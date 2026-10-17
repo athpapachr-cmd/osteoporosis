@@ -5,6 +5,8 @@ on:
     paths:
       - "clinical_data.py"
       - "clinical_capture_cp1.py"
+      - "clinical_pending_one_tap.py"
+      - "test_cockpit_cp2.py"
       - "static/cockpit/patient-chart.js"
       - "test_cockpit_cp1.py"
       - "static/cockpit/index.html"
@@ -18,6 +20,8 @@ on:
     paths:
       - "clinical_data.py"
       - "clinical_capture_cp1.py"
+      - "clinical_pending_one_tap.py"
+      - "test_cockpit_cp2.py"
       - "static/cockpit/patient-chart.js"
       - "test_cockpit_cp1.py"
       - "static/cockpit/index.html"
@@ -56,6 +60,6 @@ jobs:
             python -m playwright install --with-deps chromium
           fi
       - name: CP1 natural summary and persistent chart
-        run: pytest -q test_cockpit_cp1.py
+        run: pytest -q test_cockpit_cp1.py test_cockpit_cp2.py
       - name: Diff hygiene
         run: git diff --check HEAD^ HEAD

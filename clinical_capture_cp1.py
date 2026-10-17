@@ -111,7 +111,10 @@ def attach_cp1(router, engine, protected, context_for, ensure_patient):
                 db.add(patient);db.commit()
             return {"patient_id":TEST_ID}
 
-    def pending_view(db,p):
+    from clinical_pending_one_tap import attach_pending_one_tap_routes, project_checkpoint, installed, can_write
+    attach_pending_one_tap_routes(router, engine, protected)
+
+    def pending_view(db,p,request,ready):
         value=_pending_record(p).model_dump(mode="json")
         source=db.get(EncounterORM,p.source_encounter_id)
         if not source or source.patient_id!=p.patient_id:
@@ -123,10 +126,13 @@ def attach_cp1(router, engine, protected, context_for, ensure_patient):
             candidates=signed.get("candidate",{}).get("pending",[])
             ordinal=ids.index(p.id)
             if ordinal<len(candidates): excerpt=candidates[ordinal].get("source_excerpt")
-        return {**value,"source_date":source.encounter_date,"source_excerpt":excerpt}
+        return {**value,"source_date":source.encounter_date,"source_excerpt":excerpt,
+            "checkpoints":project_checkpoint(db,p) if ready else None,
+            "checkpoint_storage_ready":ready,
+            "checkpoint_write_allowed":ready and can_write(request,db.get(PatientORM,p.patient_id))}
 
     @router.get("/patient/{patient_id}/chart",dependencies=protected)
-    def chart(patient_id: str,response: Response):
+    def chart(patient_id: str,response: Response,request: Request):
         response.headers["Cache-Control"]="no-store"
         with Session(engine) as db:
             patient=ensure_patient(db,patient_id)
@@ -137,16 +143,18 @@ def attach_cp1(router, engine, protected, context_for, ensure_patient):
                 candidate=signed.get("candidate") if signed.get("signed") else None
                 visits.append({"encounter_id":row.id,"date":row.encounter_date,"clinical":candidate,
                     "legacy":candidate is None})
-            pending=[pending_view(db,p) for p in db.scalars(select(ClinicalPendingORM).where(ClinicalPendingORM.patient_id==patient_id).order_by(ClinicalPendingORM.created_at.desc()))]
+            ready=installed(engine)
+            pending=[pending_view(db,p,request,ready) for p in db.scalars(select(ClinicalPendingORM).where(ClinicalPendingORM.patient_id==patient_id).order_by(ClinicalPendingORM.created_at.desc()))]
             return {"patient_id":patient_id,"demographics":patient.demographics_json,"visits":visits,"pending":pending}
 
     @router.get("/clinical-updates", dependencies=protected)
-    def updates(response: Response, scope: str=Query(default="real",pattern="^(real|test)$")):
+    def updates(response: Response, request: Request, scope: str=Query(default="real",pattern="^(real|test)$")):
         response.headers["Cache-Control"]="no-store"
         with Session(engine) as db:
             test_ids=(*SYNTHETIC_161_PATIENT_IDS,TEST_ID)
             stmt=select(ClinicalPendingORM,PatientORM).join(PatientORM,PatientORM.patient_id==ClinicalPendingORM.patient_id)
             stmt=stmt.where(PatientORM.patient_id==TEST_ID if scope=="test" else PatientORM.patient_id.not_in(test_ids))
             rows=db.execute(stmt.order_by(ClinicalPendingORM.updated_at.desc()).limit(100)).all()
-            items=[{**pending_view(db,p),"patient_name":(patient.demographics_json or {}).get("full_name") or "Κλινικός φάκελος"} for p,patient in rows]
+            ready=installed(engine)
+            items=[{**pending_view(db,p,request,ready),"patient_name":(patient.demographics_json or {}).get("full_name") or "Κλινικός φάκελος"} for p,patient in rows]
             return {"items":items,"shown":len(items)}

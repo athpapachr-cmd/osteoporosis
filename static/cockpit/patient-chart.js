@@ -8,7 +8,7 @@
   const session=crypto.randomUUID();
   const el=(parent,tag,value,cls)=>{const n=document.createElement(tag);if(value)n.textContent=value;if(cls)n.className=cls;parent.append(n);return n;};
   const button=(parent,label,fn)=>{const b=el(parent,'button',label,'clinical-secondary');b.type='button';b.onclick=fn;return b;};
-  const date=v=>v?new Intl.DateTimeFormat('el-CY',{dateStyle:'medium'}).format(new Date(v.slice(0,10)+'T12:00:00')):'';
+  const date=v=>v?new Intl.DateTimeFormat('el-CY',{dateStyle:'medium',timeZone:'Asia/Nicosia'}).format(new Date(v.includes('T')?v:v.slice(0,10)+'T12:00:00Z')):'';
   const statuses={open:'Ανοικτή',awaiting_patient:'Αναμένεται από τον ασθενή',awaiting_result:'Αναμένεται αποτέλεσμα',resolved:'Ολοκληρώθηκε',cancelled:'Ακυρώθηκε',not_yet_indicated:'Δεν έχει ακόμη ένδειξη'};
   const roles={patient:'Ασθενής',clinician:'Γιατρός',secretary:'Γραμματεία',unspecified:'Δεν προσδιορίστηκε'};
   const chart=el($('visitWorkspacePatient'),'section','','patient-chart');chart.id='patientChart';
@@ -49,9 +49,43 @@
     for(const item of items){const row=el(target,'article','','synthetic-pending-row'),copy=el(row,'div');
       el(copy,'strong',item.description);el(copy,'p',(statuses[item.status]||item.status)+' · '+(roles[item.responsible_role]||item.responsible_role));
       if(item.review_date)el(copy,'p','Επανέλεγχος: '+date(item.review_date));
+      const progress=item.checkpoints;
+      const actions=el(copy,'div','','pending-checkpoint-actions');
+      async function mutate(path,body){
+        const ticket=generation;for(const b of copy.querySelectorAll('button'))b.disabled=true;
+        const status=el(copy,'p','Αποθήκευση…');status.setAttribute('role','status');
+        try{await request('/patient/'+encodeURIComponent(id)+'/pending/'+encodeURIComponent(item.pending_id)+path,{...body,idempotency_key:crypto.randomUUID()});
+          if(ticket!==generation)return;await open(id);window.dispatchEvent(new Event('cockpit:clinical-updates-changed'));
+        }catch(e){if(ticket!==generation)return;status.textContent=e.message+' Έλεγξε την αποθηκευμένη κατάσταση.';button(copy,'Ανανέωση κατάστασης',()=>open(id));}
+      }
+      function stage(parent,step){
+        el(parent,'p',step.state==='confirmed'?'✓ '+step.meaning:step.question);
+        if(step.state==='not_yet')el(parent,'small','Όχι ακόμη · καταγράφηκε '+date(step.observed_not_yet_at));
+        if(!item.checkpoint_write_allowed)return;
+        const controls=el(parent,'div','','pending-checkpoint-actions');
+        const act=(observation)=>mutate('/checkpoint',{checkpoint_key:step.key,observation,expected_revision:progress.revision,retracts_event_id:observation==='retracted'?step.event_id:null});
+        if(step.state==='confirmed')button(controls,'Αναίρεση',()=>act('retracted'));
+        else{button(controls,'Ναι',()=>act('yes_confirmed'));button(controls,'Όχι ακόμη',()=>act('not_yet_observed'));}
+      }
+      if(progress){
+        for(const step of progress.steps.filter(s=>s.state==='confirmed'))stage(actions,step);
+        if(progress.next_checkpoint)stage(actions,progress.next_checkpoint);
+        const later=progress.steps.filter(s=>s.state!=='confirmed'&&s.key!==progress.next_checkpoint?.key);
+        if(later.length){const other=el(copy,'details');el(other,'summary','Έγινε ήδη επόμενο βήμα;');for(const step of later)stage(other,step);}
+      }else if(item.checkpoint_write_allowed&&['open','awaiting_patient','awaiting_result'].includes(item.status)){
+        const choices={material_images:['CD: παραλαβή → εξέταση εικόνων','Παραλήφθηκε το CD;'],document:['Πόρισμα: παραλαβή → ανάγνωση','Παραλήφθηκε το πόρισμα;'],completion:['Μία ενέργεια','Ολοκληρώθηκε η ενέργεια;']};
+        const label=el(actions,'label','Παρακολούθηση '),select=el(label,'select');
+        for(const [key,[title]]of Object.entries(choices)){const option=el(select,'option',title);option.value=key;}
+        select.value=/\bcd\b/i.test(item.description)?'material_images':/πόρισμα/i.test(item.description)?'document':'completion';
+        const question=el(actions,'p',choices[select.value][1]);select.onchange=()=>question.textContent=choices[select.value][1];
+        button(actions,'Ναι',()=>mutate('/checkpoint-plan',{template:select.value,first_observation:'yes_confirmed'}));
+        button(actions,'Όχι ακόμη',()=>mutate('/checkpoint-plan',{template:select.value,first_observation:'not_yet_observed'}));
+      }else if(!item.checkpoint_storage_ready)el(copy,'small','Η ενημέρωση των βημάτων δεν έχει ενεργοποιηθεί ακόμη.');
+      else if(!item.checkpoint_write_allowed)el(copy,'small','Για ενημέρωση χρειάζεται η πρόσβαση γιατρού.');
+
       if(item.source_excerpt)el(copy,'blockquote',item.source_excerpt);
       button(copy,'Δημιουργήθηκε στην επίσκεψη · '+date(item.source_date),async()=>{
-        if(patientId!==id)await open(id);const target=$('visit-'+item.source_encounter_id);if(target){target.open=true;target.scrollIntoView({behavior:'smooth'});}
+        if(patientId!==id)await open(id);const target=$('visit-'+item.source_encounter_id);if(target){target.hidden=false;target.open=true;target.scrollIntoView({behavior:'smooth'});}
       });
     }
   }
@@ -74,7 +108,22 @@
       else el(overview,'p',latest?'Η προηγούμενη επίσκεψη δεν διαθέτει δομημένη σύνοψη.':'Η πρώτη επίσκεψη θα εμφανιστεί εδώ μετά την αποθήκευση.');
       const pending=el(grid,'section','','patient-chart-card');el(pending,'h3','Υποχρεώσεις');renderPending(el(pending,'div'),id,data.pending);
       const timeline=el(chart,'section','','patient-timeline');el(timeline,'h3','Πορεία ασθενούς');
-      for(const visit of data.visits){const block=el(timeline,'details','','patient-visit');block.id='visit-'+visit.encounter_id;
+      const rail=el(timeline,'div','','patient-journey-rail');rail.setAttribute('aria-label','Επισκέψεις και ορόσημα');
+      const selected=el(timeline,'section','','patient-journey-preview');selected.setAttribute('aria-live','polite');
+      const points=[];
+      function selectPoint(point,b){
+        for(const dot of rail.querySelectorAll('button'))dot.setAttribute('aria-pressed',String(dot===b));
+        selected.replaceChildren();el(selected,'small',date(point.date));el(selected,'h4',point.title);
+        for(const text of point.summary||[])el(selected,'p',text);
+        button(selected,'Άνοιγμα επίσκεψης',()=>{const visit=$('visit-'+point.source);if(visit){visit.hidden=false;visit.open=true;visit.scrollIntoView({behavior:'smooth'});visit.querySelector('summary').focus();}});
+      }
+      for(const visit of data.visits)points.push({date:visit.date,title:visit.clinical?.reason_for_visit?.text||'Καταγεγραμμένη επίσκεψη',source:visit.encounter_id,summary:(visit.clinical?.decisions||[]).map(f=>f.text)});
+      for(const item of data.pending)for(const event of item.checkpoints?.history||[])points.push({date:event.recorded_at,title:event.label,source:item.source_encounter_id,summary:[item.description,'Καταγράφηκε: '+new Intl.DateTimeFormat('el-CY',{dateStyle:'medium',timeStyle:'short'}).format(new Date(event.recorded_at))]});
+      const day=v=>v.includes('T')?new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Nicosia',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(v)):v;
+      points.sort((a,b)=>day(a.date).localeCompare(day(b.date))||a.date.localeCompare(b.date));
+      for(const point of points){const b=button(rail,'',()=>selectPoint(point,b));b.className='patient-journey-point';b.setAttribute('aria-pressed','false');el(b,'span','','patient-journey-dot');el(b,'small',date(point.date));el(b,'span',point.title);}
+      if(points.length)selectPoint(points[points.length-1],rail.lastElementChild);else el(selected,'p','Δεν έχουν καταγραφεί επισκέψεις.');
+      for(const visit of data.visits){const block=el(timeline,'details','','patient-visit');block.id='visit-'+visit.encounter_id;block.hidden=true;
         const summary=el(block,'summary');el(summary,'span',date(visit.date));el(summary,'strong',visit.clinical?.reason_for_visit?.text||'Καταγεγραμμένη επίσκεψη');
         const origin=data.pending.filter(p=>p.source_encounter_id===visit.encounter_id);for(const p of origin)el(summary,'small','Δημιουργήθηκε υποχρέωση: '+p.description);
         const body=el(block,'div','','patient-visit-body');const v=visit.clinical;
@@ -147,7 +196,7 @@
     try{const data=await request('/clinical-updates?scope='+scope);if(ticket!==generation||!active())return;target.replaceChildren();
       button(target,scope==='test'?'Πραγματικοί φάκελοι':'Δοκιμαστικός ασθενής',()=>renderUpdates(target,active,close,scope==='test'?'real':'test'));
       el(target,'p',data.items.length?'Υποχρεώσεις από αποθηκευμένες επισκέψεις · έως 100 πρόσφατες':'Δεν έχουν καταγραφεί υποχρεώσεις.');
-      for(const item of data.items){const b=button(target,'',()=>{close();open(item.patient_id);});b.className='doctor-action-row';const copy=el(b,'span');el(copy,'strong',item.patient_name);el(copy,'small',item.description);el(copy,'small',(statuses[item.status]||item.status)+' · '+date(item.source_date));el(b,'span','›');}
+      for(const item of data.items){const b=button(target,'',()=>{close();open(item.patient_id);});b.className='doctor-action-row';const copy=el(b,'span');el(copy,'strong',item.patient_name);el(copy,'small',item.description);el(copy,'small',(item.checkpoints?.next_checkpoint?.question||statuses[item.status]||item.status)+' · '+date(item.source_date));el(b,'span','›');}
     }catch(e){if(ticket===generation&&active()){target.replaceChildren();el(target,'p',e.message);}}
   }
   $('visitBackHome').addEventListener('click',()=>{reset();const u=new URL(location.href);u.searchParams.delete('chart');history.replaceState(null,'',u);});
