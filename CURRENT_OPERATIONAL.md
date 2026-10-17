@@ -1,5 +1,8 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-18 #170 TEST DEPLOYED / LIVE PROOF NEXT:** Existing Render deploy `dep-db9uapnlk1mc73cbij7g` LIVE at exact `946637550a2dd3ea6efb61a92874ab26003bfcd3`, finished 21:17:19 UTC / 00:17 Cyprus. Local durable checkpoint before smoke; publish together with the result to avoid duplicate doc deploys. Verification-only branch `721f02c` reuses existing one-off Actions runner and secret for two browser sessions; not merged/deployed. Next prove direct Brief, received persistence across browsers, chart refresh and undo. PO acceptance remains NO, CP1 STOP.
+
+
 > **2026-10-18 #170 MERGED / DEPLOY PENDING:** Squash `3684ee5c785771a6e1f6a56faac767df6e99cfae` at 21:15 UTC (00:15 Cyprus). Runtime tests reused from `6ff54f3`; final canonical guard `39070091220` PASS, docs-successor Visit Brief `39070029537` and Home `39070029552` PASS. Native Render auto-deploy only. Next observe LIVE then one-off real browser persistence proof with existing secret. No PO acceptance; CP1 stopped.
 
 
