@@ -95,6 +95,21 @@ def browser_suite(width, screenshot_name):
                       "reason": "Επανεξέταση", "clinic": "Limassol",
                       "start_at": "2026-10-11T07:30:00Z"},
                 } if auth["authenticated"] else {"detail": "Unauthorized"})
+            if url.endswith("/clinical/staff-session"):
+                return route.fulfill(status=200 if auth["authenticated"] else 401,
+                    json=({"staff_role": "clinician", "principal_id": "clinic-clinician"}
+                          if auth["authenticated"] else {"detail": "Unauthorized"}))
+            if url.endswith("/clinical/calendar/visit-brief/patient-search"):
+                assert route.request.method == "POST"
+                payload = route.request.post_data_json
+                assert payload["booking_uid"] == DAY[0]["appointment_id"]
+                assert payload["observed_booking"] == "a" * 64
+                assert payload["query"].strip()
+                return route.fulfill(status=200 if auth["authenticated"] else 401,
+                    json=[{"patient_id": "SYN-BRIEF",
+                           "demographics": {"full_name": "Ασθενής Δοκιμής Α",
+                                            "date_of_birth": "1980-01-01"}}]
+                    if auth["authenticated"] else {"detail": "Unauthorized"})
             if "/clinical/patients?query=" in url:
                 return route.fulfill(status=200 if auth["authenticated"] else 401,
                     json=[{"patient_id": "SYN-BRIEF",
