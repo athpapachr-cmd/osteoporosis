@@ -77,7 +77,11 @@
     const patient = new URL(location.href).searchParams.get("chart");
     if(patient) open(patient);
   });
-  window.CockpitStoredChart = {open};
+  window.CockpitStoredChart = {open, reset() {
+    clear();
+    const url = new URL(location.href); url.searchParams.delete("chart");
+    history.replaceState(null, "", url);
+  }};
   // Restores by a fresh authenticated backend read, never browser storage.
   const patientId = new URL(location.href).searchParams.get("chart");
   if (patientId) open(patientId);

@@ -189,6 +189,11 @@ def test_real_browser_two_sessions_refresh_and_complete_chart(setup, tmp_path):
                 clinical = [u.split(f"localhost:{port}")[1] for u in requests if "/clinical/" in u]
                 assert all(p.startswith(PREFIX + "/") or p in ("/clinical/status","/clinical/login") for p in clinical), clinical
                 page.screenshot(path=str(tmp_path / f"synthetic-161-{width}.png"), full_page=True)
+                if index == 0:
+                    page.locator("#visitRecentRows .clinical-patient-row").first.click()
+                    expect(page.locator("#synthetic161Chart")).to_be_empty()
+                    expect(page.locator("#visitSelectedName")).to_have_text("Δοκιμαστικός Ασθενής 161 1")
+                    assert "chart=" not in page.url
                 context.close()
             browser.close()
         with Session(engine) as db:
