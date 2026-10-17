@@ -53,6 +53,11 @@
  }
  function open(row){
    window.CockpitStoredChart?.reset();
+   if(window.CockpitSynthetic && row.patientId){
+     window.CockpitVisitBrief?.invalidate();
+     window.CockpitStoredChart?.open(row.patientId);
+     return;
+   }
    state.revision++;clearTimeout(state.timer);
    resetDraft();
    state.selected=row;
