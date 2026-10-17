@@ -1636,3 +1636,5 @@ PO rejected duplicate identity checks and an inert Pending status despite techni
 ## 2026-10-18 — #161 obligation provenance and usable patient chart
 
 PO rejected unstructured chart and hidden obligation origin despite direct-opening correction. Bounded synthetic correction reuses structured signed encounter, existing Pending and audit records for clinical overview, source-linked obligation creation and dated lifecycle. Existing Home Clinical Updates/obligations panels read these same records; no Gmail/unread claims, new source or storage. 36 affected Python/Chromium and four Node suites PASS, nine focused synthetic tests. Release and PO acceptance pending; CP1 stopped.
+
+#171 released as `b93d47c` on existing Render `dep-db9ujlbm8hqs73atet0g`, source `cbad563` LIVE. Live run `39071664714` SUCCESS verifies source encounter, lifecycle, structured chart and Clinical Updates navigation in two independent browser sessions. Prior received status restored. PO acceptance remains pending; CP1 stopped, writer released.
