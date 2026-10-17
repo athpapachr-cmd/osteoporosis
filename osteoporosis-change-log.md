@@ -1631,3 +1631,8 @@ Bounded chart-selection correction #169 merged `7b10f063551710ed98b2a9ed8373515e
 PO rejected duplicate identity checks and an inert Pending status despite technical PASS. Fixed synthetic appointment identity now opens the existing Brief projection directly; registry selection opens stored chart. Added inline received/undo on the existing synthetic Pending row, timestamp conflict protection and synthetic audit. Shared real-patient authentication/verification unchanged. 35 affected Python/Chromium tests and four Node suites PASS. Not yet deployed or accepted; CP1 remains stopped.
 
 #161 UX correction #170 released as `3684ee5` on existing Render at source `9466375` (LIVE `dep-db9uapnlk1mc73cbij7g`). Live run `39070316620` SUCCESS proves direct opening and received/undo persistence across two independent browsers and refresh. PO rejection remains authoritative until explicit acceptance. CP1 stopped; bounded writer released.
+
+
+## 2026-10-18 — #161 obligation provenance and usable patient chart
+
+PO rejected unstructured chart and hidden obligation origin despite direct-opening correction. Bounded synthetic correction reuses structured signed encounter, existing Pending and audit records for clinical overview, source-linked obligation creation and dated lifecycle. Existing Home Clinical Updates/obligations panels read these same records; no Gmail/unread claims, new source or storage. 36 affected Python/Chromium and four Node suites PASS, nine focused synthetic tests. Release and PO acceptance pending; CP1 stopped.

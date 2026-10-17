@@ -66,7 +66,7 @@ def test_key_required_for_every_test_data_and_write_route(setup):
     app, _ = setup
     c = TestClient(app, base_url="https://testserver")
     assert c.get(PREFIX + "/").status_code == 200  # empty public shell
-    for path in ("/patients", "/recent-encounters", "/staff-session", "/calendar/cockpit-context",
+    for path in ("/patients", "/clinical-updates", "/recent-encounters", "/staff-session", "/calendar/cockpit-context",
                  "/patient/" + SYNTHETIC_161_PATIENT_IDS[0] + "/chart"):
         assert c.get(PREFIX + path).status_code == 401
     for path, body in (("/prepare", {}), ("/calendar/visit-brief/read", {"booking_uid":BOOKINGS[0]})):
@@ -177,18 +177,33 @@ def test_real_browser_two_sessions_refresh_and_complete_chart(setup, tmp_path):
                 expect(page.locator("#visitBriefPlan")).to_contain_text("Συμφωνήθηκε επανέλεγχος")
                 expect(page.locator("#visitBriefPending")).to_contain_text("Αναμένεται από τον ασθενή")
                 page.locator("#visitBriefPending button",has_text="Παραλήφθηκε").click()
-                expect(page.locator("#visitBriefPending button")).to_have_text("Αναίρεση")
+                expect(page.locator("#visitBriefPending .pending-action")).to_have_text("Αναίρεση")
                 page.locator("#visitBriefOpenChart").click()
                 expect(page.locator("#synthetic161Chart")).to_contain_text("2 αποθηκευμένες επισκέψεις")
-                expect(page.locator("#synthetic161Chart")).to_contain_text("SAFETY-NET")
+                expect(page.locator("#synthetic161Chart")).to_contain_text("Πορεία ασθενούς")
                 page.reload()
                 expect(page.locator("#synthetic161Chart")).to_contain_text("2 αποθηκευμένες επισκέψεις")
-                expect(page.locator("#synthetic161Chart .synthetic-pending-row button")).to_have_text("Αναίρεση")
-                page.locator("#synthetic161Chart .synthetic-pending-row button").click()
-                expect(page.locator("#synthetic161Chart .synthetic-pending-row button")).to_have_text("Παραλήφθηκε")
+                expect(page.locator("#synthetic161Chart .pending-action")).to_have_text("Αναίρεση")
+                page.locator("#synthetic161Chart .pending-action").click()
+                expect(page.locator("#synthetic161Chart .pending-action")).to_have_text("Παραλήφθηκε")
                 assert not errors, errors
                 clinical = [u.split(f"localhost:{port}")[1] for u in requests if "/clinical/" in u]
                 assert all(p.startswith(PREFIX + "/") or p in ("/clinical/status","/clinical/login") for p in clinical), clinical
+                page.locator("#synthetic161Chart .clinical-source-link").click()
+                expect(page.locator(".patient-visit[open] .patient-obligation-origin")).to_contain_text("Υποχρεώσεις που δημιουργήθηκαν στην επίσκεψη")
+                expect(page.locator(".patient-timeline-event")).not_to_have_count(0)
+                page.locator("#doctorTasksButton").click()
+                expect(page.locator("#doctorPopoverTitle")).to_have_text("Υποχρεώσεις ασθενών")
+                expect(page.locator("#doctorPopoverContent")).to_contain_text("3 ανοικτές υποχρεώσεις")
+                page.locator("#doctorInboxButton").click()
+                expect(page.locator("#doctorPopoverTitle")).to_have_text("Κλινικές ενημερώσεις")
+                expect(page.locator("#doctorPopoverContent")).to_contain_text("3 ανοικτές υποχρεώσεις")
+                expect(page.locator("#doctorPopoverContent")).not_to_contain_text("Δεν έχει συνδεθεί")
+                page.locator("#doctorPopoverContent .doctor-action-row").filter(has_text="Δοκιμαστικός Ασθενής 161 2").click()
+                expect(page.locator("#visitSelectedName")).to_have_text("Δοκιμαστικός Ασθενής 161 2")
+                expect(page.locator("#doctorPopover")).to_be_hidden()
+                expect(page.locator("#synthetic161Chart .patient-chart-grid")).to_be_visible()
+                expect(page.locator("#synthetic161Chart")).to_contain_text("Δημιουργήθηκε υποχρέωση")
                 page.screenshot(path=str(tmp_path / f"synthetic-161-{width}.png"), full_page=True)
                 if index == 0:
                     page.locator("#visitRecentRows .clinical-patient-row").first.click()
@@ -262,3 +277,28 @@ def test_one_click_fixture_and_pending_action_persist_with_conflict_protection(s
         assert len(audit) == 2 and all(a.role == "synthetic_tester" for a in audit)
         row = db.get(ClinicalPendingORM, pending["pending_id"])
         assert row.source_encounter_id.endswith("-visit-10")
+
+
+def test_obligation_origin_and_updates_share_persisted_history(setup):
+    app, engine = setup
+    c = login(app)
+    c.post(PREFIX + "/prepare")
+    route = PREFIX + "/patient/" + SYNTHETIC_161_PATIENT_IDS[1] + "/chart"
+    chart = c.get(route).json()
+    pending = chart["pending"][0]
+    origin = next(v for v in chart["visits"] if v["encounter_id"] == pending["source_encounter_id"])
+    assert pending["source_date"] == origin["date"] == "2026-10-07"
+    assert origin["clinical"]["pending"][0]["description"] == pending["description"]
+    assert pending["history"][0]["kind"] == "created"
+    updates = c.get(PREFIX + "/clinical-updates").json()
+    assert updates["open_count"] == 3
+    assert all(p["patient_id"] in SYNTHETIC_161_PATIENT_IDS for p in updates["items"])
+    path = PREFIX + "/patient/" + chart["patient_id"] + "/pending/" + pending["pending_id"]
+    received = c.post(path, json={"status":"resolved", "expected_updated_at":pending["updated_at"]}).json()
+    assert [e["kind"] for e in received["history"]] == ["created", "received"]
+    reopened = c.post(path, json={"status":"awaiting_patient", "expected_updated_at":received["updated_at"]}).json()
+    second = login(application(engine))
+    item = next(p for p in second.get(PREFIX + "/clinical-updates").json()["items"] if p["patient_id"] == chart["patient_id"])
+    assert item["history"] == second.get(route).json()["pending"][0]["history"] == reopened["history"]
+    assert [e["kind"] for e in item["history"]] == ["created", "received", "reopened"]
+    assert second.get(route).json()["visits"] == chart["visits"]  # source is never rewritten
