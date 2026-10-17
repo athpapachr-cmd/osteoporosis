@@ -486,13 +486,84 @@ def test_real_staff_login_cookies_secretary_separation_and_logout(monkeypatch):
         assert clinician.status_code == 200
         assert clinician.json()["staff_role"] == "clinician"
         assert c.get("/clinical/status").status_code == 200
+        assert c.get("/clinical/patients?query=P1").status_code == 200
         assert read(c).status_code == 200
 
-        # Rotating the credential invalidates the old staff cookie immediately.
+        # Rotation invalidates ALL staff-authorized clinical endpoints, not
+        # just Visit Brief. There is no orphan broad Clinical Key cookie.
         monkeypatch.setenv("COCKPIT_STAFF_CLINICIAN_KEY",
                            "rotated-clinician-" + "r" * 40)
         assert read(c).status_code == 401
+        assert c.get("/clinical/status").status_code == 401
+        assert c.get("/clinical/patients?query=P1").status_code == 401
+
+        # One new doctor key restores both existing and Visit Brief views.
+        renewed = c.post("/clinical/login", json={
+            "key": "rotated-clinician-" + "r" * 40,
+        })
+        assert renewed.status_code == 200
+        assert renewed.json()["staff_role"] == "clinician"
         assert c.get("/clinical/status").status_code == 200
+        assert c.get("/clinical/patients?query=P1").status_code == 200
+        assert read(c).status_code == 200
+
         assert c.post("/clinical/logout").status_code == 200
         assert c.get("/clinical/status").status_code == 401
+        assert read(c).status_code == 401
+
+        # Legacy Clinical Key keeps its existing screens but does NOT
+        # bypass independently attributable Visit Brief confirmation.
+        legacy = c.post("/clinical/login", json={"key": KEY})
+        assert legacy.status_code == 200
+        assert c.get("/clinical/status").status_code == 200
+        assert read(c).status_code == 401
+
+
+def test_staff_access_audits_booking_only_refusals_and_corrections(monkeypatch):
+    c, engine = client(monkeypatch)
+    first = read(c)
+    assert first.status_code == 200 and first.json()["reason"] == "unlinked"
+    observed = first.json()["booking"]["observation"]
+    assert c.post("/clinical/calendar/visit-brief/patient-search", json={
+        "booking_uid": BOOKING["uid"], "observed_booking": "0" * 64,
+        "query": "P1",
+    }).status_code == 409
+    assert c.post("/clinical/calendar/visit-brief/confirm", json={
+        "booking_uid": BOOKING["uid"], "patient_id": "P1",
+        "expected_revision": 9, "independently_verified": True,
+        "evidence_type": "protected_chart_identifiers",
+        "observed_booking": observed,
+    }).status_code == 409
+    assert confirm(c).status_code == 200
+    with Session(engine) as db:
+        events = [(row.event, row.outcome, row.principal_id)
+                  for row in db.scalars(select(VisitBriefStaffAuditORM))]
+    assert ("booking_read", "allowed", "clinic-clinician") in events
+    assert ("registry_search", "denied_409", "clinic-clinician") in events
+    assert ("brief_read_confirm", "denied_409", "clinic-clinician") in events
+    assert ("link_confirm", "allowed", "clinic-clinician") in events
+    assert ("brief_read_confirm", "allowed", "clinic-clinician") in events
+
+
+def test_staff_expiry_invalidates_all_clinician_routes(monkeypatch):
+    import clinical_staff_auth as staff
+    from clinical_auth import build_auth_router, ClinicalCookieMiddleware
+
+    _, engine = client(monkeypatch)
+    now = 1_799_000_000
+    monkeypatch.setattr(staff.time, "time", lambda: now)
+    app = FastAPI()
+    app.add_middleware(ClinicalCookieMiddleware)
+    app.include_router(build_auth_router())
+    app.include_router(build_clinical_router(engine))
+    app.include_router(build_clinical_calendar_router(engine))
+    with TestClient(app, base_url="https://testserver") as c:
+        assert c.post("/clinical/login", json={
+            "key": "clinician-test-" + "c" * 36,
+        }).status_code == 200
+        assert c.get("/clinical/status").status_code == 200
+        assert read(c).status_code == 200
+        monkeypatch.setattr(staff.time, "time", lambda: now + staff.STAFF_LIFETIME + 1)
+        assert c.get("/clinical/status").status_code == 401
+        assert c.get("/clinical/patients?query=P1").status_code == 401
         assert read(c).status_code == 401
