@@ -157,12 +157,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install playwright -r requirements.txt
+      - run: pip install playwright
       - run: python -m playwright install --with-deps chromium
       - name: Existing-key live synthetic browser proof only
         env:
           CLINICAL_DATA_KEY: ${{ secrets.CLINICAL_DATA_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: python test_live_synthetic_161_once.py
       - uses: actions/upload-artifact@v4
         if: success()
