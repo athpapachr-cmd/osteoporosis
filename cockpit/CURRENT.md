@@ -1,5 +1,7 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-18 #191 ACTUAL-SOURCE LIVE READ PROOF PASS:** Run39127659489 SUCCESS against exactLIVEcd632b8f879d4c2978df08859ce096ae1ddbe8dd / dep-dbabnd61egvs73dgpj50. Independent1280/390: uniqueprotectedrecentpatientIDs andrailcount; mailInboxsourceplaceholderwithoutPendingread; actualopenPendingIDs exactlypreservedingroupsbyexactpatientID, nooverflow. No actualnames/history logged/captured, no patient/task/providerwrites. Next inspect safeInbox screenshots then docs-onlycloseout/writerrelease; no fullClinicalInboxorCP3activationclaim.
+
 > **2026-10-18 #191 DEPLOYED / READ-ONLY LIVE PROOF NEXT:** Renderdep-dbabnd61egvs73dgpj50 LIVE exactcd632b8f879d4c2978df08859ce096ae1ddbe8dd at12:31:29UTC. Durablelocalcheckpoint before verification-only0eefb5d dispatch: oneclinicalsession/independent1280/390, realrecentIDsunique, mailInboxdoesnotfetchPending, actualactivelistgroupcount/IDs preserved. Only safeemptyInbox screenshots; no actualnames/history logging/capture, task/patient/providerwrites.
 
 > **2026-10-18 #191 MERGED / NATIVE DEPLOY NEXT:** Squashcd632b8f879d4c2978df08859ce096ae1ddbe8dd at12:29:39UTC. Same reviewed/tested readprojection/UI correction, no ClinicalInboxintegration/CP3activation. Durablelocalcheckpoint before existingnativeRender observation; next exactLIVE then actualsourcereadonlyproof0eefb5d. No records/auth/schema/env/networkchanges.
