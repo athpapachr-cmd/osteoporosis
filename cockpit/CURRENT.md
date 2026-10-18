@@ -1,5 +1,7 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-18 #196 EXACT SOURCE LIVE / READ-ONLY PROOF NEXT:** Renderdep-dbach6qvcj2c73a2s910 LIVE at13:26:26UTC on58281ea331ae13e6c4a79c06cd875666e6163c75. Durable checkpoint before dispatching verification-onlyb921f5d. Proof is fixed marked chart navigation at1280/390 and identical chart before/after; no patient/task/provider write. Two-date fidelity and actual appointment latest remain covered local/CI.
+
 > **2026-10-18 #196 NATIVE BUILD OBSERVED:** Renderdep-dbach6qvcj2c73a2s910 building exact squash58281ea331ae13e6c4a79c06cd875666e6163c75. No duplicate deploy triggered. Next wait for LIVE before running verification-onlyb921f5d; no production read proof yet.
 
 > **2026-10-18 #196 MERGED / NATIVE DEPLOY NEXT:** Squash58281ea331ae13e6c4a79c06cd875666e6163c75 at13:24:42UTC; exact reviewed runtime unchanged. Durable local checkpoint before observing existing native Render deployment. Next exact-source LIVE then fixed marked read-only focused-reader proofb921f5d; not yet live verified.
