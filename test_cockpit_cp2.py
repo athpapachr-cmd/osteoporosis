@@ -360,3 +360,58 @@ def test_remove_resolved_preserves_confirmation_and_exact_resolution_pointer(set
         assert db.get(ClinicalPendingORM,p['pending_id']).resolution_event_id==original_resolution
         assert db.get(EncounterORM,p['source_encounter_id']).payload_json==original_source
         assert db.scalar(select(func.count()).select_from(PendingCheckpointEventORM))==count+2
+
+
+def test_patient_task_groups_and_incoming_sources_remain_separate(setup,tmp_path):
+    import socket,threading,shutil
+    import uvicorn
+    from copy import deepcopy
+    from playwright.sync_api import sync_playwright,expect
+    app,engine=setup;c,p,path=real_seed(app,engine)
+    extra=draft().model_dump(mode='json');extra['pending']=[deepcopy(extra['pending'][i%2]) for i in range(4)]
+    for i,item in enumerate(extra['pending']):item['description']='Συνθετική ενέργεια '+str(i)
+    assert c.post('/clinical/visit-capture/save',json={'context_id':ctx(c),'candidate':extra}).status_code==200
+    with Session(engine) as db:
+        for visit in db.scalars(select(EncounterORM).where(EncounterORM.patient_id==TEST_ID)):
+            visit.patient_id='outside-synthetic-scope'
+        added=db.scalars(select(ClinicalPendingORM).where(ClinicalPendingORM.patient_id==TEST_ID)).all()
+        for item in added:item.patient_id='outside-synthetic-scope'
+        next(x for x in added if x.description=='Συνθετική ενέργεια 3').status='resolved'
+        next(x for x in added if x.description=='Συνθετική ενέργεια 2').status='cancelled';db.commit()
+    # A namesake is a separate identity, never merged by the display name.
+    other=c.post('/clinical/patients/create',json={'creation_id':str(uuid4()),'full_name':'Protected sentinel'}).json()['patient_id']
+    another=draft().model_dump(mode='json');another['pending']=another['pending'][:1]
+    assert c.post('/clinical/visit-capture/save',json={'context_id':ctx(c,other),'candidate':another}).status_code==200
+    active=c.get('/clinical/clinical-updates?active_only=true').json()['items']
+    assert len(active)==4 and {x['status'] for x in active} <= {'open','awaiting_patient','awaiting_result'}
+    assert len(c.get('/clinical/clinical-updates').json()['items'])==6
+    recent=c.get('/clinical/recent-encounters').json();assert len(recent)==2
+    assert {x['patient_id'] for x in recent}=={'outside-synthetic-scope',other}
+    sock=socket.socket();sock.bind(('127.0.0.1',0));port=sock.getsockname()[1]
+    server=uvicorn.Server(uvicorn.Config(app,log_level='error'));thread=threading.Thread(target=server.run,kwargs={'sockets':[sock]},daemon=True);thread.start()
+    try:
+        with sync_playwright() as pw:
+            browser=pw.chromium.launch(executable_path=shutil.which('google-chrome') or shutil.which('chromium'))
+            for width in [1280,390]:
+                context=browser.new_context(viewport={'width':width,'height':950});page=context.new_page();reads=[]
+                page.on('request',lambda r:reads.append(r.url) if '/clinical-updates' in r.url else None)
+                page.goto(f'http://localhost:{port}/static/cockpit/index.html')
+                page.locator('#ceGlobalKey').click();page.locator('#ceGlobalKeyInput').fill(KEY)
+                page.locator('#ceGlobalLoginForm button[type=submit]').click();expect(page.locator('#ceGlobalAuthStatus')).to_contain_text('Συνδέθηκες');page.keyboard.press('Escape')
+                expect(page.locator('#visitRecentRows .clinical-patient-row')).to_have_count(2)
+                page.locator('#doctorInboxButton').click();expect(page.locator('#doctorPopoverTitle')).to_have_text('Κλινικά εισερχόμενα')
+                expect(page.locator('#doctorPopoverContent')).to_contain_text('Δεν έχει συνδεθεί')
+                expect(page.locator('#doctorPopoverContent button.doctor-action-row')).to_have_count(0);assert not reads
+                page.locator('#doctorTasksButton').click();expect(page.locator('#doctorPopoverTitle')).to_have_text('Υποχρεώσεις ασθενών')
+                groups=page.locator('.patient-updates-group');expect(groups).to_have_count(2)
+                expect(groups.locator('h3')).to_have_count(2);expect(groups.locator('.doctor-action-row')).to_have_count(4)
+                assert sorted(groups.evaluate_all('gs=>gs.map(g=>g.querySelectorAll("button").length)'))==[1,3]
+                assert len(set(groups.locator('button').evaluate_all('ns=>ns.map(n=>n.dataset.pendingId)')))==4
+                expect(groups.filter(has_text='Συνθετική ενέργεια 3')).to_have_count(0)
+                assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
+                page.locator('#doctorPopover').screenshot(path=str(tmp_path/f'task-groups-{width}.png'))
+                selected=groups.locator('button').first;label=selected.locator('strong').text_content();selected.click()
+                expect(page.locator('.patient-pending-dialog')).to_contain_text(label)
+                context.close()
+            browser.close()
+    finally:server.should_exit=True;thread.join(10);sock.close()

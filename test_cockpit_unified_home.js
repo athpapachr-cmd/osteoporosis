@@ -20,7 +20,7 @@ for(const id of ["visitSidebarPrevious","visitSidebarCurrent","visitSidebarNext"
 assert.ok(html.indexOf('id="visitSidebarNext"')<html.indexOf('id="doctorAttentionList"'),
   "appointment cards lead the main content");
 
-assert.match(html,/<h2>Πρόσφατες επισκέψεις<\/h2><span>έως 3<\/span>/);
+assert.match(html,/<h2>Πρόσφατοι ασθενείς<\/h2><span>έως 3<\/span>/);
 assert.match(html,/id="doctorAttentionList"/);
 assert.match(html,/id="doctorDateButton"/);
 assert.match(html,/id="doctorLibraryView"/);
