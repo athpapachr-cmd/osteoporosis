@@ -1,5 +1,7 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-18 #196 LIVE READ-ONLY PROOF PASS:** Workflow39131610970 on verification-onlyb921f5d SUCCESS against exact LIVE58281ea. Fixed marked chart1280/390: one selected visit, overview hidden, timeline/source/shared public caller, Back restores overview and no visible visit bodies; full chart identical before/after. No patient/task/provider mutation. Durable checkpoint before downloading/inspecting safe marked reader screenshots and R0 docs closeout. Actual two-date/appointment behavior covered local/CI, not claimed as two-visit live fixture evidence.
+
 > **2026-10-18 #196 EXACT SOURCE LIVE / READ-ONLY PROOF NEXT:** Renderdep-dbach6qvcj2c73a2s910 LIVE at13:26:26UTC on58281ea331ae13e6c4a79c06cd875666e6163c75. Durable checkpoint before dispatching verification-onlyb921f5d. Proof is fixed marked chart navigation at1280/390 and identical chart before/after; no patient/task/provider write. Two-date fidelity and actual appointment latest remain covered local/CI.
 
 > **2026-10-18 #196 NATIVE BUILD OBSERVED:** Renderdep-dbach6qvcj2c73a2s910 building exact squash58281ea331ae13e6c4a79c06cd875666e6163c75. No duplicate deploy triggered. Next wait for LIVE before running verification-onlyb921f5d; no production read proof yet.
