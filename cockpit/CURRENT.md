@@ -1,5 +1,7 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-18 #201 FINAL AFFECTED CI PASS / MERGE NEXT:** Publisheda4b9c0214672787c40fc453dc018d33b332f1499, reviewed6c4bed6. Calendar39153829143/Home39153829180/Brief39153829205/Capture39153829246/Demo39153829211/canonical39153829230 SUCCESS. Existing unrelated L0allowlist39153829098 inspected. Durable checkpoint before authorizedsquash/native correction release and fullagenda proof42fb63e; #200scopednavigation evidence retained.
+
 > **2026-10-18 #201 OPEN / CORRECTED AGENDA CI NEXT:** PR https://github.com/athpapachr-cmd/osteoporosis/pull/201 publisheda4b9c02, reviewed6c4bed6. Correctedactualsource readonlyproof42fb63e prepared on never-merge branch, checks fullagenda counts/date and same-day Home next inclusion without names/history capture or clinical/link writes. Durable local checkpoint before finalCI/nativecorrectionrelease.
 
 > **2026-10-18 FULL AGENDA R2 PASS / PR NEXT:** Exact6c4bed6 independently PASS COMPLETE_FOR_DECLARED_SCOPE, no material finding. Shared sourcevalidation/weeklyfilter/protection/minimal7fields/no-store/read-onlyconsumerfidelity closed.37Python/3Node + actual1280/680/390PASS. Next publishcorrectivePR/affectedCI/native release and correctedfullagenda liveproof; #200navigationproof remains scoped, not all-category proof.
