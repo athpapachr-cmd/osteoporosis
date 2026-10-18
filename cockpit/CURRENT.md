@@ -1,5 +1,7 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-18 #196 NATIVE BUILD OBSERVED:** Renderdep-dbach6qvcj2c73a2s910 building exact squash58281ea331ae13e6c4a79c06cd875666e6163c75. No duplicate deploy triggered. Next wait for LIVE before running verification-onlyb921f5d; no production read proof yet.
+
 > **2026-10-18 #196 MERGED / NATIVE DEPLOY NEXT:** Squash58281ea331ae13e6c4a79c06cd875666e6163c75 at13:24:42UTC; exact reviewed runtime unchanged. Durable local checkpoint before observing existing native Render deployment. Next exact-source LIVE then fixed marked read-only focused-reader proofb921f5d; not yet live verified.
 
 > **2026-10-18 #196 AFFECTED CI PASS / MERGE NEXT:** Published7f7d14a7f0743a5707857c5317df460750f3aa95; reviewed runtimee8ecef3. Capture39131271753, Home39131271765, Brief39131271684, Demo39131271630 and canonical39131271604 SUCCESS. Existing unrelated L0 design-only allowlist39131271769 rejection inspected (Unexpected non-L0 file in design branch). Durable checkpoint before authorized squash/native deployment; verification-onlyb921f5d stays separate.
