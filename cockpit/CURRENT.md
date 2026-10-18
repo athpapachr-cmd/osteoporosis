@@ -1,5 +1,7 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-18 #196 AFFECTED CI PASS / MERGE NEXT:** Published7f7d14a7f0743a5707857c5317df460750f3aa95; reviewed runtimee8ecef3. Capture39131271753, Home39131271765, Brief39131271684, Demo39131271630 and canonical39131271604 SUCCESS. Existing unrelated L0 design-only allowlist39131271769 rejection inspected (Unexpected non-L0 file in design branch). Durable checkpoint before authorized squash/native deployment; verification-onlyb921f5d stays separate.
+
 > **2026-10-18 #196 OPEN / AFFECTED CI NEXT:** PR https://github.com/athpapachr-cmd/osteoporosis/pull/196 published7f7d14a; reviewed runtime e8ecef3. Read-only fixed marked verification prepared separately at b921f5d on never-merge verification branch. Durable local checkpoint before final CI/authorized merge; no runtime delta after R1. Next affected CI/canonical guard then native release.
 
 > **2026-10-18 FOCUSED VISIT R1 PASS / PR NEXT:** Independent exact-head review e8ecef3 PASS / COMPLETE_FOR_DECLARED_SCOPE, no material findings. Three callers share exact-encounter selection, Back preserves overview/scroll/source focus and unchanged signed content; patient/draft/busy/generation/auth clearing retained. Targeted34Python/3Node and inspected1280/390 screenshots complete. Next publish tested runtime and canonical checkpoints, affected CI, authorized merge/native Render and bounded fixed marked read-only proof. No production mutation/provider call.
