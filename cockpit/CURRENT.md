@@ -1,5 +1,7 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-18 #193/#194 LIVE COMPACT PROOF PASS:** Run `39130033288` SUCCESS against exact LIVE `4797b60f002b90e903ff7b89b375870387304325` / `dep-dbac79gae00c739jivog`. Independent1280/390: CD undo/delete share same row, duplicate excerpt/origin absent inline and retained in popup, confirmed stages and full chart unchanged, no root overflow. Earlier readonly39129251840/39129465429 exposed CD wrapping; #194 closes it with measured geometry. Permanent terminal removal is local/CI verified, not executed on production fixture. Next safe screenshot inspection and docs-only closeout/writer release.
+
 > **2026-10-18 #194 DEPLOYED / LIVE ALIGNMENT RECHECK NEXT:** Render `dep-dbac79gae00c739jivog` LIVE at exact `4797b60f002b90e903ff7b89b375870387304325`, finished13:05:10UTC. Durable checkpoint before unchanged readonly `0be4936` proof of compact branches/CD action alignment/source popup. No production task mutation.
 
 > **2026-10-18 #194 MERGED / NATIVE DEPLOY NEXT:** Squash `4797b60f002b90e903ff7b89b375870387304325` at13:03:33UTC. Reviewed CSS-only CD action sizing plus explicit geometry regression; permanent-removal semantics from #193 unchanged. Durable checkpoint before native Render observation and fixed marked read-only proof.
