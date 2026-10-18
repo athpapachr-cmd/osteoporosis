@@ -1,5 +1,7 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-18 #198 LIVE READ-ONLY EDIT PROOF PASS:** Run39133756681 on verification-onlyc5b8950 SUCCESS against LIVEc2ed41b. Fixed marked1280/390: existing visit/date prefilled, focused reader hidden during edit, unsaved change cancelled and reopened with original content; entire chart identical, no amend/extract/save requests and no page errors/overflow. Durable checkpoint before safe screenshot inspection and R0docscloseout. Actual amendment/task/history/asof writes verified local/CI only; established fixture and real records unchanged.
+
 > **2026-10-18 #198 EXACT SOURCE LIVE / READ-ONLY SMOKE NEXT:** Renderdep-dbacv161egvs73di0fvg LIVE at13:55:51UTC on exactc2ed41b9a3da197b5394c6925b8e35506dc16bd3. Durable checkpoint before dispatchc5b8950: fixed marked edit/prefill/cancel at1280/390, chart identical and no amend/extract/save requests. Real clinical amendment/provider calls not authorized for this proof; local/CI write evidence retained.
 
 > **2026-10-18 #198 EXACT NATIVE BUILD OBSERVED:** Renderdep-dbacv161egvs73di0fvg buildingc2ed41b9a3da197b5394c6925b8e35506dc16bd3; no duplicate deployment triggered. Next wait forLIVE, then preparedreadonlymarkedproofc5b8950, no clinical save/provider invocation.
