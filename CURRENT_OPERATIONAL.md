@@ -1,5 +1,7 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-18 #201 EXACT SOURCE LIVE / FULL AGENDA PROOF NEXT:** Renderdep-dbagu50ae00c739oua3g LIVE at18:27:14UTC on exacta8b0a59eabf611ca18ebfa1f9bb4a6877bcd4317. Durable checkpoint before correctedreadonly42fb63e actual /agenda dates/counts and Home-next inclusion, navigation-only screenshots. No clinical/link/task/providerwrite.
+
 > **2026-10-18 #201 CORRECTED NATIVE DEPLOY OBSERVED:** Renderdep-dbagu50ae00c739oua3g update_in_progress exacta8b0a59eabf611ca18ebfa1f9bb4a6877bcd4317; nativeautodeploy reused. NextLIVE then readonlyactualagenda/Home-next inclusion; no patient/link/task mutation.
 
 > **2026-10-18 #201 MERGED / CORRECTED SOURCE DEPLOY NEXT:** Squasha8b0a59eabf611ca18ebfa1f9bb4a6877bcd4317 at18:25:21UTC. Reviewed all-category agenda source unchanged. Durable checkpoint before nativeRender observation; exactsourceLIVE then readonlyfullagenda/Home-next proof42fb63e.
