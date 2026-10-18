@@ -1,5 +1,7 @@
 # TODO.md — Clinical Excellence long-range compass
 
+> **2026-10-18 Compact task follow-through installed:** #193/#194 reduce branch duplication and place undo/delete together. Trash now offers explicit permanent task removal without restoration; signed visit and private audit remain intact. Local/CI terminal-state tests and read-only live layout proof passed; no production task destruction. Personal PO use pending, later phases unchanged. Exact state in root/Cockpit CURRENT.
+
 > **2026-10-18 Canonical Inbox/task distinction restored:** #191 removes the stored-obligation substitute from Clinical Inbox, groups open obligations under their own patient task view, and shows up to3distinctrecentpatients with latestvisit. Actual-source readonly1280/390 verified. Full incoming-source Inbox integration and selectiveCP3Home/DailyBrief remain planned; this correction does not complete or activate them. Exactstate in root/Cockpit CURRENT.
 
 > **2026-10-18 Obligation usability correction installed:** #189 removes universal task-template selection for ordinary reminders and makes reversible deletion available inline/popup after completion. Missing-field extraction clarified; live synthetic noSave comparison confirms blankBP is not a task while an explicitly agreed measurement remains supported. Existing approved CD/image stages preserved. PersonalPOuse pending, no later phase activation; exact release/evidence in root/Cockpit CURRENT.
