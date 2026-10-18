@@ -495,6 +495,12 @@ def test_cockpit_recent_encounters_protected_three_minimal(monkeypatch):
         })
         assert saved.status_code == 200
 
+    # One patient has several newer visits; they must not displace other patients.
+    for day in ("2026-10-10", "2026-10-11", "2026-10-12"):
+        assert client.post("/clinical/patient/R3/encounters", headers=HEADERS, json={
+            "encounter_date": day, "status": "completed", "payload": {"_visit_capture_v1": {
+                "signed": True, "candidate": {"visit_type": "Νέα εκτίμηση"}}}}).status_code == 200
+
     assert client.get("/clinical/recent-encounters?limit=3").status_code == 401
     response = client.get("/clinical/recent-encounters?limit=3", headers=HEADERS)
     assert response.status_code == 200
@@ -504,6 +510,7 @@ def test_cockpit_recent_encounters_protected_three_minimal(monkeypatch):
     assert [row["visit_type"] for row in rows] == [
         "Νέα εκτίμηση", "Κλινική επίσκεψη", "Επανέλεγχος"
     ]
+    assert rows[0]["encounter_date"] == "2026-10-12"
     assert rows[0]["patient_display_name"] == rows[2]["patient_display_name"]
     assert all(set(row) == {"patient_id", "patient_display_name", "encounter_date", "visit_type"}
                for row in rows)

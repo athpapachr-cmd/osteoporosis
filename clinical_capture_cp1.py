@@ -152,12 +152,13 @@ def attach_cp1(router, engine, protected, context_for, ensure_patient):
             return {"patient_id":patient_id,"demographics":patient.demographics_json,"visits":visits,"pending":pending}
 
     @router.get("/clinical-updates", dependencies=protected)
-    def updates(response: Response, request: Request, scope: str=Query(default="real",pattern="^(real|test)$")):
+    def updates(response: Response, request: Request, scope: str=Query(default="real",pattern="^(real|test)$"), active_only: bool=False):
         response.headers["Cache-Control"]="no-store"
         with Session(engine) as db:
             test_ids=(*SYNTHETIC_161_PATIENT_IDS,TEST_ID)
             stmt=select(ClinicalPendingORM,PatientORM).join(PatientORM,PatientORM.patient_id==ClinicalPendingORM.patient_id)
             stmt=stmt.where(PatientORM.patient_id==TEST_ID if scope=="test" else PatientORM.patient_id.not_in(test_ids))
+            if active_only:stmt=stmt.where(ClinicalPendingORM.status.in_(("open","awaiting_patient","awaiting_result")))
             rows=db.execute(stmt.order_by(ClinicalPendingORM.updated_at.desc()).limit(100)).all()
             ready=installed(engine)
             items=[{**pending_view(db,p,request,ready),"patient_name":(patient.demographics_json or {}).get("full_name") or "Κλινικός φάκελος"} for p,patient in rows]

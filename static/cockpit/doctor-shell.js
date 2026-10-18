@@ -148,12 +148,6 @@
     }
   }
   function inbox() {
-    if(window.CockpitStoredChart){
-      const ticket=state.request;
-      $("doctorPopoverTitle").textContent="Κλινικές ενημερώσεις";
-      window.CockpitStoredChart.renderUpdates(content,()=>state.panel==="inbox"&&ticket===state.request,close);
-      return;
-    }
     content.append(text("Δεν έχει συνδεθεί ακόμη το Clinical Inbox με το Cockpit. Δεν υπάρχει αξιόπιστη μέτρηση νέων κλινικών μηνυμάτων, συνεπώς δεν εμφανίζεται αριθμός."));
     content.append(newLink("Άνοιγμα Gmail","https://mail.google.com/","Έλεγχος μηνυμάτων απευθείας στο Gmail"));
   }
@@ -299,9 +293,9 @@
     target.append(newLink(rfTitle, "/clinical/clinic-utilities/rf/tracking", rfInfo));
     target.append(newLink("Ιατρικές εκθέσεις", "/clinical/clinic-utilities/medical-report",
       "Δεν υπάρχει ακόμη αξιόπιστη καταμέτρηση."));
-    target.append(action("Κλινικές ενημερώσεις",
-      "Υποχρεώσεις από τις αποθηκευμένες επισκέψεις",
-      () => openPanel("inbox", buttons.inbox)));
+    target.append(action("Υποχρεώσεις ασθενών",
+      "Ανοικτές εκκρεμότητες ανά ασθενή",
+      () => openPanel("tasks", buttons.tasks)));
   }
 
     buttons.day.addEventListener("click",()=>openPanel("day",buttons.day));

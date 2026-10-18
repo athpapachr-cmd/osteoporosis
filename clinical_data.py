@@ -750,13 +750,18 @@ def build_clinical_router(engine: Engine) -> APIRouter:
         dependencies=protected,
     )
     def recent_encounters(limit: int = Query(default=3, ge=1, le=3)) -> List[RecentEncounterSummary]:
-        # Read only three real completed/amended encounters with an existing
-        # registered patient. No unsigned drafts or clinical payload in response.
+        # One latest completed/amended visit per exact patient, then the three
+        # most recently seen patients. Names never merge distinct identities.
         with Session(engine) as session:
+            ranked = select(EncounterORM.id.label("encounter_id"), func.row_number().over(
+                partition_by=EncounterORM.patient_id,
+                order_by=(EncounterORM.encounter_date.desc(), EncounterORM.created_at.desc(), EncounterORM.id.asc())
+            ).label("patient_rank")).where(EncounterORM.status.in_(("completed", "amended"))).subquery()
             rows = session.execute(
                 select(EncounterORM, PatientORM)
                 .join(PatientORM, PatientORM.patient_id == EncounterORM.patient_id)
-                .where(EncounterORM.status.in_(("completed", "amended")),
+                .join(ranked, ranked.c.encounter_id == EncounterORM.id)
+                .where(ranked.c.patient_rank == 1,
                        PatientORM.patient_id.not_in((*SYNTHETIC_161_PATIENT_IDS, "cockpit-cp1-test")))
                 .order_by(
                     EncounterORM.encounter_date.desc(),

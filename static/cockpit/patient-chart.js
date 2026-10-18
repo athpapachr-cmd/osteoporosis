@@ -288,10 +288,18 @@
     }
   }
   async function renderUpdates(target,active,close,scope=patientId==='cockpit-cp1-test'?'test':'real'){const ticket=generation;target.replaceChildren();el(target,'p','Φόρτωση ενημερώσεων…');
-    try{const data=await request('/clinical-updates?scope='+scope);if(ticket!==generation||!active())return;target.replaceChildren();
+    try{const data=await request('/clinical-updates?scope='+scope+'&active_only=true');if(ticket!==generation||!active())return;target.replaceChildren();
       button(target,scope==='test'?'Πραγματικοί φάκελοι':'Δοκιμαστικός ασθενής',()=>renderUpdates(target,active,close,scope==='test'?'real':'test'));
-      el(target,'p',data.items.filter(p=>p.status!=='cancelled').length?'Υποχρεώσεις από αποθηκευμένες επισκέψεις · έως 100 πρόσφατες':'Δεν έχουν καταγραφεί υποχρεώσεις.');
-      for(const item of data.items.filter(p=>p.status!=='cancelled')){const b=button(target,'',async()=>{close();if(!canLeave())return;await open(item.patient_id);const current=chartPending.find(p=>p.pending_id===item.pending_id);if(current)showPending(item.patient_id,current);});b.className='doctor-action-row';const copy=el(b,'span');el(copy,'strong',item.patient_name);el(copy,'small',item.description);el(copy,'small',(item.checkpoints?.next_checkpoint?.question||statuses[item.status]||item.status)+' · '+date(item.source_date));el(b,'span','›');}
+      const items=data.items.filter(p=>['open','awaiting_patient','awaiting_result'].includes(p.status));
+      el(target,'p',items.length?'Ανοικτές υποχρεώσεις ανά ασθενή · έως 100':'Δεν υπάρχουν ανοικτές υποχρεώσεις.');
+      const groups=new Map();
+      for(const item of items){
+        let group=groups.get(item.patient_id);
+        if(!group){group=el(target,'section','','patient-updates-group');el(group,'h3',item.patient_name);groups.set(item.patient_id,group);}
+        const b=button(group,'',async()=>{close();if(!canLeave())return;await open(item.patient_id);const current=chartPending.find(p=>p.pending_id===item.pending_id);if(current)showPending(item.patient_id,current);});
+        b.className='doctor-action-row';b.dataset.pendingId=item.pending_id;
+        const copy=el(b,'span');el(copy,'strong',item.description);el(copy,'small',(item.checkpoints?.next_checkpoint?.question||statuses[item.status]||item.status)+' · '+date(item.source_date));el(b,'span','›');
+      }
     }catch(e){if(ticket===generation&&active()){target.replaceChildren();el(target,'p',e.message);}}
   }
   $('visitBackHome').addEventListener('click',()=>{if(!canLeave())return;reset();const u=new URL(location.href);u.searchParams.delete('chart');history.replaceState(null,'',u);});
