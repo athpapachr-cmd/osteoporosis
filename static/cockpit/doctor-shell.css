@@ -320,3 +320,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
 .patient-visit-reader .patient-visit{margin:0;border:1px solid #dce6e7;border-radius:14px;background:white;padding:18px}
 .patient-visit-reader .patient-visit>summary{cursor:pointer;display:flex;flex-direction:column;gap:8px}
 .patient-visit-reader .patient-visit>summary>strong{font-size:1.2rem}
+
+/* Browse appointment days without leaving the preparation popover. */
+.doctor-day-navigation{padding:8px 0 10px;border-bottom:1px solid var(--doctor-border);text-align:center}
+.doctor-day-stepper{display:grid;grid-template-columns:40px minmax(0,1fr) 40px;gap:8px;align-items:center}
+.doctor-day-label{margin:0;font-size:13px;font-weight:700;line-height:1.5;color:var(--doctor-ink)}
+.doctor-day-arrow,.doctor-day-today{font:inherit;border:1px solid #dce8e5;border-radius:10px;background:#f1f7f6;color:#16766e;cursor:pointer;min-height:40px}
+.doctor-day-arrow{font-size:25px;padding:0 10px}
+.doctor-day-today{margin-top:6px;padding:5px 13px;font-size:12px;min-height:32px}
+.doctor-day-today:disabled{opacity:.45;cursor:default}
+.doctor-day-arrow:focus-visible,.doctor-day-today:focus-visible{outline:2px solid #5fa8a1;outline-offset:2px}

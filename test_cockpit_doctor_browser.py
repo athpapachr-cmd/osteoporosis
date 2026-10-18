@@ -1,7 +1,8 @@
 """Real Chromium smoke with invented records; no production, Gmail or patient access."""
 from pathlib import Path
 import shutil
-from datetime import datetime, timedelta
+from urllib.parse import urlparse,parse_qs
+from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from playwright.sync_api import sync_playwright, expect
 
@@ -90,6 +91,51 @@ def assert_delayed_recent_purged_after_logout(page):
         return !document.getElementById("visitRecentRows").textContent.includes("SYN-STALE-PHI");
     }"""), "old clinician result repopulated protected patient names"
     assert page.locator("#visitRecentRows .clinical-patient-row").count() == 0
+
+
+def exercise_day_navigation(page,width):
+    page.locator('#doctorDateButton').click()
+    expect(page.locator('#doctorPopoverContent')).to_contain_text('Ασθενής Δοκιμής Α')
+    # Tomorrow browse uses a calendar day, and its booking keeps its own Cyprus date.
+    held=[];ranges=[];mode={'value':'normal'}
+    def browse_day(route):
+        q=parse_qs(urlparse(route.request.url).query);ranges.append(q)
+        if mode['value']=='hold':held.append(route);return
+        if mode['value']=='error':route.fulfill(status=503,json={'detail':'Unavailable'});return
+        if mode['value']=='empty':route.fulfill(json=[]);return
+        start=datetime.fromisoformat(q['start'][0].replace('Z','+00:00'))+timedelta(hours=10)
+        route.fulfill(json=[{'appointment_id':'cal.com:tomorrow-test','patient_display_name':'Συνθετικό αυριανό ραντεβού','reason':'Προετοιμασία επανελέγχου','start_at':start.isoformat()}])
+    page.route('**/clinical/calendar/appointments?*',browse_day)
+    page.locator('#doctorDayNext').click();expect(page.locator('#doctorDayLabel')).to_contain_text('Αύριο')
+    expect(page.locator('#doctorPopoverContent')).to_contain_text('Συνθετικό αυριανό ραντεβού')
+    expect(page.locator('#doctorDayNext')).to_be_focused()
+    tomorrow=(datetime.now(ZoneInfo('Asia/Nicosia')).date()+timedelta(days=1)).isoformat()
+    start=datetime.fromisoformat(ranges[-1]['start'][0].replace('Z','+00:00'))
+    assert start.astimezone(ZoneInfo('Asia/Nicosia')).date().isoformat()==tomorrow
+    assert start.astimezone(ZoneInfo('Asia/Nicosia')).hour==0
+    page.locator('#doctorPopover').screenshot(path=str(OUT/f'cockpit-tomorrow-{width}.png'))
+    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
+    page.evaluate("window.__dayOpen=CockpitHome.openAppointment;CockpitHome.openAppointment=item=>window.__dayPicked=item")
+    page.locator('#doctorPopoverContent button.doctor-action-row').first.click()
+    picked=page.evaluate('window.__dayPicked');assert picked['date']==tomorrow and picked['appointmentId']=='cal.com:tomorrow-test'
+    page.evaluate('CockpitHome.openAppointment=window.__dayOpen;delete window.__dayPicked;delete window.__dayOpen')
+    page.locator('#doctorDateButton').click();expect(page.locator('#doctorDayLabel')).to_contain_text('Σήμερα')
+    mode['value']='empty';page.locator('#doctorDayNext').click()
+    expect(page.locator('#doctorPopoverContent')).to_contain_text('Δεν υπάρχουν διαθέσιμα ραντεβού')
+    mode['value']='error';page.locator('#doctorDayNext').click()
+    expect(page.locator('#doctorPopoverContent')).to_contain_text('δεν είναι διαθέσιμο')
+    expect(page.locator('#doctorDayPrevious')).to_be_enabled()
+    mode['value']='hold';page.locator('#doctorDayPrevious').click()
+    page.wait_for_timeout(50);assert held
+    mode['value']='normal';page.locator('#doctorDayToday').click()
+    expect(page.locator('#doctorPopoverContent')).to_contain_text('Συνθετικό αυριανό ραντεβού')
+    held[0].fulfill(json=[{'appointment_id':'old','patient_display_name':'STALE_DAY','start_at':'2026-10-19T09:00:00Z'}])
+    page.wait_for_timeout(100);expect(page.locator('#doctorDayLabel')).to_contain_text('Σήμερα')
+    expect(page.locator('#doctorPopoverContent')).not_to_contain_text('STALE_DAY')
+    page.unroute('**/clinical/calendar/appointments?*',browse_day)
+    page.locator('#doctorDateButton').click();page.locator('#doctorDateButton').click()
+    expect(page.locator('#doctorPopoverContent')).to_contain_text('Ασθενής Δοκιμής Α')
+    page.locator('#doctorDateButton').click()
 
 
 def browser_suite(width, screenshot_name):
@@ -294,6 +340,7 @@ def browser_suite(width, screenshot_name):
         assert auth["confirmations"] == 1
         page.locator("#visitBriefClose").click()
         expect(page.locator("#visitBriefOverlay")).to_be_hidden()
+        exercise_day_navigation(page,width)
         if width <= 620:
             expect(page.locator("#doctorAttentionList .doctor-action-row")).to_have_count(4)
             expect(page.locator("#doctorAttentionList")).to_contain_text("Συνθετικός Ασθενής Β")

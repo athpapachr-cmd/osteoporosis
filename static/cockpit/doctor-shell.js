@@ -7,7 +7,7 @@
   const buttons = {day: $("doctorDateButton"), inbox: $("doctorInboxButton"),
     tasks: $("doctorTasksButton"), actions: $("doctorActionsButton")};
   const popover = $("doctorPopover"), content = $("doctorPopoverContent");
-  const state = {panel: null, opener: null, request: 0, surgeries: null, rf: null};
+  const state = {panel: null, opener: null, request: 0, day: null, surgeries: null, rf: null};
   let rfGeneration = 0;
   const zone = "Asia/Nicosia";
   const dateLabel = new Intl.DateTimeFormat("el-CY", {
@@ -43,6 +43,26 @@
       end: midnightUTC(next.getUTCFullYear(), next.getUTCMonth() + 1,
         next.getUTCDate()).toISOString()
     };
+  }
+  function dayKey(now=new Date()) {
+    const p=localParts(now);return [p.year,String(p.month).padStart(2,'0'),String(p.day).padStart(2,'0')].join('-');
+  }
+  function selectedDate(){return new Date(state.day+'T12:00:00Z');}
+  function dayHeading(){
+    const today=dayKey(),tomorrow=new Date(today+'T12:00:00Z');tomorrow.setUTCDate(tomorrow.getUTCDate()+1);
+    const relative=state.day===today?'Σήμερα':state.day===dayKey(tomorrow)?'Αύριο':'';
+    const label=new Intl.DateTimeFormat('el-CY',{timeZone:zone,weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(selectedDate());
+    return (relative?relative+' · ':'')+label;
+  }
+  function dayNavigation(){
+    const nav=document.createElement('div');nav.className='doctor-day-navigation';
+    const line=document.createElement('div');line.className='doctor-day-stepper';
+    function arrow(id,label,symbol,shift){const b=document.createElement('button');b.id=id;b.type='button';b.className='doctor-day-arrow';b.textContent=symbol;b.setAttribute('aria-label',label);b.title=label;
+      b.addEventListener('click',()=>{const d=selectedDate();d.setUTCDate(d.getUTCDate()+shift);state.day=dayKey(d);loadDay(id);});return b;}
+    const heading=document.createElement('p');heading.id='doctorDayLabel';heading.className='doctor-day-label';heading.textContent=dayHeading();heading.setAttribute('aria-live','polite');
+    line.append(arrow('doctorDayPrevious','Προηγούμενη ημέρα','‹',-1),heading,arrow('doctorDayNext','Επόμενη ημέρα','›',1));
+    const today=document.createElement('button');today.id='doctorDayToday';today.type='button';today.className='doctor-day-today';today.textContent='Σήμερα';today.disabled=state.day===dayKey();
+    today.addEventListener('click',()=>{state.day=dayKey();loadDay('doctorDayNext');});nav.append(line,today);return nav;
   }
   function text(message) {
     const p = document.createElement("p");
@@ -93,19 +113,22 @@
     popover.dataset.kind=kind;
     content.replaceChildren();
     $("doctorPopoverTitle").textContent={
-      day:"Σημερινό πρόγραμμα",inbox:"Κλινικά εισερχόμενα",
+      day:"Πρόγραμμα ημέρας",inbox:"Κλινικά εισερχόμενα",
       tasks:"Εκκρεμότητες ιατρείου",actions:"Ενέργειες"
     }[kind];
-    if(kind==="day")loadDay();
+    if(kind==="day"){state.day=dayKey();loadDay();}
     else if(kind==="inbox")inbox();
     else if(kind==="tasks")tasks();
     else commands();
   }
-  async function loadDay() {
-    const ticket=state.request;
+  async function loadDay(focusId) {
+    const ticket=++state.request;
+    const navigation=dayNavigation();
+    const clear=()=>{const focused=navigation.contains(document.activeElement)?document.activeElement:null;content.replaceChildren();content.append(navigation);focused?.focus({preventScroll:true});};
+    clear();if(focusId)$(focusId)?.focus({preventScroll:true});
     content.append(text("Φόρτωση κλινικού ημερολογίου…"));
     try {
-      const range=todayRange();
+      const range=todayRange(selectedDate());
       const q=new URLSearchParams({start:range.start,end:range.end});
       const response=await fetch(clinicalURL("/clinical/calendar/appointments?"+q), {
         credentials:"same-origin",headers:{"Accept":"application/json"}
@@ -114,9 +137,9 @@
       const rows=await response.json();
       if(ticket!==state.request||state.panel!=="day")return;
       if(!Array.isArray(rows))throw Error("Invalid schedule response");
-      content.replaceChildren();
+      clear();
       content.append(text("Επισκέψεις που καλύπτει το υπάρχον κλινικό ημερολόγιο. Δεν περιλαμβάνει κατ’ ανάγκη όλο το πρόγραμμα της Γραμματείας."));
-      content.append(sectionTitle("Σήμερα · "+rows.length+" εγγραφές"));
+      content.append(sectionTitle(rows.length+" ραντεβού"));
       if(!rows.length)content.append(text("Δεν υπάρχουν διαθέσιμα ραντεβού σε αυτή την κλινική προβολή."));
       rows.sort((a,b)=>String(a.start_at).localeCompare(String(b.start_at)))
         .forEach(row=>{
@@ -134,7 +157,7 @@
         });
     }catch(error){
       if(ticket!==state.request||state.panel!=="day")return;
-      content.replaceChildren();
+      clear();
       content.append(text(error.status===401||error.status===403
         ?"Απαιτείται σύνδεση με το Clinical Data Key."
         :"Το κλινικό ημερολόγιο δεν είναι διαθέσιμο ή δεν καλύπτει πλήρως την ημέρα."));
