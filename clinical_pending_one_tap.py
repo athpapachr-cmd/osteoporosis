@@ -75,7 +75,7 @@ PLANS = {
 
 class PendingLifecycleAction(BaseModel):
     model_config = {"extra": "forbid"}
-    action: Literal["cancel", "restore"]
+    action: Literal["cancel", "restore", "delete_permanently"]
     expected_revision: int = Field(ge=0)
     cancellation_event_id: str | None = Field(default=None, max_length=36)
     idempotency_key: str = Field(min_length=16, max_length=100, pattern=r"^[a-zA-Z0-9_-]+$")
@@ -140,7 +140,7 @@ def project_lifecycle(session,row):
 
 def project_checkpoint(session,row):
     events=_events(session,row);plan=_approved_plan(events)
-    if plan is None:return None
+    if plan is None or row.status=="deleted":return None
     confirmed,not_yet=_effective(events)
     steps=[dict(key=step.key,question=step.question,meaning=step.meaning,
         state="confirmed" if step.key in confirmed else "not_yet" if step.key in not_yet else "unknown",
@@ -155,22 +155,23 @@ def project_checkpoint(session,row):
         "confirmed_keys":list(confirmed),"completed":all(step.key in confirmed for step in plan.steps),
         "history":[{"id":e.id,"checkpoint_key":e.checkpoint_key,"kind":e.kind,"recorded_at":e.recorded_at.isoformat()+"Z",
             "label":("Αναίρεση · " if e.kind=="retracted" else "Όχι ακόμη · " if e.kind=="not_yet_observed" else "")+labels.get(e.checkpoint_key,"Παρακολούθηση υποχρέωσης"),
-            "retracts_event_id":e.retracts_event_id} for e in events if e.kind not in ("plan_approved","cancelled","reopened")]}
+            "retracts_event_id":e.retracts_event_id} for e in events if e.kind not in ("plan_approved","cancelled","reopened","permanently_deleted")]}
 
 def attach_pending_one_tap_routes(router,engine,protected):
-    def load(db,patient_id,pending_id,request):
+    def load(db,patient_id,pending_id,request,allow_deleted=False):
         if not installed(engine):raise HTTPException(503,"Checkpoint storage is not installed")
         patient=db.get(PatientORM,patient_id)
         row=db.scalar(select(ClinicalPendingORM).where(ClinicalPendingORM.id==pending_id).with_for_update())
         if not patient or not row or row.patient_id!=patient_id:raise HTTPException(404,"Pending not found")
         actor=actor_for(request,patient);_signed_source(db,row)
+        if row.status=="deleted" and not allow_deleted:raise HTTPException(409,"Pending was permanently deleted")
         return row,actor
 
-    def replay(db,row,actor,key,kind,checkpoint,retract=None,plan=None,check_plan=True):
+    def replay(db,row,actor,key,kind,checkpoint,retract=None,plan=None,check_plan=True,expected_revision=None):
         e=db.scalar(select(PendingCheckpointEventORM).where(PendingCheckpointEventORM.idempotency_key==key))
         if e is None:return None
         if (e.patient_id!=row.patient_id or e.pending_id!=row.id or e.actor_principal_id!=actor.principal_id or e.actor_role!=actor.role
-            or e.kind!=kind or e.checkpoint_key!=checkpoint or e.retracts_event_id!=retract or (check_plan and e.plan_json!=plan)):
+            or e.kind!=kind or e.checkpoint_key!=checkpoint or e.retracts_event_id!=retract or (check_plan and e.plan_json!=plan) or (expected_revision is not None and e.revision!=expected_revision+1)):
             raise HTTPException(409,"Idempotency conflict")
         return {"event_id":e.id,"replayed":True,"current":project_checkpoint(db,row)}
 
@@ -243,9 +244,12 @@ def attach_pending_one_tap_routes(router,engine,protected):
     @router.post("/patient/{patient_id}/pending/{pending_id}/lifecycle",dependencies=protected)
     def lifecycle(patient_id:str,pending_id:str,action:PendingLifecycleAction,request:Request):
         with Session(engine) as db:
-            row,actor=load(db,patient_id,pending_id,request)
-            kind="cancelled" if action.action=="cancel" else "reopened"
-            prior=replay(db,row,actor,action.idempotency_key,kind,"__lifecycle__",action.cancellation_event_id,check_plan=False)
+            row,actor=load(db,patient_id,pending_id,request,allow_deleted=True)
+            permanent=action.action=="delete_permanently"
+            if row.status=="deleted" and not permanent:raise HTTPException(409,"Pending was permanently deleted")
+            kind={"cancel":"cancelled","restore":"reopened","delete_permanently":"permanently_deleted"}[action.action]
+            prior=replay(db,row,actor,action.idempotency_key,kind,"__lifecycle__",action.cancellation_event_id,
+                         check_plan=False,expected_revision=action.expected_revision if permanent else None)
             if prior:return prior
             events=_events(db,row)
             if _revision(events)!=action.expected_revision:raise HTTPException(409,"Pending revision changed")
@@ -255,12 +259,15 @@ def attach_pending_one_tap_routes(router,engine,protected):
                 metadata={"previous_status":row.status,"previous_resolution_event_id":row.resolution_event_id}
                 row.status="cancelled";row.resolution_event_id=None
             else:
-                current=next((e for e in reversed(events) if e.kind in ("cancelled","reopened")),None)
+                current=next((e for e in reversed(events) if e.kind in ("cancelled","reopened","permanently_deleted")),None)
                 if row.status!="cancelled" or not current or current.kind!="cancelled" or current.id!=action.cancellation_event_id:
                     raise HTTPException(409,"Cancellation is no longer active")
                 metadata=None
-                row.status=current.plan_json["previous_status"]
-                row.resolution_event_id=current.plan_json.get("previous_resolution_event_id")
+                if permanent:
+                    row.status="deleted";row.resolution_event_id=None
+                else:
+                    row.status=current.plan_json["previous_status"]
+                    row.resolution_event_id=current.plan_json.get("previous_resolution_event_id")
             event=PendingCheckpointEventORM(id=str(uuid4()),idempotency_key=action.idempotency_key,pending_id=row.id,
                 patient_id=patient_id,checkpoint_key="__lifecycle__",plan_version=1,kind=kind,
                 retracts_event_id=action.cancellation_event_id,revision=action.expected_revision+1,recorded_at=utcnow(),

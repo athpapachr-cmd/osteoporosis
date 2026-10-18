@@ -415,3 +415,105 @@ def test_patient_task_groups_and_incoming_sources_remain_separate(setup,tmp_path
                 context.close()
             browser.close()
     finally:server.should_exit=True;thread.join(10);sock.close()
+
+
+@pytest.mark.parametrize('with_plan',[False,True])
+def test_permanent_task_removal_is_terminal_and_keeps_signed_source(setup,with_plan):
+    from copy import deepcopy
+    app,engine=setup;c,p,path=real_seed(app,engine)
+    _,neighbor,_=real_seed(app,engine)
+    if with_plan:
+        plan={'template':'completion','first_observation':'yes_confirmed','idempotency_key':uuid4().hex}
+        assert c.post(path+'/checkpoint-plan',json=plan).status_code==200
+    state=next(x for x in c.get('/clinical/patient/outside-synthetic-scope/chart').json()['pending'] if x['pending_id']==p['pending_id'])
+    revision=(state['lifecycle'] or {})['revision']
+    def body(action,rev,event=None):return {'action':action,'expected_revision':rev,'cancellation_event_id':event,'idempotency_key':uuid4().hex}
+    assert c.post(path+'/lifecycle',json=body('delete_permanently',revision)).status_code==409
+    cancelled=c.post(path+'/lifecycle',json=body('cancel',revision)).json();event=cancelled['event_id']
+    permanent=body('delete_permanently',revision+1,event)
+    assert c.post(path+'/lifecycle',json={**permanent,'expected_revision':revision}).status_code==409
+    assert c.post(path+'/lifecycle',json={**permanent,'cancellation_event_id':str(uuid4())}).status_code==409
+    with Session(engine) as db:
+        original=deepcopy(db.get(EncounterORM,p['source_encounter_id']).payload_json)
+        previous=[(e.id,e.kind,e.plan_json) for e in db.scalars(select(PendingCheckpointEventORM)).all()]
+    r=c.post(path+'/lifecycle',json=permanent);assert r.status_code==200,r.text
+    assert r.json()['current'] is None and c.post(path+'/lifecycle',json=permanent).json()['replayed']
+    assert c.post(path+'/lifecycle',json={**permanent,'expected_revision':revision+2}).status_code==409
+    assert c.post(path+'/lifecycle',json=body('restore',revision+2,event)).status_code==409
+    assert c.post(path+'/lifecycle',json=body('cancel',revision+2)).status_code==409
+    assert c.post(path+'/checkpoint-plan',json={'template':'completion','expected_revision':revision+2,'idempotency_key':uuid4().hex}).status_code==409
+    assert c.post(path+'/checkpoint',json={'checkpoint_key':'completed','observation':'yes_confirmed','expected_revision':revision+2,'idempotency_key':uuid4().hex}).status_code==409
+    assert c.post(path.replace('outside-synthetic-scope',TEST_ID)+'/lifecycle',json=permanent).status_code==404
+    second=login(app)
+    for route in ['/clinical/patient/outside-synthetic-scope/chart','/clinical/patient/outside-synthetic-scope/pending','/clinical/clinical-updates','/clinical/clinical-updates?active_only=true']:
+        data=second.get(route).json();items=data if isinstance(data,list) else data.get('pending',data.get('items',[]))
+        assert not any(x['pending_id']==p['pending_id'] for x in items)
+        assert any(x['pending_id']==neighbor['pending_id'] for x in items)
+    with Session(engine) as db:
+        assert db.get(ClinicalPendingORM,p['pending_id']).status=='deleted'
+        assert db.get(EncounterORM,p['source_encounter_id']).payload_json==original
+        now=db.scalars(select(PendingCheckpointEventORM)).all()
+        assert [(e.id,e.kind,e.plan_json) for e in now if e.kind!='permanently_deleted']==previous
+        assert len([e for e in now if e.kind=='permanently_deleted'])==1
+
+
+def test_legacy_writer_cannot_resurrect_permanent_task_with_current_timestamp(setup):
+    from clinical_synthetic_161 import PREFIX,SYNTHETIC_161_PATIENT_IDS
+    app,engine=setup;c=login(app);assert c.post(PREFIX+'/prepare').status_code==200
+    pid=SYNTHETIC_161_PATIENT_IDS[0];pending=pid+'-pending'
+    with Session(engine) as db:
+        row=db.get(ClinicalPendingORM,pending);row.status='deleted';db.commit();stamp=row.updated_at.isoformat()+'Z'
+    assert c.post(PREFIX+'/patient/'+pid+'/pending/'+pending,json={'status':'resolved','expected_updated_at':stamp}).status_code==409
+    assert c.post(PREFIX+'/prepare').status_code==200
+    with Session(engine) as db:assert db.get(ClinicalPendingORM,pending).status=='deleted'
+    for route in ['/patient/'+pid+'/chart','/clinical-updates']:
+        data=c.get(PREFIX+route).json();assert all(x['pending_id']!=pending for x in data.get('pending',data.get('items',[])))
+
+
+def test_compact_branch_and_permanent_removal_browser(setup,tmp_path):
+    import socket,threading,shutil
+    import uvicorn
+    from playwright.sync_api import sync_playwright,expect
+    app,engine=setup
+    sock=socket.socket();sock.bind(('127.0.0.1',0));port=sock.getsockname()[1]
+    server=uvicorn.Server(uvicorn.Config(app,log_level='error'));thread=threading.Thread(target=server.run,kwargs={'sockets':[sock]},daemon=True);thread.start()
+    try:
+        with sync_playwright() as pw:
+            browser=pw.chromium.launch(executable_path=shutil.which('google-chrome') or shutil.which('chromium'))
+            for width in [1280,390]:
+                c,p,path=real_seed(app,engine)
+                with Session(engine) as db:
+                    row=db.get(ClinicalPendingORM,p['pending_id']);row.description='Επανεκτίμηση γόνατος σε επόμενη επίσκεψη.';db.commit()
+                assert c.post(path+'/checkpoint-plan',json={'template':'completion','first_observation':'yes_confirmed','idempotency_key':uuid4().hex}).status_code==200
+                context=browser.new_context(viewport={'width':width,'height':950});page=context.new_page();page.goto(f'http://localhost:{port}/static/cockpit/index.html')
+                page.locator('#ceGlobalKey').click();page.locator('#ceGlobalKeyInput').fill(KEY)
+                page.locator('#ceGlobalLoginForm button[type=submit]').click();expect(page.locator('#ceGlobalAuthStatus')).to_contain_text('Συνδέθηκες');page.keyboard.press('Escape')
+                page.goto(f'http://localhost:{port}/static/cockpit/index.html?chart=outside-synthetic-scope')
+                row=page.locator('.patient-followthrough-branch article[data-pending-id="'+p['pending_id']+'"]')
+                expect(row).to_be_visible();expect(row.locator('blockquote')).to_have_count(0)
+                expect(row.get_by_role('button',name='Δημιουργήθηκε στην επίσκεψη',exact=False)).to_have_count(0)
+                undo=row.get_by_role('button',name='Αναίρεση',exact=True).bounding_box();remove=row.get_by_role('button',name='Διαγραφή υποχρέωσης',exact=True).bounding_box()
+                assert abs(undo['y']-remove['y'])<1 and remove['x']>undo['x']
+                assert row.bounding_box()['height']<220
+                page.locator('.patient-timeline').screenshot(path=str(tmp_path/f'compact-trajectory-{width}.png'))
+                row.locator('.pending-open').first.click();popup=page.locator('.patient-pending-dialog')
+                expect(popup.locator('blockquote')).to_have_count(1)
+                expect(popup.get_by_role('button',name='Δημιουργήθηκε στην επίσκεψη',exact=False)).to_be_visible()
+                expect(popup.get_by_role('button',name='Μόνιμη διαγραφή',exact=True)).to_have_count(0)
+                popup.get_by_role('button',name='Διαγραφή υποχρέωσης',exact=True).click();popup.get_by_role('button',name='Διαγραφή',exact=True).click()
+                page.locator('.patient-deleted-obligations summary').click()
+                page.locator('.patient-deleted-obligations button').filter(has_text='Επανεκτίμηση γόνατος').click()
+                popup.get_by_role('button',name='Μόνιμη διαγραφή',exact=True).click()
+                expect(popup).to_contain_text('δεν θα μπορεί να επανέλθει');expect(popup).to_contain_text('Η αποθηκευμένη επίσκεψη διατηρείται')
+                popup.get_by_role('button',name='Διατήρηση',exact=True).click()
+                expect(popup.get_by_role('button',name='Μόνιμη διαγραφή',exact=True)).to_be_visible()
+                popup.get_by_role('button',name='Μόνιμη διαγραφή',exact=True).click()
+                popup.screenshot(path=str(tmp_path/f'permanent-confirmation-{width}.png'))
+                popup.get_by_role('button',name='Οριστική διαγραφή',exact=True).click();expect(popup).to_have_count(0)
+                page.reload();expect(page.locator('[data-pending-id="'+p['pending_id']+'"]')).to_have_count(0)
+                expect(page.locator('.patient-deleted-obligations')).to_have_count(0)
+                assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
+                assert c.get('/clinical/patient/outside-synthetic-scope/pending').json()==[]
+                context.close()
+            browser.close()
+    finally:server.should_exit=True;thread.join(10);sock.close()
