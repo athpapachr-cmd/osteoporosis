@@ -1,5 +1,7 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-18 #193 FINAL AFFECTED CI PASS / MERGE NEXT:** Published e90ecb7f70024d4692262e6021e0e7d3664b925e; R2reviewedd3c616cPASS. Capture39128945167, Home39128945258, Brief39128945169, Demo39128945183, baseline39128945288 andcanonical39128945322SUCCESS. KnownunrelatedL0design-onlyallowlistfailure inspected. Durablelocalcheckpoint before authorizedsquash/nativeRender and exactLIVEreadonlyfixedmarkedproof53f4298. No productionpermanenttaskdeletion/provider/DDL/grants.
+
 > **2026-10-18 COMPACT/PERMANENT #193 OPEN / FINAL CI NEXT:** PRhttps://github.com/athpapachr-cmd/osteoporosis/pull/193 carries frozenR2approvedd3c616c runtime, compactbranchandterminaltaskremoval. Next finalaffectedCI/canonicalguard then authorizedsquash/nativeRender and readonlyfixedmarkedproof (no productionpermanentmutation). No userHoros migrationpathstaged; no grant/schema/providerchange.
 
 > **2026-10-18 COMPACT/PERMANENT R2 FIDELITY PASS / CI NEXT:** Independentd3c616cdd310de0c89c76d2014bc91bc66103795 PASS COMPLETE_FOR_DECLARED_SCOPE. Exactterminaltransition/replay/allwriters/readers/sourceaudit and compactpopupguardquestionsclosed. Next publishboundedPR/finalaffectedCI/canonicalguard then nativeauthorizedrelease; fixedmarkedliveproofreadonly, local+CIpermanentmutation evidence only. No productiontaskdestruction/provider/schema/grantchange.
