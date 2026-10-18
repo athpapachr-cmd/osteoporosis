@@ -1,5 +1,7 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-18 #194 DEPLOYED / LIVE ALIGNMENT RECHECK NEXT:** Render `dep-dbac79gae00c739jivog` LIVE at exact `4797b60f002b90e903ff7b89b375870387304325`, finished13:05:10UTC. Durable checkpoint before unchanged readonly `0be4936` proof of compact branches/CD action alignment/source popup. No production task mutation.
+
 > **2026-10-18 #194 MERGED / NATIVE DEPLOY NEXT:** Squash `4797b60f002b90e903ff7b89b375870387304325` at13:03:33UTC. Reviewed CSS-only CD action sizing plus explicit geometry regression; permanent-removal semantics from #193 unchanged. Durable checkpoint before native Render observation and fixed marked read-only proof.
 
 > **2026-10-18 #194 FINAL AFFECTED CI PASS / MERGE NEXT:** Published `bd356f47bebd901388671b5e0cb6d2d0d0f5bbc7`, reviewed runtime `65baa49`. Capture39129754911, Home39129754921, Brief39129754931, Demo39129754897 and canonical39129754953 SUCCESS. Known unrelated L0 design-only allowlist failure inspected. Durable checkpoint before authorized squash/native deploy and unchanged read-only geometry proof `0be4936`.
