@@ -1,5 +1,7 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-18 #189 LIVE SYNTHETIC PROOF PASS / CLOSEOUT NEXT:** Run39126229636 SUCCESS against exactLIVE6d46974e26dde13fe81d93bb5d7e532748730a74 / dep-dbabcne1egvs73dgfoeg. Fixedmarked resolvedCD deletion/keep/persistedrestore and existingapproved receipt+review preserved in independent1280/390; signedvisits unchanged.2realprovider syntheticdraftsPASS: blankBP yields noPending, explicitlyagreedBP yields sourcedtask; noSave/newencounter/realpatienttext. Earlier39126097681 stoppedbeforemutation on verification-onlytemplateDOMread, corrected581e4e2. Next safe screenshotinspection and docs-onlycloseout/writerrelease, runtimeunchanged.
+
 > **2026-10-18 #189 LIVE PROBE ASSERTION CORRECTION:** Run39126097681 stopped normal-chart before any task/provider mutation: verification script reads template.textContent, but template text belongs to template.content.textContent. Runtime unchanged. Next correct only verification DOM read then rerun same bounded marked proof; no source/clinical-state issue inferred.
 
 > **2026-10-18 #189 DEPLOYED / LIVE SYNTHETIC PROOF NEXT:** Renderdep-dbabcne1egvs73dgfoeg LIVE exact6d46974e26dde13fe81d93bb5d7e532748730a74, finished12:08:41UTC. Durable local checkpoint before verification-onlyb0e18b7 dispatch: actual marked resolvedCD remove/keep/restore with approvedstages preserved1280/390;2synthetic provider drafts compare missingBP toexplicitagreedBP, noSave/realtext. Next inspect safeoutputs/screenshots and finalcloseout ifPASS.
