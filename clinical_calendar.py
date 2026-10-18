@@ -11,7 +11,7 @@ from types import SimpleNamespace
 
 import httpx
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response
 from clinical_staff_auth import require_staff_actor, staff_enabled
 from pydantic import BaseModel, Field, ConfigDict
 from sqlalchemy import Column, DateTime, Integer, String, func, select
@@ -482,11 +482,7 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
             upcoming_today=upcoming_today,
         )
 
-    @router.get("/appointments", response_model=List[AppointmentRecord], dependencies=protected)
-    async def list_appointments(
-        start: datetime = Query(...),
-        end: datetime = Query(...),
-    ) -> List[AppointmentRecord]:
+    async def calendar_rows(start: datetime, end: datetime, include_other: bool = False) -> List[AppointmentRecord]:
         global _last_actual_schedule_fetch
         start_utc = _naive_utc(start)
         end_utc = _naive_utc(end)
@@ -599,7 +595,7 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
         for appointment_id, source_id, item, item_start, item_end, duration_minutes, automatic_category in candidates:
             manual_category = overrides.get(appointment_id)
             category = manual_category or automatic_category
-            if category not in RELEVANT_CATEGORIES:
+            if not include_other and category not in RELEVANT_CATEGORIES:
                 continue
             rows.append(
                 AppointmentRecord(
@@ -624,6 +620,19 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
             )
         rows.sort(key=lambda row: (row.start_at, row.appointment_id))
         return rows
+
+    @router.get("/appointments", response_model=List[AppointmentRecord], dependencies=protected)
+    async def list_appointments(start: datetime = Query(...), end: datetime = Query(...)) -> List[AppointmentRecord]:
+        # Weekly Osteoporosis projection remains unchanged.
+        return await calendar_rows(start,end)
+
+    @router.get("/agenda", response_model=List[CockpitAppointment], dependencies=protected)
+    async def day_agenda(response: Response, start: datetime = Query(...), end: datetime = Query(...)) -> List[CockpitAppointment]:
+        response.headers['Cache-Control']='no-store'
+        rows=await calendar_rows(start,end,include_other=True)
+        return [CockpitAppointment(appointment_id=row.appointment_id,
+            start_at=row.start_at.replace(tzinfo=timezone.utc),end_at=row.end_at.replace(tzinfo=timezone.utc),
+            clinic=row.clinic,category=row.category,patient_display_name=row.patient_display_name,reason=row.reason) for row in rows]
 
     @router.put(
         "/appointments/{appointment_id}/classification",

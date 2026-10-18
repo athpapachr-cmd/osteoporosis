@@ -105,7 +105,7 @@ def exercise_day_navigation(page,width):
         if mode['value']=='empty':route.fulfill(json=[]);return
         start=datetime.fromisoformat(q['start'][0].replace('Z','+00:00'))+timedelta(hours=10)
         route.fulfill(json=[{'appointment_id':'cal.com:tomorrow-test','patient_display_name':'Συνθετικό αυριανό ραντεβού','reason':'Προετοιμασία επανελέγχου','start_at':start.isoformat()}])
-    page.route('**/clinical/calendar/appointments?*',browse_day)
+    page.route('**/clinical/calendar/agenda?*',browse_day)
     page.locator('#doctorDayNext').click();expect(page.locator('#doctorDayLabel')).to_contain_text('Αύριο')
     expect(page.locator('#doctorPopoverContent')).to_contain_text('Συνθετικό αυριανό ραντεβού')
     expect(page.locator('#doctorDayNext')).to_be_focused()
@@ -132,7 +132,7 @@ def exercise_day_navigation(page,width):
     held[0].fulfill(json=[{'appointment_id':'old','patient_display_name':'STALE_DAY','start_at':'2026-10-19T09:00:00Z'}])
     page.wait_for_timeout(100);expect(page.locator('#doctorDayLabel')).to_contain_text('Σήμερα')
     expect(page.locator('#doctorPopoverContent')).not_to_contain_text('STALE_DAY')
-    page.unroute('**/clinical/calendar/appointments?*',browse_day)
+    page.unroute('**/clinical/calendar/agenda?*',browse_day)
     page.locator('#doctorDateButton').click();page.locator('#doctorDateButton').click()
     expect(page.locator('#doctorPopoverContent')).to_contain_text('Ασθενής Δοκιμής Α')
     page.locator('#doctorDateButton').click()
@@ -227,7 +227,7 @@ def browser_suite(width, screenshot_name):
                 })
             if "/clinical/recent-encounters" in url:
                 return route.fulfill(json=RECENT)
-            if "/clinical/calendar/appointments?" in url:
+            if "/clinical/calendar/agenda?" in url:
                 return route.fulfill(json=DAY)
             if url.endswith("/clinical/surgeries"):
                 return route.fulfill(status=200 if auth["authenticated"] else 401,
@@ -386,7 +386,7 @@ def browser_suite(width, screenshot_name):
         page.locator("#doctorDateButton").click()
         expect(page.locator("#doctorPopover")).to_be_visible()
         expect(page.locator("#doctorPopoverContent")).to_contain_text("Ασθενής Δοκιμής Α")
-        assert "Δεν περιλαμβάνει κατ’ ανάγκη όλο το πρόγραμμα" in page.locator("#doctorPopoverContent").inner_text()
+        assert "προβολή της Γραμματείας" in page.locator("#doctorPopoverContent").inner_text()
         if width <= 990:
             page.screenshot(path=str(OUT / "cockpit-day-popover-halfwidth.png"), full_page=True)
         page.locator("#doctorPopoverContent button.doctor-action-row").first.click()

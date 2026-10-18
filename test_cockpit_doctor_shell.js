@@ -69,7 +69,7 @@ async function fakeFetch(url,opts){
      counts:{issued_unknown:1,pending:2,approved:1,rejected:0,scheduled:1,performed:1,mine_actionable:1}
    })};
  }
- if(!url.startsWith("/clinical/calendar/appointments?"))throw Error("unexpected URL "+url);
+ if(!url.startsWith("/clinical/calendar/agenda?"))throw Error("unexpected URL "+url);
  if(deferred)return deferred.promise;
  return {ok:authenticated,status:authenticated?200:401,json:async()=>mockAppointments};
 }
@@ -96,20 +96,20 @@ function byId(id,node=$('doctorPopoverContent')){if(node.id===id)return node;for
  await tick();await tick();
  assert.equal($("doctorPopover").hidden,false);
  assert.equal($("doctorDateButton").attributes["aria-expanded"],"true");
- const calendarCalls=calls.filter(x=>x.url.startsWith("/clinical/calendar/appointments?"));
+ const calendarCalls=calls.filter(x=>x.url.startsWith("/clinical/calendar/agenda?"));
  assert.equal(calendarCalls.length,1);
- assert.match(calendarCalls[0].url,/\/clinical\/calendar\/appointments\?start=/);
+ assert.match(calendarCalls[0].url,/\/clinical\/calendar\/agenda\?start=/);
  assert.match(calendarCalls[0].url,/&end=/);
  const todayStart=new URLSearchParams(calendarCalls[0].url.split('?')[1]).get('start');
  assert.equal(todayStart,'2026-12-30T22:00:00.000Z');
  byId('doctorDayNext').fire('click');await tick();await tick();
  assert.match(byId('doctorDayLabel').textContent,/Αύριο/);
- const tomorrowCall=calls.filter(c=>c.url.startsWith('/clinical/calendar/appointments?')).at(-1);
+ const tomorrowCall=calls.filter(c=>c.url.startsWith('/clinical/calendar/agenda?')).at(-1);
  const tomorrowStart=new URLSearchParams(tomorrowCall.url.split('?')[1]).get('start');
  assert.equal(tomorrowStart,new URLSearchParams(calendarCalls[0].url.split('?')[1]).get('end'));
  assert.equal(tomorrowStart,'2026-12-31T22:00:00.000Z','next arrow crosses month and year to Jan1');
  byId('doctorDayPrevious').fire('click');await tick();await tick();
- assert.equal(new URLSearchParams(calls.filter(c=>c.url.startsWith('/clinical/calendar/appointments?')).at(-1).url.split('?')[1]).get('start'),todayStart);
+ assert.equal(new URLSearchParams(calls.filter(c=>c.url.startsWith('/clinical/calendar/agenda?')).at(-1).url.split('?')[1]).get('start'),todayStart);
  byId('doctorDayNext').fire('click');await tick();await tick();byId('doctorDayToday').fire('click');await tick();await tick();
  assert.match(byId('doctorDayLabel').textContent,/Σήμερα/);
  const first=findButtonContent("Συνθετικός Ασθενής Α");

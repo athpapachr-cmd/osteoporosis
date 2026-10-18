@@ -130,7 +130,7 @@
     try {
       const range=todayRange(selectedDate());
       const q=new URLSearchParams({start:range.start,end:range.end});
-      const response=await fetch(clinicalURL("/clinical/calendar/appointments?"+q), {
+      const response=await fetch(clinicalURL("/clinical/calendar/agenda?"+q), {
         credentials:"same-origin",headers:{"Accept":"application/json"}
       });
       if(!response.ok) {const error=new Error("Unavailable");error.status=response.status;throw error;}
@@ -138,7 +138,7 @@
       if(ticket!==state.request||state.panel!=="day")return;
       if(!Array.isArray(rows))throw Error("Invalid schedule response");
       clear();
-      content.append(text("Επισκέψεις που καλύπτει το υπάρχον κλινικό ημερολόγιο. Δεν περιλαμβάνει κατ’ ανάγκη όλο το πρόγραμμα της Γραμματείας."));
+      content.append(text("Ραντεβού από τη διαθέσιμη προβολή της Γραμματείας για αυτή την ημέρα."));
       content.append(sectionTitle(rows.length+" ραντεβού"));
       if(!rows.length)content.append(text("Δεν υπάρχουν διαθέσιμα ραντεβού σε αυτή την κλινική προβολή."));
       rows.sort((a,b)=>String(a.start_at).localeCompare(String(b.start_at)))

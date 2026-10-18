@@ -760,3 +760,49 @@ def test_home_covered_empty_vs_missing_local_date_coverage(monkeypatch):
         assert clinical_calendar._last_actual_schedule_fetch == successful
     assert len(calls) == 4
     assert all(params == {"target_date": "2026-10-11"} for _, _, params in calls)
+
+
+def test_full_agenda_keeps_other_visits_minimal_while_weekly_stays_filtered(monkeypatch):
+    client,engine=_client(monkeypatch);now=datetime(2026,10,6,8)
+    monkeypatch.setattr(clinical_calendar,'utcnow',lambda:now)
+    start=datetime(2026,10,6,tzinfo=ZoneInfo('Asia/Nicosia'));end=start+timedelta(days=1)
+    rows=[_appointment('osteo-agenda',start=now,minutes=40,label='Other',comment='Οστεοπόρωση'),
+          _appointment('knee-agenda',start=now+timedelta(hours=1),minutes=20,label='Other',comment='Επανέλεγχος γόνατος')]
+    _set_actual_source(monkeypatch,rows,now)
+    params={'start':start.isoformat(),'end':end.isoformat()}
+    assert client.get('/clinical/calendar/agenda',params=params).status_code==401
+    agenda=client.get('/clinical/calendar/agenda',headers=CLINICAL_HEADERS,params=params)
+    assert agenda.status_code==200 and agenda.headers['cache-control']=='no-store'
+    data=agenda.json();assert [r['appointment_id'] for r in data]==['cal.com:osteo-agenda','cal.com:knee-agenda']
+    allowed={'appointment_id','start_at','end_at','clinic','category','patient_display_name','reason'}
+    assert all(set(row)==allowed for row in data)
+    assert data[1]['category']=='other' and data[1]['reason']=='Επανέλεγχος γόνατος'
+    assert datetime.fromisoformat(data[1]['start_at']).astimezone(ZoneInfo('Asia/Nicosia')).hour==12
+    weekly=client.get('/clinical/calendar/appointments',headers=CLINICAL_HEADERS,params=params)
+    assert [r['appointment_id'] for r in weekly.json()]==['cal.com:osteo-agenda']
+    with Session(engine) as db:
+        assert db.query(ClinicalAppointmentORM).count()==0 and db.query(ClinicalAppointmentClassificationORM).count()==0
+    assert client.get('/clinical/calendar/agenda',headers=CLINICAL_HEADERS,params={'start':end.isoformat(),'end':start.isoformat()}).status_code==422
+
+
+def test_full_agenda_qualified_empty_and_source_failure_never_use_snapshot(monkeypatch):
+    import httpx
+    client,_=_client(monkeypatch);now=datetime(2026,10,6,8)
+    monkeypatch.setattr(clinical_calendar,'utcnow',lambda:now)
+    monkeypatch.setenv('RECEPTION_SCHEDULE_CONTEXT_URL','https://reception.example/private/schedule-context')
+    body={'fetched_at':now.replace(tzinfo=timezone.utc).isoformat(),'coverage_start':'2026-10-06','coverage_end':'2026-10-08','appointments':[]}
+    calls=[]
+    class Client:
+        def __init__(self,**kwargs):pass
+        async def __aenter__(self):return self
+        async def __aexit__(self,*args):pass
+        async def get(self,url,headers,params):
+            calls.append(params);return httpx.Response(200,json=body)
+    monkeypatch.setattr(clinical_calendar.httpx,'AsyncClient',Client)
+    params={'start':'2026-10-06T21:00:00Z','end':'2026-10-07T21:00:00Z'}
+    assert client.get('/clinical/calendar/agenda',headers=CLINICAL_HEADERS,params=params).json()==[]
+    assert calls[-1]=={'target_date':'2026-10-07'}
+    body['coverage_end']='2026-10-07'
+    assert client.get('/clinical/calendar/agenda',headers=CLINICAL_HEADERS,params=params).status_code==503
+    body['coverage_end']='2026-10-08';body['fetched_at']=(now-timedelta(minutes=6)).replace(tzinfo=timezone.utc).isoformat()
+    assert client.get('/clinical/calendar/agenda',headers=CLINICAL_HEADERS,params=params).status_code==503
