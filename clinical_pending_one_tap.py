@@ -1,9 +1,10 @@
 """Clinical Pending checkpoint owner, extended from #166; explicit schema installation.
-Synthetic-key writes are limited to the marked CP1 fixture. Real writes retain staff auth.
+Normal chart writes reuse protected clinical access; staff sessions retain strict role checks.
 """
 from __future__ import annotations
 
 import os
+import secrets
 from typing import Literal, Optional
 from uuid import uuid4
 
@@ -14,7 +15,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import DeclarativeBase, Session
 
-from clinical_staff_auth import StaffActor, require_staff_clinician, staff_enabled
+from clinical_staff_auth import StaffActor, require_staff_clinician, STAFF_COOKIE
 from clinical_data import (
     ClinicalPendingORM, EncounterORM, PatientORM, utcnow,
 )
@@ -72,8 +73,16 @@ PLANS = {
     "completion": [("completed", "Ολοκληρώθηκε η ενέργεια;", "Ολοκληρώθηκε η ενέργεια")],
 }
 
+class PendingLifecycleAction(BaseModel):
+    model_config = {"extra": "forbid"}
+    action: Literal["cancel", "restore"]
+    expected_revision: int = Field(ge=0)
+    cancellation_event_id: str | None = Field(default=None, max_length=36)
+    idempotency_key: str = Field(min_length=16, max_length=100, pattern=r"^[a-zA-Z0-9_-]+$")
+
 class AdoptPlan(BaseModel):
     model_config = {"extra": "forbid"}
+    expected_revision: int = Field(default=0, ge=0)
     template: Literal["material_images", "document", "completion"]
     first_checkpoint_key: str | None = Field(default=None,max_length=64)
     first_observation: Literal["yes_confirmed", "not_yet_observed"] | None = None
@@ -83,10 +92,14 @@ def installed(engine):
     return inspect(engine).has_table(PendingCheckpointEventORM.__tablename__)
 
 def actor_for(request, patient):
-    from clinical_capture_cp1 import TEST_ID, TEST_MARKER
-    if patient.patient_id == TEST_ID and (patient.demographics_json or {}).get("synthetic_scenario") == TEST_MARKER:
-        return StaffActor("synthetic-key-test", "synthetic_tester")
-    return require_staff_clinician(request)
+    # Presence, not truthiness: an invalid/empty staff cookie never falls back.
+    if STAFF_COOKIE in request.cookies:
+        return require_staff_clinician(request)
+    expected = os.environ.get("CLINICAL_DATA_KEY", "")
+    supplied = request.headers.get("x-clinical-key", "")
+    if expected and secrets.compare_digest(supplied, expected):
+        return StaffActor("shared-clinical-key", "shared_clinical_key")
+    raise HTTPException(401, "Clinical sign-in required")
 
 def can_write(request, patient):
     try:
@@ -107,7 +120,7 @@ def _events(session,row):
     ).order_by(PendingCheckpointEventORM.revision)).all()
 
 def _approved_plan(events):
-    plans=[e for e in events if e.kind=="plan_approved" and e.revision==0]
+    plans=[e for e in events if e.kind=="plan_approved"]
     if not plans:return None
     if len(plans)!=1:raise HTTPException(409,"Ambiguous plan")
     return VisitCaptureCheckpointPlan.model_validate(plans[0].plan_json)
@@ -119,6 +132,11 @@ def _effective(events):
     confirmed={e.checkpoint_key:e for e in events if e.kind=="yes_confirmed" and e.id not in retracted}
     not_yet={e.checkpoint_key:e.recorded_at for e in events if e.kind=="not_yet_observed"}
     return confirmed,not_yet
+
+def project_lifecycle(session,row):
+    events=_events(session,row)
+    active=next((e for e in reversed(events) if e.kind in ("cancelled","reopened")),None)
+    return {"revision":_revision(events), "cancellation_event_id":active.id if active and active.kind=="cancelled" and row.status=="cancelled" else None}
 
 def project_checkpoint(session,row):
     events=_events(session,row);plan=_approved_plan(events)
@@ -137,21 +155,22 @@ def project_checkpoint(session,row):
         "confirmed_keys":list(confirmed),"completed":all(step.key in confirmed for step in plan.steps),
         "history":[{"id":e.id,"checkpoint_key":e.checkpoint_key,"kind":e.kind,"recorded_at":e.recorded_at.isoformat()+"Z",
             "label":("Αναίρεση · " if e.kind=="retracted" else "Όχι ακόμη · " if e.kind=="not_yet_observed" else "")+labels.get(e.checkpoint_key,"Παρακολούθηση υποχρέωσης"),
-            "retracts_event_id":e.retracts_event_id} for e in events if e.kind!="plan_approved"]}
+            "retracts_event_id":e.retracts_event_id} for e in events if e.kind not in ("plan_approved","cancelled","reopened")]}
 
 def attach_pending_one_tap_routes(router,engine,protected):
     def load(db,patient_id,pending_id,request):
         if not installed(engine):raise HTTPException(503,"Checkpoint storage is not installed")
-        patient=db.get(PatientORM,patient_id);row=db.get(ClinicalPendingORM,pending_id)
+        patient=db.get(PatientORM,patient_id)
+        row=db.scalar(select(ClinicalPendingORM).where(ClinicalPendingORM.id==pending_id).with_for_update())
         if not patient or not row or row.patient_id!=patient_id:raise HTTPException(404,"Pending not found")
         actor=actor_for(request,patient);_signed_source(db,row)
         return row,actor
 
-    def replay(db,row,actor,key,kind,checkpoint,retract=None,plan=None):
+    def replay(db,row,actor,key,kind,checkpoint,retract=None,plan=None,check_plan=True):
         e=db.scalar(select(PendingCheckpointEventORM).where(PendingCheckpointEventORM.idempotency_key==key))
         if e is None:return None
         if (e.patient_id!=row.patient_id or e.pending_id!=row.id or e.actor_principal_id!=actor.principal_id or e.actor_role!=actor.role
-            or e.kind!=kind or e.checkpoint_key!=checkpoint or e.retracts_event_id!=retract or e.plan_json!=plan):
+            or e.kind!=kind or e.checkpoint_key!=checkpoint or e.retracts_event_id!=retract or (check_plan and e.plan_json!=plan)):
             raise HTTPException(409,"Idempotency conflict")
         return {"event_id":e.id,"replayed":True,"current":project_checkpoint(db,row)}
 
@@ -173,14 +192,18 @@ def attach_pending_one_tap_routes(router,engine,protected):
             plan["initial_observation"] = action.first_observation
             prior=replay(db,row,actor,action.idempotency_key,"plan_approved","__approved_plan__",plan=plan)
             if prior:return prior
-            if row.status not in ("open","awaiting_patient","awaiting_result") or _events(db,row):raise HTTPException(409,"Plan cannot be adopted")
+            if row.status not in ("open","awaiting_patient","awaiting_result"):raise HTTPException(409,"Plan cannot be adopted")
+            events=_events(db,row)
+            if _approved_plan(events) or _revision(events)!=action.expected_revision:
+                raise HTTPException(409,"Plan cannot be adopted")
+            plan_revision=_revision(events)+1 if events else 0
             event=PendingCheckpointEventORM(id=str(uuid4()),idempotency_key=action.idempotency_key,pending_id=row.id,
-                patient_id=patient_id,checkpoint_key="__approved_plan__",plan_version=1,kind="plan_approved",revision=0,
+                patient_id=patient_id,checkpoint_key="__approved_plan__",plan_version=1,kind="plan_approved",revision=plan_revision,
                 recorded_at=utcnow(),actor_principal_id=actor.principal_id,actor_role=actor.role,plan_json=plan)
             db.add(event)
             if action.first_observation:
                 observed=PendingCheckpointEventORM(id=str(uuid4()),idempotency_key="first-"+event.id,pending_id=row.id,
-                    patient_id=patient_id,checkpoint_key=initial_key,plan_version=1,kind=action.first_observation,revision=1,
+                    patient_id=patient_id,checkpoint_key=initial_key,plan_version=1,kind=action.first_observation,revision=plan_revision+1,
                     recorded_at=utcnow(),actor_principal_id=actor.principal_id,actor_role=actor.role,plan_json=None)
                 db.add(observed)
                 complete=action.first_observation=="yes_confirmed" and len(plan["steps"])==1
@@ -216,3 +239,31 @@ def attach_pending_one_tap_routes(router,engine,protected):
             row.resolution_event_id=event.id if complete else None;row.updated_at=event.recorded_at
             db.add(event);commit(db)
             return {"event_id":event.id,"replayed":False,"current":project_checkpoint(db,row)}
+
+    @router.post("/patient/{patient_id}/pending/{pending_id}/lifecycle",dependencies=protected)
+    def lifecycle(patient_id:str,pending_id:str,action:PendingLifecycleAction,request:Request):
+        with Session(engine) as db:
+            row,actor=load(db,patient_id,pending_id,request)
+            kind="cancelled" if action.action=="cancel" else "reopened"
+            prior=replay(db,row,actor,action.idempotency_key,kind,"__lifecycle__",action.cancellation_event_id,check_plan=False)
+            if prior:return prior
+            events=_events(db,row)
+            if _revision(events)!=action.expected_revision:raise HTTPException(409,"Pending revision changed")
+            if action.action=="cancel":
+                if action.cancellation_event_id or row.status not in ("open","awaiting_patient","awaiting_result"):
+                    raise HTTPException(409,"Pending cannot be cancelled")
+                metadata={"previous_status":row.status,"previous_resolution_event_id":row.resolution_event_id}
+                row.status="cancelled"
+            else:
+                current=next((e for e in reversed(events) if e.kind in ("cancelled","reopened")),None)
+                if row.status!="cancelled" or not current or current.kind!="cancelled" or current.id!=action.cancellation_event_id:
+                    raise HTTPException(409,"Cancellation is no longer active")
+                metadata=None
+                row.status=current.plan_json["previous_status"]
+                row.resolution_event_id=current.plan_json.get("previous_resolution_event_id")
+            event=PendingCheckpointEventORM(id=str(uuid4()),idempotency_key=action.idempotency_key,pending_id=row.id,
+                patient_id=patient_id,checkpoint_key="__lifecycle__",plan_version=1,kind=kind,
+                retracts_event_id=action.cancellation_event_id,revision=action.expected_revision+1,recorded_at=utcnow(),
+                actor_principal_id=actor.principal_id,actor_role=actor.role,plan_json=metadata)
+            row.updated_at=event.recorded_at;db.add(event);commit(db)
+            return {"event_id":event.id,"replayed":False,"current":project_checkpoint(db,row),"lifecycle":project_lifecycle(db,row)}

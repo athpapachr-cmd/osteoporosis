@@ -111,7 +111,7 @@ def attach_cp1(router, engine, protected, context_for, ensure_patient):
                 db.add(patient);db.commit()
             return {"patient_id":TEST_ID}
 
-    from clinical_pending_one_tap import attach_pending_one_tap_routes, project_checkpoint, installed, can_write
+    from clinical_pending_one_tap import attach_pending_one_tap_routes, project_checkpoint, project_lifecycle, installed, can_write
     attach_pending_one_tap_routes(router, engine, protected)
 
     def pending_view(db,p,request,ready):
@@ -129,6 +129,7 @@ def attach_cp1(router, engine, protected, context_for, ensure_patient):
         return {**value,"source_date":source.encounter_date,"source_excerpt":excerpt,
             "checkpoints":project_checkpoint(db,p) if ready else None,
             "checkpoint_storage_ready":ready,
+            "lifecycle":project_lifecycle(db,p) if ready else None,
             "checkpoint_write_allowed":ready and can_write(request,db.get(PatientORM,p.patient_id))}
 
     @router.get("/patient/{patient_id}/chart",dependencies=protected)

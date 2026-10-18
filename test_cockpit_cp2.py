@@ -45,13 +45,13 @@ def test_persistent_independent_stages_reverse_replay_conflict_and_scope(setup):
     assert second.post(path+'/checkpoint',json=act('received',4,'retracted',receipt_event)).status_code==409
     assert TestClient(app).post(path+'/checkpoint',json=act('received',4)).status_code==401
     assert c.post(path.replace(TEST_ID,'outside-synthetic-scope')+'/checkpoint',json=act('received',4)).status_code==404
-    # Shared key cannot attest real patients or a marker collision.
+    # Normal clinical-key access also works without the synthetic marker; audit stays honest.
     with Session(engine) as db:
         patient=db.get(PatientORM,TEST_ID);patient.demographics_json={'full_name':'No synthetic marker'};db.commit()
-    assert c.post(path+'/checkpoint',json=act('received',4)).status_code==503
+    assert c.post(path+'/checkpoint',json=act('received',4)).status_code==200
     with Session(engine) as db:
         assert db.scalar(select(func.count()).select_from(EncounterORM))==1
-        assert db.scalar(select(func.count()).select_from(PendingCheckpointEventORM))==5
+        assert db.scalar(select(func.count()).select_from(PendingCheckpointEventORM))==6
         assert db.scalar(select(EncounterORM)).payload_json['_visit_capture_v1']['candidate']['pending'][0]['status']=='awaiting_patient'
 
 
@@ -132,6 +132,8 @@ def test_browser_receipt_review_timeline_refresh_second_session(setup,tmp_path):
                     expect(row).to_contain_text('✓ Παραλήφθηκε το CD')
                     page.reload();expect(row.locator('.patient-followthrough-end')).to_have_attribute('data-complete','false')
                 page.locator('.patient-obligation-link button').click()
+                expect(page.locator('.patient-pending-dialog')).to_be_visible()
+                page.locator('.patient-pending-dialog').get_by_role('button',name='Κλείσιμο',exact=True).click()
                 expect(branches).to_have_attribute('open','')
                 # Geometry, not just labels: the finite fork starts at its own primary dot.
                 page.wait_for_function("document.querySelectorAll('.journey-fork').length===1")
@@ -167,26 +169,146 @@ def test_browser_receipt_review_timeline_refresh_second_session(setup,tmp_path):
                     with Session(engine) as db:
                         db.get(ClinicalPendingORM,p['pending_id']).status='cancelled';db.commit()
                     page.reload()
-                    expect(page.locator('.patient-followthrough-branch > summary')).to_contain_text('Κλειστή συνέχεια')
-                    expect(page.locator('.patient-followthrough-branch > summary')).not_to_contain_text('Ολοκληρώθηκε')
+                    expect(page.locator('.patient-followthrough-branch')).to_have_count(0)
+                    expect(page.locator('.patient-deleted-obligations')).to_contain_text('Διαγραμμένες υποχρεώσεις')
                 assert not errors;context.close()
             browser.close()
     finally:server.should_exit=True;thread.join(10);sock.close()
 
 
-def test_real_patient_requires_existing_clinician_session(setup,monkeypatch):
-    app,engine=setup;c,p,path=seed(app,engine)
+def real_seed(app,engine):
+    c,p,path=seed(app,engine)
     with Session(engine) as db:
-        patient=db.get(PatientORM,TEST_ID);patient.demographics_json={'full_name':'Synthetic real-role boundary fixture'};db.commit()
+        row=db.get(ClinicalPendingORM,p['pending_id']);row.patient_id='outside-synthetic-scope'
+        db.get(EncounterORM,row.source_encounter_id).patient_id=row.patient_id;db.commit()
+    return c,p,path.replace(TEST_ID,'outside-synthetic-scope')
+
+
+def test_real_patient_existing_key_staff_exclusion_and_honest_actor(setup,monkeypatch):
+    from clinical_staff_auth import STAFF_COOKIE
+    app,engine=setup;c,p,path=real_seed(app,engine)
     monkeypatch.setenv('COCKPIT_STAFF_AUTH_ENABLED','1')
     monkeypatch.setenv('COCKPIT_STAFF_CLINICIAN_KEY','C'*40)
     monkeypatch.setenv('COCKPIT_STAFF_SECRETARY_KEY','S'*40)
     monkeypatch.setenv('COCKPIT_STAFF_SESSION_SECRET','T'*40)
+    assert c.get('/clinical/patient/outside-synthetic-scope/chart').json()['pending'][0]['checkpoint_write_allowed']
     action={'template':'material_images','first_observation':'yes_confirmed','idempotency_key':uuid4().hex}
-    assert c.post(path+'/checkpoint-plan',json=action).status_code==401
+    assert c.post(path+'/checkpoint-plan',json=action).status_code==200
+    step={'checkpoint_key':'images_reviewed','observation':'yes_confirmed','expected_revision':1,'idempotency_key':uuid4().hex}
+    for cookie in ['', 'invalid']:
+        denied=login(app);denied.cookies.set(STAFF_COOKIE,cookie,domain='testserver.local',path='/clinical')
+        assert denied.post(path+'/checkpoint',json=step,headers={'X-Clinical-Key':KEY}).status_code in (401,403)
+    secretary=TestClient(app,base_url='https://testserver')
+    assert secretary.post('/clinical/login',json={'key':'S'*40}).status_code==200
+    assert secretary.post(path+'/checkpoint',json=step,headers={'X-Clinical-Key':KEY}).status_code==403
+    assert secretary.post(path+'/lifecycle',json={'action':'cancel','expected_revision':1,'idempotency_key':uuid4().hex},headers={'X-Clinical-Key':KEY}).status_code==403
+    assert TestClient(app).post(path+'/checkpoint',json=step).status_code==401
     clinician=TestClient(app,base_url='https://testserver')
     assert clinician.post('/clinical/login',json={'key':'C'*40}).status_code==200
-    assert clinician.post(path+'/checkpoint-plan',json=action).status_code==200
+    assert clinician.post(path+'/checkpoint',json=step).status_code==200
+    monkeypatch.setenv('COCKPIT_STAFF_CLINICIAN_KEY','R'*40)
+    assert clinician.post(path+'/checkpoint',json=step,headers={'X-Clinical-Key':KEY}).status_code==401
     with Session(engine) as db:
-        event=db.scalar(select(PendingCheckpointEventORM).where(PendingCheckpointEventORM.kind=='yes_confirmed'))
-        assert event.actor_role=='clinician' and event.actor_principal_id=='clinic-clinician'
+        events=db.scalars(select(PendingCheckpointEventORM).order_by(PendingCheckpointEventORM.revision)).all()
+        assert [(e.actor_principal_id,e.actor_role) for e in events]==[('shared-clinical-key','shared_clinical_key')]*2+[('clinic-clinician','clinician')]
+
+
+def test_real_lifecycle_cancel_restore_no_plan_and_active_plan(setup):
+    app,engine=setup;c,p,path=real_seed(app,engine)
+    with Session(engine) as db:source=dict(db.get(EncounterORM,p['source_encounter_id']).payload_json)
+    def lifecycle(action,rev,cancel=None,key=None):
+        return {'action':action,'expected_revision':rev,'cancellation_event_id':cancel,'idempotency_key':key or uuid4().hex}
+    body=lifecycle('cancel',0);r=c.post(path+'/lifecycle',json=body);assert r.status_code==200,r.text
+    cancel=r.json()['event_id'];assert r.json()['current'] is None
+    assert c.post(path+'/lifecycle',json=body).json()['replayed']
+    assert c.post(path+'/lifecycle',json={**body,'action':'restore'}).status_code==409
+    plan={'template':'completion','first_observation':'yes_confirmed','idempotency_key':uuid4().hex}
+    assert c.post(path+'/checkpoint-plan',json=plan).status_code==409
+    assert c.post(path+'/lifecycle',json=lifecycle('restore',0,cancel)).status_code==409
+    assert c.post(path+'/lifecycle',json=lifecycle('restore',1,str(uuid4()))).status_code==409
+    restore=lifecycle('restore',1,cancel);assert c.post(path+'/lifecycle',json=restore).status_code==200
+    assert c.post(path+'/lifecycle',json=restore).json()['replayed']
+    assert c.post(path+'/checkpoint-plan',json=plan).status_code==409
+    r=c.post(path+'/checkpoint-plan',json={**plan,'expected_revision':2});assert r.status_code==200,r.text
+    assert r.json()['current']['completed'] and r.json()['current']['revision']==4
+    assert c.post(path+'/lifecycle',json=lifecycle('cancel',4)).status_code==409
+    # Undo completion, cancel, restore exact pre-cancel open state, then complete again.
+    event=r.json()['current']['steps'][0]['event_id']
+    undo={'checkpoint_key':'completed','observation':'retracted','retracts_event_id':event,'expected_revision':4,'idempotency_key':uuid4().hex}
+    assert c.post(path+'/checkpoint',json=undo).status_code==200
+    r=c.post(path+'/lifecycle',json=lifecycle('cancel',5));assert r.status_code==200
+    second_cancel=r.json()['event_id'];assert r.json()['current']['completed'] is False
+    assert c.post(path+'/checkpoint',json={**undo,'expected_revision':6,'idempotency_key':uuid4().hex}).status_code==409
+    assert c.post(path+'/lifecycle',json=lifecycle('restore',6,cancel)).status_code==409
+    r=c.post(path+'/lifecycle',json=lifecycle('restore',6,second_cancel));assert r.status_code==200
+    assert r.json()['current']['status']=='open' and not r.json()['current']['completed']
+    yes={'checkpoint_key':'completed','observation':'yes_confirmed','expected_revision':7,'idempotency_key':uuid4().hex}
+    assert c.post(path+'/checkpoint',json=yes).status_code==200
+    chart=login(app).get('/clinical/patient/outside-synthetic-scope/chart').json()['pending'][0]
+    update=next(x for x in c.get('/clinical/clinical-updates').json()['items'] if x['pending_id']==p['pending_id'])
+    assert chart['checkpoints']==update['checkpoints'] and chart['lifecycle']==update['lifecycle']
+    assert len(chart['checkpoints']['history'])==3 and chart['status']=='resolved'
+    assert c.post(path.replace('outside-synthetic-scope',TEST_ID)+'/lifecycle',json=lifecycle('cancel',8)).status_code==404
+    with Session(engine) as db:
+        assert db.get(EncounterORM,p['source_encounter_id']).payload_json==source
+        assert db.scalar(select(func.count()).select_from(PendingCheckpointEventORM))==8
+
+
+def test_browser_real_obligation_popup_complete_delete_restore(setup,tmp_path):
+    import socket,threading,shutil
+    import uvicorn
+    from playwright.sync_api import sync_playwright,expect
+    app,engine=setup;c,p,path=real_seed(app,engine)
+    # Real-role chart contains a prior follow-up plus a second visit: attendance alone does not close it.
+    with Session(engine) as db:
+        row=db.get(ClinicalPendingORM,p['pending_id']);row.description='Επανεκτίμηση του γόνατος σε επόμενη επίσκεψη.';row.item_type='follow_up';db.commit()
+    later=draft().model_dump(mode='json');later['encounter_date']='2026-10-19';later['pending']=[]
+    assert c.post('/clinical/visit-capture/save',json={'context_id':ctx(c),'candidate':later}).status_code==200
+    with Session(engine) as db:
+        row=db.scalars(select(EncounterORM).where(EncounterORM.encounter_date=='2026-10-19')).one();row.patient_id='outside-synthetic-scope';db.commit()
+    sock=socket.socket();sock.bind(('127.0.0.1',0));port=sock.getsockname()[1]
+    server=uvicorn.Server(uvicorn.Config(app,log_level='error'));thread=threading.Thread(target=server.run,kwargs={'sockets':[sock]},daemon=True);thread.start()
+    base=f'http://localhost:{port}';url=base+'/static/cockpit/index.html?chart=outside-synthetic-scope'
+    try:
+        with sync_playwright() as pw:
+            browser=pw.chromium.launch(executable_path=shutil.which('google-chrome') or shutil.which('chromium'))
+            for width in [1280,390]:
+                context=browser.new_context(viewport={'width':width,'height':950});page=context.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
+                page.goto(url.split('?')[0]);page.locator('#ceGlobalKey').click();page.locator('#ceGlobalKeyInput').fill(KEY)
+                page.locator('#ceGlobalLoginForm button[type=submit]').click();expect(page.locator('#ceGlobalAuthStatus')).to_contain_text('Συνδέθηκες');page.keyboard.press('Escape');page.goto(url)
+                link=page.locator('.patient-chart-grid .patient-obligation-link button');link.click()
+                popup=page.locator('.patient-pending-dialog');expect(popup).to_be_visible()
+                if width==1280:expect(popup.locator('select')).to_have_value('completion')
+                expect(popup.get_by_role('button',name='Ναι',exact=True)).to_be_enabled()
+                if width==1280:
+                    popup.get_by_role('button',name='Όχι ακόμη',exact=True).click();expect(popup).to_have_count(0)
+                    link.click();expect(popup).to_contain_text('Όχι ακόμη');popup.get_by_role('button',name='Ναι',exact=True).click()
+                    expect(page.locator('.patient-chart-grid .patient-obligation-link')).to_contain_text('Ολοκληρώθηκε')
+                    page.reload();link.click();expect(popup).to_contain_text('✓ Ολοκληρώθηκε η ενέργεια')
+                    popup.get_by_role('button',name='Αναίρεση',exact=True).click()
+                    expect(popup).to_have_count(0);link.click()
+                # The adopted plan keeps its state through reversible deletion.
+                popup.get_by_role('button',name='Διαγραφή υποχρέωσης',exact=True).click()
+                popup.get_by_role('button',name='Διατήρηση',exact=True).click();expect(popup).to_be_visible()
+                popup.get_by_role('button',name='Διαγραφή υποχρέωσης',exact=True).click();popup.get_by_role('button',name='Διαγραφή',exact=True).click()
+                expect(page.locator('.patient-followthrough-branch')).to_have_count(0)
+                expect(page.locator('.patient-deleted-obligations')).to_be_visible()
+                page.reload();page.locator('.patient-deleted-obligations summary').click();link.click()
+                expect(popup.get_by_role('button',name='Ναι',exact=True)).to_have_count(0)
+                popup.get_by_role('button',name='Επαναφορά υποχρέωσης',exact=True).click()
+                expect(page.locator('.patient-followthrough-branch')).to_have_count(1)
+                page.locator('.patient-followthrough-branch .pending-open').first.click();expect(popup).to_be_visible()
+                assert popup.bounding_box()['width']<=width
+                popup.screenshot(path=str(tmp_path/f'obligation-popup-{width}.png'))
+                popup.get_by_role('button',name='Κλείσιμο',exact=True).click()
+                page.locator('#captureOpen').click();page.locator('#captureText').fill('Πρόχειρο που διατηρείται')
+                expect(link).to_be_disabled();expect(page.locator('#captureText')).to_have_value('Πρόχειρο που διατηρείται')
+                page.locator('#captureComposer').get_by_role('button',name='Κλείσιμο',exact=True).click()
+                # Updates opens the same dialog, not merely a chart scroll.
+                page.evaluate("""()=>{window._updates=document.createElement('section');document.body.append(window._updates);window._updates.id='proofUpdates';CockpitStoredChart.renderUpdates(window._updates,()=>true,()=>window._updates.remove(),'real')}""")
+                page.locator('#proofUpdates .doctor-action-row').click();expect(popup).to_be_visible()
+                assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
+                page.reload();expect(popup).to_have_count(0);expect(page.locator('.patient-followthrough-branch')).to_be_visible()
+                assert not errors;context.close()
+            browser.close()
+    finally:server.should_exit=True;thread.join(10);sock.close()
