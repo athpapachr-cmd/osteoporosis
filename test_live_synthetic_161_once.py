@@ -16,8 +16,12 @@ try:
     r=context.request.get(BASE+'/clinical/patient/'+ID+'/chart');assert r.status==200
     data=r.json();assert data['demographics']['synthetic_scenario']=='cockpit-cp1-v1';assert data['patient_id']==ID
     return data
+   stage='marked-baseline'
    data=read();baseline_visits=baseline_visits or json.dumps(data['visits'],sort_keys=True)
-   item=next(p for p in data['pending'] if p['description']=='Προσκόμιση του CD της μαγνητικής.')
+   choices=[p for p in data['pending'] if {s['key'] for s in (p.get('checkpoints') or {}).get('steps',[])}=={'received','images_reviewed'}]
+   print('SAFE FIXED MARKED BASELINE:',[{'status':p['status'],'write':p['checkpoint_write_allowed'],'confirmed':(p.get('checkpoints') or {}).get('confirmed_keys'),'planned':p.get('checkpoints') is not None} for p in data['pending']])
+   assert len(choices)==1
+   item=choices[0]
    assert item['checkpoint_write_allowed'] and item['status']=='open'
    assert item['checkpoints']['confirmed_keys']==['received']
    pid=item['pending_id'];path=BASE+'/clinical/patient/'+ID+'/pending/'+pid
@@ -50,5 +54,5 @@ try:
    context.close()
   browser.close()
  print('PASS REAL OBLIGATION OWNER LIVE: same normal clinical-key authority; popup via overview/branch/Updates; notyet/completion/undo, deletion/keep/persisted restore, independent1280/390, immutable signed source. Fixed marked synthetic only; no provider/new visit/real-patient writes. Fixture received confirmed/images pending.')
-except Exception:
- print('FAIL OBLIGATION LIVE stage: '+stage);sys.exit(1)
+except Exception as error:
+ print('FAIL OBLIGATION LIVE stage: '+stage+' type: '+type(error).__name__);sys.exit(1)
