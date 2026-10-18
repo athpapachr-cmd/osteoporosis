@@ -1,5 +1,7 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-18 #193 MERGED / NATIVE DEPLOY NEXT:** Squashee a7e83d9ee4dbf4f3b9475aa21752a6cbb6ca63 at12:52:07UTC (exactSHAeea7e83d9ee4dbf4f3b9475aa21752a6cbb6ca63). SameR2approvedcompactbranch/terminalremoval; affectedCIPASS. Durablelocalcheckpoint before existingnativeRender observation thenreadonlyfixedmarkedproof53f4298. No taskdestruction/provider/schema/grantchange.
+
 > **2026-10-18 #193 FINAL AFFECTED CI PASS / MERGE NEXT:** Published e90ecb7f70024d4692262e6021e0e7d3664b925e; R2reviewedd3c616cPASS. Capture39128945167, Home39128945258, Brief39128945169, Demo39128945183, baseline39128945288 andcanonical39128945322SUCCESS. KnownunrelatedL0design-onlyallowlistfailure inspected. Durablelocalcheckpoint before authorizedsquash/nativeRender and exactLIVEreadonlyfixedmarkedproof53f4298. No productionpermanenttaskdeletion/provider/DDL/grants.
 
 > **2026-10-18 COMPACT/PERMANENT #193 OPEN / FINAL CI NEXT:** PRhttps://github.com/athpapachr-cmd/osteoporosis/pull/193 carries frozenR2approvedd3c616c runtime, compactbranchandterminaltaskremoval. Next finalaffectedCI/canonicalguard then authorizedsquash/nativeRender and readonlyfixedmarkedproof (no productionpermanentmutation). No userHoros migrationpathstaged; no grant/schema/providerchange.
