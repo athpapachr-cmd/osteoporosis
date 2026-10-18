@@ -19,7 +19,8 @@ try:
    expect(row).to_be_visible();expect(row.locator('blockquote')).to_have_count(0)
    expect(row.get_by_role('button',name='Δημιουργήθηκε στην επίσκεψη',exact=False)).to_have_count(0)
    last=row.locator('.pending-stage').last;undo=last.get_by_role('button',name='Αναίρεση',exact=True).bounding_box();remove=last.get_by_role('button',name='Διαγραφή υποχρέωσης',exact=True).bounding_box()
-   assert abs(undo['y']-remove['y'])<1 and remove['x']>undo['x']
+   print('SAFE MARKED CONTROL GEOMETRY:',width,{'undo':undo,'remove':remove},flush=True)
+   assert abs((undo['y']+undo['height']/2)-(remove['y']+remove['height']/2))<1 and remove['x']>undo['x']
    page.locator('.patient-timeline').screenshot(path=str(out/f'compact-timeline-{width}.png'))
    stage='source-retained-in-popup';row.locator('.pending-open').first.click();popup=page.locator('.patient-pending-dialog')
    expect(popup.locator('blockquote')).to_have_count(1)
