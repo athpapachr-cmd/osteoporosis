@@ -1,5 +1,7 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-18 #193 LIVE MULTISTAGE LAYOUT FINDING:** Read-only39129465429 shows finalCDstage undo(77.875px) anddelete(80.5px)+gap wrap onto separate rows at1280; not merely a top-versus-center test issue. Signedsource and task unchanged. Next bounded R1 CSS sizing correction and explicit multistage geometry regression; existing R2 permanent-removal review/evidence retained, no state/auth redesign.
+
 > **2026-10-18 #193 LIVE LAYOUT ASSERTION INVESTIGATION:** Read-only run39129251840 stopped compact-inline withAssertionError before any mutation. Candidate cause is multi-stage button alignment/wrapping; no product PASS inferred. Next collect safe marked-only geometry and source visibility to distinguish test strictness from layout defect, then bounded correction/review only if needed. No production destructive actions.
 
 > **2026-10-18 #193 DEPLOYED / LIVE READ PROOF NEXT:** Render `dep-dbac1udg1s2s73b5r89g` is LIVE at exact runtime `eea7e83d9ee4dbf4f3b9475aa21752a6cbb6ca63`, finished 12:54:01 UTC. Durable checkpoint before verification-only `53f4298` dispatch: inspect compact branches and source popup at 1280/390 on the fixed marked chart, with no clinical mutations. Permanent deletion is tested in isolated local/CI fixtures; do not destroy the established production fixture or claim a live destructive test.
