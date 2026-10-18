@@ -1,5 +1,8 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-18 #175 MERGED / NATIVE DEPLOY NEXT:** Authorized squash merge ed979bf60ca876f044f917d997728e4354bcd2fc at06:08:12UTC. Final canonical guard39102937258 PASS on30b94ab, affected source gates retained as above. Production checkpoint table installed/verified. No environment/network/cost changes. Durable local checkpoint before observing native existing-service deploy. Next establish Render LIVE exact source, then finite verification-only f162ef6 normal-app synthetic proof. CP2 not yet deployed/live-tested/PO accepted.
+
+
 > **2026-10-18 #175 READY / AFFECTED CI PASS / MERGE NEXT:** Production migration verified as checkpointed above. Published head2513ea7 passed Capture39102800903, Home39102800871, Brief39102800965 and canonical guards39102800797/39102800876. Runtime still reviewed bbb9a68; subsequent deltas SQL packaging/docs only, SQL equivalence/rollback tested in PostgreSQL. Existing L0 design-only allowlist failure remains unrelated. Verification-only branch updated at f162ef681afbeadd4fbe37ad0c63c6fdad477e4e for finite normal-app lifecycle, replay, popup/source and desktop/mobile persistence proof; never merge that branch. Next authorized#175 squash/native deployment after final docs canonical guard; no more schema/user technical work required.
 
 
