@@ -76,7 +76,11 @@ def test_browser_shared_entry_and_late_results(setup,tmp_path):
                 # Provider booking boundary only is a fixture. Manual registry is real protected HTTP/DB.
                 page.evaluate("""()=>{const p=document.getElementById('nextAppointmentPatient');p.textContent='Συνθετικός Είσοδος';p.dataset.appointmentId='patient-entry-fixture';document.getElementById('visitSidebarNext').disabled=false;document.getElementById('nextAppointmentTime').textContent='19/10/2026 · 09:40';}""")
                 reads=[];page.on('request',lambda r:reads.append(r.url) if '/chart' in r.url else None)
-                page.locator('#visitSidebarNext').click();expect(page.locator('#visitBriefIdentity')).to_contain_text('Δεν επιβεβαιώνεται',timeout=10000)
+                page.route('**/clinical/calendar/visit-brief/read',lambda route:route.fulfill(status=401 if width==1280 else 403,json={'detail':'Separate staff Brief authority unavailable'}))
+                page.locator('#visitSidebarNext').click();expect(page.locator('#visitBriefIdentity')).to_contain_text('Η προεπισκόπηση δεν είναι διαθέσιμη',timeout=10000)
+                expect(page.locator('#visitBriefName')).to_have_text('Συνθετικός Είσοδος')
+                expect(page.locator('#visitBriefClinical')).not_to_be_visible()
+                expect(page.locator('#visitBriefChoosePatient')).not_to_be_visible()
                 page.locator('#visitBriefPatientEntry').click();expect(page.locator('#patientEntryName')).to_have_value('Συνθετικός Είσοδος')
                 expect(page.locator('.patient-entry-match')).to_have_count(2);assert not reads
                 page.locator('#patientEntry').screenshot(path=str(tmp_path/f'patient-entry-{width}.png'))
