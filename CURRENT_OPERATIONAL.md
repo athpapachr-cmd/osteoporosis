@@ -1,5 +1,7 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-18 #191 FINAL AFFECTED CI PASS / MERGE NEXT:** Published df16e3f7d35b4f52218a0c42dae669e5ba77487c; reviewed73db71d and2e9cd8cPASS. Capture39127376276, Home39127376263, Brief39127376300, Demo39127376295, baseline39127376243 andcanonical39127376235SUCCESS. KnownunrelatedL0design-onlyallowlistfailure inspected. Durable localcheckpoint before authorizedsquash/native deploy; next exactLIVE then verification-only0eefb5d actualsource readonlyproof1280/390, no PHIcapture/writes.
+
 > **2026-10-18 ATTENTION #191 FINAL R1 CLOSURE PASS / CI NEXT:** Independent2e9cd8cb700be4202b4689123323afef408c78ba PASS COMPLETE_FOR_DECLARED_SCOPE; incomingrefreshidempotent withoutPendingread, prior73db71dapprovalretained. Next publishedfinalhead affectedCI/canonicalguard, authorizednative release and verification-only0eefb5d actualprotectedreads1280/390. No actual names/history captured, no patient/task/providerwrites.
 
 > **2026-10-18 ATTENTION #191 OPEN / IDEMPOTENT INBOX REFRESH CORRECTION:** PRhttps://github.com/athpapachr-cmd/osteoporosis/pull/191;73db71dR1PASS retained. Final source check notes sourceInbox restoration must replace its contents on existing refresh event, otherwise repeated events append placeholder rows. Addedcontent.replaceChildren and finite actualcontroller eventregression; no clinicalread/writesemanticchange. Next bounded delta closure then finalCI/native release; verification-onlyreadscript pendingdispatch afterLIVE.
