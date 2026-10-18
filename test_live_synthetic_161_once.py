@@ -1,4 +1,4 @@
-"""Read-only proof of focused stored visit navigation on the fixed marked chart."""
+"""Fixed marked chart edit/prefill/cancel proof, no clinical save or provider."""
 import os,sys
 from pathlib import Path
 from playwright.sync_api import sync_playwright,expect
@@ -7,36 +7,34 @@ try:
  with sync_playwright() as pw:
   browser=pw.chromium.launch();out=Path('live-161-proof');out.mkdir(exist_ok=True)
   for width in [1280,390]:
-   context=browser.new_context(viewport={'width':width,'height':1000});page=context.new_page();page.set_default_timeout(20000);errors=[]
+   context=browser.new_context(viewport={'width':width,'height':1000});page=context.new_page();page.set_default_timeout(20000);forbidden=[];errors=[]
+   page.on('request',lambda r:forbidden.append(True) if r.method=='POST' and any(s in r.url for s in ['/amend','/extract','/visit-capture/save']) else None)
    page.on('pageerror',lambda e:errors.append(type(e).__name__))
    stage='login';page.goto(ROOT);page.locator('#ceGlobalKey').click();page.locator('#ceGlobalKeyInput').fill(os.environ['CLINICAL_DATA_KEY'])
    page.locator('#ceGlobalLoginForm button[type=submit]').click();expect(page.locator('#ceGlobalAuthStatus')).to_contain_text('Συνδέθηκες');page.keyboard.press('Escape')
    def read():
     r=context.request.get(BASE+'/clinical/patient/'+ID+'/chart');assert r.status==200
     d=r.json();assert d['demographics']['synthetic_scenario']=='cockpit-cp1-v1' and d['patient_id']==ID;return d
-   stage='fixed-marked-baseline';before=read();visit=before['visits'][0];eid=visit['encounter_id'];title=visit['clinical']['reason_for_visit']['text']
-   assert 'CP1' in title
-   item=next(p for p in before['pending'] if p['source_encounter_id']==eid);pid=item['pending_id'];page.goto(ROOT+'?chart='+ID)
-   def focused():
-    expect(page.locator('.patient-chart-overview')).not_to_be_visible();expect(page.locator('.patient-visit-reader')).to_be_visible()
-    expect(page.locator('.patient-visit:visible')).to_have_count(1);expect(page.locator('#visit-'+eid)).to_be_visible()
-    expect(page.locator('#visit-'+eid+' > summary')).to_contain_text(title);expect(page.locator('#patientVisitBack')).to_be_visible()
-    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
-   def back():
-    page.locator('#patientVisitBack').click();expect(page.locator('.patient-chart-overview')).to_be_visible()
-    expect(page.locator('.patient-visit:visible')).to_have_count(0);expect(page.locator('.patient-timeline')).to_be_visible()
-   stage='timeline-reader'
-   page.locator('.patient-journey-node[data-encounter-id="'+eid+'"] .patient-journey-point').click()
-   page.get_by_role('dialog').get_by_role('button',name='Άνοιγμα',exact=True).click();focused()
-   page.locator('.patient-visit-reader').screenshot(path=str(out/f'focused-visit-{width}.png'));back()
-   stage='obligation-source-reader';page.locator('.patient-followthrough-branch article[data-pending-id="'+pid+'"] .pending-open').first.click()
-   page.get_by_role('dialog').get_by_role('button',name='Δημιουργήθηκε στην επίσκεψη',exact=False).click()
-   expect(page.get_by_role('dialog')).not_to_be_visible();focused();back()
-   stage='shared-public-reader';assert page.evaluate('async args=>await CockpitStoredChart.openVisit(...args)',[ID,eid]) is True
-   focused();back()
-   stage='unchanged-chart';assert read()==before;assert not errors
-   context.close();print('PASS FOCUSED LIVE READ:',width,'one selected marked visit; overview hidden; timeline/source/shared caller; Back; unchanged chart')
+   stage='fixed-marked-baseline';before=read();visit=before['visits'][0];eid=visit['encounter_id'];title=visit['clinical']['reason_for_visit']['text'];assert 'CP1' in title
+   page.goto(ROOT+'?chart='+ID);page.locator('.patient-journey-node[data-encounter-id="'+eid+'"] .patient-journey-point').click()
+   page.get_by_role('dialog').get_by_role('button',name='Άνοιγμα',exact=True).click()
+   stage='edit-prefill';page.get_by_role('button',name='Επεξεργασία επίσκεψης',exact=True).click();composer=page.locator('#captureComposer')
+   expect(composer).to_be_visible();expect(page.locator('#captureReview textarea').first).to_have_value(title)
+   expect(page.locator('#captureDate')).to_have_value(visit['date'])
+   expect(page.locator('#captureSave')).to_have_text('Αποθήκευση διορθώσεων')
+   expect(page.locator('.patient-visit-reader')).not_to_be_visible()
+   assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
+   composer.screenshot(path=str(out/f'visit-edit-prefill-{width}.png'))
+   stage='cancel-unsaved-draft';page.locator('#captureReview textarea').first.fill('Δοκιμή ακύρωσης μη αποθηκευμένης διόρθωσης')
+   composer.get_by_role('button',name='Κλείσιμο',exact=True).click()
+   expect(composer).not_to_be_visible();expect(page.locator('.patient-visit:visible')).to_have_count(1)
+   expect(page.locator('.patient-visit:visible')).to_contain_text(title)
+   page.get_by_role('button',name='Επεξεργασία επίσκεψης',exact=True).click()
+   expect(page.locator('#captureReview textarea').first).to_have_value(title)
+   composer.get_by_role('button',name='Κλείσιμο',exact=True).click()
+   stage='unchanged-chart';assert read()==before;assert not forbidden and not errors
+   context.close();print('PASS VISIT AMENDMENT LIVE READ:',width,'prefilled existing visit/date; unsaved edit cancel/reopen; chart identical; no amendment/extraction/save request')
   browser.close()
- print('PASS FOCUSED VISIT LIVE READ: fixed marked chart only1280/390; no clinical/task/provider write. Two-date selection and actual appointment caller verified local/CI.')
+ print('PASS VISIT AMENDMENT LIVE READ: fixed marked chart only1280/390. Actual amendment/task reconciliation/replay/as-of writes verified local/CI, never performed on production fixture.')
 except Exception as error:
- print('FAIL FOCUSED LIVE stage: '+stage+' type: '+type(error).__name__);sys.exit(1)
+ print('FAIL VISIT AMENDMENT LIVE stage: '+stage+' type: '+type(error).__name__);sys.exit(1)
