@@ -236,31 +236,38 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
 .patient-journey-close{float:right;margin-left:12px}.patient-journey-preview h4{font-size:1.2rem;padding-top:6px}
 .patient-journey-preview>button:last-child{display:block;margin-top:20px;background:#e6f3f0}
 
-/* Visits continue on the primary rail; their obligations have a separate finite end. */
-.patient-followthrough{margin:4px 0 24px 22px;border-left:2px solid #d4e3e4;padding-left:20px}
-.patient-followthrough-branch{position:relative;margin:14px 0;padding:16px;border:1px solid #dce7e8;border-radius:14px;background:#fff}
-.patient-followthrough-branch:before{content:"";position:absolute;left:-22px;top:27px;width:20px;border-top:2px solid #d4e3e4}
-.patient-followthrough-branch>summary{cursor:pointer;color:#254751}
-.patient-followthrough-branch>summary strong{font-size:.95rem}
-.patient-followthrough-branch>summary small{display:block;margin:6px 0 0 15px;color:#648087}
-.patient-followthrough-branch .synthetic-pending-row{border-bottom:0;padding-bottom:0}
-.patient-followthrough-rail.pending-checkpoint-actions{display:flex;align-items:stretch;gap:0;flex-wrap:nowrap;margin:18px 0}
-.patient-followthrough-rail .pending-stage{position:relative;flex:1;min-width:0;padding:22px 12px 0 0;border-top:2px solid #d4e3e4}
-.patient-followthrough-rail .pending-stage:before{content:"";position:absolute;top:-7px;left:0;width:12px;height:12px;background:white;border:2px solid #8aa7a9;border-radius:50%;box-sizing:border-box}
-.patient-followthrough-rail .pending-stage[data-state=confirmed]:before{background:#29867e;border-color:#29867e}
-.patient-followthrough-rail .pending-stage p{font-size:.9rem}
-.patient-followthrough-end{position:relative;flex:0 1 130px;padding:22px 0 0 12px;font-size:.8rem;color:#648087;border-top:2px solid #d4e3e4}
-.patient-followthrough-end:before{content:"";position:absolute;right:0;top:-7px;height:12px;border-right:3px solid #8aa7a9}
+/* The visit and its finite follow-through share one coordinate system. */
+.patient-journey-rail{display:block;overflow-x:auto;padding:8px 0 20px;max-width:100%}
+.patient-journey-track{position:relative;display:flex;align-items:flex-start;width:max-content;min-width:100%;padding-right:32px;box-sizing:border-box}
+.patient-journey-lines{position:absolute;left:0;top:0;pointer-events:none;overflow:visible}
+.patient-journey-lines path{fill:none;stroke:#b9d2d4;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.patient-journey-lines .journey-primary{stroke-width:3}
+.patient-journey-lines .journey-future{stroke-dasharray:5 5}
+.patient-journey-node{position:relative;flex:0 0 220px;min-width:0}
+.patient-journey-node.has-followthrough{flex-basis:520px}
+.patient-journey-point.clinical-secondary{width:180px;height:136px;box-sizing:border-box;padding:8px 12px 0;justify-content:flex-end;gap:8px;position:relative}
+.patient-journey-point:before{display:none}
+.patient-journey-point>span:not(.patient-journey-dot){max-height:76px;overflow:auto}
+.patient-journey-dot{flex-shrink:0}
+.patient-followthrough-branch{margin:28px 16px 0 90px;padding:10px 0 0 22px;border:0;border-radius:0;background:transparent;position:relative}
+.patient-followthrough-branch:before{display:none}
+.patient-followthrough-branch>summary{cursor:pointer;color:#648087;font-size:.8rem;margin-bottom:14px}
+.patient-followthrough-branch>summary small{display:inline}
+.patient-followthrough-branch .synthetic-pending-row{border:0;padding:0 0 22px}
+.patient-followthrough-branch .synthetic-pending-row>div>p{font-size:.8rem}
+.patient-followthrough-branch .synthetic-pending-row blockquote{font-size:.8rem}
+.patient-followthrough-branch .synthetic-pending-row>div>button{font-size:.75rem}
+.patient-followthrough-rail.pending-checkpoint-actions{display:flex;align-items:stretch;gap:0;flex-wrap:nowrap;margin:24px 0 10px}
+.patient-followthrough-rail .pending-stage{position:relative;flex:1;min-width:0;padding:0 12px 0 0;border:0;box-sizing:border-box}
+.patient-followthrough-dot{display:block;width:12px;height:12px;border:2px solid #8aa7a9;background:#f8fafb;border-radius:50%;box-sizing:border-box}
+.pending-stage[data-state=confirmed]>.patient-followthrough-dot{background:#29867e;border-color:#29867e}
+.patient-followthrough-rail .pending-stage p{font-size:.85rem;margin-top:14px}
+.patient-followthrough-rail .pending-stage small{font-size:.75rem}
+.patient-followthrough-rail .pending-checkpoint-actions{gap:5px}
+.patient-followthrough-rail button{font-size:.8rem;padding:7px 9px}
+.patient-followthrough-end{flex:0 0 50px;font-size:.8rem;color:#648087;padding:0;border:0}
+.patient-followthrough-stop{display:block;width:2px;height:12px;background:#8aa7a9;margin-left:14px}
+.patient-followthrough-end small{display:block;margin-top:14px}
 .patient-followthrough-end[data-complete=true]{color:#24766f;font-weight:700}
 .patient-obligation-link{display:flex;flex-direction:column;align-items:flex-start;gap:5px;margin-bottom:14px}
 .patient-obligation-link button{white-space:normal;text-align:left}
-@media(max-width:600px){
-  .patient-followthrough{margin-left:8px;padding-left:12px}
-  .patient-followthrough-branch{padding:12px}
-  .patient-followthrough-branch:before{left:-14px;width:12px}
-  .patient-followthrough-rail.pending-checkpoint-actions{flex-direction:column;border-left:2px solid #d4e3e4;margin-left:6px}
-  .patient-followthrough-rail .pending-stage{border-top:0;padding:0 0 20px 18px;box-sizing:border-box}
-  .patient-followthrough-rail .pending-stage:before{left:-7px;top:4px}
-  .patient-followthrough-end{border-top:0;flex-basis:auto;padding:0 0 0 18px}
-  .patient-followthrough-end:before{left:-7px;right:auto;top:auto;bottom:0;width:12px;height:0;border-right:0;border-bottom:3px solid #8aa7a9}
-}
