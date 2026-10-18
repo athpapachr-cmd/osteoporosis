@@ -1,5 +1,7 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-18 #201 MERGED / CORRECTED SOURCE DEPLOY NEXT:** Squasha8b0a59eabf611ca18ebfa1f9bb4a6877bcd4317 at18:25:21UTC. Reviewed all-category agenda source unchanged. Durable checkpoint before nativeRender observation; exactsourceLIVE then readonlyfullagenda/Home-next proof42fb63e.
+
 > **2026-10-18 #201 FINAL AFFECTED CI PASS / MERGE NEXT:** Publisheda4b9c0214672787c40fc453dc018d33b332f1499, reviewed6c4bed6. Calendar39153829143/Home39153829180/Brief39153829205/Capture39153829246/Demo39153829211/canonical39153829230 SUCCESS. Existing unrelated L0allowlist39153829098 inspected. Durable checkpoint before authorizedsquash/native correction release and fullagenda proof42fb63e; #200scopednavigation evidence retained.
 
 > **2026-10-18 #201 OPEN / CORRECTED AGENDA CI NEXT:** PR https://github.com/athpapachr-cmd/osteoporosis/pull/201 publisheda4b9c02, reviewed6c4bed6. Correctedactualsource readonlyproof42fb63e prepared on never-merge branch, checks fullagenda counts/date and same-day Home next inclusion without names/history capture or clinical/link writes. Durable local checkpoint before finalCI/nativecorrectionrelease.
