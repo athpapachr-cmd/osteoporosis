@@ -148,7 +148,7 @@ def attach_cp1(router, engine, protected, context_for, ensure_patient):
                 visits.append({"encounter_id":row.id,"date":row.encounter_date,"clinical":candidate,
                     "legacy":candidate is None})
             ready=installed(engine)
-            pending=[pending_view(db,p,request,ready) for p in db.scalars(select(ClinicalPendingORM).where(ClinicalPendingORM.patient_id==patient_id).order_by(ClinicalPendingORM.created_at.desc()))]
+            pending=[pending_view(db,p,request,ready) for p in db.scalars(select(ClinicalPendingORM).where(ClinicalPendingORM.patient_id==patient_id,ClinicalPendingORM.status!="deleted").order_by(ClinicalPendingORM.created_at.desc()))]
             return {"patient_id":patient_id,"demographics":patient.demographics_json,"visits":visits,"pending":pending}
 
     @router.get("/clinical-updates", dependencies=protected)
@@ -156,7 +156,7 @@ def attach_cp1(router, engine, protected, context_for, ensure_patient):
         response.headers["Cache-Control"]="no-store"
         with Session(engine) as db:
             test_ids=(*SYNTHETIC_161_PATIENT_IDS,TEST_ID)
-            stmt=select(ClinicalPendingORM,PatientORM).join(PatientORM,PatientORM.patient_id==ClinicalPendingORM.patient_id)
+            stmt=select(ClinicalPendingORM,PatientORM).where(ClinicalPendingORM.status!="deleted").join(PatientORM,PatientORM.patient_id==ClinicalPendingORM.patient_id)
             stmt=stmt.where(PatientORM.patient_id==TEST_ID if scope=="test" else PatientORM.patient_id.not_in(test_ids))
             if active_only:stmt=stmt.where(ClinicalPendingORM.status.in_(("open","awaiting_patient","awaiting_result")))
             rows=db.execute(stmt.order_by(ClinicalPendingORM.updated_at.desc()).limit(100)).all()

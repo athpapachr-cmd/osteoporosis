@@ -993,7 +993,7 @@ def build_clinical_router(engine: Engine) -> APIRouter:
             ensure_patient(session, patient_id)
             rows = session.execute(
                 select(ClinicalPendingORM)
-                .where(ClinicalPendingORM.patient_id == patient_id)
+                .where(ClinicalPendingORM.patient_id == patient_id, ClinicalPendingORM.status != "deleted")
                 .order_by(ClinicalPendingORM.created_at.desc())
             ).scalars().all()
             return [_pending_record(row) for row in rows]

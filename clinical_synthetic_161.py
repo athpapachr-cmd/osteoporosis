@@ -227,7 +227,7 @@ def build_synthetic_161_router(engine):
             patient = _test_patient(db, patient_id)
             brief = _minimal_brief(db, patient_id, actual)
             brief["pending"] = [_pending_view(p, db) for p in db.scalars(
-                select(ClinicalPendingORM).where(ClinicalPendingORM.patient_id == patient_id))]
+                select(ClinicalPendingORM).where(ClinicalPendingORM.patient_id == patient_id, ClinicalPendingORM.status != "deleted"))]
             _record_access(db, actor, req.booking_uid, "synthetic_brief_read", "allowed", patient_id)
             db.commit()
             return {"mode": "synthetic_fixture", "booking": _booking_card(actual),
@@ -247,7 +247,8 @@ def build_synthetic_161_router(engine):
                 expected = expected.astimezone(timezone.utc).replace(tzinfo=None)
             stamp = datetime.now(timezone.utc).replace(tzinfo=None)
             changed = db.execute(update(ClinicalPendingORM).where(
-                ClinicalPendingORM.id == pending_id, ClinicalPendingORM.updated_at == expected
+                ClinicalPendingORM.id == pending_id, ClinicalPendingORM.updated_at == expected,
+                ClinicalPendingORM.status != "deleted"
             ).values(status=req.status, updated_at=stamp))
             if changed.rowcount != 1:
                 raise HTTPException(409, "Pending changed; reload its current state")
@@ -300,7 +301,7 @@ def build_synthetic_161_router(engine):
             for patient_id in SYNTHETIC_161_PATIENT_IDS:
                 patient = _test_patient(db, patient_id)
                 for pending in db.scalars(select(ClinicalPendingORM).where(
-                        ClinicalPendingORM.patient_id == patient_id)):
+                        ClinicalPendingORM.patient_id == patient_id, ClinicalPendingORM.status != "deleted")):
                     items.append({**_pending_view(pending, db), "patient_id": patient_id,
                                   "patient_name": patient.demographics_json["full_name"]})
             items.sort(key=lambda p: (p["updated_at"], p["pending_id"]), reverse=True)
@@ -313,7 +314,7 @@ def build_synthetic_161_router(engine):
             patient = _test_patient(db, patient_id)
             visits = db.scalars(select(EncounterORM).where(EncounterORM.patient_id == patient_id)
                                 .order_by(EncounterORM.encounter_date.desc())).all()
-            pending = db.scalars(select(ClinicalPendingORM).where(ClinicalPendingORM.patient_id == patient_id)).all()
+            pending = db.scalars(select(ClinicalPendingORM).where(ClinicalPendingORM.patient_id == patient_id, ClinicalPendingORM.status != "deleted")).all()
             history = []
             for row in visits:
                 signed = row.payload_json.get("_visit_capture_v1", {})

@@ -296,3 +296,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
 .patient-followthrough-branch .synthetic-pending-row>div>.pending-open{font-size:1rem;text-align:left;border:0;background:transparent;padding:0;font-weight:750;color:inherit}
 .patient-followthrough-rail button.patient-followthrough-dot{padding:0;min-width:12px;cursor:pointer}
 .patient-deleted-obligations{margin-top:16px;font-size:.85rem}.patient-deleted-obligations summary{cursor:pointer;color:#648087}
+
+/* Keep follow-through secondary to its source visit. */
+.patient-followthrough-branch{margin-top:16px;padding-top:4px}
+.patient-followthrough-branch>summary{margin-bottom:8px}
+.patient-followthrough-branch .synthetic-pending-row{padding-bottom:12px}
+.patient-followthrough-branch .synthetic-pending-row>div>p{margin:4px 0}
+.patient-followthrough-rail.pending-checkpoint-actions{margin:14px 0 4px}
+.patient-followthrough-rail .pending-stage p{margin:8px 0 4px}
+.patient-followthrough-rail .pending-checkpoint-actions{margin:4px 0;gap:6px;align-items:center}
+.patient-followthrough-end small{margin-top:8px}
+.pending-removal-confirmation{flex-basis:100%;font-size:.85rem}
+.pending-removal-confirmation p{margin:4px 0 8px}
+.pending-removal-confirmation button+button{margin-left:6px}
