@@ -1,5 +1,7 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-18 #200 NATIVE BUILD OBSERVED:** Renderdep-dbagm3psrm7s73aemitg building exactf2bdba77bbbe38d12fdea4867b8b7bf2c6fee970. Existing autodeploy reused, no duplicate trigger. Next LIVE then actualsource tomorrow read/date/count and safe navigation-only screenshots.
+
 > **2026-10-18 #200 MERGED / NATIVE DEPLOY NEXT:** Squashf2bdba77bbbe38d12fdea4867b8b7bf2c6fee970 at18:08:13UTC. Reviewed UI unchanged. Durable checkpoint before native Render observation; exactsourceLIVE required before actualdatedreadonlyprooffaae6e6.
 
 > **2026-10-18 #200 FINAL AFFECTED CI PASS / MERGE NEXT:** Publishedc23e226 reviewed0395665. Home39152573177/Brief39152573358/Capture39152573467/Demo39152573297/canonical39152573414 SUCCESS. Existing unrelated L0design-onlyallowlist39152573364 failure inspected. Read-only actualdatedsource prooffaae6e6 prepared separately. Durable checkpoint before authorized squash/native release; no runtime change after R1.
