@@ -312,3 +312,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
 
 .patient-followthrough-rail .pending-checkpoint-actions{gap:4px}
 .patient-followthrough-rail .pending-checkpoint-actions button{font-size:.75rem;padding:6px 8px}
+
+/* Reading a stored visit is a focused view, separate from the current chart. */
+.patient-chart-overview[hidden],.patient-visit-reader[hidden]{display:none}
+.patient-visit-reader{scroll-margin-top:100px}
+.patient-visit-reader>#patientVisitBack{margin:0 0 18px}
+.patient-visit-reader .patient-visit{margin:0;border:1px solid #dce6e7;border-radius:14px;background:white;padding:18px}
+.patient-visit-reader .patient-visit>summary{cursor:pointer;display:flex;flex-direction:column;gap:8px}
+.patient-visit-reader .patient-visit>summary>strong{font-size:1.2rem}
