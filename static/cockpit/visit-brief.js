@@ -381,7 +381,7 @@
     for(const item of pending){const b=document.createElement('button');b.type='button';b.className='clinical-secondary';b.textContent=item.description;b.onclick=()=>{if(!window.CockpitStoredChart.canLeave())return;const id=state.patientId;$('visitBriefClose').click();window.CockpitStoredChart.openPending(id,item.pending_id);};$('visitBriefPending').append(b);}
     if(latest){const open=document.createElement('button');open.id='visitBriefOpenLatest';open.type='button';open.className='clinical-secondary';open.textContent='Άνοιγμα τελευταίας επίσκεψης';open.onclick=async()=>{
       if(!window.CockpitStoredChart.canLeave())return;const id=state.patientId,visit=latest.source_encounter_id;$('visitBriefClose').click();
-      const opened=await window.CockpitStoredChart.open(id);if(opened!==id)return;const node=document.getElementById('visit-'+visit);if(node){node.hidden=false;node.open=true;node.scrollIntoView({behavior:'smooth'});}
+      await window.CockpitStoredChart.openVisit(id,visit);
     };$('visitBriefClinical').append(open);}
   }
   const manualEntry=document.getElementById('visitBriefPatientEntry');

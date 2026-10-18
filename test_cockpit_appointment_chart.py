@@ -149,6 +149,11 @@ def test_browser_single_login_booking_link_latest_and_independent_session(fixtur
                 page.goto(url+'?booking=cal.com%3Achart-fixture&booking_date='+source.start_at.date().isoformat())
                 expect(page.locator('#visitBriefOpenLatest')).to_be_visible()
                 page.locator('#visitBriefOpenLatest').click();expect(page.locator('#visit-'+p['source_encounter_id'])).to_be_visible()
+                expect(page.locator('.patient-chart-overview')).not_to_be_visible()
+                expect(page.locator('.patient-visit:visible')).to_have_count(1)
+                page.locator('#patientVisitBack').click()
+                expect(page.locator('.patient-chart-overview')).to_be_visible()
+                expect(page.locator('.patient-visit:visible')).to_have_count(0)
                 if width==1280:
                     page.evaluate("CockpitHome.openAppointment({appointmentId:'cal.com:chart-fixture',name:'Συνθετικός Ραντεβού'})")
                     expect(page.locator('#visitBriefOpenLatest')).to_be_visible();page.locator('#visitBriefPatientEntry').click()
@@ -172,6 +177,9 @@ def test_browser_single_login_booking_link_latest_and_independent_session(fixtur
                     page.evaluate("CockpitHome.openAppointment({appointmentId:'cal.com:chart-fixture',name:'Συνθετικός Ραντεβού'})")
                     expect(page.locator('#visitBriefOpenLatest')).to_be_visible();page.locator('#visitBriefOpenChart').click()
                 page.locator('#captureOpen').click();page.locator('#captureText').fill('Πρόχειρο')
+                assert page.evaluate("async args=>await CockpitStoredChart.openVisit(...args)",['outside-synthetic-scope',p['source_encounter_id']]) is False
+                expect(page.locator('#captureText')).to_have_value('Πρόχειρο')
+                expect(page.locator('.patient-visit-reader')).not_to_be_visible()
                 page.evaluate("CockpitHome.openAppointment({appointmentId:'cal.com:chart-fixture',name:'Συνθετικός Ραντεβού',date:'2026-10-19'})")
                 expect(overlay).not_to_be_visible();expect(page.locator('#captureText')).to_have_value('Πρόχειρο')
                 page.locator('#captureComposer').get_by_role('button',name='Κλείσιμο',exact=True).click()
