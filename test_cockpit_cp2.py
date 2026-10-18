@@ -129,6 +129,10 @@ def test_browser_receipt_review_timeline_refresh_second_session(setup,tmp_path):
                 expect(row.locator('.patient-followthrough-end')).to_have_attribute('data-complete',str(width==390).lower())
                 expect(points.filter(has_text='Παραλήφθηκε')).to_have_count(0)
                 if width==390:
+                    last=row.locator('.pending-stage').last
+                    undo=last.get_by_role('button',name='Αναίρεση',exact=True).bounding_box()
+                    delete=last.get_by_role('button',name='Διαγραφή υποχρέωσης',exact=True).bounding_box()
+                    assert abs(undo['y']+undo['height']/2-delete['y']-delete['height']/2)<1
                     row.locator('.pending-stage').filter(has_text='✓ Εξετάστηκαν οι εικόνες').get_by_role('button',name='Αναίρεση',exact=True).click()
                     expect(row.locator('.patient-followthrough-end')).to_have_attribute('data-complete','false')
                     expect(row).to_contain_text('✓ Παραλήφθηκε το CD')

@@ -1,5 +1,7 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-18 COMPACT CD ACTION CORRECTION TESTED:** On `codex/cockpit-compact-cd-actions`, reduce only rail action-button font/padding and gap so the two-stage CD undo/delete pair fits its column. Source-proven live wrapping remains the reason; state semantics unchanged. All13CP2 tests PASS, with an added actual-browser multistage center-alignment assertion and retained generic/permanent regressions. Existing55affected/3Node and R2d3c616c evidence reused. Next one bounded R1 delta closure, final CI/native release, then retry unchanged read-only live proof `0be4936`.
+
 > **2026-10-18 #193 LIVE MULTISTAGE LAYOUT FINDING:** Read-only39129465429 shows finalCDstage undo(77.875px) anddelete(80.5px)+gap wrap onto separate rows at1280; not merely a top-versus-center test issue. Signedsource and task unchanged. Next bounded R1 CSS sizing correction and explicit multistage geometry regression; existing R2 permanent-removal review/evidence retained, no state/auth redesign.
 
 > **2026-10-18 #193 LIVE LAYOUT ASSERTION INVESTIGATION:** Read-only run39129251840 stopped compact-inline withAssertionError before any mutation. Candidate cause is multi-stage button alignment/wrapping; no product PASS inferred. Next collect safe marked-only geometry and source visibility to distinguish test strictness from layout defect, then bounded correction/review only if needed. No production destructive actions.
