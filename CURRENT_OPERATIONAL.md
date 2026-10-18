@@ -1,5 +1,7 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-18 #185 MERGED / NATIVE DEPLOY NEXT:** Squash7e0e42a0a5af4268f7ae7c2e775feb099b5449d0 at08:58:28UTC. Same reviewed/tested real obligation auth/popup/reversible deletion owner, no schema/env/network/provider change. Durable local checkpoint before existing Render native deploy observation; next exact-source LIVE then marked synthetic proofbfc1b67. Real-patient state untouched.
+
 > **2026-10-18 #185 AFFECTED CI PASS / MERGE NEXT:** Published8dd49cfb1c7949e92690bf3d8fac8497916d2936, reviewedruntimea4c0ac9. Capture39113385516, Home39113385463, Brief39113385434, Demo39113385450 and canonical39113385452 SUCCESS. Known unrelated L0 design-only scope39113385514 rejection separately verified; no related contract/runtime failure. Durable local checkpoint before authorized squash/native deploy, then fixed marked fixture same-auth popup/lifecycle proofbfc1b67, no provider/newvisit/real-patient writes.
 
 > **2026-10-18 #185 OPEN / R2 FIDELITY PASS:** PRhttps://github.com/athpapachr-cmd/osteoporosis/pull/185 runtimea4c0ac9bd163c2f4aed3244214f1f9d830099e30 independently reviewed PASS COMPLETE_FOR_DECLARED_SCOPE, no material findings. Design3167c9c retained; marked fixture now intentionally shares normal auth.6CP2+56affectedPython/3Node PASS and1280/390 screenshots inspected. Next final affectedCI/canonical guard, authorized squash/native deploy and existing marked synthetic popup/lifecycle proof; no real patient writes/provider or schema/env/network changes.
