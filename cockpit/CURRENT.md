@@ -1,5 +1,7 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-18 #189 LIVE PROBE ASSERTION CORRECTION:** Run39126097681 stopped normal-chart before any task/provider mutation: verification script reads template.textContent, but template text belongs to template.content.textContent. Runtime unchanged. Next correct only verification DOM read then rerun same bounded marked proof; no source/clinical-state issue inferred.
+
 > **2026-10-18 #189 DEPLOYED / LIVE SYNTHETIC PROOF NEXT:** Renderdep-dbabcne1egvs73dgfoeg LIVE exact6d46974e26dde13fe81d93bb5d7e532748730a74, finished12:08:41UTC. Durable local checkpoint before verification-onlyb0e18b7 dispatch: actual marked resolvedCD remove/keep/restore with approvedstages preserved1280/390;2synthetic provider drafts compare missingBP toexplicitagreedBP, noSave/realtext. Next inspect safeoutputs/screenshots and finalcloseout ifPASS.
 
 > **2026-10-18 #189 MERGED / NATIVE DEPLOY NEXT:** Squash6d46974e26dde13fe81d93bb5d7e532748730a74 at12:06:51UTC. Reviewed simplecontrols+resolvedremoval/sourcefidelity and bounded startupwait, affectedCI PASS. Durable local checkpoint before existing nativeRender observation; next exactLIVE then marked-onlyproofb0e18b7. No schema/auth/env/network or real-patient writes.
