@@ -1,5 +1,7 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-18 #201 CORRECTED NATIVE DEPLOY OBSERVED:** Renderdep-dbagu50ae00c739oua3g update_in_progress exacta8b0a59eabf611ca18ebfa1f9bb4a6877bcd4317; nativeautodeploy reused. NextLIVE then readonlyactualagenda/Home-next inclusion; no patient/link/task mutation.
+
 > **2026-10-18 #201 MERGED / CORRECTED SOURCE DEPLOY NEXT:** Squasha8b0a59eabf611ca18ebfa1f9bb4a6877bcd4317 at18:25:21UTC. Reviewed all-category agenda source unchanged. Durable checkpoint before nativeRender observation; exactsourceLIVE then readonlyfullagenda/Home-next proof42fb63e.
 
 > **2026-10-18 #201 FINAL AFFECTED CI PASS / MERGE NEXT:** Publisheda4b9c0214672787c40fc453dc018d33b332f1499, reviewed6c4bed6. Calendar39153829143/Home39153829180/Brief39153829205/Capture39153829246/Demo39153829211/canonical39153829230 SUCCESS. Existing unrelated L0allowlist39153829098 inspected. Durable checkpoint before authorizedsquash/native correction release and fullagenda proof42fb63e; #200scopednavigation evidence retained.
