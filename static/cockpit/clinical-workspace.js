@@ -53,6 +53,9 @@
  }
  function open(row){
    if(window.CockpitStoredChart?.canLeave&&!window.CockpitStoredChart.canLeave())return;
+   if(row.kind==='appointment'&&!row.patientId&&window.CockpitPatientEntry&&!window.CockpitSynthetic){
+     window.CockpitVisitBrief?.invalidate();window.CockpitPatientEntry.open({name:row.name});return;
+   }
    window.CockpitStoredChart?.reset();
    if(window.CockpitStoredChart && row.patientId && !window.CockpitVisitBrief?.bookingVerification()){
      window.CockpitVisitBrief?.invalidate();

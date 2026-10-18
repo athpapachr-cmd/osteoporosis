@@ -86,6 +86,11 @@ def test_browser_shared_entry_and_late_results(setup,tmp_path):
                 page.locator('#patientEntry').screenshot(path=str(tmp_path/f'patient-entry-{width}.png'))
                 page.locator('.patient-entry-match').filter(has_text='1960-01-01').get_by_role('button',name='Άνοιγμα καρτέλας').click()
                 expect(page.locator('#visitSelectedName')).to_have_text('Συνθετικός Είσοδος');assert 'chart='+old['patient_id'] in page.url
+                # The dated schedule popover delegates to this same public appointment entry.
+                page.evaluate("window.CockpitHome.openAppointment({name:'Συνθετικός Είσοδος',appointmentId:'day-schedule-fixture'})")
+                expect(page.locator('#patientEntryName')).to_have_value('Συνθετικός Είσοδος')
+                expect(page.locator('.patient-entry-match')).to_have_count(2)
+                page.locator('#patientEntry').get_by_role('button',name='Κλείσιμο',exact=True).click()
                 page.goto(base+'/static/cockpit/visit-capture/?patient_id='+new_id)
                 expect(page.locator('#captureComposer')).to_be_visible();expect(page.locator('#captureText')).to_be_visible()
                 assert '/visit-capture/' not in page.url;assert page.locator('#candidateInput').count()==0
