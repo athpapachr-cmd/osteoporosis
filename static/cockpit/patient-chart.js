@@ -186,6 +186,7 @@
         path(`M ${last.x} ${last.y} H ${track.scrollWidth-16}`,'journey-future');
         for(const node of nodes){const from=center(node.querySelector('.patient-journey-dot'));
           for(const stages of node.querySelectorAll('.patient-followthrough-rail')){
+            if(!stages.closest('.patient-followthrough-branch').open)continue;
             const dot=stages.querySelector('.patient-followthrough-dot'),stop=stages.querySelector('.patient-followthrough-stop');
             if(!dot||!stop||!dot.getClientRects().length)continue;
             const to=center(dot),end=center(stop);
