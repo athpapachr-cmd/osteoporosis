@@ -1,5 +1,7 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-18 #183 DEPLOYED / LIVE STATIC COPY PROOF NEXT:** Renderdep-dba835e7bikc73ec74o0 LIVE exact7a7f445a05575b70d4d48a4039cdad41eead59cb, finished08:23:18UTC. Durable local checkpoint before verification-only6ab0874 dispatch: existing marked chart via normal capture route, actualClipboardwrite/read equals staticvisibleprompt, draftpreservation/expandabletext/1280/390/nooverflow. No provider/clinical/patientwrites. Next inspect safe screenshots and publish docs-only closeout.
+
 > **2026-10-18 #183 MERGED / NATIVE DEPLOY NEXT:** Squash7a7f445a05575b70d4d48a4039cdad41eead59cb at08:21:40UTC. Same reviewed/tested static prompt+clipboard UI. Durable local checkpoint before Render observation; next exact-sourceLIVE then read/copy-only markedfixture proof6ab0874, no model or clinicalwrite.
 
 > **2026-10-18 #183 AFFECTED CI PASS / MERGE NEXT:** Publisheda1fb44aafce1b7814e0cd08bb92575425680564a, reviewedruntimea0cf7c6. Capture39111019531 (including actualClipboard/browser and existing entry/CP1/CP2), Home39111019480, Brief39111019518, Demo39111019549 and canonical39111019508 SUCCESS. Known unrelated L0 design-only allowlist39111019523 rejection verified. Durable local checkpoint before PO-authorized squash/native deploy, then marked-fixture static clipboard live proof6ab0874. No provider/backend/auth/clinical write change.
