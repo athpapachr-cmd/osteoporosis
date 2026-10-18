@@ -6,6 +6,7 @@ clinical read requires an independent explicit confirmation in that response onl
 """
 from __future__ import annotations
 
+import json
 import hashlib
 import hmac
 import os
@@ -16,9 +17,9 @@ from uuid import uuid4
 from zoneinfo import ZoneInfo
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field, ConfigDict
-from sqlalchemy import Column, DateTime, Integer, String, select, update
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel, Field, ConfigDict, UUID4, field_validator
+from sqlalchemy import Column, DateTime, Integer, String, select, update, inspect
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session
 from sqlalchemy.exc import IntegrityError
@@ -212,9 +213,9 @@ def _enabled() -> bool:
     ))
 
 
-async def _fresh_booking(uid: str):
+async def _fresh_booking(uid: str, target_date: date | None = None):
     """Same authenticated Reception schedule source/model as clinical_calendar."""
-    target = _utcnow().astimezone(CYPRUS).date()
+    target = target_date or _utcnow().astimezone(CYPRUS).date()
     url = os.environ.get("RECEPTION_SCHEDULE_CONTEXT_URL", "").strip()
     key = os.environ.get("CLINICAL_INGEST_KEY", "").strip()
     if not url or not key:
@@ -236,7 +237,7 @@ async def _fresh_booking(uid: str):
                 or not schedule.coverage_start <= target <= schedule.coverage_end
                 or len(schedule.appointments) > 2000):
             raise ValueError("Reception schedule not fresh/complete")
-        matches = [item for item in schedule.appointments if item.uid == uid]
+        matches = [item for item in schedule.appointments if (item.uid if item.uid.startswith('cal.com:') else 'cal.com:'+item.uid) == (uid if uid.startswith('cal.com:') else 'cal.com:'+uid)]
         if len(matches) != 1:
             raise HTTPException(409, "Booking missing or UID ambiguous")
         booking = matches[0]
@@ -417,6 +418,9 @@ def attach_visit_brief_routes(
     namespace=NAMESPACE, patient_ids=None, clinician_role="clinician",
 ) -> None:
     """Attach staff-only routes. DDL is applied by a reviewed migration, never by a read/boot."""
+    if namespace == NAMESPACE:
+        attach_chart_booking_routes(router,engine,protected)
+
     async def fresh_booking(uid, actor, event):
         try:
             return await booking_loader(uid)
@@ -650,3 +654,144 @@ def attach_visit_brief_routes(
                      "occurred_at": item.occurred_at.isoformat(),
                      "booking_uid": item.booking_uid, "revision": item.revision}
                     for item in rows]
+
+class ChartBookingIntent(BookingIntent):
+    target_date: date | None = None
+    @field_validator('booking_uid')
+    @classmethod
+    def canonical_uid(cls,value):
+        uid=value if value.startswith('cal.com:') else 'cal.com:'+value
+        if len(uid)>160:raise ValueError('Booking identifier too long')
+        return uid
+
+class ChartBookingSelection(ChartBookingIntent):
+    patient_id: str = Field(min_length=1, max_length=120)
+    expected_revision: int = Field(ge=0)
+    observed_booking: str = Field(pattern=r"^[0-9a-f]{64}$")
+    replace_existing: bool = False
+    request_id: UUID4
+
+class ChartBookingUnlink(ChartBookingIntent):
+    expected_revision: int = Field(ge=1)
+    request_id: UUID4
+
+
+def _chart_reference(booking):
+    # An explicit doctor's chart choice, not an upstream identity assertion.
+    raw=json.dumps([NAMESPACE,booking.uid,booking.patient_display_name],ensure_ascii=False,separators=(',',':'))
+    return 'chart_selection:'+hmac.new(os.environ.get('CLINICAL_DATA_KEY','').encode(),raw.encode(),hashlib.sha256).hexdigest()[:48]
+
+
+def _latest_chart_summary(db,patient_id):
+    """Current stored chart summary; deliberately distinct from appointment-as-of Brief."""
+    now=_utcnow();today=now.astimezone(CYPRUS).date()
+    rows=db.scalars(select(EncounterORM).where(EncounterORM.patient_id==patient_id,
+        EncounterORM.status.in_(['completed','amended'])).order_by(EncounterORM.encounter_date.desc(),EncounterORM.updated_at.desc()).limit(100)).all()
+    for row in rows:
+        day=_day(row.encounter_date);stamp=(row.payload_json or {}).get('_visit_capture_v1',{})
+        signed=_utc(stamp.get('signed_at'))
+        if not day or day>today or not stamp.get('signed') or not signed or signed>now:continue
+        try:candidate=VisitCaptureCandidateV1.model_validate(stamp.get('candidate'))
+        except (ValueError,TypeError):continue
+        if candidate.encounter_date!=row.encounter_date:continue
+        roles={s.source_ref:s.role for s in candidate.source_bindings}
+        return {'source_encounter_id':row.id,'date':row.encounter_date,'reason':_text(candidate.reason_for_visit.text),
+            'findings':_facts(candidate.findings,3,roles)+_facts(candidate.clinical_impression,2,roles),
+            'decisions':_facts(candidate.decisions,4,roles)}
+    return None
+
+
+def attach_chart_booking_routes(router,engine,protected):
+    """Normal physician chart association over the existing link/audit owner."""
+    from clinical_pending_one_tap import actor_for
+    def clinician(request:Request):return actor_for(request,None)
+    def no_cache(response:Response):response.headers['Cache-Control']='no-store'
+    secured=protected+[Depends(no_cache)]
+    def ready():
+        inspector=inspect(engine)
+        if not all(inspector.has_table(t.__tablename__) for t in [BookingPatientLinkORM,BookingPatientLinkAuditORM,VisitBriefStaffAuditORM]):
+            raise HTTPException(503,'Chart linkage storage is not installed')
+    def reply(db,row,booking):
+        patient=db.get(PatientORM,row.patient_id)
+        if not patient:raise HTTPException(409,'Linked chart no longer exists')
+        return {'mode':'chart_linked','booking':_booking_card(booking),'revision':row.revision,'linked':True,
+            'patient_id':row.patient_id,'patient_name':(patient.demographics_json or {}).get('full_name') or 'Κλινικός φάκελος',
+            'latest_visit':_latest_chart_summary(db,row.patient_id),
+            'pending':[{'pending_id':p.id,'description':p.description,'status':p.status} for p in db.scalars(select(ClinicalPendingORM).where(ClinicalPendingORM.patient_id==row.patient_id,ClinicalPendingORM.status.in_(tuple(OPEN_PENDING))).order_by(ClinicalPendingORM.updated_at.desc()).limit(20))]}
+    def commit(db):
+        try:db.commit()
+        except IntegrityError:
+            db.rollback();raise HTTPException(409,'Booking link changed; reload') from None
+    async def booking(req):
+        ready();source=await _fresh_booking(req.booking_uid,req.target_date)
+        if not source.patient_display_name.strip():raise HTTPException(409,'Booking attendee is unavailable')
+        return source.model_copy(update={'uid':req.booking_uid})
+
+    @router.post('/visit-brief/chart-read',dependencies=secured)
+    async def chart_read(req:ChartBookingIntent,actor:StaffActor=Depends(clinician)):
+        source=await booking(req)
+        with Session(engine) as db:
+            row=db.get(BookingPatientLinkORM,(NAMESPACE,req.booking_uid))
+            _record_access(db,actor,req.booking_uid,'chart_link_read','allowed')
+            if row and row.state=='chart_linked' and hmac.compare_digest(row.evidence_type,_chart_reference(source)):
+                result=reply(db,row,source)
+            else:result={'mode':'booking_only','booking':_booking_card(source),'revision':row.revision if row else 0,
+                'linked':bool(row and row.state!='revoked'),'replace_required':bool(row),'reason':'choose_chart'}
+            commit(db);return result
+
+    @router.post('/visit-brief/chart-select',dependencies=secured)
+    async def chart_select(req:ChartBookingSelection,actor:StaffActor=Depends(clinician)):
+        source=await booking(req)
+        if not hmac.compare_digest(req.observed_booking,_booking_observation(source)):raise HTTPException(409,'Booking changed since preview')
+        reference=_chart_reference(source);stamp=_utcnow().replace(tzinfo=None)
+        with Session(engine) as db:
+            row=db.scalar(select(BookingPatientLinkORM).where(BookingPatientLinkORM.namespace==NAMESPACE,
+                BookingPatientLinkORM.booking_uid==req.booking_uid).with_for_update())
+            previous=db.get(BookingPatientLinkAuditORM,str(req.request_id))
+            if previous:
+                if (previous.namespace!=NAMESPACE or previous.booking_uid!=req.booking_uid or previous.patient_id!=req.patient_id
+                    or previous.event!='chart_selected' or previous.operator_type!=actor.role or previous.evidence_type!=reference
+                    or previous.revision!=req.expected_revision+1 or not row or row.revision!=previous.revision
+                    or row.patient_id!=req.patient_id or row.state!='chart_linked' or row.evidence_type!=reference):
+                    raise HTTPException(409,'Selection replay conflict')
+                return reply(db,row,source)
+            if not db.get(PatientORM,req.patient_id):raise HTTPException(404,'Patient not found')
+            if req.patient_id in SYNTHETIC_161_PATIENT_IDS:raise HTTPException(404,'Patient outside normal chart scope')
+            if (row.revision if row else 0)!=req.expected_revision:raise HTTPException(409,'Booking link revision changed')
+            if row and (row.patient_id!=req.patient_id or row.state=='revoked' or row.evidence_type!=reference) and not req.replace_existing:
+                raise HTTPException(409,'Explicit replacement required')
+            revision=req.expected_revision+1
+            values=dict(patient_id=req.patient_id,state='chart_linked',revision=revision,evidence_type=reference,confirmed_at=stamp,updated_at=stamp)
+            if row:
+                changed=db.execute(update(BookingPatientLinkORM).where(BookingPatientLinkORM.namespace==NAMESPACE,
+                    BookingPatientLinkORM.booking_uid==req.booking_uid,BookingPatientLinkORM.revision==req.expected_revision).values(**values))
+                if changed.rowcount!=1:raise HTTPException(409,'Booking link changed')
+                db.expire(row)
+            else:
+                row=BookingPatientLinkORM(namespace=NAMESPACE,booking_uid=req.booking_uid,**values);db.add(row)
+            db.add(BookingPatientLinkAuditORM(id=str(req.request_id),namespace=NAMESPACE,booking_uid=req.booking_uid,patient_id=req.patient_id,
+                event='chart_selected',revision=revision,evidence_type=reference,operator_type=actor.role,occurred_at=stamp))
+            _record_access(db,actor,req.booking_uid,'chart_link_select','allowed',req.patient_id,revision)
+            try:db.flush()
+            except IntegrityError:
+                db.rollback();raise HTTPException(409,'Booking link changed; reload') from None
+            result=reply(db,row,source);commit(db);return result
+
+    @router.post('/visit-brief/chart-unlink',dependencies=secured)
+    async def chart_unlink(req:ChartBookingUnlink,actor:StaffActor=Depends(clinician)):
+        # Revocation must remain possible during Reception downtime.
+        ready()
+        with Session(engine) as db:
+            row=db.scalar(select(BookingPatientLinkORM).where(BookingPatientLinkORM.namespace==NAMESPACE,
+                BookingPatientLinkORM.booking_uid==req.booking_uid).with_for_update())
+            prior=db.get(BookingPatientLinkAuditORM,str(req.request_id))
+            if prior:
+                if prior.namespace!=NAMESPACE or prior.booking_uid!=req.booking_uid or prior.operator_type!=actor.role or prior.event!='chart_revoked' or prior.revision!=req.expected_revision+1 or not row or row.state!='revoked' or row.revision!=prior.revision or row.patient_id!=prior.patient_id:
+                    raise HTTPException(409,'Unlink replay conflict')
+                return {'unlinked':True}
+            if not row or row.revision!=req.expected_revision:raise HTTPException(409,'Booking link revision changed')
+            row.state='revoked';row.revision+=1;row.updated_at=_utcnow().replace(tzinfo=None)
+            db.add(BookingPatientLinkAuditORM(id=str(req.request_id),namespace=NAMESPACE,booking_uid=req.booking_uid,patient_id=row.patient_id,
+                event='chart_revoked',revision=row.revision,evidence_type=row.evidence_type,operator_type=actor.role,occurred_at=row.updated_at))
+            _record_access(db,actor,req.booking_uid,'chart_link_revoke','allowed',row.patient_id,row.revision)
+            commit(db);return {'unlinked':True}

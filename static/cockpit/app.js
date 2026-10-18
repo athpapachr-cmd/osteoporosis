@@ -125,6 +125,7 @@
       timeNode.textContent = "—";
       patientNode.textContent = emptyText;
       delete patientNode.dataset.appointmentId;
+      delete patientNode.dataset.appointmentDate;
       typeNode.textContent = "";
       return;
     }
@@ -137,6 +138,7 @@
       : "—";
     patientNode.textContent = row.patient_display_name || "Χωρίς καταχωρημένο όνομα";
     patientNode.dataset.appointmentId = row.appointment_id;
+    patientNode.dataset.appointmentDate=start?new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Nicosia",year:"numeric",month:"2-digit",day:"2-digit"}).format(start):"";
     typeNode.textContent = [row.clinic, row.reason || appointmentCategoryLabels[row.category] || "Ραντεβού"]
       .filter(Boolean).join(" · ");
   }

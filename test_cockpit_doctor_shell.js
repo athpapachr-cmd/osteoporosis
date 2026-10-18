@@ -55,7 +55,7 @@ const windowHandlers=new Map(),windowStub={
 let deferred=null,authenticated=true;
 const mockAppointments=[
  {appointment_id:"cal.com:synthetic-1",patient_display_name:"Συνθετικός Ασθενής Α",
-  start_at:"2026-10-11T07:20:00Z",reason:"Συνθετική οστεοπόρωση"},
+  start_at:"2026-10-10T22:20:00Z",reason:"Συνθετική οστεοπόρωση"},
  {appointment_id:"cal.com:synthetic-2",patient_display_name:"Συνθετικός Ασθενής Β",
   start_at:"2026-10-11T08:40:00Z",reason:"Prolia"}
 ];
@@ -99,6 +99,7 @@ function findButtonContent(title) {
  assert.equal($("doctorPopover").hidden,true);
  assert.equal(windowStub.lastAppointment.patientId,null,"appointment name cannot link a patient");
  assert.equal(windowStub.lastAppointment.appointmentId,"cal.com:synthetic-1");
+ assert.equal(windowStub.lastAppointment.date,"2026-10-11","appointment selection carries Cyprus day across UTC midnight");
 
  $("doctorInboxButton").fire("click");
  assert.equal($("doctorInboxBadge").hidden,true);

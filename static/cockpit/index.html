@@ -8,7 +8,7 @@
   <meta name="description" content="Κεντρική αρχική σελίδα του Clinical Excellence Cockpit." />
   <link rel="stylesheet" href="/static/cockpit/styles.css" />
   <link rel="stylesheet" href="/static/cockpit/clinical-workspace.css" />
-  <link rel="stylesheet" href="/static/cockpit/doctor-shell.css?v=obligation-actions-20261018" />
+  <link rel="stylesheet" href="/static/cockpit/doctor-shell.css?v=chart-continuity-20261018" />
   <link rel="stylesheet" href="/static/cockpit/shared-nav.css" />
 </head>
 <body>
@@ -194,16 +194,16 @@ ENCOUNTER DETAIL
         <p id="visitBriefReason" class="clinical-muted"></p>
         <p id="visitBriefIdentity" class="clinical-identity-note" role="status"></p>
         <section id="visitBriefClinical" class="clinical-brief-sections" hidden>
-          <h3>Προηγούμενη επιβεβαιωμένη επίσκεψη</h3>
+          <h3 id="visitBriefPreviousHeading">Προηγούμενη επιβεβαιωμένη επίσκεψη</h3>
           <div id="visitBriefPrevious"></div>
           <h3>Προηγούμενη απόφαση και σχέδιο</h3>
           <div id="visitBriefPlan"></div>
-          <h3>Καταγεγραμμένες εκκρεμότητες</h3>
+          <h3 id="visitBriefPendingHeading">Καταγεγραμμένες εκκρεμότητες</h3>
           <div id="visitBriefPending"></div>
           <h3 id="visitBriefChecksTitle">Για το ραντεβού</h3>
           <div id="visitBriefChecks"></div>
         </section>
-        <p class="clinical-muted">Πλήρης κλινική σύνοψη και προηγούμενο σχέδιο εμφανίζονται μόνο μετά από επιβεβαιωμένη σύνδεση με τον προστατευμένο φάκελο.</p>
+        <p id="visitBriefLinkNote" class="clinical-muted">Πλήρης κλινική σύνοψη και προηγούμενο σχέδιο εμφανίζονται μόνο μετά από επιβεβαιωμένη σύνδεση με τον προστατευμένο φάκελο.</p>
         <p id="visitBriefFreshness" class="clinical-muted"></p>
         <button id="visitBriefPatientEntry" type="button" class="clinical-primary">Αναζήτηση / Νέα καρτέλα</button>
         <button id="visitBriefChoosePatient" type="button" class="clinical-secondary">Σύνδεση με το ραντεβού · προαιρετικά</button>
@@ -404,12 +404,12 @@ ENCOUNTER DETAIL
 
 Μην περιλαμβάνεις ονοματεπώνυμο, τηλέφωνο ή άλλα αναγνωριστικά ασθενούς. Επέστρεψε μόνο τη σύνοψη σε απλό κείμενο, χωρίς JSON ή υποχρεωτικές ειδικές επικεφαλίδες.</template>
 
-  <script src="/static/cockpit/clinical-workspace.js" defer></script>
-  <script src="/static/cockpit/visit-brief.js" defer></script>
-  <script src="/static/cockpit/app.js" defer></script>
-  <script src="/static/cockpit/patient-chart.js?v=obligation-actions-20261018" defer></script>
-  <script src="/static/cockpit/patient-entry.js?v=patient-entry-20261018" defer></script>
-  <script src="/static/cockpit/doctor-shell.js" defer></script>
+  <script src="/static/cockpit/clinical-workspace.js?v=chart-continuity-20261018" defer></script>
+  <script src="/static/cockpit/visit-brief.js?v=chart-continuity-20261018" defer></script>
+  <script src="/static/cockpit/app.js?v=chart-continuity-20261018" defer></script>
+  <script src="/static/cockpit/patient-chart.js?v=chart-continuity-20261018" defer></script>
+  <script src="/static/cockpit/patient-entry.js?v=chart-continuity-20261018" defer></script>
+  <script src="/static/cockpit/doctor-shell.js?v=chart-continuity-20261018" defer></script>
   <script src="/static/cockpit/shared-nav.js" defer></script>
 </body>
 </html>
