@@ -1,15 +1,17 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Literal, Optional
 from uuid import uuid4
+from zoneinfo import ZoneInfo
 import os
 import secrets
 import unicodedata
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response
+from pydantic import BaseModel, Field, UUID4
 from sqlalchemy import Column, DateTime, JSON, String, delete, select, func
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session
 
@@ -118,6 +120,14 @@ def _patient_matches_search(patient: PatientORM, search_terms: List[str]) -> boo
 class PatientUpsert(BaseModel):
     patient_id: str = Field(min_length=1, max_length=120)
     demographics: Dict[str, Any] = Field(default_factory=dict)
+
+
+class PatientCreate(BaseModel):
+    model_config = {"extra": "forbid", "str_strip_whitespace": True}
+    creation_id: UUID4
+    full_name: str = Field(min_length=2, max_length=200)
+    dob: Optional[date] = None
+    phone: Optional[str] = Field(default=None, max_length=60)
 
 
 class PatientSummary(BaseModel):
@@ -629,6 +639,52 @@ def build_clinical_router(engine: Engine) -> APIRouter:
     @router.get("/status", response_model=ClinicalStatus, dependencies=protected)
     def clinical_status() -> ClinicalStatus:
         return ClinicalStatus(database_dialect=engine.dialect.name, protected=True)
+
+    @router.post("/patients/create", response_model=PatientSummary, dependencies=protected)
+    async def create_patient(request: Request, response: Response) -> PatientSummary:
+        # Strict create-only adapter over the existing registry. No upsert on retries.
+        raw = bytearray()
+        async for chunk in request.stream():
+            raw.extend(chunk)
+            if len(raw) > 8192:
+                raise HTTPException(413, "Patient form too large", headers={"Cache-Control": "no-store"})
+        try:
+            req = PatientCreate.model_validate_json(bytes(raw))
+            name = " ".join(req.full_name.split())
+            if len(name) < 2 or (req.dob and req.dob > datetime.now(ZoneInfo("Asia/Nicosia")).date()):
+                raise ValueError("Invalid patient fields")
+            if not name.isprintable() or (req.phone and not req.phone.isprintable()):
+                raise ValueError("Invalid patient fields")
+        except Exception:
+            raise HTTPException(422, "Check name, birth date and phone", headers={"Cache-Control": "no-store"}) from None
+        demographics = {"full_name": name}
+        if req.dob:
+            demographics["dob"] = req.dob.isoformat()
+        if req.phone:
+            demographics["phone"] = req.phone
+        patient_id = "patient-" + str(req.creation_id)
+        response.headers["Cache-Control"] = "no-store"
+        def replay(session, patient):
+            if patient.demographics_json != demographics:
+                raise HTTPException(409, "Creation request already used; open saved chart", headers={"Cache-Control": "no-store"})
+            return patient_summary(session, patient)
+        with Session(engine) as session:
+            existing = session.get(PatientORM, patient_id)
+            if existing:
+                return replay(session, existing)
+            now = utcnow()
+            patient = PatientORM(patient_id=patient_id, demographics_json=demographics, created_at=now, updated_at=now)
+            session.add(patient)
+            try:
+                session.commit()
+            except IntegrityError:
+                session.rollback()
+                existing = session.get(PatientORM, patient_id)
+                if not existing:
+                    raise
+                return replay(session, existing)
+            session.refresh(patient)
+            return patient_summary(session, patient)
 
     @router.post("/patients", response_model=PatientSummary, dependencies=protected)
     def upsert_patient(req: PatientUpsert) -> PatientSummary:

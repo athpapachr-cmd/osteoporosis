@@ -113,11 +113,14 @@
       }
       if(item.source_excerpt)el(copy,'blockquote',item.source_excerpt);
       button(copy,'Δημιουργήθηκε στην επίσκεψη · '+date(item.source_date),async()=>{
-        if(patientId!==id)await open(id);const target=$('visit-'+item.source_encounter_id);if(target){target.hidden=false;target.open=true;target.scrollIntoView({behavior:'smooth'});}
+        if(patientId!==id){if(!canLeave())return;await open(id);}const target=$('visit-'+item.source_encounter_id);if(target){target.hidden=false;target.open=true;target.scrollIntoView({behavior:'smooth'});}
       });
     }
   }
+  function canLeave(){if(!composer.hidden){feedback.textContent='Κλείσε ή αποθήκευσε την τρέχουσα καταγραφή πριν αλλάξεις ασθενή.';composer.scrollIntoView({behavior:'smooth'});return false;}return true;}
+  function beginVisit(){if(!patientId)return;resetDraft();composer.hidden=false;pendingControls(true);visitDate.value=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Nicosia',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());input.focus();composer.scrollIntoView({behavior:'smooth'});}
   async function open(id){
+    window.dispatchEvent(new Event('cockpit:patient-opening'));
     reset();const ticket=generation;el(chart,'p','Φόρτωση καρτέλας…');
     $('visitWorkspaceHome').hidden=true;$('visitWorkspacePatient').hidden=false;
     for(const name of ['visitIdentityStatus','visitIdentityNote','visitBookingConfirmation','visitChoosePatient','visitDiaComposer','visitDiaPreview'])$(name).hidden=true;
@@ -127,9 +130,7 @@
       $('visitSelectedReason').textContent=data.demographics.dob?'Γέννηση: '+date(data.demographics.dob):'';
       $('visitSelectedSource').textContent=data.demographics.synthetic_scenario?'ΔΟΚΙΜΑΣΤΙΚΗ ΚΑΡΤΕΛΑ':'ΚΑΡΤΕΛΑ ΑΣΘΕΝΟΥΣ';
       const heading=el(chart,'div','','patient-chart-heading');el(heading,'h2','Κλινική συνέχεια');
-      button(heading,'Νέα επίσκεψη · Σύνοψη Dia',()=>{
-        resetDraft();composer.hidden=false;pendingControls(true);visitDate.value=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Nicosia',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());input.focus();composer.scrollIntoView({behavior:'smooth'});
-      }).id='captureOpen';
+      button(heading,'Νέα επίσκεψη · Σύνοψη Dia',beginVisit).id='captureOpen';
       const grid=el(chart,'div','','patient-chart-grid'),overview=el(grid,'section','','patient-chart-card');el(overview,'h3','Κλινική εικόνα');
       const latest=data.visits[0];const c=latest?.clinical;
       if(c){el(overview,'p','Από την επίσκεψη '+date(latest.date));facts(overview,'Λόγος παρακολούθησης',[c.reason_for_visit]);facts(overview,'Εκτίμηση',c.clinical_impression);facts(overview,'Σχέδιο',c.decisions);}
@@ -209,7 +210,7 @@
         facts(body,'Οδηγίες επανεπικοινωνίας',v.safety_net);facts(body,'Αβεβαιότητες',v.uncertainties);
         if(origin.length){el(body,'h4','Υποχρεώσεις που δημιουργήθηκαν');renderPending(el(body,'div'),id,origin);}
       }
-      const url=new URL(location.href);url.searchParams.set('chart',id);history.replaceState(null,'',url);
+      const url=new URL(location.href);url.searchParams.set('chart',id);history.replaceState(null,'',url);return id;
     }catch(e){if(ticket===generation){chart.replaceChildren();el(chart,'p',e.message);}}
   }
   const labels={reason_for_visit:'Λόγος επίσκεψης',visit_type:'Τύπος επίσκεψης',specialty:'Ειδικότητα',what_changed:'Μεταβολές',findings:'Ιστορικό και ευρήματα',clinical_impression:'Κλινική εκτίμηση',coding:'Κωδικοποίηση',gesy_coded:'Κωδικοί',coding_complete:'Πλήρης κωδικοποίηση',decisions:'Αποφάσεις',medications:'Φάρμακα',pending:'Προτεινόμενες υποχρεώσεις',next_contact:'Επόμενη επαφή',safety_net:'Οδηγίες επανεπικοινωνίας',uncertainties:'Αβεβαιότητες',text:'Περιγραφή',type:'Είδος',responsible_role:'Υπεύθυνος',certainty:'Βεβαιότητα',region:'Περιοχή',name:'Φάρμακο',action:'Ενέργεια',dose:'Δόση',frequency:'Συχνότητα',route:'Οδός',duration:'Διάρκεια',value:'Τιμή',unit:'Μονάδα',approximate:'Κατά προσέγγιση',item_type:'Είδος υποχρέωσης',description:'Περιγραφή',trigger:'Προϋπόθεση',status:'Κατάσταση',external_dependency:'Εξωτερική εξάρτηση',actor:'Από ποιον',condition:'Προϋπόθεση',review_date:'Ημερομηνία επανελέγχου',when:'Ημερομηνία',time:'Ώρα',purpose:'Σκοπός',assess:'Προς αξιολόγηση',code:'Κωδικός',system:'Σύστημα',title:'Τίτλος',direction:'Μεταβολή'};
@@ -271,12 +272,13 @@
     try{const data=await request('/clinical-updates?scope='+scope);if(ticket!==generation||!active())return;target.replaceChildren();
       button(target,scope==='test'?'Πραγματικοί φάκελοι':'Δοκιμαστικός ασθενής',()=>renderUpdates(target,active,close,scope==='test'?'real':'test'));
       el(target,'p',data.items.length?'Υποχρεώσεις από αποθηκευμένες επισκέψεις · έως 100 πρόσφατες':'Δεν έχουν καταγραφεί υποχρεώσεις.');
-      for(const item of data.items){const b=button(target,'',()=>{close();open(item.patient_id);});b.className='doctor-action-row';const copy=el(b,'span');el(copy,'strong',item.patient_name);el(copy,'small',item.description);el(copy,'small',(item.checkpoints?.next_checkpoint?.question||statuses[item.status]||item.status)+' · '+date(item.source_date));el(b,'span','›');}
+      for(const item of data.items){const b=button(target,'',()=>{close();if(canLeave())open(item.patient_id);});b.className='doctor-action-row';const copy=el(b,'span');el(copy,'strong',item.patient_name);el(copy,'small',item.description);el(copy,'small',(item.checkpoints?.next_checkpoint?.question||statuses[item.status]||item.status)+' · '+date(item.source_date));el(b,'span','›');}
     }catch(e){if(ticket===generation&&active()){target.replaceChildren();el(target,'p',e.message);}}
   }
-  $('visitBackHome').addEventListener('click',()=>{reset();const u=new URL(location.href);u.searchParams.delete('chart');history.replaceState(null,'',u);});
+  $('visitBackHome').addEventListener('click',()=>{if(!canLeave())return;reset();const u=new URL(location.href);u.searchParams.delete('chart');history.replaceState(null,'',u);});
   window.addEventListener('clinical:unauthenticated',reset);
   window.addEventListener('clinical:authenticated',()=>{reset();const id=new URL(location.href).searchParams.get('chart');if(id)open(id);});
-  window.CockpitStoredChart={open,reset,renderPending,renderUpdates};
+  window.CockpitStoredChart={open(id){if(!canLeave())return;return open(id);},reset,renderPending,renderUpdates,beginVisit,canLeave,cancelPendingRead(){generation++;}};
+  window.addEventListener('beforeunload',e=>{if(!composer.hidden&&(input.value.trim()||candidate||busy)){e.preventDefault();e.returnValue='';}});
   const id=new URL(location.href).searchParams.get('chart');if(id)open(id);
 })();

@@ -327,6 +327,13 @@
 
   $("visitConfirmBooking").addEventListener("click",confirmSelection);
   $("visitBriefUnlink").addEventListener("click",revoke);
+  const manualEntry=document.getElementById('visitBriefPatientEntry');
+  if(manualEntry)manualEntry.addEventListener('click',()=>{
+    const name=String(state.view?.name||$('visitBriefName').textContent||'');
+    if(window.CockpitStoredChart?.canLeave&&!window.CockpitStoredChart.canLeave())return;
+    $('visitBriefClose').click();
+    window.CockpitPatientEntry?.open({name});
+  });
   $("visitBriefOpenChart").addEventListener("click",()=>{
     if(!state.patientId)return;
     if(window.CockpitStoredChart){
