@@ -282,3 +282,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
 .patient-entry-match button{white-space:normal;flex-shrink:0;max-width:45%}
 #patientEntryHome{margin-top:10px}#patientEntryCreate{margin:12px 0}
 @media(max-width:500px){.patient-entry-dialog{padding:18px}.patient-entry-demographics{display:block}}
+
+.capture-dia-prompt{margin:16px 0;padding:16px;border:1px solid #dce6e7;border-radius:12px;background:#f4f9f8}
+.capture-dia-prompt details{margin-top:12px}.capture-dia-prompt summary{cursor:pointer;color:#267875}
+.capture-dia-prompt pre{font:inherit;font-size:.9rem;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;margin:14px 0 0}
+.capture-dia-prompt>button{white-space:normal;max-width:100%}
+.capture-dia-prompt p:empty{display:none}

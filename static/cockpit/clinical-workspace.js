@@ -248,16 +248,17 @@
    $("visitDiaPreview").hidden=!has;
    $("visitDiaPreviewText").textContent=has?(state.parts[state.tab]||"Δεν δόθηκε κείμενο για αυτή την ενότητα."):"";
  }
- async function copy(){
-   const content=$("visitDiaPrompt").textContent.trim();
+ async function copy(content,status){
+   content=typeof content==="string"?content:$("visitDiaPrompt").textContent.trim();
+   status=status||$("visitDiaCopyStatus");
    try{
      if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(content);
      else{
        const t=document.createElement("textarea");t.value=content;document.body.append(t);t.select();
        const okay=document.execCommand("copy");t.remove();if(!okay)throw Error("copy refused");
      }
-     $("visitDiaCopyStatus").textContent="Αντιγράφηκε. Επικόλλησε την οδηγία στο Dia.";
-   }catch(e){$("visitDiaCopyStatus").textContent="Η αντιγραφή δεν επιτράπηκε.";}
+     status.textContent="Αντιγράφηκε. Επικόλλησε την οδηγία στο Dia.";return true;
+   }catch(e){status.textContent="Η αντιγραφή δεν επιτράπηκε. Επίλεξε και αντέγραψε την οδηγία από το κείμενο.";return false;}
  }
  ["previous","current","next"].forEach(prefix=>{
    $("visitSidebar"+prefix[0].toUpperCase()+prefix.slice(1)).addEventListener("click",()=>showBrief(prefix));
@@ -322,6 +323,7 @@
  // in the main page or perform another calendar request at startup.
  if(typeof window!=="undefined"){
    window.CockpitHome={
+     copyDiaPrompt:copy,
      openAppointment(row){
        if(!row||!row.appointmentId)return;
        const home=document.getElementById("doctorMainView");
