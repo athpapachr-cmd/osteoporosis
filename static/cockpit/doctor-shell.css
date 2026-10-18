@@ -309,3 +309,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
 .pending-removal-confirmation{flex-basis:100%;font-size:.85rem}
 .pending-removal-confirmation p{margin:4px 0 8px}
 .pending-removal-confirmation button+button{margin-left:6px}
+
+.patient-followthrough-rail .pending-checkpoint-actions{gap:4px}
+.patient-followthrough-rail .pending-checkpoint-actions button{font-size:.75rem;padding:6px 8px}
