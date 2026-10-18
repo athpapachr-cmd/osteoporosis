@@ -115,13 +115,28 @@ def test_browser_capture_edit_reject_save_refresh_and_second_session(setup,monke
         with sync_playwright() as pw:
             browser=pw.chromium.launch(executable_path=shutil.which('google-chrome') or shutil.which('chromium'))
             for width in [1280,390]:
-                context=browser.new_context(viewport={'width':width,'height':950});page=context.new_page();errors=[]
+                context=browser.new_context(viewport={'width':width,'height':950},permissions=['clipboard-read','clipboard-write']);page=context.new_page();errors=[]
                 page.on('pageerror',lambda e:errors.append(str(e)));page.goto(url)
                 page.locator('#ceGlobalKey').click();page.locator('#ceGlobalKeyInput').fill(KEY)
                 page.locator('#ceGlobalLoginForm button[type=submit]').click()
                 expect(page.locator('#ceGlobalAuthStatus')).to_contain_text('Συνδέθηκες')
                 page.keyboard.press('Escape')
                 page.locator('#captureTestPatient').click();expect(page.locator('#captureOpen')).to_be_visible()
+                page.locator('#captureOpen').click()
+                page.locator('#captureCopyDiaPrompt').click()
+                expect(page.locator('#captureDiaPromptStatus')).to_contain_text('Αντιγράφηκε')
+                copied=page.evaluate('navigator.clipboard.readText()')
+                assert copied==page.locator('#captureDiaPromptText').text_content()
+                assert 'ενεργής επίσκεψης' in copied and 'Δοκιμαστικός ασθενής' not in copied and '1972-01-01' not in copied
+                page.locator('#captureText').fill('Το πρόχειρο παραμένει μετά την αντιγραφή')
+                page.evaluate("()=>{navigator.clipboard.writeText=async()=>{throw new Error('Clipboard denied')};}")
+                page.locator('#captureCopyDiaPrompt').click()
+                expect(page.locator('#captureDiaPromptText')).to_be_visible()
+                expect(page.locator('#captureDiaPromptStatus')).to_contain_text('Επίλεξε και αντέγραψε')
+                expect(page.locator('#captureText')).to_have_value('Το πρόχειρο παραμένει μετά την αντιγραφή')
+                assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
+                page.locator('.capture-dia-prompt').screenshot(path=str(tmp_path/f'dia-prompt-{width}.png'))
+                page.locator('#captureComposer').get_by_role('button',name='Κλείσιμο',exact=True).click()
                 if width==1280:
                     page.locator('#captureOpen').click();page.locator('#captureText').fill(TEXT)
                     page.get_by_role('button',name='Προετοιμασία καταγραφής',exact=True).click()

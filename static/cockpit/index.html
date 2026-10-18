@@ -8,7 +8,7 @@
   <meta name="description" content="Κεντρική αρχική σελίδα του Clinical Excellence Cockpit." />
   <link rel="stylesheet" href="/static/cockpit/styles.css" />
   <link rel="stylesheet" href="/static/cockpit/clinical-workspace.css" />
-  <link rel="stylesheet" href="/static/cockpit/doctor-shell.css?v=patient-entry-20261018" />
+  <link rel="stylesheet" href="/static/cockpit/doctor-shell.css?v=dia-prompt-20261018" />
   <link rel="stylesheet" href="/static/cockpit/shared-nav.css" />
 </head>
 <body>
@@ -394,10 +394,20 @@ ENCOUNTER DETAIL
     </footer>
   </main>
 
+  <template id="visitDiaNaturalPrompt">Σύνταξε στα ελληνικά μια φυσική κλινική σύνοψη της ενεργής επίσκεψης για επικόλληση στο Cockpit, χρησιμοποιώντας μόνο όσα αναφέρονται στα στοιχεία που σου δίνω.
+
+Περιέλαβε τον λόγο επίσκεψης, τις μεταβολές, τα ευρήματα, την κλινική εκτίμηση, τις αποφάσεις και την αγωγή όπως καταγράφηκαν. Πρόσθεσε τις εκκρεμότητες, ποιος αναλαμβάνει κάθε ενέργεια, τον επανέλεγχο και τις οδηγίες επανεπικοινωνίας, μόνο εφόσον αναφέρονται.
+
+Ξεχώρισε τι ζητήθηκε ή προγραμματίστηκε, τι πραγματοποιήθηκε και ποια αποτελέσματα είναι διαθέσιμα. Για CD ή απεικονίσεις ξεχώρισε την παραλαβή του υλικού από την εξέταση των εικόνων. Κατέγραψε καθεμία ως ολοκληρωμένη μόνο αν δηλώνεται ρητά.
+
+Μην επινοείς στοιχεία, φυσιολογικά ή αρνητικά ευρήματα, διαγνώσεις, δοσολογίες ή ημερομηνίες. Μην προσθέτεις συμβουλές ή αλλάζεις τις καταγεγραμμένες αποφάσεις. Αν κάτι είναι ασαφές ή αντιφατικό, δήλωσέ το ως αβεβαιότητα.
+
+Μην περιλαμβάνεις ονοματεπώνυμο, τηλέφωνο ή άλλα αναγνωριστικά ασθενούς. Επέστρεψε μόνο τη σύνοψη σε απλό κείμενο, χωρίς JSON ή υποχρεωτικές ειδικές επικεφαλίδες.</template>
+
   <script src="/static/cockpit/clinical-workspace.js" defer></script>
   <script src="/static/cockpit/visit-brief.js" defer></script>
   <script src="/static/cockpit/app.js" defer></script>
-  <script src="/static/cockpit/patient-chart.js?v=patient-entry-20261018" defer></script>
+  <script src="/static/cockpit/patient-chart.js?v=dia-prompt-20261018" defer></script>
   <script src="/static/cockpit/patient-entry.js?v=patient-entry-20261018" defer></script>
   <script src="/static/cockpit/doctor-shell.js" defer></script>
   <script src="/static/cockpit/shared-nav.js" defer></script>

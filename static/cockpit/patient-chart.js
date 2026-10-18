@@ -14,6 +14,13 @@
   const chart=el($('visitWorkspacePatient'),'section','','patient-chart');chart.id='patientChart';
   const composer=el($('visitWorkspacePatient'),'section','','clinical-dia-composer');composer.id='captureComposer';composer.hidden=true;
   el(composer,'h3','Νέα επίσκεψη από τη σύνοψη Dia');
+  const promptText=$('visitDiaNaturalPrompt').content.textContent.trim();
+  const promptTools=el(composer,'section','','capture-dia-prompt');
+  const promptCopy=button(promptTools,'Αντιγραφή οδηγίας για το Dia',async()=>{if(!await window.CockpitHome.copyDiaPrompt(promptText,promptStatus))promptDetails.open=true;});promptCopy.id='captureCopyDiaPrompt';
+  const promptDetails=el(promptTools,'details');el(promptDetails,'summary','Δες την οδηγία για το Dia');
+  const promptDisplay=el(promptDetails,'pre',promptText);promptDisplay.id='captureDiaPromptText';promptDisplay.tabIndex=0;
+  const promptStatus=el(promptTools,'p','','clinical-muted');promptStatus.id='captureDiaPromptStatus';promptStatus.setAttribute('role','status');
+
   const dateLabel=el(composer,'label','Ημερομηνία επίσκεψης');
   const visitDate=el(dateLabel,'input');visitDate.type='date';visitDate.id='captureDate';
   const inputLabel=el(composer,'label','Σύνοψη επίσκεψης');
@@ -42,7 +49,7 @@
     }return r.json();
   }
   function pendingControls(disabled){for(const b of chart.querySelectorAll('.pending-checkpoint-actions button,.pending-checkpoint-actions select,.pending-stage button'))b.disabled=disabled;}
-  function resetDraft(){pendingControls(false);draftGeneration++;contextId=null;candidate=null;source='';busy=false;input.value='';review.replaceChildren();previews.replaceChildren();feedback.textContent='';saveButton.hidden=true;extractButton.disabled=false;input.disabled=false;visitDate.disabled=false;}
+  function resetDraft(){promptStatus.textContent='';pendingControls(false);draftGeneration++;contextId=null;candidate=null;source='';busy=false;input.value='';review.replaceChildren();previews.replaceChildren();feedback.textContent='';saveButton.hidden=true;extractButton.disabled=false;input.disabled=false;visitDate.disabled=false;}
   function reset(){journeyObserver?.disconnect();journeyObserver=null;generation++;patientId=null;chart.replaceChildren();resetDraft();composer.hidden=true;}
   function facts(parent,title,items){if(!items?.length)return;el(parent,'h4',title);const list=el(parent,'ul');for(const i of items)el(list,'li',typeof i==='string'?i:i.text);}
   function renderPending(target,id,items,branch=false){
