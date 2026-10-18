@@ -1,5 +1,7 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-18 #185 LIVE PROOF PRECONDITION STOP / DIAGNOSE NEXT:** Runtime remainsLIVE7e0e42a / dep-dba8kdjm8hqs73b4sc8g. First proof39113802021 stoppedstage login before any UI mutation (this stage included fixed-chart baseline assertions); no proof success claimed. Next instrument finite baseline diagnostics / select unique received+images checkpoint by keys rather than remembered exact description, rerun only proof; no runtime change or real-patient/provider mutation.
+
 > **2026-10-18 #185 DEPLOYED / LIVE ACTION PROOF NEXT:** Renderdep-dba8kdjm8hqs73b4sc8g LIVE exact7e0e42a0a5af4268f7ae7c2e775feb099b5449d0, finished09:00:18UTC. Durable local checkpoint before verification-onlybfc1b67 dispatch. Proof fixed marked chart now uses same normal clinical-key auth as unmarked patients: popup overview/branch/Updates, notyet/complete/undo, delete/keep/persistedrestore across1280/390; preserve signed source and final received-confirmed/images-pending state. No provider/newvisit/real-patient writes.
 
 > **2026-10-18 #185 MERGED / NATIVE DEPLOY NEXT:** Squash7e0e42a0a5af4268f7ae7c2e775feb099b5449d0 at08:58:28UTC. Same reviewed/tested real obligation auth/popup/reversible deletion owner, no schema/env/network/provider change. Durable local checkpoint before existing Render native deploy observation; next exact-source LIVE then marked synthetic proofbfc1b67. Real-patient state untouched.
