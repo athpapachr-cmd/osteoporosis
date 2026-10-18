@@ -1,5 +1,7 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-18 ATTENTION #191 FINAL R1 CLOSURE PASS / CI NEXT:** Independent2e9cd8cb700be4202b4689123323afef408c78ba PASS COMPLETE_FOR_DECLARED_SCOPE; incomingrefreshidempotent withoutPendingread, prior73db71dapprovalretained. Next publishedfinalhead affectedCI/canonicalguard, authorizednative release and verification-only0eefb5d actualprotectedreads1280/390. No actual names/history captured, no patient/task/providerwrites.
+
 > **2026-10-18 ATTENTION #191 OPEN / IDEMPOTENT INBOX REFRESH CORRECTION:** PRhttps://github.com/athpapachr-cmd/osteoporosis/pull/191;73db71dR1PASS retained. Final source check notes sourceInbox restoration must replace its contents on existing refresh event, otherwise repeated events append placeholder rows. Addedcontent.replaceChildren and finite actualcontroller eventregression; no clinicalread/writesemanticchange. Next bounded delta closure then finalCI/native release; verification-onlyreadscript pendingdispatch afterLIVE.
 
 > **2026-10-18 ATTENTION SEPARATION R1 PASS / RELEASE CI NEXT:** Independent73db71d509c9144e42bf456b95b5da66feb699dc PASS COMPLETE_FOR_DECLARED_SCOPE: canonicaldistinctInbox/tasks, exactpatientrank/group, everyPendingID/action, activefilterbeforelimit/defaultAPIhistory and auth/privacy/late guards preserved. Next publishboundedcorrectionPR/finalaffectedCI/canonicalguard then nativeauthorizedrelease/read-onlyliveproof. No ClinicalInboxintegrationactivation or CP3fullcompletionclaim.
