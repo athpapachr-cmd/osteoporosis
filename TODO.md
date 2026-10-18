@@ -1,5 +1,7 @@
 # TODO.md — Clinical Excellence long-range compass
 
+> **2026-10-18 Historical visit reading corrected:** #196 opens one selected stored visit with its date/reason and Back to chart. Latest summary, trajectory and other visit bodies remain out of that reader; no accumulation across openings. Local/CI two-date and appointment/source navigation plus fixed marked read-only live1280/390 passed. Personal PO use pending, later phases unchanged; exact state in root/Cockpit CURRENT.
+
 > **2026-10-18 Compact task follow-through installed:** #193/#194 reduce branch duplication and place undo/delete together. Trash now offers explicit permanent task removal without restoration; signed visit and private audit remain intact. Local/CI terminal-state tests and read-only live layout proof passed; no production task destruction. Personal PO use pending, later phases unchanged. Exact state in root/Cockpit CURRENT.
 
 > **2026-10-18 Canonical Inbox/task distinction restored:** #191 removes the stored-obligation substitute from Clinical Inbox, groups open obligations under their own patient task view, and shows up to3distinctrecentpatients with latestvisit. Actual-source readonly1280/390 verified. Full incoming-source Inbox integration and selectiveCP3Home/DailyBrief remain planned; this correction does not complete or activate them. Exactstate in root/Cockpit CURRENT.
