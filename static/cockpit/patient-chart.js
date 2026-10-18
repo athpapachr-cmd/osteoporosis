@@ -45,8 +45,8 @@
         if(error?.detail?.code==='provider_budget_exhausted')throw Error('Το διαθέσιμο υπόλοιπο επεξεργασίας έχει εξαντληθεί. Το κείμενό σου διατηρήθηκε· χρειάζεται ανανέωση του υπολοίπου του παρόχου.');
       }
       if(r.status===401)window.dispatchEvent(new Event('clinical:request-login'));
-      throw Error(r.status===401?'Συνδέσου από την Πρόσβαση.':r.status===409?'Ο φάκελος άλλαξε. Άνοιξέ τον ξανά πριν συνεχίσεις.':
-        r.status===502||r.status===503?'Η μετατροπή δεν είναι διαθέσιμη αυτή τη στιγμή. Το κείμενο διατηρήθηκε.':'Η ενέργεια δεν ολοκληρώθηκε. Δοκίμασε ξανά.');
+      const failure=Error(r.status===401?'Συνδέσου από την Πρόσβαση.':r.status===409?'Ο φάκελος άλλαξε. Άνοιξέ τον ξανά πριν συνεχίσεις.':
+        r.status===502||r.status===503?'Η μετατροπή δεν είναι διαθέσιμη αυτή τη στιγμή. Το κείμενο διατηρήθηκε.':'Η ενέργεια δεν ολοκληρώθηκε. Δοκίμασε ξανά.');failure.status=r.status;throw failure;
     }return r.json();
   }
   function pendingControls(disabled){for(const b of chart.querySelectorAll('.pending-checkpoint-actions button,.pending-checkpoint-actions select,.pending-stage button,.pending-open'))b.disabled=disabled;}
@@ -369,10 +369,12 @@
   }
   async function saveAmendment(){
     if(busy||!candidate)return;
-    if(!contextId){await preview();if(!contextId)return;}
-    // First click reviews the task effects; the same button then explicitly saves.
-    if(!previews.querySelector('.amendment-task-review')){await preview();feedback.textContent='Έλεγξε τις υποχρεώσεις και πάτησε ξανά «Αποθήκευση διορθώσεων».';return;}
     const ticket=generation,draftTicket=draftGeneration,id=patientId,editing=amendment;
+    const active=()=>ticket===generation&&draftTicket===draftGeneration&&id===patientId&&editing===amendment&&!composer.hidden;
+    if(!contextId){await preview();if(!active()||!contextId)return;}
+    // First click reviews the task effects; the same button then explicitly saves.
+    if(!previews.querySelector('.amendment-task-review')){await preview();if(active())feedback.textContent='Έλεγξε τις υποχρεώσεις και πάτησε ξανά «Αποθήκευση διορθώσεων».';return;}
+    if(!active())return;
     const body={context_id:contextId,expected_token:editing.expected_token,request_id:editing.request_id,candidate,pending_bindings:candidate.pending.map(p=>pendingBindings.get(p)||null)};
     const serialized=JSON.stringify(body);
     if(editing.submitted&&editing.submitted!==serialized){feedback.textContent='Η προηγούμενη αποθήκευση έχει αβέβαιο αποτέλεσμα. Έλεγξε την καρτέλα πριν κάνεις νέα διόρθωση.';return;}
@@ -382,7 +384,7 @@
     try{await request('/patient/'+encodeURIComponent(id)+'/visit/'+encodeURIComponent(editing.encounter_id)+'/amend',body);
       if(ticket!==generation||draftTicket!==draftGeneration)return;
       await open(id);showVisit(id,editing.encounter_id);window.dispatchEvent(new Event('cockpit:clinical-updates-changed'));
-    }catch(e){if(ticket===generation&&draftTicket===draftGeneration){feedback.textContent=e.message+' Το πρόχειρο διατηρήθηκε. Μπορείς να επαναλάβεις την ίδια αποθήκευση ή να κλείσεις και να ελέγξεις την καρτέλα.';busy=false;controls.forEach((c,i)=>c.disabled=disabled[i]);}}
+    }catch(e){if(active()){if(e.status===422)editing.submitted=null;feedback.textContent=(e.status===422?'Έλεγξε τα πεδία και κράτησε τις νέες υποχρεώσεις ανοικτές. ':e.message+' ')+'Το πρόχειρο διατηρήθηκε. Μπορείς να επαναλάβεις την ίδια αποθήκευση ή να κλείσεις και να ελέγξεις την καρτέλα.';busy=false;controls.forEach((c,i)=>c.disabled=disabled[i]);}}
   }
   async function renderUpdates(target,active,close,scope=patientId==='cockpit-cp1-test'?'test':'real'){const ticket=generation;target.replaceChildren();el(target,'p','Φόρτωση ενημερώσεων…');
     try{const data=await request('/clinical-updates?scope='+scope+'&active_only=true');if(ticket!==generation||!active())return;target.replaceChildren();

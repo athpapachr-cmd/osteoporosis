@@ -142,6 +142,20 @@ def test_temporal_brief_keeps_prior_date_and_signed_content(seeded,monkeypatch):
     assert chart(c)['visits'][0]['clinical']['reason_for_visit']['text']=='Μεταγενέστερη διόρθωση'
 
 
+def test_effective_revision_future_clinical_date_never_resurrects_old_version(seeded,monkeypatch):
+    _,engine,c,eid,path=seeded
+    with Session(engine) as db:
+        row=db.get(EncounterORM,eid);payload=deepcopy(row.payload_json);payload['_visit_capture_v1']['signed_at']='2026-10-01T10:00:00'
+        payload['_visit_capture_v1']['candidate']['encounter_date']='2026-10-01';row.encounter_date='2026-10-01';row.payload_json=payload
+        row.created_at=row.updated_at=datetime(2026,10,1,10);db.commit()
+    monkeypatch.setattr('clinical_visit_amendments.utcnow',lambda:datetime(2026,10,3,10))
+    body=edit(c,path);body['candidate']['encounter_date']='2026-10-09'
+    assert c.post(path+'/amend',json=body).status_code==200
+    from clinical_visit_brief import _minimal_brief
+    with Session(engine) as db:
+        assert _minimal_brief(db,TEST_ID,SimpleNamespace(start_at=datetime(2026,10,5,12,tzinfo=timezone.utc)))['previous_visit'] is None
+
+
 def test_browser_edit_existing_visit_cancel_reextract_save_and_independent_read(seeded,tmp_path,monkeypatch):
     import socket,threading,shutil
     import uvicorn
@@ -167,6 +181,23 @@ def test_browser_edit_existing_visit_cancel_reextract_save_and_independent_read(
                 composer.get_by_role('button',name='Κλείσιμο',exact=True).click();expect(page.locator('.patient-visit:visible')).to_have_count(1)
                 page.get_by_role('button',name='Επεξεργασία επίσκεψης',exact=True).click()
                 if width==1280:
+                    held=[];writes=[]
+                    page.on('request',lambda r:writes.append(r.url) if r.url.endswith('/amend') else None)
+                    def hold_first_preview(route):
+                        if not held:held.append(route)
+                        else:route.continue_()
+                    page.route('**/visit-capture/preview',hold_first_preview)
+                    with page.expect_request('**/visit-capture/preview'):
+                        page.locator('#captureSave').click()
+                    page.wait_for_timeout(50);assert held
+                    composer.get_by_role('button',name='Κλείσιμο',exact=True).click()
+                    page.get_by_role('button',name='Επεξεργασία επίσκεψης',exact=True).click()
+                    composer.get_by_role('button',name='Προεπισκόπηση καταγραφής',exact=True).click()
+                    expect(composer.locator('.amendment-task-review')).to_be_visible()
+                    held[0].fulfill(json={'snapshot':'old','brief':'old','detail':'old','can_save':True})
+                    page.wait_for_timeout(150);assert not writes
+                    expect(page.locator('#captureReview textarea').first).to_have_value('Επανέλεγχος γόνατος')
+                    page.unroute('**/visit-capture/preview')
                     page.locator('#captureReview section[data-field=pending] .capture-field-group').last.get_by_role('button',name='Αφαίρεση',exact=True).click()
                     page.locator('#captureReview').get_by_role('button',name='Προσθήκη · Κλινική εκτίμηση',exact=True).click()
                     page.locator('#captureReview section[data-field=clinical_impression] textarea').fill('Διορθωμένη εκτίμηση')
@@ -174,10 +205,21 @@ def test_browser_edit_existing_visit_cancel_reextract_save_and_independent_read(
                     page.locator('#captureText').fill('Νέα διορθωμένη σύνοψη χωρίς υποχρεώσεις.')
                     composer.get_by_role('button',name='Προετοιμασία καταγραφής',exact=True).click()
                     expect(page.locator('#captureReview section[data-field=pending] .capture-field-group')).to_have_count(0)
+                if width==1280:
+                    composer.get_by_role('button',name='Προσθήκη · Προτεινόμενες υποχρεώσεις',exact=True).click()
+                    task=page.locator('#captureReview section[data-field=pending] > div > .capture-field-group').last
+                    task.get_by_label('Περιγραφή',exact=True).fill('Νέα κλινική εκκρεμότητα')
+                    task.get_by_label('Κατάσταση',exact=False).evaluate("n=>{n.add(new Option('resolved','resolved'));n.value='resolved';n.dispatchEvent(new Event('input'));}")
                 page.locator('#captureReview textarea').first.fill('Διόρθωση '+str(width))
                 composer.get_by_role('button',name='Προεπισκόπηση καταγραφής',exact=True).click()
                 expect(composer.locator('.amendment-task-review')).to_contain_text('Στις διαγραμμένες')
                 page.locator('#captureReview').screenshot(path=str(tmp_path/f'amend-edit-{width}.png'))
+                if width==1280:
+                    page.locator('#captureSave').click();expect(page.locator('#captureStatus')).to_contain_text('κράτησε τις νέες υποχρεώσεις ανοικτές')
+                    expect(composer).to_be_visible()
+                    task.get_by_label('Κατάσταση',exact=False).select_option('open')
+                    composer.get_by_role('button',name='Προεπισκόπηση καταγραφής',exact=True).click()
+                    expect(composer.locator('.amendment-task-review')).to_be_visible()
                 page.locator('#captureSave').click();expect(page.locator('.patient-visit:visible')).to_contain_text('Διόρθωση '+str(width))
                 expect(page.locator('.visit-amendment-history')).to_be_visible()
                 page.reload();page.locator('.patient-journey-point').click();page.get_by_role('button',name='Άνοιγμα',exact=True).click()

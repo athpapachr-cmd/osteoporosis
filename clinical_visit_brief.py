@@ -292,14 +292,14 @@ def _minimal_brief(session: Session, patient_id: str, booking) -> dict:
         versions=[]
         for recorded_date,signed in signed_versions(row):
             clinical_day=_day(recorded_date);signed_at=_utc(signed.get('signed_at'))
-            if not signed.get('signed') or clinical_day is None or clinical_day>local_day or signed_at is None or signed_at>=booking_start:continue
+            if not signed.get('signed') or clinical_day is None or signed_at is None or signed_at>=booking_start:continue
             try:candidate=VisitCaptureCandidateV1.model_validate(signed.get('candidate'))
             except (ValueError,TypeError):continue
             if candidate.encounter_date!=recorded_date:continue
             versions.append((signed_at,clinical_day,candidate))
         if versions:
             signed_at,clinical_day,candidate=max(versions,key=lambda v:v[0])
-            eligible.append((clinical_day,signed_at,row.id,candidate))
+            if clinical_day<=local_day:eligible.append((clinical_day,signed_at,row.id,candidate))
 
     eligible.sort(key=lambda x: (x[0], x[1], x[2]), reverse=True)
     previous = None
