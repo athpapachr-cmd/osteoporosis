@@ -73,15 +73,22 @@ async function fakeFetch(url,opts){
  if(deferred)return deferred.promise;
  return {ok:authenticated,status:authenticated?200:401,json:async()=>mockAppointments};
 }
-vm.runInNewContext(script,{document:doc,window:windowStub,fetch:fakeFetch,
- URLSearchParams,Date,Intl,console});
+class CalendarClock extends Date{constructor(...args){super(...(args.length?args:['2026-12-31T12:00:00Z']));}}
+vm.runInNewContext(script.replace("  function text(message) {","  window.dayRangeForTest=todayRange;\n  function text(message) {"),{document:doc,window:windowStub,fetch:fakeFetch,
+ URLSearchParams,Date:CalendarClock,Intl,console});
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 function findButtonContent(title) {
  return $("doctorPopoverContent").children.find(item=>
    item.tagName==="button" && item.children?.some(c=>
      c.children?.some(n=>n.textContent?.includes(title))));
 }
+function byId(id,node=$('doctorPopoverContent')){if(node.id===id)return node;for(const child of node.children||[]){const found=byId(id,child);if(found)return found;}return null;}
 (async()=>{
+ for(const [day,hours] of [['2026-03-29',23],['2026-10-25',25],['2026-12-31',24]]){
+   const range=windowStub.dayRangeForTest(new Date(day+'T12:00:00Z'));
+   assert.equal((new Date(range.end)-new Date(range.start))/3600000,hours,'Cyprus calendar boundaries '+day);
+ }
+
  assert.equal($("doctorLibraryView").hidden,true);
  assert.equal($("doctorInboxBadge").hidden,true,"no invented unread email count");
  assert.equal($("doctorAttentionList").children.length,4);
@@ -93,6 +100,18 @@ function findButtonContent(title) {
  assert.equal(calendarCalls.length,1);
  assert.match(calendarCalls[0].url,/\/clinical\/calendar\/appointments\?start=/);
  assert.match(calendarCalls[0].url,/&end=/);
+ const todayStart=new URLSearchParams(calendarCalls[0].url.split('?')[1]).get('start');
+ assert.equal(todayStart,'2026-12-30T22:00:00.000Z');
+ byId('doctorDayNext').fire('click');await tick();await tick();
+ assert.match(byId('doctorDayLabel').textContent,/Αύριο/);
+ const tomorrowCall=calls.filter(c=>c.url.startsWith('/clinical/calendar/appointments?')).at(-1);
+ const tomorrowStart=new URLSearchParams(tomorrowCall.url.split('?')[1]).get('start');
+ assert.equal(tomorrowStart,new URLSearchParams(calendarCalls[0].url.split('?')[1]).get('end'));
+ assert.equal(tomorrowStart,'2026-12-31T22:00:00.000Z','next arrow crosses month and year to Jan1');
+ byId('doctorDayPrevious').fire('click');await tick();await tick();
+ assert.equal(new URLSearchParams(calls.filter(c=>c.url.startsWith('/clinical/calendar/appointments?')).at(-1).url.split('?')[1]).get('start'),todayStart);
+ byId('doctorDayNext').fire('click');await tick();await tick();byId('doctorDayToday').fire('click');await tick();await tick();
+ assert.match(byId('doctorDayLabel').textContent,/Σήμερα/);
  const first=findButtonContent("Συνθετικός Ασθενής Α");
  assert.ok(first,"actual protected appointment is actionable");
  first.fire("click");
@@ -149,6 +168,13 @@ function findButtonContent(title) {
  $("doctorDateButton").fire("click");
 
  authenticated=true;
+ let resolveOld;
+ deferred={promise:new Promise(done=>{resolveOld=done;})};
+ $('doctorDateButton').fire('click');
+ deferred=null;byId('doctorDayNext').fire('click');await tick();await tick();
+ resolveOld({ok:true,status:200,json:async()=>[{...mockAppointments[0],patient_display_name:'STALE_TODAY'}]});await tick();await tick();
+ assert.match(byId('doctorDayLabel').textContent,/Αύριο/);assert.ok(!findButtonContent('STALE_TODAY'));
+ $('doctorDateButton').fire('click');
  let resolve;
  deferred={promise:new Promise(done=>{resolve=done;})};
  $("doctorDateButton").fire("click");

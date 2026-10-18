@@ -152,7 +152,7 @@ def test_v3_clinician_workspace_is_existing_home_not_separate_page():
     assert "/clinical/recent-encounters?limit=3" in js
     shell = _read("static/cockpit/doctor-shell.js")
     assert "/clinical/calendar/appointments" in shell
-    assert "Σημερινό πρόγραμμα" in shell
+    assert "Πρόγραμμα ημέρας" in shell
     assert "/clinical/recent-encounters?limit=3" in js
     assert '"/clinical/patients?query="' in js
     assert "clinical-two-panels" in css
