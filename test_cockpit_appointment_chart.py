@@ -42,8 +42,18 @@ def test_explicit_link_replay_persistence_drift_cas_and_revoke(fixture):
     app,engine,c,p,state=fixture
     read=c.post(PATH+'chart-read',json={'booking_uid':'chart-fixture'}).json()
     assert read['mode']=='booking_only' and 'latest_visit' not in read and 'patient_id' not in read
-    body=selection(c,read);r=c.post(PATH+'chart-select',json=body);assert r.status_code==200,r.text
+    body=selection(c,read)
+    original=state['source'];state['source']=original.model_copy(update={'patient_display_name':'   '})
+    assert c.post(PATH+'chart-read',json={'booking_uid':'chart-fixture'}).status_code==409
+    assert c.post(PATH+'chart-select',json=body).status_code==409
+    state['source']=original
+    r=c.post(PATH+'chart-select',json=body);assert r.status_code==200,r.text
     assert r.json()['latest_visit']['source_encounter_id']==p['source_encounter_id']
+    state['source']=original.model_copy(update={'patient_display_name':'\t '})
+    assert c.post(PATH+'chart-read',json={'booking_uid':'chart-fixture'}).status_code==409
+    assert c.post(PATH+'chart-select',json=body).status_code==409
+    with Session(engine) as db:assert db.get(BookingPatientLinkORM,(brief.NAMESPACE,'cal.com:chart-fixture')).state=='chart_linked'
+    state['source']=original
     assert c.post(PATH+'chart-select',json=body).status_code==200
     assert r.headers['cache-control']=='no-store'
     again=login(app).post(PATH+'chart-read',json={'booking_uid':'cal.com:chart-fixture'}).json();assert again['mode']=='chart_linked'
@@ -131,6 +141,8 @@ def test_browser_single_login_booking_link_latest_and_independent_session(fixtur
                 expect(page.locator('#visitBriefOpenLatest')).to_be_visible()
                 expect(page.locator('#visitBriefPrevious')).to_contain_text('Επανέλεγχος γόνατος')
                 overlay.screenshot(path=str(tmp_path/f'appointment-chart-{width}.png'))
+                page.goto(url+'?booking=cal.com%3Achart-fixture&booking_date='+source.start_at.date().isoformat())
+                expect(page.locator('#visitBriefOpenLatest')).to_be_visible()
                 page.locator('#visitBriefOpenLatest').click();expect(page.locator('#visit-'+p['source_encounter_id'])).to_be_visible()
                 if width==1280:
                     page.evaluate("CockpitHome.openAppointment({appointmentId:'cal.com:chart-fixture',name:'Συνθετικός Ραντεβού'})")

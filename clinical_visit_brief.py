@@ -724,6 +724,7 @@ def attach_chart_booking_routes(router,engine,protected):
             db.rollback();raise HTTPException(409,'Booking link changed; reload') from None
     async def booking(req):
         ready();source=await _fresh_booking(req.booking_uid,req.target_date)
+        if not source.patient_display_name.strip():raise HTTPException(409,'Booking attendee is unavailable')
         return source.model_copy(update={'uid':req.booking_uid})
 
     @router.post('/visit-brief/chart-read',dependencies=secured)
