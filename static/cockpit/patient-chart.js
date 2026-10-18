@@ -45,9 +45,10 @@
   function resetDraft(){pendingControls(false);draftGeneration++;contextId=null;candidate=null;source='';busy=false;input.value='';review.replaceChildren();previews.replaceChildren();feedback.textContent='';saveButton.hidden=true;extractButton.disabled=false;input.disabled=false;visitDate.disabled=false;}
   function reset(){generation++;patientId=null;chart.replaceChildren();resetDraft();composer.hidden=true;}
   function facts(parent,title,items){if(!items?.length)return;el(parent,'h4',title);const list=el(parent,'ul');for(const i of items)el(list,'li',typeof i==='string'?i:i.text);}
-  function renderPending(target,id,items){
+  function renderPending(target,id,items,branch=false){
     target.replaceChildren();if(!items.length)el(target,'p','Δεν έχουν καταγραφεί υποχρεώσεις.');
     for(const item of items){const row=el(target,'article','','synthetic-pending-row'),copy=el(row,'div');
+      row.dataset.pendingId=item.pending_id;
       el(copy,'strong',item.description);el(copy,'p',(statuses[item.status]||item.status)+' · '+(roles[item.responsible_role]||item.responsible_role));
       if(item.review_date)el(copy,'p','Επανέλεγχος: '+date(item.review_date));
       const progress=item.checkpoints;
@@ -63,7 +64,7 @@
         finally{if(ticket===generation&&captureOpen)captureOpen.disabled=false;}
       }
       function stage(parent,step){
-        parent=el(parent,'div','','pending-stage');
+        parent=el(parent,'div','','pending-stage');parent.dataset.state=step.state;
         el(parent,'p',step.state==='confirmed'?'✓ '+step.meaning:step.question);
         if(step.state==='not_yet')el(parent,'small','Όχι ακόμη · καταγράφηκε '+date(step.observed_not_yet_at));
         if(!item.checkpoint_write_allowed)return;
@@ -72,7 +73,12 @@
         if(step.state==='confirmed')button(controls,'Αναίρεση',()=>act('retracted'));
         else{button(controls,'Ναι',()=>act('yes_confirmed'));button(controls,'Όχι ακόμη',()=>act('not_yet_observed'));}
       }
-      if(progress){
+      if(progress&&branch){
+        actions.classList.add('patient-followthrough-rail');actions.setAttribute('aria-label','Βήματα υποχρέωσης');
+        for(const step of progress.steps)stage(actions,step);
+        const end=el(actions,'div',progress.completed?'Ολοκληρώθηκε':'Τέλος μετά την ολοκλήρωση','patient-followthrough-end');
+        end.dataset.complete=String(progress.completed);
+      }else if(progress){
         for(const step of progress.steps.filter(s=>s.state==='confirmed'))stage(actions,step);
         if(progress.next_checkpoint)stage(actions,progress.next_checkpoint);
         const later=progress.steps.filter(s=>s.state!=='confirmed'&&s.key!==progress.next_checkpoint?.key);
@@ -120,10 +126,15 @@
       const latest=data.visits[0];const c=latest?.clinical;
       if(c){el(overview,'p','Από την επίσκεψη '+date(latest.date));facts(overview,'Λόγος παρακολούθησης',[c.reason_for_visit]);facts(overview,'Εκτίμηση',c.clinical_impression);facts(overview,'Σχέδιο',c.decisions);}
       else el(overview,'p',latest?'Η προηγούμενη επίσκεψη δεν διαθέτει δομημένη σύνοψη.':'Η πρώτη επίσκεψη θα εμφανιστεί εδώ μετά την αποθήκευση.');
-      const pending=el(grid,'section','','patient-chart-card');el(pending,'h3','Υποχρεώσεις');renderPending(el(pending,'div'),id,data.pending);
+      const pending=el(grid,'section','','patient-chart-card');el(pending,'h3','Υποχρεώσεις');
+      if(!data.pending.length)el(pending,'p','Δεν έχουν καταγραφεί υποχρεώσεις.');
+      for(const item of data.pending){const row=el(pending,'div','','patient-obligation-link');
+        button(row,item.description,()=>{const branch=$('followthrough-'+item.source_encounter_id);if(branch){branch.open=true;branch.scrollIntoView({behavior:'smooth'});branch.querySelector('summary').focus();}});
+        el(row,'small',statuses[item.status]||item.status);
+      }
       const timeline=el(chart,'section','','patient-timeline');el(timeline,'h3','Πορεία ασθενούς');
-      const rail=el(timeline,'div','','patient-journey-rail');rail.setAttribute('aria-label','Επισκέψεις και ορόσημα');
-      const selected=el(timeline,'dialog','','patient-journey-preview');selected.setAttribute('aria-label','Σύνοψη επίσκεψης ή ορόσημου');
+      const rail=el(timeline,'div','','patient-journey-rail');rail.setAttribute('aria-label','Επισκέψεις');
+      const selected=el(timeline,'dialog','','patient-journey-preview');selected.setAttribute('aria-label','Σύνοψη επίσκεψης');
       selected.onclick=e=>{if(e.target===selected)selected.close();};
       selected.onclose=()=>{for(const dot of rail.querySelectorAll('button'))dot.setAttribute('aria-expanded','false');};
       const points=[];
@@ -135,11 +146,21 @@
         b.setAttribute('aria-expanded','true');selected.showModal();
       }
       for(const visit of data.visits)points.push({date:visit.date,title:visit.clinical?.reason_for_visit?.text||'Καταγεγραμμένη επίσκεψη',source:visit.encounter_id,summary:[...(visit.clinical?.findings||[]).slice(0,2).map(f=>'Ευρήματα: '+f.text),...(visit.clinical?.clinical_impression||[]).slice(0,2).map(f=>'Εκτίμηση: '+f.text),...(visit.clinical?.decisions||[]).slice(0,2).map(f=>'Απόφαση: '+f.text),...data.pending.filter(p=>p.source_encounter_id===visit.encounter_id).map(p=>'Υποχρέωση: '+p.description)]});
-      for(const item of data.pending)for(const event of item.checkpoints?.history||[])points.push({date:event.recorded_at,title:event.label,source:item.source_encounter_id,summary:[item.description,'Καταγράφηκε: '+new Intl.DateTimeFormat('el-CY',{dateStyle:'medium',timeStyle:'short'}).format(new Date(event.recorded_at))]});
-      const day=v=>{if(!v.includes('T'))return v;const p=Object.fromEntries(new Intl.DateTimeFormat('en',{timeZone:'Asia/Nicosia',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(v)).map(p=>[p.type,p.value]));return p.year+'-'+p.month+'-'+p.day;};
-      points.sort((a,b)=>day(a.date).localeCompare(day(b.date))||Number(a.date.includes('T'))-Number(b.date.includes('T'))||a.date.localeCompare(b.date));
+      points.sort((a,b)=>a.date.localeCompare(b.date));
       for(const point of points){const b=button(rail,'',()=>selectPoint(point,b));b.className='clinical-secondary patient-journey-point';b.setAttribute('aria-pressed','false');b.setAttribute('aria-haspopup','dialog');b.setAttribute('aria-expanded','false');el(b,'span','','patient-journey-dot');el(b,'small',date(point.date));el(b,'span',point.title);}
       if(!points.length)el(timeline,'p','Δεν έχουν καταγραφεί επισκέψεις.');
+      const branches=el(timeline,'div','','patient-followthrough');
+      for(const point of points){
+        const origin=data.pending.filter(p=>p.source_encounter_id===point.source);if(!origin.length)continue;
+        const branch=el(branches,'details','','patient-followthrough-branch');branch.id='followthrough-'+point.source;
+        // Keep the originating visit available, including its finite completed branch and undo.
+        branch.open=true;
+        const heading=el(branch,'summary');el(heading,'strong',date(point.date)+' · '+point.title);
+        const active=origin.filter(p=>!['resolved','cancelled'].includes(p.status)).length;
+        el(heading,'small',active?'Υποχρεώσεις επίσκεψης · '+active+' σε εκκρεμότητα':'Υποχρεώσεις επίσκεψης · Κλειστή συνέχεια');
+        renderPending(el(branch,'div'),id,origin,true);
+      }
+
       for(const visit of data.visits){const block=el(timeline,'details','','patient-visit');block.id='visit-'+visit.encounter_id;block.hidden=true;
         const summary=el(block,'summary');el(summary,'span',date(visit.date));el(summary,'strong',visit.clinical?.reason_for_visit?.text||'Καταγεγραμμένη επίσκεψη');
         const origin=data.pending.filter(p=>p.source_encounter_id===visit.encounter_id);for(const p of origin)el(summary,'small','Δημιουργήθηκε υποχρέωση: '+p.description);
