@@ -53,6 +53,17 @@ try:
   assert row.locator('xpath=ancestor::details[1]').get_attribute('id')=='followthrough-'+p['source_encounter_id']
   expect(row.locator('.patient-followthrough-rail .pending-stage')).to_have_count(2)
   expect(row.locator('.patient-followthrough-end')).to_have_attribute('data-complete','false')
+  stage='connected-source-geometry'
+  expect(page.locator('.journey-fork')).to_have_count(1)
+  def connected(pg):
+   return pg.locator('.patient-journey-track').evaluate('''track=>{
+    const dot=track.querySelector('.patient-journey-dot').getBoundingClientRect(),box=track.getBoundingClientRect();
+    const line=track.querySelector('.journey-fork'),stop=track.querySelector('.patient-followthrough-stop').getBoundingClientRect();
+    const start=line.getPointAtLength(0),end=line.getPointAtLength(line.getTotalLength());
+    return Math.abs(start.x-(dot.x-box.x+dot.width/2))<1 && Math.abs(start.y-(dot.y-box.y+dot.height/2))<1 && Math.abs(end.x-(stop.x-box.x+stop.width/2))<1 && Math.abs(end.y-(stop.y-box.y+stop.height/2))<1 && stop.y>dot.y;
+   }''')
+  assert connected(page)
+  page.locator('.patient-timeline').screenshot(path=str(out/'connected-journey-desktop.png'))
   stage='desktop-timeline-popup'
   page.locator('.patient-journey-point').filter(has_text=REASON).click();expect(page.get_by_role('dialog')).to_be_visible()
   expect(page.get_by_role('dialog')).to_contain_text(REASON)
@@ -81,6 +92,9 @@ try:
    updates=context.request.get(BASE+'/clinical/clinical-updates?scope=test').json()['items']
    linked=[i for i in updates if i['pending_id']==state['pending_id']];assert len(linked)==1
    assert linked[0]['checkpoints']==item(context)['checkpoints']
+   expect(pg.locator('.journey-fork')).to_have_count(1);assert connected(pg)
+   pg.locator('.patient-journey-rail').evaluate('n=>n.scrollLeft=0')
+   pg.locator('.patient-timeline').screenshot(path=str(out/f'connected-journey-{width}.png'))
    pg.locator('#visitWorkspacePatient').screenshot(path=str(out/f'cp2-final-{width}.png'))
    pg.locator('#doctorInboxButton').click();expect(pg.locator('#doctorPopoverTitle')).to_have_text('Κλινικές ενημερώσεις')
    updates_row=pg.locator('#doctorPopoverContent .doctor-action-row').filter(has_text='CD').first
@@ -89,6 +103,6 @@ try:
    assert pg.evaluate('document.documentElement.scrollWidth<=innerWidth')
   for context in contexts:context.close()
   browser.close()
- print('PASS CP2 LIVE: visit-only main trajectory; exact source branch and finite terminal; marked synthetic patient; PostgreSQL receipt/notyet/review/undo; idempotent replay; immutable signed visit; popup/open-source; same chart/updates in independent1280/390 sessions after refresh. Final fixture: received confirmed, image review pending. No provider request or new encounter.')
+ print('PASS CP2 LIVE: measured source-dot fork and finite terminal in one connected drawing; visit-only main trajectory; exact source branch and finite terminal; marked synthetic patient; PostgreSQL receipt/notyet/review/undo; idempotent replay; immutable signed visit; popup/open-source; same chart/updates in independent1280/390 sessions after refresh. Final fixture: received confirmed, image review pending. No provider request or new encounter.')
 except Exception:
  print('FAIL CP2 LIVE stage: '+stage);sys.exit(1)
