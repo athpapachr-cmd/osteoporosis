@@ -288,3 +288,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
 .capture-dia-prompt pre{font:inherit;font-size:.9rem;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;margin:14px 0 0}
 .capture-dia-prompt>button{white-space:normal;max-width:100%}
 .capture-dia-prompt p:empty{display:none}
+
+/* Actionable obligations reuse the same checkpoint owner in a native popup. */
+.patient-pending-dialog{box-sizing:border-box;overflow:auto;max-height:85vh;overflow-wrap:anywhere}
+.patient-pending-dialog .synthetic-pending-row{border:0;padding:0}.patient-pending-dialog .pending-checkpoint-actions{display:flex;flex-wrap:wrap;gap:8px}
+.patient-pending-dialog .pending-stage{flex-basis:100%;min-width:0}.patient-pending-dialog select{max-width:100%}
+.patient-followthrough-branch .synthetic-pending-row>div>.pending-open{font-size:1rem;text-align:left;border:0;background:transparent;padding:0;font-weight:750;color:inherit}
+.patient-followthrough-rail button.patient-followthrough-dot{padding:0;min-width:12px;cursor:pointer}
+.patient-deleted-obligations{margin-top:16px;font-size:.85rem}.patient-deleted-obligations summary{cursor:pointer;color:#648087}
