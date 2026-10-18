@@ -1,5 +1,7 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-18 #200 EXACT SOURCE LIVE / READ-ONLY PROOF NEXT:** Renderdep-dbagm3psrm7s73aemitg LIVE at18:09:54UTC onf2bdba77bbbe38d12fdea4867b8b7bf2c6fee970. Durable checkpoint before verification-onlyfaae6e6 actualprotectedtomorrow date/count/Today navigation; only safe date/arrows screenshot, no actual names/reasons logged/captured and no clinical/link write.
+
 > **2026-10-18 #200 NATIVE BUILD OBSERVED:** Renderdep-dbagm3psrm7s73aemitg building exactf2bdba77bbbe38d12fdea4867b8b7bf2c6fee970. Existing autodeploy reused, no duplicate trigger. Next LIVE then actualsource tomorrow read/date/count and safe navigation-only screenshots.
 
 > **2026-10-18 #200 MERGED / NATIVE DEPLOY NEXT:** Squashf2bdba77bbbe38d12fdea4867b8b7bf2c6fee970 at18:08:13UTC. Reviewed UI unchanged. Durable checkpoint before native Render observation; exactsourceLIVE required before actualdatedreadonlyprooffaae6e6.
