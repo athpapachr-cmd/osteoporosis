@@ -1,5 +1,7 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-18 #185 DEPLOYED / LIVE ACTION PROOF NEXT:** Renderdep-dba8kdjm8hqs73b4sc8g LIVE exact7e0e42a0a5af4268f7ae7c2e775feb099b5449d0, finished09:00:18UTC. Durable local checkpoint before verification-onlybfc1b67 dispatch. Proof fixed marked chart now uses same normal clinical-key auth as unmarked patients: popup overview/branch/Updates, notyet/complete/undo, delete/keep/persistedrestore across1280/390; preserve signed source and final received-confirmed/images-pending state. No provider/newvisit/real-patient writes.
+
 > **2026-10-18 #185 MERGED / NATIVE DEPLOY NEXT:** Squash7e0e42a0a5af4268f7ae7c2e775feb099b5449d0 at08:58:28UTC. Same reviewed/tested real obligation auth/popup/reversible deletion owner, no schema/env/network/provider change. Durable local checkpoint before existing Render native deploy observation; next exact-source LIVE then marked synthetic proofbfc1b67. Real-patient state untouched.
 
 > **2026-10-18 #185 AFFECTED CI PASS / MERGE NEXT:** Published8dd49cfb1c7949e92690bf3d8fac8497916d2936, reviewedruntimea4c0ac9. Capture39113385516, Home39113385463, Brief39113385434, Demo39113385450 and canonical39113385452 SUCCESS. Known unrelated L0 design-only scope39113385514 rejection separately verified; no related contract/runtime failure. Durable local checkpoint before authorized squash/native deploy, then fixed marked fixture same-auth popup/lifecycle proofbfc1b67, no provider/newvisit/real-patient writes.
