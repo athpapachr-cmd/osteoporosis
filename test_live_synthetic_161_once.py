@@ -22,7 +22,7 @@ try:
    def current():return next(p for p in read()['pending'] if p['pending_id']==pid)
    def link():return page.locator('.patient-chart-grid .patient-obligation-link button').filter(has_text=item['description'])
    stage='normal-chart';page.goto(ROOT+'?chart='+ID)
-   assert 'Μην μετατρέπεις κενά ή μη καταγεγραμμένα πεδία' in page.locator('#visitDiaNaturalPrompt').text_content()
+   assert 'Μην μετατρέπεις κενά ή μη καταγεγραμμένα πεδία' in page.locator('#visitDiaNaturalPrompt').evaluate('n=>n.content.textContent')
    popup=page.locator('.patient-pending-dialog');link().click();expect(popup).to_be_visible()
    expect(popup.locator('select')).to_have_count(0);expect(popup).to_contain_text('✓ Εξετάστηκαν οι εικόνες')
    expect(popup.get_by_role('button',name='Διαγραφή υποχρέωσης',exact=True)).to_be_visible()
