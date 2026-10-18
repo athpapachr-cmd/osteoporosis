@@ -92,6 +92,7 @@ def test_browser_receipt_review_timeline_refresh_second_session(setup,tmp_path):
                 row=page.locator('#patientChart .patient-followthrough-branch .synthetic-pending-row').first
                 if width==1280:
                     expect(row).to_contain_text('Παραλήφθηκε το CD;')
+                    expect(page.locator('.journey-fork')).to_have_count(1)
                     page.locator('#captureOpen').click();page.locator('#captureText').fill('Πρόχειρη επίσκεψη')
                     expect(row.get_by_role('button',name='Ναι',exact=True).first).to_be_disabled()
                     expect(row.locator('select')).to_be_disabled()
@@ -120,7 +121,7 @@ def test_browser_receipt_review_timeline_refresh_second_session(setup,tmp_path):
                 points=page.locator('.patient-journey-point');expect(points).to_have_count(2)
                 branches=page.locator('.patient-followthrough-branch');expect(branches).to_have_count(1)
                 assert branches.get_attribute('id')=='followthrough-'+p['source_encounter_id']
-                expect(branches).to_contain_text('Επανέλεγχος γόνατος')
+                expect(branches.locator('..').locator('.patient-journey-point')).to_contain_text('Επανέλεγχος γόνατος')
                 expect(branches).not_to_contain_text('Νεότερη επίσκεψη')
                 expect(row.locator('.patient-followthrough-rail .pending-stage')).to_have_count(2)
                 expect(row.locator('.patient-followthrough-end')).to_have_attribute('data-complete',str(width==390).lower())
@@ -132,6 +133,27 @@ def test_browser_receipt_review_timeline_refresh_second_session(setup,tmp_path):
                     page.reload();expect(row.locator('.patient-followthrough-end')).to_have_attribute('data-complete','false')
                 page.locator('.patient-obligation-link button').click()
                 expect(branches).to_have_attribute('open','')
+                # Geometry, not just labels: the finite fork starts at its own primary dot.
+                page.wait_for_function("document.querySelectorAll('.journey-fork').length===1")
+                geometry=page.locator('.patient-journey-track').evaluate("""track=>{
+                    const dots=[...track.querySelectorAll('.patient-journey-dot')].map(n=>n.getBoundingClientRect());
+                    const line=track.querySelector('.journey-fork'),box=track.getBoundingClientRect();
+                    const start=line.getPointAtLength(0),end=line.getPointAtLength(line.getTotalLength());
+                    const stop=track.querySelector('.patient-followthrough-stop').getBoundingClientRect();
+                    return {sameY:Math.abs(dots[0].y-dots[1].y)<1,
+                      start:Math.abs(start.x-(dots[0].x-box.x+dots[0].width/2))<1 && Math.abs(start.y-(dots[0].y-box.y+dots[0].height/2))<1,
+                      end:Math.abs(end.x-(stop.x-box.x+stop.width/2))<1 && Math.abs(end.y-(stop.y-box.y+stop.height/2))<1,
+                      below:stop.y>dots[0].y,source:line.dataset.source};
+                }""")
+                assert geometry=={'sameY':True,'start':True,'end':True,'below':True,'source':p['source_encounter_id']}
+                branches.locator(':scope > summary').click();expect(page.locator('.journey-fork')).to_have_count(0)
+                branches.locator(':scope > summary').click();expect(page.locator('.journey-fork')).to_have_count(1)
+                if width==390:
+                    expect(page.locator('.patient-journey-scroll-hint')).to_be_visible()
+                    points.last.click();expect(page.get_by_role('dialog')).to_contain_text('Νεότερη επίσκεψη')
+                    page.get_by_role('dialog').get_by_role('button',name='Κλείσιμο',exact=True).click()
+                    page.locator('.patient-journey-rail').evaluate('n=>n.scrollLeft=0')
+                page.locator('.patient-timeline').screenshot(path=str(tmp_path/f'connected-journey-{width}.png'))
                 points.filter(has_text='Επανέλεγχος γόνατος').click();expect(page.locator('.patient-journey-preview')).to_contain_text('Επανέλεγχος γόνατος')
                 expect(page.get_by_role('dialog')).to_be_visible()
                 page.screenshot(path=str(tmp_path/f'cp2-popup-{width}.png'),full_page=False)
@@ -140,6 +162,13 @@ def test_browser_receipt_review_timeline_refresh_second_session(setup,tmp_path):
                 expect(page.locator('#visit-'+p['source_encounter_id'])).to_be_visible()
                 assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), page.evaluate("Array.from(document.querySelectorAll('body *')).filter(e=>e.getBoundingClientRect().right>innerWidth && e.getBoundingClientRect().width>0).slice(0,15).map(e=>[e.tagName,e.id,e.className,e.getBoundingClientRect().width])")
                 page.locator('#patientChart').screenshot(path=str(tmp_path/f'cp2-{width}.png'))
+                if width==390:
+                    # A cancelled obligation closes its branch without claiming completion.
+                    with Session(engine) as db:
+                        db.get(ClinicalPendingORM,p['pending_id']).status='cancelled';db.commit()
+                    page.reload()
+                    expect(page.locator('.patient-followthrough-branch > summary')).to_contain_text('Κλειστή συνέχεια')
+                    expect(page.locator('.patient-followthrough-branch > summary')).not_to_contain_text('Ολοκληρώθηκε')
                 assert not errors;context.close()
             browser.close()
     finally:server.should_exit=True;thread.join(10);sock.close()
