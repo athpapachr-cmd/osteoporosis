@@ -1,5 +1,7 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-18 #200 FINAL AFFECTED CI PASS / MERGE NEXT:** Publishedc23e226 reviewed0395665. Home39152573177/Brief39152573358/Capture39152573467/Demo39152573297/canonical39152573414 SUCCESS. Existing unrelated L0design-onlyallowlist39152573364 failure inspected. Read-only actualdatedsource prooffaae6e6 prepared separately. Durable checkpoint before authorized squash/native release; no runtime change after R1.
+
 > **2026-10-18 #200 OPEN / AFFECTED CI NEXT:** PR https://github.com/athpapachr-cmd/osteoporosis/pull/200 publishedc23e226, reviewed0395665. Read-only actual-source proof prepared on never-merge verification branch; safe screenshots date/arrows only and count/day comparisons, no names/reasons captured/logged or clinical/link writes. Durable local checkpoint before final affectedCI/authorized native release.
 
 > **2026-10-18 DAY NAVIGATION R1 PASS / PR NEXT:** Exact0395665 independently PASS COMPLETE_FOR_DECLARED_SCOPE, no material findings. Cyprus ranges/DST/year rollover, stale/auth isolation, navigable empty/error states, bookingdate and explicit identity flow, responsive/focus evidence closed. Next publish tested UI/current checkpoints, affected CI/native release and actual-source read-only navigation/date/count proof; no clinical/task/provider mutation.
