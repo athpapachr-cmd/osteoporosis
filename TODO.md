@@ -1,5 +1,7 @@
 # TODO.md — Clinical Excellence long-range compass
 
+> **2026-10-18 Appointment-to-chart prerequisite corrected:** #187 installs normal physician single-session preview and persistent explicit perbooking chart choice, latest stored signed visit/exact opening and obligation actions. Actual-source one-login navigation live verified; true association writes/persistence verified local/CI; personalPOchoice/use pending. No automatic namesake/newUID identity mapping or later-phase activation. Exact state in root/Cockpit CURRENT.
+
 > **2026-10-18 Real obligation actions correction installed:** #185 closes the normal-key versus staff-only Pending gap exposed in real use. Native obligation popup supports completion/notyet/undo and reversible deletion; source visits stay unchanged. Unmarked normal-key flow tested locally/CI, same-authority marked live lifecycle verified; personal PO use pending. No later phase activation; exact release state in root/Cockpit CURRENT.
 
 > **2026-10-18 Patient-entry prerequisite installed:** #181 adds shared create/open from normal Home, appointments (including dated schedule) and Capture. Existing chart/natural-summary flow reused; strict create-only adapter and explicit existing-person selection. Local/CI creation and live normal-entry navigation verified; personal PO use pending. No automatic booking-person linkage or later CP3–CP5 activation. Exact state in root/Cockpit CURRENT.
