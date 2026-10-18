@@ -283,33 +283,23 @@ def _minimal_brief(session: Session, patient_id: str, booking) -> dict:
         ).order_by(EncounterORM.encounter_date.desc(), EncounterORM.id.asc())
         .limit(100)
     ).all()
+    from clinical_visit_amendments import signed_versions
     for row in rows:
-        clinical_day = _day(row.encounter_date)
-        if clinical_day is None or clinical_day > local_day:
-            continue
-        # Signed content must have existed before the SELECTED appointment.
-        # A later amendment overwrites provenance; no pre-amendment version exists.
-        created, updated = _utc(row.created_at), _utc(row.updated_at)
-        if (created is None or updated is None
-                or created >= booking_start or updated >= booking_start):
-            continue
-        payload = row.payload_json
-        signed = payload.get("_visit_capture_v1") if isinstance(payload, dict) else None
-        if not isinstance(signed, dict) or signed.get("signed") is not True:
-            continue
-        signed_at = _utc(signed.get("signed_at"))
-        if signed_at is None or signed_at >= booking_start:
-            continue
-        if clinical_day == local_day and not signed_at < booking_start:
-            continue
-        try:
-            candidate = VisitCaptureCandidateV1.model_validate(signed.get("candidate"))
-        except (ValueError, TypeError):
-            continue
-        # Signed date and encounter ownership must not contradict each other.
-        if candidate.encounter_date != row.encounter_date:
-            continue
-        eligible.append((clinical_day, signed_at, row.id, candidate))
+        current=(row.payload_json or {}).get('_visit_capture_v1',{})
+        audited=bool(current.get('amendment_history'))
+        created,updated=_utc(row.created_at),_utc(row.updated_at)
+        if created is None or updated is None or created>=booking_start or (not audited and updated>=booking_start):continue
+        versions=[]
+        for recorded_date,signed in signed_versions(row):
+            clinical_day=_day(recorded_date);signed_at=_utc(signed.get('signed_at'))
+            if not signed.get('signed') or clinical_day is None or clinical_day>local_day or signed_at is None or signed_at>=booking_start:continue
+            try:candidate=VisitCaptureCandidateV1.model_validate(signed.get('candidate'))
+            except (ValueError,TypeError):continue
+            if candidate.encounter_date!=recorded_date:continue
+            versions.append((signed_at,clinical_day,candidate))
+        if versions:
+            signed_at,clinical_day,candidate=max(versions,key=lambda v:v[0])
+            eligible.append((clinical_day,signed_at,row.id,candidate))
 
     eligible.sort(key=lambda x: (x[0], x[1], x[2]), reverse=True)
     previous = None

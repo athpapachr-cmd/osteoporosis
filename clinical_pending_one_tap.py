@@ -157,6 +157,20 @@ def project_checkpoint(session,row):
             "label":("Αναίρεση · " if e.kind=="retracted" else "Όχι ακόμη · " if e.kind=="not_yet_observed" else "")+labels.get(e.checkpoint_key,"Παρακολούθηση υποχρέωσης"),
             "retracts_event_id":e.retracts_event_id} for e in events if e.kind not in ("plan_approved","cancelled","reopened","permanently_deleted")]}
 
+def cancel_pending(db,row,actor,expected_revision,idempotency_key):
+    """Same cancellation owner, also used inside an atomic visit amendment."""
+    _signed_source(db,row)
+    if _revision(_events(db,row))!=expected_revision or row.status not in ("open","awaiting_patient","awaiting_result","resolved"):
+        raise HTTPException(409,"Pending cannot be cancelled")
+    metadata={"previous_status":row.status,"previous_resolution_event_id":row.resolution_event_id}
+    event=PendingCheckpointEventORM(id=str(uuid4()),idempotency_key=idempotency_key,pending_id=row.id,
+        patient_id=row.patient_id,checkpoint_key="__lifecycle__",plan_version=1,kind="cancelled",
+        retracts_event_id=None,revision=expected_revision+1,recorded_at=utcnow(),
+        actor_principal_id=actor.principal_id,actor_role=actor.role,plan_json=metadata)
+    row.status="cancelled";row.resolution_event_id=None;row.updated_at=event.recorded_at
+    db.add(event)
+    return event
+
 def attach_pending_one_tap_routes(router,engine,protected):
     def load(db,patient_id,pending_id,request,allow_deleted=False):
         if not installed(engine):raise HTTPException(503,"Checkpoint storage is not installed")
@@ -256,8 +270,9 @@ def attach_pending_one_tap_routes(router,engine,protected):
             if action.action=="cancel":
                 if action.cancellation_event_id or row.status not in ("open","awaiting_patient","awaiting_result","resolved"):
                     raise HTTPException(409,"Pending cannot be cancelled")
-                metadata={"previous_status":row.status,"previous_resolution_event_id":row.resolution_event_id}
-                row.status="cancelled";row.resolution_event_id=None
+                event=cancel_pending(db,row,actor,action.expected_revision,action.idempotency_key)
+                commit(db)
+                return {"event_id":event.id,"replayed":False,"current":project_checkpoint(db,row),"lifecycle":project_lifecycle(db,row)}
             else:
                 current=next((e for e in reversed(events) if e.kind in ("cancelled","reopened","permanently_deleted")),None)
                 if row.status!="cancelled" or not current or current.kind!="cancelled" or current.id!=action.cancellation_event_id:

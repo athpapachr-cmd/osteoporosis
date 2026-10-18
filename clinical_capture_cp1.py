@@ -114,6 +114,9 @@ def attach_cp1(router, engine, protected, context_for, ensure_patient):
                 db.add(patient);db.commit()
             return {"patient_id":TEST_ID}
 
+    from clinical_visit_amendments import attach_visit_amendments, source_item
+    attach_visit_amendments(router,engine,protected,context_for,ensure_patient)
+
     from clinical_pending_one_tap import attach_pending_one_tap_routes, project_checkpoint, project_lifecycle, installed, can_write
     attach_pending_one_tap_routes(router, engine, protected)
 
@@ -123,12 +126,8 @@ def attach_cp1(router, engine, protected, context_for, ensure_patient):
         if not source or source.patient_id!=p.patient_id:
             raise HTTPException(409,"Η προέλευση της υποχρέωσης δεν είναι διαθέσιμη.")
         signed=(source.payload_json or {}).get("_visit_capture_v1",{})
-        ids=signed.get("pending_ids",[])
-        excerpt=None
-        if p.id in ids:
-            candidates=signed.get("candidate",{}).get("pending",[])
-            ordinal=ids.index(p.id)
-            if ordinal<len(candidates): excerpt=candidates[ordinal].get("source_excerpt")
+        original=source_item(source,p.id)
+        excerpt=original.get('source_excerpt') if original else None
         return {**value,"source_date":source.encounter_date,"source_excerpt":excerpt,
             "checkpoints":project_checkpoint(db,p) if ready else None,
             "checkpoint_storage_ready":ready,
@@ -146,7 +145,10 @@ def attach_cp1(router, engine, protected, context_for, ensure_patient):
                 signed=(row.payload_json or {}).get("_visit_capture_v1",{})
                 candidate=signed.get("candidate") if signed.get("signed") else None
                 visits.append({"encounter_id":row.id,"date":row.encounter_date,"clinical":candidate,
-                    "legacy":candidate is None})
+                    "legacy":candidate is None,"revision":signed.get('revision',0),
+                    "amendments":[{"date":h['previous']['date'],"amended_at":h['amended_at'],
+                        "detail":_render_visit_capture(VisitCaptureCandidateV1.model_validate(h['previous']['signed']['candidate']))[2]}
+                        for h in signed.get('amendment_history',[])]})
             ready=installed(engine)
             pending=[pending_view(db,p,request,ready) for p in db.scalars(select(ClinicalPendingORM).where(ClinicalPendingORM.patient_id==patient_id,ClinicalPendingORM.status!="deleted").order_by(ClinicalPendingORM.created_at.desc()))]
             return {"patient_id":patient_id,"demographics":patient.demographics_json,"visits":visits,"pending":pending}

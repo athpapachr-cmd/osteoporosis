@@ -3,7 +3,7 @@
   'use strict';
   if(window.CockpitSynthetic)return;
   const $=id=>document.getElementById(id);
-  let draftGeneration=0,journeyObserver=null,pendingBusy=false,chartPending=[];
+  let draftGeneration=0,journeyObserver=null,pendingBusy=false,chartPending=[],amendment=null,pendingBindings=new Map();
   let generation=0,patientId=null,contextId=null,candidate=null,source='',busy=false,chartScroll=0,chartReturnPoint=null;
   const session=crypto.randomUUID();
   const el=(parent,tag,value,cls)=>{const n=document.createElement(tag);if(value)n.textContent=value;if(cls)n.className=cls;parent.append(n);return n;};
@@ -13,7 +13,8 @@
   const roles={patient:'Ασθενής',clinician:'Γιατρός',secretary:'Γραμματεία',unspecified:'Δεν προσδιορίστηκε'};
   const chart=el($('visitWorkspacePatient'),'section','','patient-chart');chart.id='patientChart';
   const composer=el($('visitWorkspacePatient'),'section','','clinical-dia-composer');composer.id='captureComposer';composer.hidden=true;
-  el(composer,'h3','Νέα επίσκεψη από τη σύνοψη Dia');
+  const composerTitle=el(composer,'h3','Νέα επίσκεψη από τη σύνοψη Dia');
+  const amendmentNote=el(composer,'p','','clinical-muted');amendmentNote.hidden=true;
   const promptText=$('visitDiaNaturalPrompt').content.textContent.trim();
   const promptTools=el(composer,'section','','capture-dia-prompt');
   const promptCopy=button(promptTools,'Αντιγραφή οδηγίας για το Dia',async()=>{if(!await window.CockpitHome.copyDiaPrompt(promptText,promptStatus))promptDetails.open=true;});promptCopy.id='captureCopyDiaPrompt';
@@ -31,7 +32,7 @@
   const review=el(composer,'div');review.id='captureReview';
   const previews=el(composer,'div');
   const saveButton=button(composer,'Αποθήκευση επίσκεψης και υποχρεώσεων',save);saveButton.id='captureSave';saveButton.hidden=true;
-  button(composer,'Κλείσιμο',()=>{resetDraft();composer.hidden=true;});
+  const closeComposer=button(composer,'Κλείσιμο',()=>{const previous=amendment;resetDraft();composer.hidden=true;chart.hidden=false;if(previous)showVisit(patientId,previous.encounter_id);});
   const testButton=button($('visitPatientSearch').parentElement,'Δοκιμαστικός ασθενής',async()=>{
     try{const data=await request('/visit-capture/test-patient',{});await open(data.patient_id);}catch(e){testButton.textContent=e.message;}
   });testButton.id='captureTestPatient';
@@ -49,7 +50,7 @@
     }return r.json();
   }
   function pendingControls(disabled){for(const b of chart.querySelectorAll('.pending-checkpoint-actions button,.pending-checkpoint-actions select,.pending-stage button,.pending-open'))b.disabled=disabled;}
-  function resetDraft(){promptStatus.textContent='';pendingControls(false);draftGeneration++;contextId=null;candidate=null;source='';busy=false;input.value='';review.replaceChildren();previews.replaceChildren();feedback.textContent='';saveButton.hidden=true;extractButton.disabled=false;input.disabled=false;visitDate.disabled=false;}
+  function resetDraft(){amendment=null;pendingBindings=new Map();composerTitle.textContent='Νέα επίσκεψη από τη σύνοψη Dia';amendmentNote.hidden=true;saveButton.textContent='Αποθήκευση επίσκεψης και υποχρεώσεων';closeComposer.disabled=false;chart.hidden=false;promptStatus.textContent='';pendingControls(false);draftGeneration++;contextId=null;candidate=null;source='';busy=false;input.value='';review.replaceChildren();previews.replaceChildren();feedback.textContent='';saveButton.hidden=true;extractButton.disabled=false;input.disabled=false;visitDate.disabled=false;}
   function reset(){for(const dialog of chart.querySelectorAll('dialog[open]'))dialog.close();pendingBusy=false;chartPending=[];chartScroll=0;chartReturnPoint=null;journeyObserver?.disconnect();journeyObserver=null;generation++;patientId=null;chart.replaceChildren();resetDraft();composer.hidden=true;}
   function facts(parent,title,items){if(!items?.length)return;el(parent,'h4',title);const list=el(parent,'ul');for(const i of items)el(list,'li',typeof i==='string'?i:i.text);}
   function showPending(id,item){
@@ -253,6 +254,11 @@
         const summary=el(block,'summary');el(summary,'span',date(visit.date));el(summary,'strong',visit.clinical?.reason_for_visit?.text||'Καταγεγραμμένη επίσκεψη');
         const origin=data.pending.filter(p=>p.source_encounter_id===visit.encounter_id);for(const p of origin)el(summary,'small','Δημιουργήθηκε υποχρέωση: '+p.description);
         const body=el(block,'div','','patient-visit-body');const v=visit.clinical;
+        if(v){button(body,'Επεξεργασία επίσκεψης',()=>beginAmend(visit.encounter_id)).classList.add('visit-edit');
+          if(visit.revision)el(body,'small','Διορθωμένη καταγραφή · '+visit.revision);
+          if(visit.amendments?.length){const history=el(body,'details','','visit-amendment-history');el(history,'summary','Ιστορικό διορθώσεων');
+            for(const prior of [...visit.amendments].reverse()){const d=el(history,'details');el(d,'summary','Προηγούμενη καταγραφή · '+date(prior.date)+' · διορθώθηκε '+date(prior.amended_at));el(d,'p',prior.detail,'clinical-preview-text');}}
+        }
         if(!v){el(body,'p','Παλαιότερη καταγραφή χωρίς δομημένη σύνοψη.');continue;}
         facts(body,'Ιστορικό / μεταβολές',v.what_changed);facts(body,'Ευρήματα',v.findings);facts(body,'Κλινική εκτίμηση',v.clinical_impression);facts(body,'Αποφάσεις',v.decisions);
         facts(body,'Αγωγή',(v.medications||[]).map(m=>[({prescribed:'Έναρξη',continued:'Συνέχιση',stopped:'Διακοπή'})[m.action],m.name,m.dose,m.frequency,m.route,m.duration?m.duration.value+' '+m.duration.unit:null].filter(Boolean).join(' · ')));
@@ -271,14 +277,18 @@
     for(const [key,value] of Object.entries(obj)){
       if(['schema_version','source_identity_state','source_bindings','comparison_basis','encounter_date','provenance','verification'].includes(key))continue;
       if(key==='source_excerpt'){if(value)el(parent,'blockquote',value);continue;}
-      if(Array.isArray(value)){if(!value.length)continue;const group=el(parent,'section');el(group,'h4',labels[key]||key);
-        for(const item of [...value]){const row=el(group,'div','','capture-field-group');
-          if(typeof item==='object')fields(row,item);else{const l=el(row,'label',labels[key]||key);const t=el(l,'input');t.value=item;t.oninput=()=>{const index=Array.from(group.querySelectorAll(':scope > .capture-field-group')).indexOf(row);value[index]=t.value;edited(obj);};}
-          button(row,'Αφαίρεση',()=>{const index=Array.from(group.querySelectorAll(':scope > .capture-field-group')).indexOf(row);if(index>=0)value.splice(index,1);row.remove();edited(obj);});
-        }continue;}
-      if(value&&typeof value==='object'){const group=el(parent,'fieldset');el(group,'legend',labels[key]||key);fields(group,value);continue;}
+      if(Array.isArray(value)){const group=el(parent,'section');group.dataset.field=key;el(group,'h4',labels[key]||key);const rows=el(group,'div');
+        for(const item of [...value]){const row=el(rows,'div','','capture-field-group');
+          if(typeof item==='object')fields(row,item);else{const l=el(row,'label',labels[key]||key);const t=el(l,'input');t.value=item;t.oninput=()=>{const index=Array.from(rows.querySelectorAll(':scope > .capture-field-group')).indexOf(row);value[index]=t.value;edited(obj);};}
+          button(row,'Αφαίρεση',()=>{const index=Array.from(rows.querySelectorAll(':scope > .capture-field-group')).indexOf(row);if(index>=0)value.splice(index,1);row.remove();edited(obj);});
+        }
+        if(['what_changed','findings','clinical_impression','decisions','medications','pending','safety_net','uncertainties','gesy_coded','assess'].includes(key))
+          button(group,'Προσθήκη · '+(labels[key]||key),()=>{value.push(newField(key));edited(obj);drawReview();});
+        continue;}
+      if(value&&typeof value==='object'){const group=el(parent,'fieldset');el(group,'legend',labels[key]||key);fields(group,value);if(['duration','external_dependency','next_contact'].includes(key))button(group,'Αφαίρεση · '+labels[key],()=>{obj[key]=null;edited(obj);drawReview();});continue;}
       // Empty optional objects cannot be edited as strings.
-      if(value===null&&['duration','external_dependency','next_contact'].includes(key))continue;
+      if(value===null&&['duration','external_dependency','next_contact'].includes(key)){
+        button(parent,'Προσθήκη · '+(labels[key]||key),()=>{obj[key]=key==='next_contact'?{when:null,time:null,purpose:'',assess:[],provenance:['clinician_edit']}:key==='duration'?{value:1,unit:'ημέρες',approximate:false}:{actor:'',condition:''};edited(obj);drawReview();});continue;}
       let destination=parent;
       if(['type','certainty','region','item_type','specialty','visit_type','system','coding_complete'].includes(key)){
         if(!extra){extra=el(parent,'details');el(extra,'summary','Λεπτομέρειες');}destination=extra;
@@ -291,24 +301,63 @@
       control.oninput=()=>{obj[key]=typeof value==='boolean'?control.checked:typeof value==='number'?Number(control.value):control.value||null;edited(obj);};
     }
   }
+  function newField(key){
+    const fact={text:'',provenance:['clinician_edit'],verification:'clinician_confirmed',certainty:'certain'};
+    if(key==='pending')return {source_excerpt:null,item_type:'other',description:'',trigger:null,status:'open',responsible_role:'clinician',external_dependency:null,review_date:null,provenance:['clinician_edit']};
+    if(key==='medications')return {name:'',action:'prescribed',dose:null,frequency:null,route:null,duration:null,provenance:['clinician_edit'],verification:'clinician_confirmed',certainty:'certain'};
+    if(key==='gesy_coded')return {system:'ICD10',code:'',title:'',provenance:['clinician_edit']};
+    if(key==='assess')return '';
+    if(key==='decisions')return {...fact,type:'advice',responsible_role:null};
+    if(key==='findings')return {...fact,region:null};
+    if(key==='what_changed')return {...fact,direction:'unchanged'};
+    return fact;
+  }
+  function bindClinician(){if(!candidate.source_bindings.some(b=>b.source_ref==='clinician_edit'))candidate.source_bindings.push({source_ref:'clinician_edit',role:'clinician_edit'});}
+  function drawReview(){review.replaceChildren();fields(review,candidate);button(review,'Προεπισκόπηση καταγραφής',preview);}
+  function taskReview(){
+    if(!amendment)return;
+    const section=el(previews,'section','','amendment-task-review');el(section,'h4','Έλεγχος υποχρεώσεων');
+    const kept=new Set();
+    for(const item of candidate.pending){const id=pendingBindings.get(item),original=amendment.originals.get(id);const same=original&&JSON.stringify(item)===original;
+      if(same)kept.add(id);el(section,'p',(same?'Διατηρείται με την κατάστασή της: ':id?'Αντικατάσταση με νέα εκκρεμότητα: ':'Νέα εκκρεμότητα: ')+item.description);}
+    for(const [id,description] of amendment.descriptions)if(!kept.has(id))el(section,'p','Στις διαγραμμένες: '+description);
+    if(!candidate.pending.length&&!amendment.descriptions.size)el(section,'p','Δεν υπάρχουν υποχρεώσεις.');
+  }
+  async function beginAmend(encounter){
+    if(!patientId||pendingBusy||!canLeave())return;
+    const id=patientId,ticket=generation,draftTicket=++draftGeneration;
+    try{const result=await request('/patient/'+encodeURIComponent(id)+'/visit/'+encodeURIComponent(encounter)+'/edit');
+      if(ticket!==generation||draftTicket!==draftGeneration||!composer.hidden||pendingBusy)return;
+      resetDraft();amendment={...result,request_id:crypto.randomUUID(),originals:new Map(),descriptions:new Map(),submitted:null};
+      candidate=result.candidate;
+      candidate.pending.forEach((item,index)=>{const pid=result.pending_bindings[index];pendingBindings.set(item,pid);amendment.originals.set(pid,JSON.stringify(item));amendment.descriptions.set(pid,item.description);});
+      bindClinician();composerTitle.textContent='Επεξεργασία επίσκεψης · '+date(candidate.encounter_date);
+      amendmentNote.hidden=false;amendmentNote.textContent='Διόρθωσε την υπάρχουσα καταγραφή ή επικόλλησε ξανά τη σύνοψη και πάτησε «Προετοιμασία καταγραφής». Αμετάβλητες υποχρεώσεις διατηρούν την κατάστασή τους. Αφαιρούμενες πηγαίνουν στις διαγραμμένες· τροποποιημένες αντικαθίστανται ως νέες εκκρεμότητες.';
+      visitDate.value=candidate.encounter_date;saveButton.textContent='Αποθήκευση διορθώσεων';saveButton.hidden=false;saveButton.disabled=false;
+      composer.hidden=false;chart.hidden=true;pendingControls(true);drawReview();feedback.textContent='Η αποθηκευμένη επίσκεψη είναι έτοιμη για επεξεργασία. Δεν έχει αλλάξει τίποτα ακόμη.';
+      composer.scrollIntoView({block:'start'});
+    }catch(e){if(ticket===generation&&draftTicket===draftGeneration){const status=el(chart,'p',e.message);status.setAttribute('role','status');}}
+  }
   async function extract(){
     if(busy||!patientId||input.value.trim().length<10||!visitDate.value)return;
     const ticket=generation,draftTicket=++draftGeneration;busy=true;extractButton.disabled=true;saveButton.hidden=true;review.replaceChildren();previews.replaceChildren();feedback.textContent='Προετοιμασία καταγραφής…';
     source=input.value;input.disabled=true;visitDate.disabled=true;
     try{const context=await request('/visit-capture/context',{patient_id:patientId,client_session_id:session});if(ticket!==generation||draftTicket!==draftGeneration)return;contextId=context.context_id;
       const result=await request('/visit-capture/extract',{context_id:contextId,text:source,encounter_date:visitDate.value});if(ticket!==generation||draftTicket!==draftGeneration)return;
-      candidate=result.candidate;candidate.source_bindings.push({source_ref:'clinician_edit',role:'clinician_edit'});
-      fields(review,candidate);feedback.textContent=candidate.source_identity_state==='consistent'?'Διόρθωσε ό,τι χρειάζεται και αφαίρεσε όποια υποχρέωση δεν αποδέχεσαι.':'Η σύνοψη περιέχει ασυμφωνία ή αβεβαιότητα ταυτότητας. Διόρθωσε το αρχικό κείμενο και προετοίμασε ξανά.';
-      button(review,'Προεπισκόπηση καταγραφής',preview);saveButton.hidden=candidate.source_identity_state!=='consistent';saveButton.disabled=false;await preview();
+      candidate=result.candidate;pendingBindings=new Map();bindClinician();
+      drawReview();feedback.textContent=candidate.source_identity_state==='consistent'?'Διόρθωσε ό,τι χρειάζεται και αφαίρεσε όποια υποχρέωση δεν αποδέχεσαι.':'Η σύνοψη περιέχει ασυμφωνία ή αβεβαιότητα ταυτότητας. Διόρθωσε το αρχικό κείμενο και προετοίμασε ξανά.';
+      saveButton.hidden=candidate.source_identity_state!=='consistent';saveButton.disabled=false;await preview();
     }catch(e){if(ticket===generation&&draftTicket===draftGeneration)feedback.textContent=e.message;}
     finally{if(ticket===generation&&draftTicket===draftGeneration){busy=false;extractButton.disabled=false;input.disabled=false;visitDate.disabled=false;}}
   }
-  async function preview(){const ticket=generation,draftTicket=draftGeneration;if(!candidate)return;const submitted=JSON.stringify(candidate);try{
+  async function preview(){
+    if(amendment&&!contextId){const ticket=generation,draftTicket=draftGeneration;try{const c=await request('/visit-capture/context',{patient_id:patientId,client_session_id:session});if(ticket!==generation||draftTicket!==draftGeneration)return;contextId=c.context_id;}catch(e){if(ticket===generation&&draftTicket===draftGeneration)feedback.textContent=e.message;return;}}
+    const ticket=generation,draftTicket=draftGeneration;if(!candidate)return;const submitted=JSON.stringify(candidate);try{
     const p=await request('/visit-capture/preview',{context_id:contextId,candidate});if(ticket!==generation||draftTicket!==draftGeneration||JSON.stringify(candidate)!==submitted)return;
-    previews.replaceChildren();for(const [key,label]of [['snapshot','Συνοπτική εικόνα'],['brief','Προετοιμασία επίσκεψης'],['detail','Πλήρης καταγραφή']]){const d=el(previews,'details');el(d,'summary',label);el(d,'p',p[key],'clinical-preview-text');}
+    previews.replaceChildren();taskReview();for(const [key,label]of [['snapshot','Συνοπτική εικόνα'],['brief','Προετοιμασία επίσκεψης'],['detail','Πλήρης καταγραφή']]){const d=el(previews,'details');el(d,'summary',label);el(d,'p',p[key],'clinical-preview-text');}
   }catch(e){if(ticket===generation&&draftTicket===draftGeneration)feedback.textContent=e.message;}}
-  input.oninput=()=>{draftGeneration++;candidate=null;saveButton.hidden=true;review.replaceChildren();previews.replaceChildren();};visitDate.oninput=input.oninput;
-  async function save(){if(busy||!candidate||!contextId)return;const ticket=generation,draftTicket=draftGeneration,id=patientId;busy=true;saveButton.disabled=true;extractButton.disabled=true;
+  input.oninput=()=>{draftGeneration++;if(amendment){saveButton.hidden=true;previews.replaceChildren();feedback.textContent='Πάτησε «Προετοιμασία καταγραφής» για να χρησιμοποιήσεις το νέο κείμενο.';return;}candidate=null;saveButton.hidden=true;review.replaceChildren();previews.replaceChildren();};visitDate.oninput=()=>{if(amendment){candidate.encounter_date=visitDate.value;previews.replaceChildren();}else input.oninput();};
+  async function save(){if(amendment)return saveAmendment();if(busy||!candidate||!contextId)return;const ticket=generation,draftTicket=draftGeneration,id=patientId;busy=true;saveButton.disabled=true;extractButton.disabled=true;
     feedback.textContent='Αποθήκευση…';
     try{await request('/visit-capture/save',{context_id:contextId,candidate});if(ticket!==generation||draftTicket!==draftGeneration)return;await open(id);window.dispatchEvent(new Event('cockpit:clinical-updates-changed'));
     }catch(e){if(ticket!==generation||draftTicket!==draftGeneration)return;
@@ -317,6 +366,23 @@
       feedback.textContent=e.message+' Έλεγξε την καρτέλα πριν επαναλάβεις την καταγραφή.';
       button(review,'Έλεγχος αποθηκευμένης καρτέλας',()=>open(id));
     }
+  }
+  async function saveAmendment(){
+    if(busy||!candidate)return;
+    if(!contextId){await preview();if(!contextId)return;}
+    // First click reviews the task effects; the same button then explicitly saves.
+    if(!previews.querySelector('.amendment-task-review')){await preview();feedback.textContent='Έλεγξε τις υποχρεώσεις και πάτησε ξανά «Αποθήκευση διορθώσεων».';return;}
+    const ticket=generation,draftTicket=draftGeneration,id=patientId,editing=amendment;
+    const body={context_id:contextId,expected_token:editing.expected_token,request_id:editing.request_id,candidate,pending_bindings:candidate.pending.map(p=>pendingBindings.get(p)||null)};
+    const serialized=JSON.stringify(body);
+    if(editing.submitted&&editing.submitted!==serialized){feedback.textContent='Η προηγούμενη αποθήκευση έχει αβέβαιο αποτέλεσμα. Έλεγξε την καρτέλα πριν κάνεις νέα διόρθωση.';return;}
+    editing.submitted=serialized;busy=true;
+    const controls=[...composer.querySelectorAll('button,input,textarea,select')];const disabled=controls.map(c=>c.disabled);controls.forEach(c=>c.disabled=true);
+    feedback.textContent='Αποθήκευση διορθώσεων…';
+    try{await request('/patient/'+encodeURIComponent(id)+'/visit/'+encodeURIComponent(editing.encounter_id)+'/amend',body);
+      if(ticket!==generation||draftTicket!==draftGeneration)return;
+      await open(id);showVisit(id,editing.encounter_id);window.dispatchEvent(new Event('cockpit:clinical-updates-changed'));
+    }catch(e){if(ticket===generation&&draftTicket===draftGeneration){feedback.textContent=e.message+' Το πρόχειρο διατηρήθηκε. Μπορείς να επαναλάβεις την ίδια αποθήκευση ή να κλείσεις και να ελέγξεις την καρτέλα.';busy=false;controls.forEach((c,i)=>c.disabled=disabled[i]);}}
   }
   async function renderUpdates(target,active,close,scope=patientId==='cockpit-cp1-test'?'test':'real'){const ticket=generation;target.replaceChildren();el(target,'p','Φόρτωση ενημερώσεων…');
     try{const data=await request('/clinical-updates?scope='+scope+'&active_only=true');if(ticket!==generation||!active())return;target.replaceChildren();
