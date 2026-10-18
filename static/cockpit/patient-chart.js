@@ -109,7 +109,7 @@
         const step=el(actions,'div','','pending-stage');step.dataset.state='unknown';el(step,'span','','patient-followthrough-dot');
         for(const child of existing)step.append(child);
         if(!existing.length)el(step,'p',statuses[item.status]||item.status);
-        const end=el(actions,'div','','patient-followthrough-end');end.dataset.complete='false';el(end,'span','','patient-followthrough-stop');el(end,'small','Τέλος');
+        const end=el(actions,'div','','patient-followthrough-end');end.dataset.complete=String(item.status==='resolved');el(end,'span','','patient-followthrough-stop');el(end,'small',item.status==='resolved'?'Ολοκληρώθηκε':item.status==='cancelled'?'Ακυρώθηκε':'Τέλος');
       }
       if(item.source_excerpt)el(copy,'blockquote',item.source_excerpt);
       button(copy,'Δημιουργήθηκε στην επίσκεψη · '+date(item.source_date),async()=>{
@@ -168,7 +168,7 @@
         const branch=el(node,'details','','patient-followthrough-branch');branch.id='followthrough-'+point.source;branch.open=true;
         const heading=el(branch,'summary');
         const active=origin.filter(p=>!['resolved','cancelled'].includes(p.status)).length;
-        el(heading,'small',active?'Συνέχεια επίσκεψης · '+active+' σε εκκρεμότητα':'Συνέχεια επίσκεψης · Ολοκληρώθηκε');
+        el(heading,'small',active?'Συνέχεια επίσκεψης · '+active+' σε εκκρεμότητα':'Συνέχεια επίσκεψης · Κλειστή συνέχεια');
         renderPending(el(branch,'div'),id,origin,true);
         branch.ontoggle=()=>requestAnimationFrame(drawJourney);
       }

@@ -162,6 +162,13 @@ def test_browser_receipt_review_timeline_refresh_second_session(setup,tmp_path):
                 expect(page.locator('#visit-'+p['source_encounter_id'])).to_be_visible()
                 assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), page.evaluate("Array.from(document.querySelectorAll('body *')).filter(e=>e.getBoundingClientRect().right>innerWidth && e.getBoundingClientRect().width>0).slice(0,15).map(e=>[e.tagName,e.id,e.className,e.getBoundingClientRect().width])")
                 page.locator('#patientChart').screenshot(path=str(tmp_path/f'cp2-{width}.png'))
+                if width==390:
+                    # A cancelled obligation closes its branch without claiming completion.
+                    with Session(engine) as db:
+                        db.get(ClinicalPendingORM,p['pending_id']).status='cancelled';db.commit()
+                    page.reload()
+                    expect(page.locator('.patient-followthrough-branch > summary')).to_contain_text('Κλειστή συνέχεια')
+                    expect(page.locator('.patient-followthrough-branch > summary')).not_to_contain_text('Ολοκληρώθηκε')
                 assert not errors;context.close()
             browser.close()
     finally:server.should_exit=True;thread.join(10);sock.close()
