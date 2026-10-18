@@ -216,7 +216,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
 .patient-journey-rail{display:flex;overflow-x:auto;gap:0;padding:8px 0 18px;max-width:100%}
 .patient-journey-point.clinical-secondary{position:relative;display:flex;flex:0 0 150px;flex-direction:column;align-items:center;gap:8px;border:0;background:transparent;text-align:center;white-space:normal;padding:10px 12px;font-size:.85rem}
 .patient-journey-point:before{content:"";position:absolute;top:19px;left:0;right:0;border-top:2px solid #d4e3e4}
-.patient-journey-point:first-child:before{left:50%}.patient-journey-point:last-child:before{right:50%}
+.patient-journey-point:first-child:before{left:50%}.patient-journey-point:last-child:before{right:-24px;border-top-style:dashed}
 .patient-journey-dot{position:relative;display:block;width:18px;height:18px;border-radius:50%;border:3px solid #7c9e9f;background:white;box-sizing:border-box}
 .patient-journey-point[aria-pressed=true] .patient-journey-dot{border-color:#267875;background:#267875;box-shadow:0 0 0 5px #e0efed}
 .patient-journey-point[aria-pressed=true]{color:#186b68;font-weight:700}
@@ -235,3 +235,32 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
 .patient-journey-preview::backdrop{background:rgba(25,45,54,.32);backdrop-filter:blur(3px)}
 .patient-journey-close{float:right;margin-left:12px}.patient-journey-preview h4{font-size:1.2rem;padding-top:6px}
 .patient-journey-preview>button:last-child{display:block;margin-top:20px;background:#e6f3f0}
+
+/* Visits continue on the primary rail; their obligations have a separate finite end. */
+.patient-followthrough{margin:4px 0 24px 22px;border-left:2px solid #d4e3e4;padding-left:20px}
+.patient-followthrough-branch{position:relative;margin:14px 0;padding:16px;border:1px solid #dce7e8;border-radius:14px;background:#fff}
+.patient-followthrough-branch:before{content:"";position:absolute;left:-22px;top:27px;width:20px;border-top:2px solid #d4e3e4}
+.patient-followthrough-branch>summary{cursor:pointer;color:#254751}
+.patient-followthrough-branch>summary strong{font-size:.95rem}
+.patient-followthrough-branch>summary small{display:block;margin:6px 0 0 15px;color:#648087}
+.patient-followthrough-branch .synthetic-pending-row{border-bottom:0;padding-bottom:0}
+.patient-followthrough-rail.pending-checkpoint-actions{display:flex;align-items:stretch;gap:0;flex-wrap:nowrap;margin:18px 0}
+.patient-followthrough-rail .pending-stage{position:relative;flex:1;min-width:0;padding:22px 12px 0 0;border-top:2px solid #d4e3e4}
+.patient-followthrough-rail .pending-stage:before{content:"";position:absolute;top:-7px;left:0;width:12px;height:12px;background:white;border:2px solid #8aa7a9;border-radius:50%;box-sizing:border-box}
+.patient-followthrough-rail .pending-stage[data-state=confirmed]:before{background:#29867e;border-color:#29867e}
+.patient-followthrough-rail .pending-stage p{font-size:.9rem}
+.patient-followthrough-end{position:relative;flex:0 1 130px;padding:22px 0 0 12px;font-size:.8rem;color:#648087;border-top:2px solid #d4e3e4}
+.patient-followthrough-end:before{content:"";position:absolute;right:0;top:-7px;height:12px;border-right:3px solid #8aa7a9}
+.patient-followthrough-end[data-complete=true]{color:#24766f;font-weight:700}
+.patient-obligation-link{display:flex;flex-direction:column;align-items:flex-start;gap:5px;margin-bottom:14px}
+.patient-obligation-link button{white-space:normal;text-align:left}
+@media(max-width:600px){
+  .patient-followthrough{margin-left:8px;padding-left:12px}
+  .patient-followthrough-branch{padding:12px}
+  .patient-followthrough-branch:before{left:-14px;width:12px}
+  .patient-followthrough-rail.pending-checkpoint-actions{flex-direction:column;border-left:2px solid #d4e3e4;margin-left:6px}
+  .patient-followthrough-rail .pending-stage{border-top:0;padding:0 0 20px 18px;box-sizing:border-box}
+  .patient-followthrough-rail .pending-stage:before{left:-7px;top:4px}
+  .patient-followthrough-end{border-top:0;flex-basis:auto;padding:0 0 0 18px}
+  .patient-followthrough-end:before{left:-7px;right:auto;top:auto;bottom:0;width:12px;height:0;border-right:0;border-bottom:3px solid #8aa7a9}
+}

@@ -73,7 +73,11 @@ def test_browser_receipt_review_timeline_refresh_second_session(setup,tmp_path):
     import socket,threading,shutil
     import uvicorn
     from playwright.sync_api import sync_playwright,expect
-    app,engine=setup;seed(app,engine)
+    app,engine=setup;c,p,_=seed(app,engine)
+    # A later visit must extend the main rail without stealing the older visit's branch.
+    later=draft().model_dump(mode='json');later['encounter_date']='2026-10-19';later['pending']=[]
+    later['reason_for_visit']['text']='Νεότερη επίσκεψη χωρίς εκκρεμότητες'
+    assert c.post('/clinical/visit-capture/save',json={'context_id':ctx(c),'candidate':later}).status_code==200
     sock=socket.socket();sock.bind(('127.0.0.1',0));port=sock.getsockname()[1]
     server=uvicorn.Server(uvicorn.Config(app,log_level='error'));thread=threading.Thread(target=server.run,kwargs={'sockets':[sock]},daemon=True);thread.start()
     url=f'http://localhost:{port}/static/cockpit/index.html?chart={TEST_ID}'
@@ -85,7 +89,7 @@ def test_browser_receipt_review_timeline_refresh_second_session(setup,tmp_path):
                 page.on('pageerror',lambda e:errors.append(str(e)))
                 page.goto(url.split('?')[0]);page.locator('#ceGlobalKey').click();page.locator('#ceGlobalKeyInput').fill(KEY)
                 page.locator('#ceGlobalLoginForm button[type=submit]').click();expect(page.locator('#ceGlobalAuthStatus')).to_contain_text('Συνδέθηκες');page.keyboard.press('Escape');page.goto(url)
-                row=page.locator('#patientChart .patient-chart-grid .synthetic-pending-row').first
+                row=page.locator('#patientChart .patient-followthrough-branch .synthetic-pending-row').first
                 if width==1280:
                     expect(row).to_contain_text('Παραλήφθηκε το CD;')
                     page.locator('#captureOpen').click();page.locator('#captureText').fill('Πρόχειρη επίσκεψη')
@@ -107,19 +111,33 @@ def test_browser_receipt_review_timeline_refresh_second_session(setup,tmp_path):
                     expect(row).to_contain_text('Εξετάστηκαν οι εικόνες;')
                     expect(row).not_to_contain_text('Ολοκληρώθηκε')
                     page.reload();expect(row).to_contain_text('Εξετάστηκαν οι εικόνες;')
-                    row.get_by_role('button',name='Όχι ακόμη',exact=True).click()
+                    row.locator('.pending-stage').filter(has_text='Εξετάστηκαν οι εικόνες;').get_by_role('button',name='Όχι ακόμη',exact=True).click()
                     expect(row).to_contain_text('Όχι ακόμη · καταγράφηκε')
                 else:
                     expect(row).to_contain_text('Όχι ακόμη · καταγράφηκε')
                     row.get_by_role('button',name='Ναι',exact=True).click()
                     expect(row).to_contain_text('Ολοκληρώθηκε')
-                points=page.locator('.patient-journey-point');assert points.count()>=2
+                points=page.locator('.patient-journey-point');expect(points).to_have_count(2)
+                branches=page.locator('.patient-followthrough-branch');expect(branches).to_have_count(1)
+                assert branches.get_attribute('id')=='followthrough-'+p['source_encounter_id']
+                expect(branches).to_contain_text('Επανέλεγχος γόνατος')
+                expect(branches).not_to_contain_text('Νεότερη επίσκεψη')
+                expect(row.locator('.patient-followthrough-rail .pending-stage')).to_have_count(2)
+                expect(row.locator('.patient-followthrough-end')).to_have_attribute('data-complete',str(width==390).lower())
+                expect(points.filter(has_text='Παραλήφθηκε')).to_have_count(0)
+                if width==390:
+                    row.locator('.pending-stage').filter(has_text='✓ Εξετάστηκαν οι εικόνες').get_by_role('button',name='Αναίρεση',exact=True).click()
+                    expect(row.locator('.patient-followthrough-end')).to_have_attribute('data-complete','false')
+                    expect(row).to_contain_text('✓ Παραλήφθηκε το CD')
+                    page.reload();expect(row.locator('.patient-followthrough-end')).to_have_attribute('data-complete','false')
+                page.locator('.patient-obligation-link button').click()
+                expect(branches).to_have_attribute('open','')
                 points.filter(has_text='Επανέλεγχος γόνατος').click();expect(page.locator('.patient-journey-preview')).to_contain_text('Επανέλεγχος γόνατος')
                 expect(page.get_by_role('dialog')).to_be_visible()
                 page.screenshot(path=str(tmp_path/f'cp2-popup-{width}.png'),full_page=False)
                 page.get_by_role('button',name='Άνοιγμα',exact=True).click()
                 expect(page.get_by_role('dialog')).not_to_be_visible()
-                expect(page.locator('.patient-visit')).to_be_visible()
+                expect(page.locator('#visit-'+p['source_encounter_id'])).to_be_visible()
                 assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), page.evaluate("Array.from(document.querySelectorAll('body *')).filter(e=>e.getBoundingClientRect().right>innerWidth && e.getBoundingClientRect().width>0).slice(0,15).map(e=>[e.tagName,e.id,e.className,e.getBoundingClientRect().width])")
                 page.locator('#patientChart').screenshot(path=str(tmp_path/f'cp2-{width}.png'))
                 assert not errors;context.close()
