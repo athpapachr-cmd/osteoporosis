@@ -5,7 +5,7 @@
   const $=id=>document.getElementById(id);
   const el=(parent,tag,text,cls)=>{const n=document.createElement(tag);if(text)n.textContent=text;if(cls)n.className=cls;parent.append(n);return n;};
   const button=(parent,text,fn)=>{const b=el(parent,'button',text,'clinical-secondary');b.type='button';b.onclick=fn;return b;};
-  let revision=0,searchRevision=0,timer=null,active=false,creating=false,capture=false,creationId=null,opener=null;
+  let revision=0,searchRevision=0,timer=null,active=false,creating=false,capture=false,creationId=null,opener=null,onChoose=null,selectedId=null;
   const dialog=el(document.body,'dialog','','patient-entry-dialog');dialog.id='patientEntry';dialog.setAttribute('aria-labelledby','patientEntryTitle');
   const heading=el(dialog,'div','','clinical-row-between');el(heading,'h2','Καρτέλα ασθενούς').id='patientEntryTitle';button(heading,'Κλείσιμο',dismiss);
   el(dialog,'p','Άνοιξε υπάρχουσα καρτέλα ή δημιούργησε νέα.','clinical-muted');
@@ -19,7 +19,7 @@
   const submit=el(form,'button','Δημιουργία νέας καρτέλας','clinical-primary');submit.type='submit';submit.id='patientEntryCreate';
   const status=el(dialog,'p','','clinical-muted');status.id='patientEntryStatus';status.setAttribute('role','status');
   button(dialog,'Πρόσβαση',()=>{dismiss();window.dispatchEvent(new Event('clinical:request-login'));});
-  function clear(){revision++;searchRevision++;clearTimeout(timer);active=false;creating=false;name.value='';dob.value='';phone.value='';results.replaceChildren();status.textContent='';for(const control of form.elements)control.disabled=false;}
+  function clear(){revision++;searchRevision++;clearTimeout(timer);active=false;creating=false;onChoose=null;selectedId=null;name.value='';dob.value='';phone.value='';results.replaceChildren();status.textContent='';for(const control of form.elements)control.disabled=false;}
   function dismiss(){clear();if(dialog.open)dialog.close();opener?.focus?.();opener=null;}
   dialog.onclose=()=>{if(active)clear();};
   async function api(path,body){
@@ -28,11 +28,19 @@
   }
   async function choose(id,ticket=revision){
     if(ticket!==revision||!active)return;
+    if(onChoose){
+      const callback=onChoose;selectedId=id;creating=true;status.textContent='Σύνδεση ραντεβού…';for(const control of form.elements)control.disabled=true;
+      try{const valid=()=>ticket===revision&&active;await callback(id,valid);if(!valid())return;dismiss();await window.CockpitStoredChart.open(id);}
+      catch(e){if(ticket===revision&&active){status.textContent='Η καρτέλα υπάρχει. Η σύνδεση δεν ολοκληρώθηκε· μπορείς να την επαναλάβεις.';results.replaceChildren();button(results,'Επανάληψη σύνδεσης',()=>choose(selectedId,ticket));}}
+      finally{if(ticket===revision&&active){creating=false;for(const control of form.elements)control.disabled=false;submit.disabled=Boolean(selectedId);}}
+      return;
+    }
     const startCapture=capture;dismiss();const after=revision;
     window.CockpitVisitBrief?.invalidate();
     const opened=await window.CockpitStoredChart.open(id);
     if(after===revision&&opened===id&&startCapture)window.CockpitStoredChart.beginVisit();
   }
+
   function displayName(p){const d=p.demographics||{};return d.full_name||d.fullName||d.name||[d.first_name||d.firstName,d.last_name||d.lastName].filter(Boolean).join(' ')||'Καταχωρισμένος ασθενής';}
   async function search(append=false,offset=0){
     const term=name.value.trim(),ticket=revision,lookup=++searchRevision;
@@ -41,23 +49,23 @@
       if(ticket!==revision||lookup!==searchRevision||!active||term!==name.value.trim())return;
       if(!append)results.replaceChildren();
       if(!rows.length&&!append)el(results,'p','Δεν βρέθηκε καρτέλα. Μπορείς να δημιουργήσεις νέα με τα παρακάτω στοιχεία.','clinical-muted');
-      for(const p of rows){const row=el(results,'div','','patient-entry-match');const copy=el(row,'div');el(copy,'strong',displayName(p));const d=p.demographics||{};el(copy,'small',[d.dob||d.date_of_birth||d.birth_date,d.phone].filter(Boolean).join(' · '));button(row,capture?'Καταγραφή επίσκεψης':'Άνοιγμα καρτέλας',()=>choose(p.patient_id,ticket));}
+      for(const p of rows){const row=el(results,'div','','patient-entry-match');const copy=el(row,'div');el(copy,'strong',displayName(p));const d=p.demographics||{};el(copy,'small',[d.dob||d.date_of_birth||d.birth_date,d.phone].filter(Boolean).join(' · '));button(row,onChoose?'Σύνδεση και άνοιγμα':capture?'Καταγραφή επίσκεψης':'Άνοιγμα καρτέλας',()=>choose(p.patient_id,ticket));}
       if(rows.length===20){const more=button(results,'Περισσότερα αποτελέσματα',()=>{more.remove();search(true,offset+rows.length);});}
     }catch(e){if(ticket===revision&&lookup===searchRevision&&active){results.replaceChildren();el(results,'p',e.message,'clinical-muted');}}
   }
   name.oninput=()=>{clearTimeout(timer);searchRevision++;results.replaceChildren();status.textContent='';timer=setTimeout(()=>search(),250);};
   form.onsubmit=async e=>{
-    e.preventDefault();if(creating||!active||!form.reportValidity())return;
+    e.preventDefault();if(creating||selectedId||!active||!form.reportValidity())return;
     creating=true;searchRevision++;clearTimeout(timer);results.replaceChildren();const ticket=revision;for(const control of form.elements)control.disabled=true;
     status.textContent='Δημιουργία καρτέλας…';
     try{const p=await api('/patients/create',{creation_id:creationId,full_name:name.value,dob:dob.value||null,phone:phone.value||null});if(ticket===revision&&active)await choose(p.patient_id,ticket);}
     catch(error){if(ticket===revision&&active)status.textContent=error.message;}
-    finally{if(ticket===revision&&active){creating=false;for(const control of form.elements)control.disabled=false;}}
+    finally{if(ticket===revision&&active){creating=false;for(const control of form.elements)control.disabled=false;submit.disabled=Boolean(selectedId);}}
   };
   function open(options={}){
     if(window.CockpitStoredChart?.canLeave&&!window.CockpitStoredChart.canLeave())return;
     window.CockpitStoredChart?.cancelPendingRead();
-    dismiss();active=true;capture=Boolean(options.capture);creationId=crypto.randomUUID();opener=document.activeElement;
+    dismiss();active=true;capture=Boolean(options.capture);onChoose=typeof options.onChoose==='function'?options.onChoose:null;creationId=crypto.randomUUID();opener=document.activeElement;
     name.value=String(options.name||'').slice(0,200);submit.textContent=capture?'Δημιουργία και καταγραφή επίσκεψης':'Δημιουργία νέας καρτέλας';
     dialog.showModal();name.focus();if(name.value.trim())search();
   }

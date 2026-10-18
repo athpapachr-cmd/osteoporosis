@@ -127,7 +127,7 @@
           content.append(action(time+" · "+name,reason,()=>{
             close();
             if(window.CockpitHome?.openAppointment)window.CockpitHome.openAppointment({
-              kind:"appointment",name,reason,time,appointmentId:row.appointment_id,
+              kind:"appointment",name,reason,time,date:row.start_at.slice(0,10),appointmentId:row.appointment_id,
               patientId:null
             });
           }));

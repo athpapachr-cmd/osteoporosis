@@ -54,7 +54,7 @@
  function open(row){
    if(window.CockpitStoredChart?.canLeave&&!window.CockpitStoredChart.canLeave())return;
    if(row.kind==='appointment'&&!row.patientId&&window.CockpitPatientEntry&&!window.CockpitSynthetic){
-     window.CockpitVisitBrief?.invalidate();window.CockpitPatientEntry.open({name:row.name});return;
+     window.CockpitVisitBrief?.open({uid:row.appointmentId,name:row.name,reason:row.reason,time:row.time,date:row.date||null,freshness:''});return;
    }
    window.CockpitStoredChart?.reset();
    if(window.CockpitStoredChart && row.patientId && !window.CockpitVisitBrief?.bookingVerification()){
@@ -203,7 +203,7 @@
    if(!nameNode.dataset.appointmentId)return;
    state.briefReturnFocus=$("visitSidebar"+prefix[0].toUpperCase()+prefix.slice(1));
    const view={
-     uid:nameNode.dataset.appointmentId,name:nameNode.textContent,
+     uid:nameNode.dataset.appointmentId,name:nameNode.textContent,date:nameNode.dataset.appointmentDate||null,
      time:$(prefix+"AppointmentTime").textContent,
      reason:$(prefix+"AppointmentType").textContent,
      freshness:$("calendarNote").textContent
@@ -330,7 +330,7 @@
        const library=document.getElementById("doctorLibraryView");
        if(home&&library){home.hidden=false;library.hidden=true;}
        open({kind:"appointment",name:String(row.name||"Ραντεβού"),reason:String(row.reason||"Ραντεβού"),
-         time:String(row.time||""),appointmentId:String(row.appointmentId),patientId:null});
+         time:String(row.time||""),date:row.date||null,appointmentId:String(row.appointmentId),patientId:null});
      }
    };
  }

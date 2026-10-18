@@ -143,6 +143,7 @@
       <div class="appt-name">${esc(patient)}</div>
       <div class="appt-meta">${esc(row.status || "scheduled")}${esc(clinic)}</div>
       ${reason ? `<div class="appt-label">${esc(reason)}</div>` : ""}
+      <a class="button ghost" href="/static/cockpit/?booking=${encodeURIComponent(row.appointment_id)}&amp;booking_date=${start ? dateKey(start) : ''}">Καρτέλα · Τελευταία επίσκεψη</a>
       ${classificationControl(row, category)}
     </article>`;
   }

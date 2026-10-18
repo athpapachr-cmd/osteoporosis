@@ -4,7 +4,7 @@
   const $=id=>document.getElementById(id);
   const state={
     ticket:0, view:null, ready:false, revision:0, linked:false,
-    pending:null, chosen:null, patientId:null, inFlight:false
+    pending:null, chosen:null, patientId:null, inFlight:false, chartMode:false, replaceRequired:false
   };
   const endpoint=(window.CockpitClinicalBase||"/clinical")+"/calendar/visit-brief/";
 
@@ -28,7 +28,7 @@
     const list=document.createElement("ul");
     values.forEach(value=>{
       const sourceLabel={heidi_today:"Heidi",gesy_today:"ΓεΣΥ σήμερα",
-        gesy_previous:"ΓεΣΥ προηγούμενο",clinician_edit:"Ιατρική καταγραφή"};
+        gesy_previous:"ΓεΣΥ προηγούμενο",dia_summary:"Σύνοψη Dia",clinician_edit:"Ιατρική καταγραφή"};
       let printed="";
       if(value&&typeof value==="object"){
         const p=(value.source_roles||[]).slice(0,3).map(x=>sourceLabel[x]||"Μη προσδιορισμένη πηγή");
@@ -48,6 +48,10 @@
     state.patientId=null;
     $("visitBriefClinical").hidden=true;
     $("visitBriefOpenChart").hidden=true;
+    document.getElementById("visitBriefOpenLatest")?.remove?.();
+    if($('visitBriefPreviousHeading'))$('visitBriefPreviousHeading').textContent='Προηγούμενη επιβεβαιωμένη επίσκεψη';
+    if($('visitBriefLinkNote'))$('visitBriefLinkNote').hidden=false;
+    $('visitBriefChecksTitle').hidden=false;$('visitBriefChecks').hidden=false;
     $("visitBriefUnlink").textContent="Αποσύνδεση ραντεβού";
     $("visitBriefUnlink").dataset.armed="";
     $("visitBriefUnlink").hidden=true;
@@ -57,7 +61,7 @@
   function invalidate(){
     state.ticket++;
     state.ready=false;state.view=null;state.pending=null;state.chosen=null;
-    state.revision=0;state.linked=false;state.inFlight=false;
+    state.revision=0;state.linked=false;state.inFlight=false;state.chartMode=false;state.replaceRequired=false;
     clearProtected();
     // Hiding the overlay alone must not leave patient names or confirmation
     // identifiers in the DOM after close, logout, re-login or context switch.
@@ -87,6 +91,7 @@
   }
   async function open(view){
     if(!view||!view.uid)return;
+    if(window.CockpitStoredChart?.canLeave&&!window.CockpitStoredChart.canLeave())return;
     invalidate();
     const ticket=state.ticket;
     state.view={...view};
@@ -112,6 +117,16 @@
         $("visitBriefFreshness").textContent="";
         renderConfirmed(data);
         return;
+      }
+      if(window.CockpitPatientEntry){
+        const normal=await fetch('/clinical/status',{credentials:'same-origin',cache:'no-store'});
+        if(ticket!==state.ticket||$('visitBriefOverlay').hidden)return;
+        if(normal.ok){
+          state.chartMode=true;
+          const data=await request('chart-read',{booking_uid:view.uid,target_date:view.date||null});
+          if(ticket!==state.ticket||$('visitBriefOverlay').hidden)return;
+          renderChart(data);return;
+        }
       }
       const data=await request("read",{booking_uid:view.uid});
       if(ticket!==state.ticket||$("visitBriefOverlay").hidden)return;
@@ -144,6 +159,11 @@
     }catch(err){
       if(ticket!==state.ticket||$("visitBriefOverlay").hidden)return;
       clearProtected();
+      if(state.chartMode){
+        $('visitBriefChoosePatient').hidden=true;
+        $('visitBriefIdentity').textContent=err.status===401?'Συνδέσου από την Πρόσβαση.':'Δεν ανανεώθηκε το ραντεβού. Μπορείς να ανοίξεις την καρτέλα με αναζήτηση.';
+        if(err.status===401)identityDenied();return;
+      }
       $("visitBriefChoosePatient").hidden=true;
       if((err.status===401||err.status===403)&&window.CockpitPatientEntry&&!window.CockpitSynthetic){
         // Optional staff Brief denial does not revoke an independently valid registry session.
@@ -325,6 +345,7 @@
     $("visitBriefChoosePatient").hidden=true;
     $("visitBriefIdentity").textContent="Αποσύνδεση…";
     try{
+      if(state.chartMode){await request('chart-unlink',{booking_uid:uid,expected_revision:revision,request_id:crypto.randomUUID()});if(ticket!==state.ticket)return;state.linked=false;state.revision=revision+1;state.replaceRequired=true;$('visitBriefPatientEntry').textContent='Σύνδεση καρτέλας / Νέος ασθενής';$('visitBriefIdentity').textContent='Η σύνδεση αφαιρέθηκε.';return;}
       await request("unlink",{booking_uid:uid,expected_revision:revision,explicit_unlink:true});
       if(ticket!==state.ticket)return;
       state.linked=false;
@@ -338,12 +359,45 @@
 
   $("visitConfirmBooking").addEventListener("click",confirmSelection);
   $("visitBriefUnlink").addEventListener("click",revoke);
+  function renderChart(data){
+    clearProtected();state.revision=data.revision;state.linked=Boolean(data.linked);state.replaceRequired=Boolean(data.replace_required);
+    state.ready=true;state.view.observation=data.booking.observation;state.view.uid=data.booking.booking_uid;
+    $('visitBriefWhen').textContent=new Intl.DateTimeFormat('el-CY',{timeZone:'Asia/Nicosia',dateStyle:'short',timeStyle:'short'}).format(new Date(data.booking.start_at));
+    $('visitBriefName').textContent=data.booking.patient_display_name||'Ραντεβού';
+    state.view.name=data.booking.patient_display_name;state.view.date=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Nicosia',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(data.booking.start_at));
+    $('visitBriefReason').textContent=data.booking.reason||'';
+    $('visitBriefChoosePatient').hidden=true;
+    const entry=$('visitBriefPatientEntry');entry.hidden=false;entry.className=data.mode==='chart_linked'?'clinical-secondary':'clinical-primary';entry.textContent=data.mode==='chart_linked'?'Αλλαγή συνδεδεμένης καρτέλας':'Σύνδεση καρτέλας / Νέος ασθενής';
+    if(data.mode!=='chart_linked'){$('visitBriefIdentity').textContent='Επίλεξε την καρτέλα μία φορά για αυτό το ραντεβού.';return;}
+    state.patientId=data.patient_id;$('visitBriefIdentity').textContent='Συνδεδεμένη καρτέλα · '+data.patient_name;
+    $('visitBriefClinical').hidden=false;$('visitBriefOpenChart').hidden=false;$('visitBriefUnlink').hidden=false;
+    if($('visitBriefLinkNote'))$('visitBriefLinkNote').hidden=true;
+    if($('visitBriefPreviousHeading'))$('visitBriefPreviousHeading').textContent='Τελευταία αποθηκευμένη επίσκεψη';
+    const latest=data.latest_visit;
+    evidence('visitBriefPrevious',latest?[latest.date+' · '+latest.reason].concat(latest.findings||[]):[],'Δεν έχει αποθηκευτεί επίσκεψη.');
+    evidence('visitBriefPlan',latest?.decisions||[],'Δεν έχει καταγραφεί προηγούμενο σχέδιο.');
+    $('visitBriefPending').replaceChildren();$('visitBriefChecks').replaceChildren();$('visitBriefChecksTitle').hidden=true;$('visitBriefChecks').hidden=true;
+    const pending=data.pending||[];if(!pending.length)evidence('visitBriefPending',[],'Δεν υπάρχουν ανοικτές υποχρεώσεις.');
+    for(const item of pending){const b=document.createElement('button');b.type='button';b.className='clinical-secondary';b.textContent=item.description;b.onclick=()=>{if(!window.CockpitStoredChart.canLeave())return;const id=state.patientId;$('visitBriefClose').click();window.CockpitStoredChart.openPending(id,item.pending_id);};$('visitBriefPending').append(b);}
+    if(latest){const open=document.createElement('button');open.id='visitBriefOpenLatest';open.type='button';open.className='clinical-secondary';open.textContent='Άνοιγμα τελευταίας επίσκεψης';open.onclick=async()=>{
+      if(!window.CockpitStoredChart.canLeave())return;const id=state.patientId,visit=latest.source_encounter_id;$('visitBriefClose').click();
+      const opened=await window.CockpitStoredChart.open(id);if(opened!==id)return;const node=document.getElementById('visit-'+visit);if(node){node.hidden=false;node.open=true;node.scrollIntoView({behavior:'smooth'});}
+    };$('visitBriefClinical').append(open);}
+  }
   const manualEntry=document.getElementById('visitBriefPatientEntry');
   if(manualEntry)manualEntry.addEventListener('click',()=>{
     const name=String(state.view?.name||$('visitBriefName').textContent||'');
     if(window.CockpitStoredChart?.canLeave&&!window.CockpitStoredChart.canLeave())return;
+    const context=state.chartMode&&state.ready&&state.view?.observation?{...state.view,revision:state.revision,linked:state.linked,replace:state.replaceRequired}:null;
     $('visitBriefClose').click();
-    window.CockpitPatientEntry?.open({name});
+    const token=state.ticket;
+    const requestId=crypto.randomUUID();
+    window.CockpitPatientEntry?.open({name,...(context?{onChoose:async(id,valid)=>{
+      if(!valid()||token!==state.ticket)throw Error('Closed selection');
+      await request('chart-select',{booking_uid:context.uid,target_date:context.date||null,patient_id:id,expected_revision:context.revision,
+        observed_booking:context.observation,replace_existing:context.replace||context.linked,request_id:requestId});
+      if(!valid()||token!==state.ticket)throw Error('Closed selection');
+    }}:{})});
   });
   $("visitBriefOpenChart").addEventListener("click",()=>{
     if(!state.patientId)return;
@@ -361,6 +415,17 @@
   window.addEventListener("clinical:unauthenticated",()=>{
     invalidate();$("visitBriefOverlay").hidden=true;
   });
+  async function bookingFromURL(){
+    const ticket=state.ticket,url=new URL(location.href),uid=url.searchParams.get('booking');if(!uid||uid.length>160)return;
+    try{const r=await fetch('/clinical/status',{credentials:'same-origin',cache:'no-store'});if(ticket!==state.ticket)return;if(!r.ok){if(r.status===401)window.dispatchEvent(new Event('clinical:request-login'));return;}
+      const date=url.searchParams.get('booking_date');url.searchParams.delete('booking');url.searchParams.delete('booking_date');history.replaceState(null,'',url);
+      open({uid,name:'Ραντεβού',time:'',reason:'',freshness:'',date:/^\d{4}-\d{2}-\d{2}$/.test(date||'')?date:null});
+    }catch(e){}
+  }
+  if(typeof URL==='function'&&typeof location!=='undefined'){
+    window.addEventListener('clinical:authenticated',bookingFromURL);
+    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bookingFromURL);else bookingFromURL();
+  }
   window.CockpitVisitBrief={
     open, selectionContext, bookingVerification,
     activateSelection, selectPatient, invalidate, closed,

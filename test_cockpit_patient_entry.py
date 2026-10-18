@@ -75,9 +75,9 @@ def test_browser_shared_entry_and_late_results(setup,tmp_path):
                 page.locator('#captureComposer').get_by_role('button',name='Κλείσιμο',exact=True).click();page.locator('#visitBackHome').click()
                 # Provider booking boundary only is a fixture. Manual registry is real protected HTTP/DB.
                 page.evaluate("""()=>{const p=document.getElementById('nextAppointmentPatient');p.textContent='Συνθετικός Είσοδος';p.dataset.appointmentId='patient-entry-fixture';document.getElementById('visitSidebarNext').disabled=false;document.getElementById('nextAppointmentTime').textContent='19/10/2026 · 09:40';}""")
-                reads=[];page.on('request',lambda r:reads.append(r.url) if '/chart' in r.url else None)
-                page.route('**/clinical/calendar/visit-brief/read',lambda route:route.fulfill(status=401 if width==1280 else 403,json={'detail':'Separate staff Brief authority unavailable'}))
-                page.locator('#visitSidebarNext').click();expect(page.locator('#visitBriefIdentity')).to_contain_text('Η προεπισκόπηση δεν είναι διαθέσιμη',timeout=10000)
+                reads=[];page.on('request',lambda r:reads.append(r.url) if '/clinical/patient/' in r.url and r.url.endswith('/chart') else None)
+                page.route('**/clinical/calendar/visit-brief/chart-read',lambda route:route.fulfill(status=503,json={'detail':'Fresh appointment source unavailable'}))
+                page.locator('#visitSidebarNext').click();expect(page.locator('#visitBriefIdentity')).to_contain_text('Δεν ανανεώθηκε το ραντεβού',timeout=10000)
                 expect(page.locator('#visitBriefName')).to_have_text('Συνθετικός Είσοδος')
                 expect(page.locator('#visitBriefClinical')).not_to_be_visible()
                 expect(page.locator('#visitBriefChoosePatient')).not_to_be_visible()
@@ -88,6 +88,8 @@ def test_browser_shared_entry_and_late_results(setup,tmp_path):
                 expect(page.locator('#visitSelectedName')).to_have_text('Συνθετικός Είσοδος');assert 'chart='+old['patient_id'] in page.url
                 # The dated schedule popover delegates to this same public appointment entry.
                 page.evaluate("window.CockpitHome.openAppointment({name:'Συνθετικός Είσοδος',appointmentId:'day-schedule-fixture'})")
+                expect(page.locator('#visitBriefIdentity')).to_contain_text('Δεν ανανεώθηκε το ραντεβού')
+                page.locator('#visitBriefPatientEntry').click()
                 expect(page.locator('#patientEntryName')).to_have_value('Συνθετικός Είσοδος')
                 expect(page.locator('.patient-entry-match')).to_have_count(2)
                 page.locator('#patientEntry').get_by_role('button',name='Κλείσιμο',exact=True).click()
