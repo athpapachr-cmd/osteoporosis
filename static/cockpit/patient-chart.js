@@ -100,21 +100,9 @@
         const later=progress.steps.filter(s=>s.state!=='confirmed'&&s.key!==progress.next_checkpoint?.key);
         if(later.length){const other=el(copy,'details');el(other,'summary','Έγινε ήδη επόμενο βήμα;');for(const step of later)stage(other,step);}
       }else if(item.checkpoint_write_allowed&&['open','awaiting_patient','awaiting_result'].includes(item.status)){
-        const choices={material_images:['CD: παραλαβή → εξέταση εικόνων','Παραλήφθηκε το CD;'],document:['Πόρισμα: παραλαβή → ανάγνωση','Παραλήφθηκε το πόρισμα;'],completion:['Μία ενέργεια','Ολοκληρώθηκε η ενέργεια;']};
-        const label=el(actions,'label','Παρακολούθηση '),select=el(label,'select');
-        for(const [key,[title]]of Object.entries(choices)){const option=el(select,'option',title);option.value=key;}
-        select.value=/\bcd\b/i.test(item.description)?'material_images':/πόρισμα/i.test(item.description)?'document':'completion';
-        const question=el(actions,'p',choices[select.value][1]);select.onchange=()=>question.textContent=choices[select.value][1];
-        button(actions,'Ναι',()=>mutate('/checkpoint-plan',{expected_revision:item.lifecycle?.revision||0,template:select.value,first_observation:'yes_confirmed'}));
-        button(actions,'Όχι ακόμη',()=>mutate('/checkpoint-plan',{expected_revision:item.lifecycle?.revision||0,template:select.value,first_observation:'not_yet_observed'}));
-        const prior=el(actions,'details');el(prior,'summary','Έγινε ήδη επόμενο βήμα;');
-        const priorChoices=el(prior,'div');
-        function showPrior(){priorChoices.replaceChildren();prior.hidden=select.value==='completion';
-          const key=select.value==='material_images'?'images_reviewed':'report_read';
-          el(priorChoices,'p',key==='images_reviewed'?'Εξετάστηκαν οι εικόνες;':'Διαβάστηκε το πόρισμα;');
-          for(const [label,observation]of [['Ναι','yes_confirmed'],['Όχι ακόμη','not_yet_observed']])button(priorChoices,label,()=>mutate('/checkpoint-plan',{expected_revision:item.lifecycle?.revision||0,template:select.value,first_checkpoint_key:key,first_observation:observation}));
-        }
-        select.onchange=()=>{question.textContent=choices[select.value][1];showPrior();};showPrior();
+        el(actions,'p','Ολοκληρώθηκε η ενέργεια;');
+        for(const [label,observation]of [['Ναι','yes_confirmed'],['Όχι ακόμη','not_yet_observed']])
+          button(actions,label,()=>mutate('/checkpoint-plan',{expected_revision:item.lifecycle?.revision||0,template:'completion',first_observation:observation}));
 
       }else if(!item.checkpoint_storage_ready)el(copy,'small','Η ενημέρωση των βημάτων δεν έχει ενεργοποιηθεί ακόμη.');
       else if(!item.checkpoint_write_allowed)el(copy,'small','Για ενημέρωση χρειάζεται η πρόσβαση γιατρού.');
@@ -126,16 +114,16 @@
         if(!existing.length)el(step,'p',statuses[item.status]||item.status);
         const end=el(actions,'div','','patient-followthrough-end');end.dataset.complete=String(item.status==='resolved');el(end,'span','','patient-followthrough-stop');el(end,'small',item.status==='resolved'?'Ολοκληρώθηκε':item.status==='cancelled'?'Ακυρώθηκε':'Τέλος');
       }
-      if(target.closest('.patient-pending-dialog')&&item.checkpoint_write_allowed){
+      if(item.checkpoint_write_allowed){
         const tools=el(copy,'div','','pending-checkpoint-actions');
         if(item.status==='cancelled'&&item.lifecycle?.cancellation_event_id){
           button(tools,'Επαναφορά υποχρέωσης',()=>mutate('/lifecycle',{action:'restore',expected_revision:item.lifecycle.revision,cancellation_event_id:item.lifecycle.cancellation_event_id}));
-        }else if(['open','awaiting_patient','awaiting_result'].includes(item.status)){
-          button(tools,'Διαγραφή υποχρέωσης',()=>{
-            tools.replaceChildren();el(tools,'p','Να αφαιρεθεί από τις ενεργές υποχρεώσεις; Η καταγραφή της επίσκεψης διατηρείται και μπορείς να την επαναφέρεις.');
-            button(tools,'Διαγραφή',()=>mutate('/lifecycle',{action:'cancel',expected_revision:item.lifecycle?.revision||0}));
-            button(tools,'Διατήρηση',()=>{const dialog=target.closest('dialog');dialog.close();showPending(id,item);});
-          });
+        }else if(['open','awaiting_patient','awaiting_result','resolved'].includes(item.status)){
+          const remove=button(tools,'Διαγραφή υποχρέωσης',()=>{remove.hidden=true;confirmation.hidden=false;});
+          const confirmation=el(tools,'div');confirmation.hidden=true;
+          el(confirmation,'p','Να διαγραφεί αυτή η υποχρέωση; Μπορείς να την επαναφέρεις.');
+          button(confirmation,'Διαγραφή',()=>mutate('/lifecycle',{action:'cancel',expected_revision:item.lifecycle?.revision||0}));
+          button(confirmation,'Διατήρηση',()=>{confirmation.hidden=true;remove.hidden=false;});
         }
       }
       if(item.source_excerpt)el(copy,'blockquote',item.source_excerpt);

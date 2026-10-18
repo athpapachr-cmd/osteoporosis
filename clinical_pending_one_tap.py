@@ -250,10 +250,10 @@ def attach_pending_one_tap_routes(router,engine,protected):
             events=_events(db,row)
             if _revision(events)!=action.expected_revision:raise HTTPException(409,"Pending revision changed")
             if action.action=="cancel":
-                if action.cancellation_event_id or row.status not in ("open","awaiting_patient","awaiting_result"):
+                if action.cancellation_event_id or row.status not in ("open","awaiting_patient","awaiting_result","resolved"):
                     raise HTTPException(409,"Pending cannot be cancelled")
                 metadata={"previous_status":row.status,"previous_resolution_event_id":row.resolution_event_id}
-                row.status="cancelled"
+                row.status="cancelled";row.resolution_event_id=None
             else:
                 current=next((e for e in reversed(events) if e.kind in ("cancelled","reopened")),None)
                 if row.status!="cancelled" or not current or current.kind!="cancelled" or current.id!=action.cancellation_event_id:
