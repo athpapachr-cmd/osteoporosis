@@ -1,5 +1,7 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-18 #198 EXACT SOURCE LIVE / READ-ONLY SMOKE NEXT:** Renderdep-dbacv161egvs73di0fvg LIVE at13:55:51UTC on exactc2ed41b9a3da197b5394c6925b8e35506dc16bd3. Durable checkpoint before dispatchc5b8950: fixed marked edit/prefill/cancel at1280/390, chart identical and no amend/extract/save requests. Real clinical amendment/provider calls not authorized for this proof; local/CI write evidence retained.
+
 > **2026-10-18 #198 EXACT NATIVE BUILD OBSERVED:** Renderdep-dbacv161egvs73di0fvg buildingc2ed41b9a3da197b5394c6925b8e35506dc16bd3; no duplicate deployment triggered. Next wait forLIVE, then preparedreadonlymarkedproofc5b8950, no clinical save/provider invocation.
 
 > **2026-10-18 #198 MERGED / NATIVE DEPLOY NEXT:** Squashc2ed41b9a3da197b5394c6925b8e35506dc16bd3 at13:54:11UTC. Exact reviewed/tested amendment runtime unchanged. Durable checkpoint before existing native Render deployment observation; next exact sourceLIVE then fixed marked read-only edit/cancel proofc5b8950. Not yet production UI verified.
