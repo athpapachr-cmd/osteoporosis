@@ -148,6 +148,7 @@
     }
   }
   function inbox() {
+    content.replaceChildren();
     content.append(text("Δεν έχει συνδεθεί ακόμη το Clinical Inbox με το Cockpit. Δεν υπάρχει αξιόπιστη μέτρηση νέων κλινικών μηνυμάτων, συνεπώς δεν εμφανίζεται αριθμός."));
     content.append(newLink("Άνοιγμα Gmail","https://mail.google.com/","Έλεγχος μηνυμάτων απευθείας στο Gmail"));
   }
