@@ -1,5 +1,7 @@
 # TODO.md — Clinical Excellence long-range compass
 
+> **2026-10-18 Obligation usability correction installed:** #189 removes universal task-template selection for ordinary reminders and makes reversible deletion available inline/popup after completion. Missing-field extraction clarified; live synthetic noSave comparison confirms blankBP is not a task while an explicitly agreed measurement remains supported. Existing approved CD/image stages preserved. PersonalPOuse pending, no later phase activation; exact release/evidence in root/Cockpit CURRENT.
+
 > **2026-10-18 Appointment-to-chart prerequisite corrected:** #187 installs normal physician single-session preview and persistent explicit perbooking chart choice, latest stored signed visit/exact opening and obligation actions. Actual-source one-login navigation live verified; true association writes/persistence verified local/CI; personalPOchoice/use pending. No automatic namesake/newUID identity mapping or later-phase activation. Exact state in root/Cockpit CURRENT.
 
 > **2026-10-18 Real obligation actions correction installed:** #185 closes the normal-key versus staff-only Pending gap exposed in real use. Native obligation popup supports completion/notyet/undo and reversible deletion; source visits stay unchanged. Unmarked normal-key flow tested locally/CI, same-authority marked live lifecycle verified; personal PO use pending. No later phase activation; exact release state in root/Cockpit CURRENT.
