@@ -1,5 +1,7 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-18 #194 OPEN / FINAL CI NEXT:** PR https://github.com/athpapachr-cmd/osteoporosis/pull/194, published `bd356f47bebd901388671b5e0cb6d2d0d0f5bbc7`; R1-reviewed runtime `65baa49`. Durable local checkpoint before final affected CI and authorized native release; read-only proof stays `0be4936`. No further runtime changes intended.
+
 > **2026-10-18 COMPACT CD DELTA REVIEW PASS / RELEASE NEXT:** Independent `65baa49f98c220510c0f2e6ad93bb78a55ce96e3` PASS / COMPLETE_FOR_DECLARED_SCOPE. Scoped sizing fixes measured wrapping without hiding/forcing overlap or changing actions; prior R2 removal closure retained. Next publish correction PR, final affected CI/canonical guard and native release, then read-only marked proof.
 
 > **2026-10-18 COMPACT CD ACTION CORRECTION TESTED:** On `codex/cockpit-compact-cd-actions`, reduce only rail action-button font/padding and gap so the two-stage CD undo/delete pair fits its column. Source-proven live wrapping remains the reason; state semantics unchanged. All13CP2 tests PASS, with an added actual-browser multistage center-alignment assertion and retained generic/permanent regressions. Existing55affected/3Node and R2d3c616c evidence reused. Next one bounded R1 delta closure, final CI/native release, then retry unchanged read-only live proof `0be4936`.
