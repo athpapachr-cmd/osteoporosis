@@ -52,6 +52,10 @@
    });
  }
  function open(row){
+   if(window.CockpitStoredChart?.canLeave&&!window.CockpitStoredChart.canLeave())return;
+   if(row.kind==='appointment'&&!row.patientId&&window.CockpitPatientEntry&&!window.CockpitSynthetic){
+     window.CockpitVisitBrief?.invalidate();window.CockpitPatientEntry.open({name:row.name});return;
+   }
    window.CockpitStoredChart?.reset();
    if(window.CockpitStoredChart && row.patientId && !window.CockpitVisitBrief?.bookingVerification()){
      window.CockpitVisitBrief?.invalidate();
@@ -91,6 +95,7 @@
    window.CockpitVisitBrief?.invalidate();
  }
  function back(){
+   if(window.CockpitStoredChart?.canLeave&&!window.CockpitStoredChart.canLeave())return;
    state.revision++;clearTimeout(state.timer);
    resetDraft();state.selected=null;state.appointment=null;
    window.CockpitVisitBrief?.invalidate();
@@ -157,7 +162,9 @@
      if(ticket!==state.revision)return;
      if(!Array.isArray(rows))throw Error("invalid results");
      if(offset===0)box.replaceChildren();
-     if(!rows.length&&offset===0)return info(box,"Δεν βρέθηκε ασθενής.");
+     if(!rows.length&&offset===0){info(box,"Δεν βρέθηκε ασθενής.");
+       if(window.CockpitPatientEntry){const create=document.createElement('button');create.type='button';create.className='clinical-secondary';create.textContent='Δημιουργία καρτέλας';create.onclick=()=>window.CockpitPatientEntry.open({name:term});box.append(create);}return;
+     }
      rows.forEach(p=>{
        const name=nameOf(p),d=p.demographics||{},birthday=d.date_of_birth||d.birth_date||d.dob||"";
        const meta=birthday?"Γέννηση: "+birthday:"Καταχωρισμένος φάκελος — επιβεβαίωσε τα στοιχεία πριν την επιλογή";
@@ -265,7 +272,7 @@
      // The modal gains two buttons after independent confirmation. Hidden
      // controls must never receive keyboard focus.
      const visible=["visitBriefClose","visitBriefChoosePatient",
-       "visitBriefOpenChart","visitBriefUnlink"]
+       "visitBriefOpenChart","visitBriefUnlink","visitBriefPatientEntry"]
        .map($).filter(el=>el&&!el.hidden&&!el.disabled);
      if(!visible.length)return;
      const first=visible[0],last=visible[visible.length-1];

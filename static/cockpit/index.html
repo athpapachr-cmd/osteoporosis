@@ -8,7 +8,7 @@
   <meta name="description" content="Κεντρική αρχική σελίδα του Clinical Excellence Cockpit." />
   <link rel="stylesheet" href="/static/cockpit/styles.css" />
   <link rel="stylesheet" href="/static/cockpit/clinical-workspace.css" />
-  <link rel="stylesheet" href="/static/cockpit/doctor-shell.css?v=connected-journey-20261018" />
+  <link rel="stylesheet" href="/static/cockpit/doctor-shell.css?v=patient-entry-20261018" />
   <link rel="stylesheet" href="/static/cockpit/shared-nav.css" />
 </head>
 <body>
@@ -205,7 +205,8 @@ ENCOUNTER DETAIL
         </section>
         <p class="clinical-muted">Πλήρης κλινική σύνοψη και προηγούμενο σχέδιο εμφανίζονται μόνο μετά από επιβεβαιωμένη σύνδεση με τον προστατευμένο φάκελο.</p>
         <p id="visitBriefFreshness" class="clinical-muted"></p>
-        <button id="visitBriefChoosePatient" type="button" class="clinical-primary">Επιλογή κλινικού φακέλου</button>
+        <button id="visitBriefPatientEntry" type="button" class="clinical-primary">Αναζήτηση / Νέα καρτέλα</button>
+        <button id="visitBriefChoosePatient" type="button" class="clinical-secondary">Σύνδεση με το ραντεβού · προαιρετικά</button>
         <button id="visitBriefOpenChart" type="button" class="clinical-primary" hidden>Κλινικός φάκελος</button>
         <button id="visitBriefUnlink" type="button" class="clinical-secondary" hidden>Αποσύνδεση ραντεβού</button>
       </section>
@@ -396,7 +397,8 @@ ENCOUNTER DETAIL
   <script src="/static/cockpit/clinical-workspace.js" defer></script>
   <script src="/static/cockpit/visit-brief.js" defer></script>
   <script src="/static/cockpit/app.js" defer></script>
-  <script src="/static/cockpit/patient-chart.js?v=connected-journey-20261018" defer></script>
+  <script src="/static/cockpit/patient-chart.js?v=patient-entry-20261018" defer></script>
+  <script src="/static/cockpit/patient-entry.js?v=patient-entry-20261018" defer></script>
   <script src="/static/cockpit/doctor-shell.js" defer></script>
   <script src="/static/cockpit/shared-nav.js" defer></script>
 </body>

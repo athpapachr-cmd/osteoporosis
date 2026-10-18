@@ -271,3 +271,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
 .patient-followthrough-end[data-complete=true]{color:#24766f;font-weight:700}
 .patient-obligation-link{display:flex;flex-direction:column;align-items:flex-start;gap:5px;margin-bottom:14px}
 .patient-obligation-link button{white-space:normal;text-align:left}
+
+.patient-entry-dialog{width:min(620px,calc(100vw - 32px));max-height:85vh;overflow:auto;box-sizing:border-box;border:1px solid #dce6e7;border-radius:18px;padding:24px;color:#203c48;background:white}
+.patient-entry-dialog::backdrop{background:rgba(25,45,54,.32);backdrop-filter:blur(3px)}
+.patient-entry-dialog h2{margin:0;font-size:1.35rem}.patient-entry-dialog label{display:block;font-size:.85rem;margin:16px 0}
+.patient-entry-dialog input{display:block;width:100%;box-sizing:border-box;padding:11px;border:1px solid #cadadd;border-radius:9px;font:inherit;margin-top:7px}
+.patient-entry-demographics{display:flex;gap:14px}.patient-entry-demographics label{flex:1;min-width:0}
+.patient-entry-match{display:flex;justify-content:space-between;gap:14px;align-items:center;padding:14px 0;border-bottom:1px solid #e4ebee}
+.patient-entry-match>div{min-width:0;overflow-wrap:anywhere}.patient-entry-match small{display:block;margin-top:5px;color:#648087}
+.patient-entry-match button{white-space:normal;flex-shrink:0;max-width:45%}
+#patientEntryHome{margin-top:10px}#patientEntryCreate{margin:12px 0}
+@media(max-width:500px){.patient-entry-dialog{padding:18px}.patient-entry-demographics{display:block}}

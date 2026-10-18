@@ -145,6 +145,17 @@
       if(ticket!==state.ticket||$("visitBriefOverlay").hidden)return;
       clearProtected();
       $("visitBriefChoosePatient").hidden=true;
+      if((err.status===401||err.status===403)&&window.CockpitPatientEntry&&!window.CockpitSynthetic){
+        // Optional staff Brief denial does not revoke an independently valid registry session.
+        let registry;
+        try{registry=await fetch('/clinical/status',{credentials:'same-origin',cache:'no-store'});}catch(e){}
+        if(ticket!==state.ticket||$('visitBriefOverlay').hidden)return;
+        if(registry?.ok){
+          state.ready=false;state.linked=false;
+          $('visitBriefIdentity').textContent='Η προεπισκόπηση δεν είναι διαθέσιμη. Μπορείς να αναζητήσεις ή να δημιουργήσεις καρτέλα.';
+          return;
+        }
+      }
       if(err.status===401||err.status===403)identityDenied();
       else $("visitBriefIdentity").textContent=
         "Δεν επιβεβαιώνεται πλήρης πρόσφατη πηγή. Δεν ανοίγει κλινικό ιστορικό.";
@@ -327,6 +338,13 @@
 
   $("visitConfirmBooking").addEventListener("click",confirmSelection);
   $("visitBriefUnlink").addEventListener("click",revoke);
+  const manualEntry=document.getElementById('visitBriefPatientEntry');
+  if(manualEntry)manualEntry.addEventListener('click',()=>{
+    const name=String(state.view?.name||$('visitBriefName').textContent||'');
+    if(window.CockpitStoredChart?.canLeave&&!window.CockpitStoredChart.canLeave())return;
+    $('visitBriefClose').click();
+    window.CockpitPatientEntry?.open({name});
+  });
   $("visitBriefOpenChart").addEventListener("click",()=>{
     if(!state.patientId)return;
     if(window.CockpitStoredChart){
