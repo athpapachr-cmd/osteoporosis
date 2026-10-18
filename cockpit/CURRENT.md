@@ -1,5 +1,7 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-18 #198 FINAL AFFECTED CI PASS / MERGE NEXT:** Published5c5fb7dfa2a858419f27a73eacd48dccedb91924 reviewedf94d67f. Capture39133420891, Home39133420842, Brief39133420846, Demo39133421024 andcanonical39133420896 SUCCESS. Existing unrelated L0design-onlyallowlist39133420799 rejection inspected. Durable checkpoint before authorized squash/native deployment, then fixedmarkedreadonlyproofc5b8950. No production writes/provider calls.
+
 > **2026-10-18 #198 OPEN / AFFECTED CI NEXT:** PR https://github.com/athpapachr-cmd/osteoporosis/pull/198 published5c5fb7d; reviewed runtimef94d67f. Verification-onlyc5b8950 prepared for fixed marked edit/prefill/cancel, no clinical/task/provider write. Durable local checkpoint before affected CI/canonical guard and authorized merge/native deployment; no runtime delta after review.
 
 > **2026-10-18 AMENDMENT R2 CLOSED / PR NEXT:** Exactf94d67f independently PASS ALL MATERIAL FINDINGS CLOSED / COMPLETE_FOR_DECLARED_SCOPE. All3original temporal/async/validation-retry defects closed with direct regressions; cumulative auth/transaction/task/history/terminal boundaries remain closed. Prior79affected/3Node + final24amendment/Brief PASS. Next publish final candidate/affected CI and authorized native release, then fixed marked read-only edit/prefill/cancel proofc5b8950. No real record or established fixture writes/provider calls.
