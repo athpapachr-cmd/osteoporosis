@@ -1,5 +1,8 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-18 #175 DEPLOYED / LIVE PROOF NEXT:** Existing Render service deploy dep-dba64jlg1s2s73b10nbg LIVE at exact ed979bf60ca876f044f917d997728e4354bcd2fc, finished06:09:48UTC. No manual deploy/env/plan/IP change. Production migration already verified. Durable local checkpoint before live synthetic lifecycle proof. Next dispatch verification-only f162ef6; no provider/new encounter, preserve signed source, leave fixture receipt-confirmed/image-review-pending after testing completion+undo. Not yet live-smoke-verified or PO accepted.
+
+
 > **2026-10-18 #175 MERGED / NATIVE DEPLOY NEXT:** Authorized squash merge ed979bf60ca876f044f917d997728e4354bcd2fc at06:08:12UTC. Final canonical guard39102937258 PASS on30b94ab, affected source gates retained as above. Production checkpoint table installed/verified. No environment/network/cost changes. Durable local checkpoint before observing native existing-service deploy. Next establish Render LIVE exact source, then finite verification-only f162ef6 normal-app synthetic proof. CP2 not yet deployed/live-tested/PO accepted.
 
 
