@@ -1,5 +1,7 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-18 #200 ACTUAL SOURCE LIVE READ PASS:** Run39153152179 verification-onlyfaae6e6 SUCCESS against exactLIVEf2bdba7. Actual protected tomorrow rows match displayed count and Cyprus day at1280/390; Today return works, no pageerror/overflow/clinical or link writes. Only safe date/arrows screenshots; actual names/reasons not logged/captured. Durable checkpoint before screenshot inspection and R0canonicalcloseout. Appointment caller/DST/failure/stale evidence local/CI reused.
+
 > **2026-10-18 #200 EXACT SOURCE LIVE / READ-ONLY PROOF NEXT:** Renderdep-dbagm3psrm7s73aemitg LIVE at18:09:54UTC onf2bdba77bbbe38d12fdea4867b8b7bf2c6fee970. Durable checkpoint before verification-onlyfaae6e6 actualprotectedtomorrow date/count/Today navigation; only safe date/arrows screenshot, no actual names/reasons logged/captured and no clinical/link write.
 
 > **2026-10-18 #200 NATIVE BUILD OBSERVED:** Renderdep-dbagm3psrm7s73aemitg building exactf2bdba77bbbe38d12fdea4867b8b7bf2c6fee970. Existing autodeploy reused, no duplicate trigger. Next LIVE then actualsource tomorrow read/date/count and safe navigation-only screenshots.
