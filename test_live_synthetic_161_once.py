@@ -27,7 +27,7 @@ try:
    page.locator('#captureTestPatient').click();expect(page.locator('#captureOpen')).to_be_visible()
    contexts.append(context);pages.append(page);return context,page
   stage='desktop-login';desktop,page=login(1280)
-  initial=chart(desktop);signed_before=initial['visits'];row=page.locator('#patientChart .patient-chart-grid .synthetic-pending-row').filter(has_text='CD').first
+  initial=chart(desktop);signed_before=initial['visits'];row=page.locator('#patientChart .patient-followthrough-branch .synthetic-pending-row').filter(has_text='CD').first
   p=item(desktop)
   if not p.get('checkpoints'):
    stage='plan-and-explicit-notyet'
@@ -46,31 +46,36 @@ try:
    row.locator('.pending-stage').filter(has_text='✓ Εξετάστηκαν οι εικόνες').get_by_role('button',name='Αναίρεση',exact=True).click()
   expect(row).to_contain_text('Εξετάστηκαν οι εικόνες;')
   stage='review-notyet'
-  row.get_by_role('button',name='Όχι ακόμη',exact=True).click();expect(row).to_contain_text('Όχι ακόμη · καταγράφηκε')
+  row.locator('.pending-stage').filter(has_text='Εξετάστηκαν οι εικόνες;').get_by_role('button',name='Όχι ακόμη',exact=True).click();expect(row).to_contain_text('Όχι ακόμη · καταγράφηκε')
   assert item(desktop)['status']!='resolved'
+  stage='visit-hierarchy-and-finite-branch'
+  expect(page.locator('.patient-journey-point')).to_have_count(len(initial['visits']))
+  assert row.locator('xpath=ancestor::details[1]').get_attribute('id')=='followthrough-'+p['source_encounter_id']
+  expect(row.locator('.patient-followthrough-rail .pending-stage')).to_have_count(2)
+  expect(row.locator('.patient-followthrough-end')).to_have_attribute('data-complete','false')
   stage='desktop-timeline-popup'
   page.locator('.patient-journey-point').filter(has_text=REASON).click();expect(page.get_by_role('dialog')).to_be_visible()
   expect(page.get_by_role('dialog')).to_contain_text(REASON)
   page.get_by_role('dialog').screenshot(path=str(out/'cp2-popup-desktop.png'))
   page.get_by_role('button',name='Άνοιγμα',exact=True).click();expect(page.locator('#visit-'+p['source_encounter_id'])).to_be_visible()
   stage='mobile-independent-read'
-  mobile,mp=login(390);mr=mp.locator('#patientChart .patient-chart-grid .synthetic-pending-row').filter(has_text='CD').first
+  mobile,mp=login(390);mr=mp.locator('#patientChart .patient-followthrough-branch .synthetic-pending-row').filter(has_text='CD').first
   expect(mr).to_contain_text('✓ Παραλήφθηκε το CD');expect(mr).to_contain_text('Όχι ακόμη · καταγράφηκε')
   mp.locator('.patient-journey-point').filter(has_text=REASON).click();expect(mp.get_by_role('dialog')).to_be_visible()
   mp.get_by_role('dialog').screenshot(path=str(out/'cp2-popup-mobile.png'))
   mp.get_by_role('button',name='Άνοιγμα',exact=True).click()
   stage='review-confirmation-and-replay'
   with mp.expect_request('**/checkpoint') as sent:mr.get_by_role('button',name='Ναι',exact=True).click()
-  expect(mr).to_contain_text('Ολοκληρώθηκε');state=item(mobile);assert state['status']=='resolved' and state['checkpoints']['completed']
+  expect(mr).to_contain_text('Ολοκληρώθηκε');expect(mr.locator('.patient-followthrough-end')).to_have_attribute('data-complete','true');state=item(mobile);assert state['status']=='resolved' and state['checkpoints']['completed']
   assert mobile.request.post(sent.value.url,data=sent.value.post_data_json).json()['replayed'] is True
   mp.locator('#visitWorkspacePatient').screenshot(path=str(out/'cp2-completed-mobile.png'))
   stage='exact-review-undo'
   mr.locator('.pending-stage').filter(has_text='✓ Εξετάστηκαν οι εικόνες').get_by_role('button',name='Αναίρεση',exact=True).click()
-  expect(mr).to_contain_text('Εξετάστηκαν οι εικόνες;');state=item(mobile)
+  expect(mr).to_contain_text('Εξετάστηκαν οι εικόνες;');expect(mr.locator('.patient-followthrough-end')).to_have_attribute('data-complete','false');state=item(mobile)
   assert state['status']=='open' and state['checkpoints']['confirmed_keys']==['received']
   stage='refresh-second-browser-and-source'
   for context,pg,width in [(desktop,page,1280),(mobile,mp,390)]:
-   pg.reload();r=pg.locator('#patientChart .patient-chart-grid .synthetic-pending-row').filter(has_text='CD').first
+   pg.reload();r=pg.locator('#patientChart .patient-followthrough-branch .synthetic-pending-row').filter(has_text='CD').first
    expect(r).to_contain_text('✓ Παραλήφθηκε το CD');expect(r).to_contain_text('Εξετάστηκαν οι εικόνες;')
    data=chart(context);assert data['visits']==signed_before
    updates=context.request.get(BASE+'/clinical/clinical-updates?scope=test').json()['items']
@@ -84,6 +89,6 @@ try:
    assert pg.evaluate('document.documentElement.scrollWidth<=innerWidth')
   for context in contexts:context.close()
   browser.close()
- print('PASS CP2 LIVE: marked synthetic patient; PostgreSQL receipt/notyet/review/undo; idempotent replay; immutable signed visit; popup/open-source; same chart/updates in independent1280/390 sessions after refresh. Final fixture: received confirmed, image review pending. No provider request or new encounter.')
+ print('PASS CP2 LIVE: visit-only main trajectory; exact source branch and finite terminal; marked synthetic patient; PostgreSQL receipt/notyet/review/undo; idempotent replay; immutable signed visit; popup/open-source; same chart/updates in independent1280/390 sessions after refresh. Final fixture: received confirmed, image review pending. No provider request or new encounter.')
 except Exception:
  print('FAIL CP2 LIVE stage: '+stage);sys.exit(1)
