@@ -1,5 +1,7 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-18 #189 MERGED / NATIVE DEPLOY NEXT:** Squash6d46974e26dde13fe81d93bb5d7e532748730a74 at12:06:51UTC. Reviewed simplecontrols+resolvedremoval/sourcefidelity and bounded startupwait, affectedCI PASS. Durable local checkpoint before existing nativeRender observation; next exactLIVE then marked-onlyproofb0e18b7. No schema/auth/env/network or real-patient writes.
+
 > **2026-10-18 #189 FINAL AFFECTED CI PASS / MERGE NEXT:** Published30b88c6549b80a56dae7211f79ca426799bf4ba5; reviewedruntime1071b19 and88640e4 PASS. Capture39125843005, Home39125843045, Brief39125842976, Demo39125842984 and canonical39125842975 SUCCESS. Existing L0design-onlyallowlist rejection independently inspected, unrelated. Durable local checkpoint before authorized squash/native deploy; next exactLIVE then fixedmarkedb0e18b7 resolvedremoval/restore and2synthetic providerdrafts withoutSave. No real-record deletion or clinicalspecialtypolicy.
 
 > **2026-10-18 #189 STARTUP DELTA REVIEW PASS / FINAL CI NEXT:** Independent88640e4d23f6e85481fdb7068af7b994b4e7941b PASS COMPLETE_FOR_DECLARED_SCOPE; loading/interactive wait all deferredowners, complete immediate, auth/stale guards unchanged. Original1071b19 obligationPASS retained. Next finalpublishedhead affectedCI/canonical guard then authorized squash/native deploy/live marked proofb0e18b7; no additional design/review loop. KnownL0design-onlyallowlist rejection unrelated and verified.
