@@ -1,6 +1,6 @@
 # TODO.md — Clinical Excellence long-range compass
 
-> **2026-10-18 Cockpit roadmap checkpoint:** #161 experience accepted by the Product Owner. CP1 natural Dia capture and the requested CP2 follow-through are installed in normal Cockpit and live-verified with the persistent synthetic patient. #175 adds receipt/review/not-yet/undo and source-linked dot popups; agent completed the new PostgreSQL table installation without personal-IP changes or user SQL steps. Personal Product Owner acceptance remains pending; CP3–CP5 remain subsequent milestones. Exact release/proof and next action: `CURRENT_OPERATIONAL.md` / `cockpit/CURRENT.md`.
+> **2026-10-18 Cockpit roadmap checkpoint:** #161 experience accepted by the Product Owner. CP1 natural Dia capture and the requested CP2 follow-through are installed in normal Cockpit and live-verified with the persistent synthetic patient. #175 adds receipt/review/not-yet/undo and source-linked dot popups; #177 applies the PO-requested visit-first trajectory with finite source-visit obligation branches and dynamic state; agent completed the new PostgreSQL table installation without personal-IP changes or user SQL steps. Personal Product Owner acceptance remains pending; CP3–CP5 remain subsequent milestones. Exact release/proof and next action: `CURRENT_OPERATIONAL.md` / `cockpit/CURRENT.md`.
 
 > **ROLE:** permanent broad roadmap/checklist across phases.
 > **CANONICAL HOME:** `athpapachr-cmd/osteoporosis`.
