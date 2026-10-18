@@ -1,5 +1,7 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-18 #198 EXACT NATIVE BUILD OBSERVED:** Renderdep-dbacv161egvs73di0fvg buildingc2ed41b9a3da197b5394c6925b8e35506dc16bd3; no duplicate deployment triggered. Next wait forLIVE, then preparedreadonlymarkedproofc5b8950, no clinical save/provider invocation.
+
 > **2026-10-18 #198 MERGED / NATIVE DEPLOY NEXT:** Squashc2ed41b9a3da197b5394c6925b8e35506dc16bd3 at13:54:11UTC. Exact reviewed/tested amendment runtime unchanged. Durable checkpoint before existing native Render deployment observation; next exact sourceLIVE then fixed marked read-only edit/cancel proofc5b8950. Not yet production UI verified.
 
 > **2026-10-18 #198 FINAL AFFECTED CI PASS / MERGE NEXT:** Published5c5fb7dfa2a858419f27a73eacd48dccedb91924 reviewedf94d67f. Capture39133420891, Home39133420842, Brief39133420846, Demo39133421024 andcanonical39133420896 SUCCESS. Existing unrelated L0design-onlyallowlist39133420799 rejection inspected. Durable checkpoint before authorized squash/native deployment, then fixedmarkedreadonlyproofc5b8950. No production writes/provider calls.
