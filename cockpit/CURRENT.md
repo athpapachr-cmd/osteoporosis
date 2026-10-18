@@ -1,5 +1,8 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-18 #175 LIVE SYNTHETIC PROOF PASS:** Run39103120886 SUCCESS at06:11:37UTC against exact LIVE ed979bf/dep-dba64jlg1s2s73b10nbg. Normal Cockpit, fixed marked CP1 patient: explicit notyet/receipt/review/notyet, completion, exact review undo, idempotent request replay, signed visit unchanged, popup/source navigation, same chart/Clinical Updates after refresh in independent1280/390 sessions. No provider request or new encounter. Final fixture receipt confirmed, image review pending; persisted synthetic history visible. Artifacts downloaded under cockpit-v4-browser-evidence/cp2-live-proof/ and desktop/mobile screenshots inspected. Production table install verified separately via full TLS. No IP/credential/env/plan/cost changes; no user technical step required. IMPLEMENTED=YES / MIGRATED=YES / MERGED=YES / DEPLOYED=YES / LIVE SYNTHETIC VERIFIED=YES / PO ACCEPTED=NO. Next publish durable closeout docs and hand back for personal PO test; no CP3-CP5 activation.
+
+
 > **2026-10-18 #175 DEPLOYED / LIVE PROOF NEXT:** Existing Render service deploy dep-dba64jlg1s2s73b10nbg LIVE at exact ed979bf60ca876f044f917d997728e4354bcd2fc, finished06:09:48UTC. No manual deploy/env/plan/IP change. Production migration already verified. Durable local checkpoint before live synthetic lifecycle proof. Next dispatch verification-only f162ef6; no provider/new encounter, preserve signed source, leave fixture receipt-confirmed/image-review-pending after testing completion+undo. Not yet live-smoke-verified or PO accepted.
 
 
