@@ -1,5 +1,7 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-18 #194 FINAL AFFECTED CI PASS / MERGE NEXT:** Published `bd356f47bebd901388671b5e0cb6d2d0d0f5bbc7`, reviewed runtime `65baa49`. Capture39129754911, Home39129754921, Brief39129754931, Demo39129754897 and canonical39129754953 SUCCESS. Known unrelated L0 design-only allowlist failure inspected. Durable checkpoint before authorized squash/native deploy and unchanged read-only geometry proof `0be4936`.
+
 > **2026-10-18 #194 OPEN / FINAL CI NEXT:** PR https://github.com/athpapachr-cmd/osteoporosis/pull/194, published `bd356f47bebd901388671b5e0cb6d2d0d0f5bbc7`; R1-reviewed runtime `65baa49`. Durable local checkpoint before final affected CI and authorized native release; read-only proof stays `0be4936`. No further runtime changes intended.
 
 > **2026-10-18 COMPACT CD DELTA REVIEW PASS / RELEASE NEXT:** Independent `65baa49f98c220510c0f2e6ad93bb78a55ce96e3` PASS / COMPLETE_FOR_DECLARED_SCOPE. Scoped sizing fixes measured wrapping without hiding/forcing overlap or changing actions; prior R2 removal closure retained. Next publish correction PR, final affected CI/canonical guard and native release, then read-only marked proof.
