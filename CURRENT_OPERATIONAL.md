@@ -1,5 +1,7 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-18 #183 LIVE CLIPBOARD PROOF PASS:** Run39111291323 SUCCESS against LIVE7a7f445a05575b70d4d48a4039cdad41eead59cb / dep-dba835e7bikc73ec74o0. Existing marked chart through normal capture entry, actualClipboardwrite/read equals displayed staticinstruction, no patient identifiers, draftpreserved, expandabletext/nooverflow in independent1280/390. No clinical/provider/patientwrites. Safe screenshots inspected under cockpit-v4-browser-evidence/dia-prompt-live/. Localdenial/manualfallback and existingfullCP1flow PASS retained. Next docs-only closeout/writer release; no runtime delta or later phase activation.
+
 > **2026-10-18 #183 DEPLOYED / LIVE STATIC COPY PROOF NEXT:** Renderdep-dba835e7bikc73ec74o0 LIVE exact7a7f445a05575b70d4d48a4039cdad41eead59cb, finished08:23:18UTC. Durable local checkpoint before verification-only6ab0874 dispatch: existing marked chart via normal capture route, actualClipboardwrite/read equals staticvisibleprompt, draftpreservation/expandabletext/1280/390/nooverflow. No provider/clinical/patientwrites. Next inspect safe screenshots and publish docs-only closeout.
 
 > **2026-10-18 #183 MERGED / NATIVE DEPLOY NEXT:** Squash7a7f445a05575b70d4d48a4039cdad41eead59cb at08:21:40UTC. Same reviewed/tested static prompt+clipboard UI. Durable local checkpoint before Render observation; next exact-sourceLIVE then read/copy-only markedfixture proof6ab0874, no model or clinicalwrite.
