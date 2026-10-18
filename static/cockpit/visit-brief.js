@@ -424,7 +424,8 @@
   }
   if(typeof URL==='function'&&typeof location!=='undefined'){
     window.addEventListener('clinical:authenticated',bookingFromURL);
-    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bookingFromURL);else bookingFromURL();
+    // Defer URL entry until all deferred owners (chart and patient entry) are installed.
+    if(document.readyState!=='complete')document.addEventListener('DOMContentLoaded',bookingFromURL);else bookingFromURL();
   }
   window.CockpitVisitBrief={
     open, selectionContext, bookingVerification,

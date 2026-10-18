@@ -44,7 +44,10 @@ All extracted provenance references dia_summary. verification=source_stated, nev
 comparison_basis=unavailable and what_changed=[] (no independently bound prior encounter provided).
 Retain reported history/changes in findings clearly labelled as reported. Retain uncertainty explicitly.
 Only unfulfilled explicitly agreed obligations belong in pending. status=open/awaiting_patient/awaiting_result,
-never resolved/cancelled. Every pending source_excerpt must be a nonempty verbatim substring of SOURCE.
+never resolved/cancelled. A blank, unknown, unrecorded or missing form/checklist field is NOT an agreed future action.
+For example, 'αρτηριακή πίεση/σφυγμοί: κενή έως τώρα' describes missing data, not a request to measure it later.
+Do not generate tasks from such gaps or generic quality/specialty recommendations. Only create a vitals task when SOURCE explicitly requests/agrees the future measurement.
+Every pending source_excerpt must be a nonempty verbatim substring of SOURCE.
 item_type must be test/result/document/follow_up/referral/other. responsible_role must be patient/clinician/secretary/unspecified. Unknown responsible_role=unspecified. Dates null unless explicitly unambiguous; relative dates require supplied date.
 Do not generate codes unless explicitly present. No duplicate facts across sections.
 All medication fields, next contact, safety net and uncertainties must reflect only SOURCE.

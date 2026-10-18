@@ -126,6 +126,11 @@ def test_browser_single_login_booking_link_latest_and_independent_session(fixtur
             for width in [1280,390]:
                 context=browser.new_context(viewport={'width':width,'height':950});page=context.new_page();page.set_default_timeout(8000);errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
                 page.route('**/clinical/calendar/cockpit-context',lambda route:route.fulfill(json=home))
+                # Deferred entry may download after a fast status response on URL arrival.
+                def slow_entry(route):
+                    import time
+                    response=route.fetch();time.sleep(0.3);route.fulfill(response=response)
+                page.route('**/static/cockpit/patient-entry.js?*',slow_entry)
                 page.goto(url);page.locator('#ceGlobalKey').click();page.locator('#ceGlobalKeyInput').fill(KEY)
                 page.locator('#ceGlobalLoginForm button[type=submit]').click();expect(page.locator('#ceGlobalAuthStatus')).to_contain_text('Συνδέθηκες');page.keyboard.press('Escape')
                 page.locator('#visitSidebarNext').click();overlay=page.locator('#visitBriefOverlay');expect(overlay).to_be_visible()

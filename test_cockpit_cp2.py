@@ -1,5 +1,6 @@
 """Continuation uses one event owner across chart, updates and independent sessions."""
 from uuid import uuid4
+import pytest
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from fastapi.testclient import TestClient
@@ -73,7 +74,9 @@ def test_browser_receipt_review_timeline_refresh_second_session(setup,tmp_path):
     import socket,threading,shutil
     import uvicorn
     from playwright.sync_api import sync_playwright,expect
-    app,engine=setup;c,p,_=seed(app,engine)
+    app,engine=setup;c,p,path=seed(app,engine)
+    # Existing explicitly approved CD/image stages remain intact after simplifying generic tasks.
+    assert c.post(path+'/checkpoint-plan',json={'template':'material_images','idempotency_key':uuid4().hex}).status_code==200
     # A later visit must extend the main rail without stealing the older visit's branch.
     later=draft().model_dump(mode='json');later['encounter_date']='2026-10-19';later['pending']=[]
     later['reason_for_visit']['text']='Νεότερη επίσκεψη χωρίς εκκρεμότητες'
@@ -95,12 +98,11 @@ def test_browser_receipt_review_timeline_refresh_second_session(setup,tmp_path):
                     expect(page.locator('.journey-fork')).to_have_count(1)
                     page.locator('#captureOpen').click();page.locator('#captureText').fill('Πρόχειρη επίσκεψη')
                     expect(row.get_by_role('button',name='Ναι',exact=True).first).to_be_disabled()
-                    expect(row.locator('select')).to_be_disabled()
+                    expect(row.locator('select')).to_have_count(0)
                     expect(page.locator('#captureText')).to_have_value('Πρόχειρη επίσκεψη')
                     page.locator('#captureComposer').get_by_role('button',name='Κλείσιμο',exact=True).click()
                     expect(row.get_by_role('button',name='Ναι',exact=True).first).to_be_enabled()
-                    row.locator('summary').filter(has_text='Έγινε ήδη επόμενο βήμα;').click()
-                    row.locator('details').get_by_role('button',name='Ναι',exact=True).click()
+                    row.locator('.pending-stage').filter(has_text='Εξετάστηκαν οι εικόνες;').get_by_role('button',name='Ναι',exact=True).click()
                     expect(row).to_contain_text('✓ Εξετάστηκαν οι εικόνες')
                     expect(row).to_contain_text('Παραλήφθηκε το CD;')
                     state=page.request.get(f'http://localhost:{port}/clinical/patient/{TEST_ID}/chart').json()['pending'][0]['checkpoints']
@@ -231,7 +233,6 @@ def test_real_lifecycle_cancel_restore_no_plan_and_active_plan(setup):
     assert c.post(path+'/checkpoint-plan',json=plan).status_code==409
     r=c.post(path+'/checkpoint-plan',json={**plan,'expected_revision':2});assert r.status_code==200,r.text
     assert r.json()['current']['completed'] and r.json()['current']['revision']==4
-    assert c.post(path+'/lifecycle',json=lifecycle('cancel',4)).status_code==409
     # Undo completion, cancel, restore exact pre-cancel open state, then complete again.
     event=r.json()['current']['steps'][0]['event_id']
     undo={'checkpoint_key':'completed','observation':'retracted','retracts_event_id':event,'expected_revision':4,'idempotency_key':uuid4().hex}
@@ -278,29 +279,43 @@ def test_browser_real_obligation_popup_complete_delete_restore(setup,tmp_path):
                 page.locator('#ceGlobalLoginForm button[type=submit]').click();expect(page.locator('#ceGlobalAuthStatus')).to_contain_text('Συνδέθηκες');page.keyboard.press('Escape');page.goto(url)
                 link=page.locator('.patient-chart-grid .patient-obligation-link button');link.click()
                 popup=page.locator('.patient-pending-dialog');expect(popup).to_be_visible()
-                if width==1280:expect(popup.locator('select')).to_have_value('completion')
+                expect(popup.locator('select')).to_have_count(0)
+                expect(popup).not_to_contain_text('CD: παραλαβή')
+                expect(popup).not_to_contain_text('Παρακολούθηση')
                 expect(popup.get_by_role('button',name='Ναι',exact=True)).to_be_enabled()
                 if width==1280:
                     popup.get_by_role('button',name='Όχι ακόμη',exact=True).click();expect(popup).to_have_count(0)
-                    link.click();expect(popup).to_contain_text('Όχι ακόμη');popup.get_by_role('button',name='Ναι',exact=True).click()
-                    expect(page.locator('.patient-chart-grid .patient-obligation-link')).to_contain_text('Ολοκληρώθηκε')
-                    page.reload();link.click();expect(popup).to_contain_text('✓ Ολοκληρώθηκε η ενέργεια')
-                    popup.get_by_role('button',name='Αναίρεση',exact=True).click()
-                    expect(popup).to_have_count(0);link.click()
-                # The adopted plan keeps its state through reversible deletion.
-                popup.get_by_role('button',name='Διαγραφή υποχρέωσης',exact=True).click()
-                popup.get_by_role('button',name='Διατήρηση',exact=True).click();expect(popup).to_be_visible()
-                popup.get_by_role('button',name='Διαγραφή υποχρέωσης',exact=True).click();popup.get_by_role('button',name='Διαγραφή',exact=True).click()
-                expect(page.locator('.patient-followthrough-branch')).to_have_count(0)
-                expect(page.locator('.patient-deleted-obligations')).to_be_visible()
+                    link.click();expect(popup).to_contain_text('Όχι ακόμη')
+                popup.get_by_role('button',name='Ναι',exact=True).click()
+                expect(page.locator('.patient-chart-grid .patient-obligation-link')).to_contain_text('Ολοκληρώθηκε')
+                page.reload();link.click();expect(popup).to_contain_text('✓ Ολοκληρώθηκε η ενέργεια')
+                expect(popup.get_by_role('button',name='Διαγραφή υποχρέωσης',exact=True)).to_be_visible()
+                popup.screenshot(path=str(tmp_path/f'obligation-popup-{width}.png'))
+                assert popup.bounding_box()['width']<=width
+                popup.get_by_role('button',name='Κλείσιμο',exact=True).click()
+                # Inline confirmation works without a dialog, including a completed task.
+                branch=page.locator('.patient-followthrough-branch')
+                branch.get_by_role('button',name='Διαγραφή υποχρέωσης',exact=True).click()
+                branch.get_by_role('button',name='Διατήρηση',exact=True).click()
+                expect(branch.get_by_role('button',name='Διαγραφή υποχρέωσης',exact=True)).to_be_visible()
+                branch.get_by_role('button',name='Διαγραφή υποχρέωσης',exact=True).click()
+                branch.get_by_role('button',name='Διαγραφή',exact=True).click()
+                expect(branch).to_have_count(0)
                 page.reload();page.locator('.patient-deleted-obligations summary').click();link.click()
                 expect(popup.get_by_role('button',name='Ναι',exact=True)).to_have_count(0)
                 popup.get_by_role('button',name='Επαναφορά υποχρέωσης',exact=True).click()
-                expect(page.locator('.patient-followthrough-branch')).to_have_count(1)
-                page.locator('.patient-followthrough-branch .pending-open').first.click();expect(popup).to_be_visible()
-                assert popup.bounding_box()['width']<=width
-                popup.screenshot(path=str(tmp_path/f'obligation-popup-{width}.png'))
-                popup.get_by_role('button',name='Κλείσιμο',exact=True).click()
+                expect(branch).to_have_count(1)
+                link.click();expect(popup).to_contain_text('✓ Ολοκληρώθηκε η ενέργεια')
+                # The same resolved cancellation/restore works through the popup.
+                popup.get_by_role('button',name='Διαγραφή υποχρέωσης',exact=True).click()
+                popup.get_by_role('button',name='Διατήρηση',exact=True).click();expect(popup).to_be_visible()
+                popup.get_by_role('button',name='Διαγραφή υποχρέωσης',exact=True).click()
+                popup.get_by_role('button',name='Διαγραφή',exact=True).click();expect(branch).to_have_count(0)
+                page.locator('.patient-deleted-obligations summary').click();link.click()
+                popup.get_by_role('button',name='Επαναφορά υποχρέωσης',exact=True).click()
+                link.click();expect(popup).to_contain_text('✓ Ολοκληρώθηκε η ενέργεια')
+                popup.get_by_role('button',name='Αναίρεση',exact=True).click()
+                expect(popup).to_have_count(0)
                 page.locator('#captureOpen').click();page.locator('#captureText').fill('Πρόχειρο που διατηρείται')
                 expect(link).to_be_disabled();expect(page.locator('#captureText')).to_have_value('Πρόχειρο που διατηρείται')
                 page.locator('#captureComposer').get_by_role('button',name='Κλείσιμο',exact=True).click()
@@ -312,3 +327,36 @@ def test_browser_real_obligation_popup_complete_delete_restore(setup,tmp_path):
                 assert not errors;context.close()
             browser.close()
     finally:server.should_exit=True;thread.join(10);sock.close()
+
+
+@pytest.mark.parametrize('with_plan',[True,False])
+def test_remove_resolved_preserves_confirmation_and_exact_resolution_pointer(setup,with_plan):
+    from copy import deepcopy
+    app,engine=setup;c,p,path=real_seed(app,engine)
+    if with_plan:
+        r=c.post(path+'/checkpoint-plan',json={'template':'completion','first_observation':'yes_confirmed','idempotency_key':uuid4().hex})
+        assert r.status_code==200
+        revision=r.json()['current']['revision'];confirmed=r.json()['current']['confirmed_keys']
+    else:
+        with Session(engine) as db:
+            row=db.get(ClinicalPendingORM,p['pending_id']);row.status='resolved';row.resolution_event_id=str(uuid4());db.commit()
+        revision=0;confirmed=None
+    with Session(engine) as db:
+        original_resolution=db.get(ClinicalPendingORM,p['pending_id']).resolution_event_id
+        original_source=deepcopy(db.get(EncounterORM,p['source_encounter_id']).payload_json)
+        count=db.scalar(select(func.count()).select_from(PendingCheckpointEventORM))
+    cancel={'action':'cancel','expected_revision':revision,'idempotency_key':uuid4().hex}
+    r=c.post(path+'/lifecycle',json=cancel);assert r.status_code==200,r.text
+    event=r.json()['event_id'];assert c.post(path+'/lifecycle',json=cancel).json()['replayed']
+    with Session(engine) as db:
+        row=db.get(ClinicalPendingORM,p['pending_id']);assert row.status=='cancelled' and row.resolution_event_id is None
+    restore={'action':'restore','expected_revision':revision+1,'cancellation_event_id':event,'idempotency_key':uuid4().hex}
+    assert c.post(path+'/lifecycle',json={**restore,'expected_revision':revision}).status_code==409
+    r=c.post(path+'/lifecycle',json=restore);assert r.status_code==200
+    assert c.post(path+'/lifecycle',json=restore).json()['replayed']
+    state=c.get('/clinical/patient/outside-synthetic-scope/chart').json()['pending'][0]
+    assert state['status']=='resolved' and (state['checkpoints']['confirmed_keys'] if with_plan else state['checkpoints'])==confirmed
+    with Session(engine) as db:
+        assert db.get(ClinicalPendingORM,p['pending_id']).resolution_event_id==original_resolution
+        assert db.get(EncounterORM,p['source_encounter_id']).payload_json==original_source
+        assert db.scalar(select(func.count()).select_from(PendingCheckpointEventORM))==count+2
