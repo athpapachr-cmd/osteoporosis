@@ -1,5 +1,7 @@
 # TODO.md — Clinical Excellence long-range compass
 
+> **2026-10-18 Next-day preparation installed:** Top-right date popover now browses previous/next days with explicit Cyprus date and Today return. Full minimal agenda includes all actual appointment categories from the existing Reception source, preserving the separate weekly Osteoporosis filter. Live read-only1280/390 verified8tomorrowappointments and Home-next continuity; personal POusepending, later phases unchanged. Exact evidence in root/Cockpit CURRENT.
+
 > **2026-10-18 Stored visit correction installed:** #198 adds explicit editing of existing signed structured visits on the same encounter, with previous versions retained. Full prefilled clinical fields or optional re-extraction, task effect review and explicit correction Save; unchanged task history preserved, removed/replaced tasks cancelled through their existing owner without terminal resurrection. Local/CI writes and live read-only edit/cancel1280/390 verified; personal PO use pending. No later-phase activation; exact evidence in root/Cockpit CURRENT.
 
 > **2026-10-18 Historical visit reading corrected:** #196 opens one selected stored visit with its date/reason and Back to chart. Latest summary, trajectory and other visit bodies remain out of that reader; no accumulation across openings. Local/CI two-date and appointment/source navigation plus fixed marked read-only live1280/390 passed. Personal PO use pending, later phases unchanged; exact state in root/Cockpit CURRENT.
