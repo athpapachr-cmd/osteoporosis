@@ -165,7 +165,11 @@
     $("doctorObligationsScope").textContent=state.scope==="real"?
       "Προβολή δοκιμαστικού ασθενούς":"Επιστροφή σε πραγματικούς φακέλους";
     try {
-      const response=await fetch("/clinical/clinical-updates?scope="+
+      // The existing #161 sandbox has its own strictly synthetic clinical base;
+      // normal Cockpit always uses the actual protected /clinical owner.
+      const base=window.CockpitSynthetic===true && window.CockpitClinicalBase==="/clinical/synthetic-161"
+        ? window.CockpitClinicalBase : "/clinical";
+      const response=await fetch(base+"/clinical-updates?scope="+
         encodeURIComponent(state.scope)+"&active_only=true",{
         credentials:"same-origin",cache:"no-store",signal:controller.signal,
         headers:{"Accept":"application/json"}
@@ -175,9 +179,13 @@
       }
       const body=await response.json();
       if(!state.active||ticket!==state.generation||view.hidden)return;
-      if(!body||!Array.isArray(body.items)||body.items.some(x=>!validItem(x))||body.items.length>100)
+      if(!body||!Array.isArray(body.items))throw Error("Invalid protected projection");
+      // Synthetic #161 predates active_only and returns resolved history too.
+      // The clinic endpoint filters active tasks *before* its 100-row limit.
+      const active=body.items.filter(x=>["open","awaiting_patient","awaiting_result"].includes(x?.status));
+      if(active.some(x=>!validItem(x))||active.length>100)
         throw Error("Invalid protected projection");
-      state.rows=body.items;
+      state.rows=active;
       $("doctorObligationsState").textContent=state.scope==="test"?
         "Δοκιμαστικός φάκελος · χωρίς ανάμειξη με πραγματικές εγγραφές.":
         "Ενεργές κλινικές υποχρεώσεις · οι ενέργειες γίνονται μέσα στην καρτέλα.";
