@@ -438,7 +438,7 @@ def test_patient_task_groups_and_incoming_sources_remain_separate(setup,tmp_path
                 expect(page.locator('[data-doctor-library-panel="obligations"]')).to_be_visible()
                 groups=page.locator('#cccObligationsList .patient-updates-group');expect(groups).to_have_count(2)
                 expect(groups.locator('h3')).to_have_count(2);expect(groups.locator('.doctor-action-row')).to_have_count(4)
-                assert sorted(groups.evaluate_all('gs=>gs.map(g=>gs.length ? 0 : g.querySelectorAll("button").length)'))==[1,3]
+                assert sorted(groups.evaluate_all('gs=>gs.map(g=>g.querySelectorAll("button").length)'))==[1,3]
                 assert len(set(groups.locator('button').evaluate_all('ns=>ns.map(n=>n.dataset.pendingId)')))==4
                 expect(groups.filter(has_text='Συνθετική ενέργεια 3')).to_have_count(0)
                 assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
