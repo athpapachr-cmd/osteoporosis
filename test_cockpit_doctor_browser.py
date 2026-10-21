@@ -219,6 +219,7 @@ def exercise_obligations(page,width):
     assert "STALE_PATIENT_NAME" not in page.locator("#doctorObligationsRows").text_content()
     assert page.evaluate("document.documentElement.scrollWidth<=innerWidth+1")
     assert not page.locator("#doctorObligationsRows").locator("*").count()
+    page.evaluate("delete window.CockpitStoredChart; delete window.__chosenObligation;")
 
 
 def browser_suite(width, screenshot_name):
