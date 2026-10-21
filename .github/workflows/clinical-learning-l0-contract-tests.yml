@@ -16,6 +16,7 @@ on:
       - 'CURRENT_OPERATIONAL.md'
       - 'TODO.md'
       - 'osteoporosis-change-log.md'
+      - '.github/workflows/clinical-learning-l0-contract-tests.yml'
 
 jobs:
   contract:
@@ -36,6 +37,9 @@ jobs:
         run: python -m unittest discover -v -p 'test_clinical_learning_l0_*.py'
 
       - name: Confirm design-only scope
+        # Only L0 design branches are contract-frozen; unrelated Cockpit PRs
+        # still run L0 tests but must not be rejected by the design allowlist.
+        if: startsWith(github.head_ref || github.ref_name, 'design/clinical-learning-l0-')
         run: |
           set -euo pipefail
           base="$(git merge-base origin/main HEAD)"
