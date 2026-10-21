@@ -151,8 +151,9 @@ function byId(id,node=$('doctorPopoverContent')){if(node.id===id)return node;for
  assert.equal($("doctorObligationsView").hidden,true);
  assert.ok(obligationsCleared>0,"hiding the screen purges cached patient data");
  $("doctorActionsButton").fire("click");
- const libraryAction=findButtonContent("Εργασίες ιατρείου");
- assert.ok(libraryAction,"surgery and tools remain available via Actions");
+ const libraryAction=$("doctorPopoverContent").children[1]?.children?.at(-1);
+ assert.equal(libraryAction?.children?.[0]?.children?.[0]?.textContent,
+   "Εργασίες ιατρείου","surgery/tools launcher remains in Actions");
  libraryAction.fire("click");
  assert.equal($("doctorLibraryView").hidden,false);
  assert.equal($("doctorMainView").hidden,true);
