@@ -218,11 +218,79 @@ ENCOUNTER DETAIL
         <button id="doctorBackHome" class="doctor-command-button" type="button">← Αρχική</button>
       </header>
       <nav id="doctorLibraryNav" class="doctor-library-nav" aria-label="Κατηγορίες εργασιών">
+        <button type="button" data-doctor-library-tab="obligations">Υποχρεώσεις</button>
         <button type="button" data-doctor-library-tab="surgery">Χειρουργεία</button>
         <button type="button" data-doctor-library-tab="documents">Έγγραφα</button>
         <button type="button" data-doctor-library-tab="modules">Κλινικά modules</button>
         <button type="button" data-doctor-library-tab="learning">Εκπαίδευση</button>
       </nav>
+      <section class="section ccc-obligations" data-doctor-library-panel="obligations" hidden aria-label="Υποχρεώσεις ασθενών">
+        <div class="ccc-heading">
+          <div><p class="section-kicker">Clinical Continuity · CCC-01</p>
+            <h3>Υποχρεώσεις ασθενών</h3>
+            <p class="clinical-muted">Όλες οι καταγεγραμμένες κλινικές υποχρεώσεις. Μόνο οι ρητά χρονολογημένες ληξιπρόθεσμες εμφανίζονται στο «Εργασίες».</p>
+          </div>
+        </div>
+        <div class="ccc-filters">
+          <label>Αναζήτηση
+            <input id="cccSearch" type="search" autocomplete="off" placeholder="Ασθενής ή υποχρέωση…"/>
+          </label>
+          <label>Κατηγορία
+            <select id="cccCategory">
+              <option value="">Όλες</option>
+              <option value="test">Εξετάσεις</option>
+              <option value="investigation">Διερεύνηση</option>
+              <option value="result">Αποτελέσματα</option>
+              <option value="document">Έγγραφα</option>
+              <option value="follow_up">Επανεξετάσεις</option>
+              <option value="referral">Παραπομπές</option>
+              <option value="other">Άλλο</option>
+            </select>
+          </label>
+          <label>Κατάσταση
+            <select id="cccStatus">
+              <option value="">Ενεργές</option>
+              <option value="open">Ανοικτές</option>
+              <option value="awaiting_patient">Αναμονή ασθενούς</option>
+              <option value="awaiting_result">Αναμονή αποτελέσματος</option>
+              <option value="resolved">Ολοκληρωμένες</option>
+              <option value="cancelled">Ακυρωμένες</option>
+            </select>
+          </label>
+          <label>Προθεσμία
+            <select id="cccDue">
+              <option value="all">Όλες</option>
+              <option value="today">Σήμερα / εκπρόθεσμες</option>
+              <option value="future">Μελλοντικές</option>
+              <option value="undated">Χωρίς ημερομηνία</option>
+            </select>
+          </label>
+          <label>Ομαδοποίηση
+            <select id="cccGroup">
+              <option value="patient">Ανά ασθενή</option>
+              <option value="category">Ανά κατηγορία</option>
+              <option value="due">Ανά προθεσμία</option>
+            </select>
+          </label>
+          <label>Ταξινόμηση
+            <select id="cccSort">
+              <option value="updated">Πρόσφατη ενημέρωση</option>
+              <option value="patient">Ανά ασθενή</option>
+              <option value="category">Ανά κατηγορία</option>
+              <option value="due">Ανά προθεσμία</option>
+            </select>
+          </label>
+        </div>
+        <p id="cccObligationsStatus" role="status" aria-live="polite" class="clinical-muted">Φόρτωση…</p>
+        <div id="cccObligationsList" class="ccc-obligations-list"></div>
+        <div class="ccc-pages">
+          <button type="button" id="cccPrev" class="clinical-secondary" disabled>← Προηγούμενη</button>
+          <span id="cccPage" aria-live="polite"></span>
+          <button type="button" id="cccNext" class="clinical-secondary" disabled>Επόμενη →</button>
+        </div>
+        <button type="button" id="cccSynthetic" class="ccc-synthetic-toggle">Δοκιμαστικός φάκελος</button>
+        <p class="clinical-muted ccc-coverage-note">Ενεργοποίηση μετά από κλήση, email ή επόμενη επίσκεψη θα συνδεθεί μόνο με επαληθευμένο γεγονός στα επόμενα milestones. Χωρίς ημερομηνία δεν σημαίνει «σήμερα».</p>
+      </section>
       <div class="clinical-secondary-functions" id="cockpitOtherFunctions">
     <section class="section visit-capture-entry-section" data-doctor-library-panel="documents">
       <article class="panel">
@@ -411,7 +479,8 @@ ENCOUNTER DETAIL
   <script src="/static/cockpit/app.js?v=chart-continuity-20261018" defer></script>
   <script src="/static/cockpit/patient-chart.js?v=visit-amendments-20261018" defer></script>
   <script src="/static/cockpit/patient-entry.js?v=chart-continuity-20261018" defer></script>
-  <script src="/static/cockpit/doctor-shell.js?v=full-day-agenda-20261018" defer></script>
+  <script src="/static/cockpit/clinical-obligations.js?v=ccc01-20261021" defer></script>
+  <script src="/static/cockpit/doctor-shell.js?v=ccc01-20261021" defer></script>
   <script src="/static/cockpit/shared-nav.js" defer></script>
 </body>
 </html>
