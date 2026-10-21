@@ -234,7 +234,9 @@
       // Reuse the exact existing chart+pending owner. Opening a listed task
       // cannot grant a capability or write a clinical record by itself.
       showHome();
-      if(window.CockpitStoredChart)window.CockpitStoredChart.openPending(id,pendingId);
+      const chart=window.CockpitStoredChart;
+      if(typeof chart?.openPending==="function")chart.openPending(id,pendingId);
+      else if(window.CockpitSynthetic===true && typeof chart?.open==="function")chart.open(id);
     });
     $("doctorObligationsSearch").focus();
   }
