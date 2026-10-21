@@ -136,6 +136,9 @@ function byId(id,node=$('doctorPopoverContent')){if(node.id===id)return node;for
  windowStub.CockpitStoredChart=null;
  windowHandlers.get("cockpit:surgery-counts")({detail:{total:2,undated:1,invalid:0,overdue:0,
   upcoming:[{date:"2099-11-01",count:1,name:"Συνθετικός Ασθενής Μ",procedure:"Αρθροσκόπηση"}]}});
+ assert.equal($("doctorTasksBadge").hidden,true,
+   "surgery totals must no longer masquerade as patient tasks");
+ windowHandlers.get("cockpit:ccc01-attention-count")({detail:{total:2}});
  assert.equal($("doctorTasksBadge").hidden,false);
  assert.equal($("doctorTasksBadge").textContent,"2");
  $("doctorTasksButton").fire("click");
