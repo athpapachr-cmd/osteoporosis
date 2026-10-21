@@ -2,7 +2,7 @@
 
 **Date:** 2026-10-22 Asia/Nicosia. **Mode:** fresh independent **READ-ONLY**, ONE bounded post-code R1 implementation-fidelity review. Return PASS/BLOCK/UNKNOWN and STOP. No code, merge, deploy, backend, clinic DB or PHI actions.
 
-Repository: `athpapachr-cmd/osteoporosis`. PR: [#205](https://github.com/athpapachr-cmd/osteoporosis/pull/205), DRAFT/HOLD. Verified base `main=7ca04734d697eaf573c59437e987b5575e5998c7`. **Frozen runtime+test author head**: `ecfa22f6dc639a3aacdf2a5febcb799ab239563e`. Follow-up review-request/checkpoint commits must not change runtime/test blobs.
+Repository: `athpapachr-cmd/osteoporosis`. PR: [#205](https://github.com/athpapachr-cmd/osteoporosis/pull/205), DRAFT/HOLD. Verified base `main=7ca04734d697eaf573c59437e987b5575e5998c7`. **Frozen runtime+test author head**: `36aa39369d9f6ea6b05fa4e09e65fd203074fa18`. Follow-up review-request/checkpoint commits must not change runtime/test blobs.
 
 ## Product Owner requirement
 
@@ -22,7 +22,7 @@ The clinician requests the patient obligations formerly shown only in a narrow T
 2. **Presentation:** true full-screen workspace, correctly returns Home; grouped exact patient IDs, recorded category and Cyprus due-date buckets; search/status/type filters and up-to-100 limitation true; counts not misrepresented as global; handles empty, unauthorized, unavailable.
 3. **Existing task owner:** click passes unchanged IDs to original `CockpitStoredChart.openPending` patient chart/popup, no second task writer, no automatic acceptance/completion, no duplicate clinical task lifecycle.
 4. **Inbox preserved:** email icon remains distinct and honestly pending; no Gmail/prototype connector, no automatic email-to-task association; unrelated Home/Calendar/VisitBrief/VisitCapture/surgery preserved. Legacy synthetic-161 session works with its own fixture owner.
-5. **Evidence:** compare exact source/test blobs and focused author GitHub Actions: Home [39680844094](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39680844094), Visit Brief+real Chromium/synthetic-161 [39680844268](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39680844268), surgery [39680844173](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39680844173), Canonical Impact [39680844031](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39680844031). Check final Visit Capture result separately. Reuse previously accepted clinical pending/CP1/CP2 and Home R2; don't reopen unrelated medical authority.
+5. **Evidence:** compare exact source/test blobs and focused author GitHub Actions: Home [39680844094](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39680844094), Visit Brief+real Chromium/synthetic-161 [39680844268](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39680844268), surgery [39680844173](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39680844173), Canonical Impact [39680844031](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39680844031). Visit Capture [39681703329](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39681703329), after targeted adaptation of the existing exact-patient-ID CP2 task grouping regression; verify final outcome. Reuse previously accepted clinical pending/CP1/CP2 and Home R2; don't reopen unrelated medical authority.
 
 ## Scope exclusions and handback
 
