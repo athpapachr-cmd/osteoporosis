@@ -1,5 +1,7 @@
 """CP1 natural text adapter and read projections over existing clinical owners."""
-from datetime import date
+from datetime import date, datetime
+from zoneinfo import ZoneInfo
+import unicodedata
 import json
 from fastapi import HTTPException, Query, Response, Request
 from starlette.concurrency import run_in_threadpool
@@ -154,14 +156,80 @@ def attach_cp1(router, engine, protected, context_for, ensure_patient):
             return {"patient_id":patient_id,"demographics":patient.demographics_json,"visits":visits,"pending":pending}
 
     @router.get("/clinical-updates", dependencies=protected)
-    def updates(response: Response, request: Request, scope: str=Query(default="real",pattern="^(real|test)$"), active_only: bool=False):
+    def updates(
+        response: Response, request: Request,
+        scope: str=Query(default="real",pattern="^(real|test)$"),
+        active_only: bool=False,
+        limit: int=Query(default=100,ge=1,le=100),
+        offset: int=Query(default=0,ge=0,le=1000000),
+        query: str=Query(default="",max_length=120),
+        category: str=Query(default="",max_length=120),
+        status: str=Query(default="",pattern="^(|open|awaiting_patient|awaiting_result|resolved|cancelled)$"),
+        due: str=Query(default="all",pattern="^(all|today|future|undated)$"),
+        sort: str=Query(default="updated",pattern="^(updated|patient|category|due)$"),
+    ):
+        """Existing protected Pending owner; CCC-01 adds bounded *read-only* projections.
+
+        Presence of a Pending row or free-text trigger is NOT proof of an action
+        due today. Only explicit, valid ISO review_date <= today's Cyprus date
+        qualifies. Mail/call/next-visit trigger handling is separately gated.
+        """
         response.headers["Cache-Control"]="no-store"
+        cyprus_today=datetime.now(ZoneInfo("Asia/Nicosia")).date()
+        def fold(value):
+            return "".join(c for c in unicodedata.normalize("NFKD",str(value or "")).casefold()
+                           if not unicodedata.combining(c))
+        def due_day(value):
+            if not isinstance(value,str) or len(value)!=10:
+                return None
+            try:
+                parsed=date.fromisoformat(value)
+                return parsed if parsed.isoformat()==value else None
+            except ValueError:
+                return None
+
         with Session(engine) as db:
             test_ids=(*SYNTHETIC_161_PATIENT_IDS,TEST_ID)
-            stmt=select(ClinicalPendingORM,PatientORM).where(ClinicalPendingORM.status!="deleted").join(PatientORM,PatientORM.patient_id==ClinicalPendingORM.patient_id)
+            stmt=(select(ClinicalPendingORM,PatientORM)
+                  .join(PatientORM,PatientORM.patient_id==ClinicalPendingORM.patient_id)
+                  .where(ClinicalPendingORM.status!="deleted"))
             stmt=stmt.where(PatientORM.patient_id==TEST_ID if scope=="test" else PatientORM.patient_id.not_in(test_ids))
-            if active_only:stmt=stmt.where(ClinicalPendingORM.status.in_(("open","awaiting_patient","awaiting_result")))
-            rows=db.execute(stmt.order_by(ClinicalPendingORM.updated_at.desc()).limit(100)).all()
+            if active_only:
+                stmt=stmt.where(ClinicalPendingORM.status.in_(("open","awaiting_patient","awaiting_result")))
+            if category:
+                stmt=stmt.where(ClinicalPendingORM.item_type==category)
+            if status:
+                stmt=stmt.where(ClinicalPendingORM.status==status)
+            # Search and valid-date classification are applied BEFORE pagination,
+            # not to a misleading first-100 subset. No patient row is logged.
+            term=fold(query.strip())
+            rows=db.execute(stmt).all()
+            eligible=[]
+            for p,patient in rows:
+                person=(patient.demographics_json or {}).get("full_name") or "Κλινικός φάκελος"
+                if term and not any(term in fold(x) for x in (person,p.patient_id,p.description)):
+                    continue
+                day=due_day(p.review_date)
+                if due=="today" and not (day and day<=cyprus_today):
+                    continue
+                if due=="future" and not (day and day>cyprus_today):
+                    continue
+                if due=="undated" and day:
+                    continue
+                eligible.append((p,patient,person,day))
+            if sort=="patient":
+                eligible.sort(key=lambda v:(fold(v[2]),v[0].id))
+            elif sort=="category":
+                eligible.sort(key=lambda v:(v[0].item_type,fold(v[2]),v[0].id))
+            elif sort=="due":
+                eligible.sort(key=lambda v:(v[3] is None,v[3] or date.max,fold(v[2]),v[0].id))
+            else:
+                eligible.sort(key=lambda v:(v[0].updated_at or datetime.min,v[0].id),reverse=True)
+            total=len(eligible)
+            page=eligible[offset:offset+limit]
             ready=installed(engine)
-            items=[{**pending_view(db,p,request,ready),"patient_name":(patient.demographics_json or {}).get("full_name") or "Κλινικός φάκελος"} for p,patient in rows]
-            return {"items":items,"shown":len(items)}
+            items=[{**pending_view(db,p,request,ready),"patient_name":person} for p,patient,person,day in page]
+            next_offset=offset+len(items) if offset+len(items)<total else None
+            return {"items":items,"shown":len(items),"total":total,
+                    "has_more":next_offset is not None,"next_offset":next_offset,
+                    "today":cyprus_today.isoformat()}
