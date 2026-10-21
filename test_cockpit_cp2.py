@@ -426,15 +426,20 @@ def test_patient_task_groups_and_incoming_sources_remain_separate(setup,tmp_path
                 page.locator('#doctorInboxButton').click();expect(page.locator('#doctorPopoverTitle')).to_have_text('Κλινικά εισερχόμενα')
                 expect(page.locator('#doctorPopoverContent')).to_contain_text('Δεν έχει συνδεθεί')
                 expect(page.locator('#doctorPopoverContent button.doctor-action-row')).to_have_count(0);assert not reads
-                page.locator('#doctorTasksButton').click();expect(page.locator('#doctorPopoverTitle')).to_have_text('Υποχρεώσεις ασθενών')
-                groups=page.locator('.patient-updates-group');expect(groups).to_have_count(2)
-                expect(groups.locator('h3')).to_have_count(2);expect(groups.locator('.doctor-action-row')).to_have_count(4)
-                assert sorted(groups.evaluate_all('gs=>gs.map(g=>g.querySelectorAll("button").length)'))==[1,3]
-                assert len(set(groups.locator('button').evaluate_all('ns=>ns.map(n=>n.dataset.pendingId)')))==4
+                page.locator('#doctorTasksButton').click()
+                expect(page.locator('#doctorObligationsView')).to_be_visible()
+                expect(page.locator('#doctorPopover')).to_be_hidden()
+                expect(page.locator('#doctorObligationsTotal')).to_have_text('4')
+                groups=page.locator('#doctorObligationsRows .doctor-obligation-group');expect(groups).to_have_count(2)
+                expect(groups.locator('h3')).to_have_count(2)
+                expect(groups.locator('.doctor-obligation-row')).to_have_count(4)
+                assert sorted(groups.evaluate_all('gs=>gs.map(g=>g.querySelectorAll("button.doctor-obligation-row").length)'))==[1,3]
+                assert len(set(groups.locator('.doctor-obligation-row').evaluate_all('ns=>ns.map(n=>n.dataset.pendingId)')))==4
                 expect(groups.filter(has_text='Συνθετική ενέργεια 3')).to_have_count(0)
                 assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
-                page.locator('#doctorPopover').screenshot(path=str(tmp_path/f'task-groups-{width}.png'))
-                selected=groups.locator('button').first;label=selected.locator('strong').text_content();selected.click()
+                page.locator('#doctorObligationsView').screenshot(path=str(tmp_path/f'task-groups-{width}.png'))
+                selected=groups.locator('button.doctor-obligation-row').first
+                label=selected.locator('strong').text_content();selected.click()
                 expect(page.locator('.patient-pending-dialog')).to_contain_text(label)
                 context.close()
             browser.close()
