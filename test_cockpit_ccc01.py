@@ -77,7 +77,7 @@ def test_backend_exact_due_date_filters_pagination_and_privacy(setup):
         "ccc-item-000","ccc-item-001"}
     assert all(p["review_date"]<=today.isoformat() for p in due["items"])
     assert {p["pending_id"] for p in c.get(route+"?active_only=true&due=future").json()["items"]}=={"ccc-item-002"}
-    undated=c.get(route+"?active_only=true&due=undated").json()
+    undated=c.get(route+"?active_only=true&due=undated&sort=due").json()
     assert undated["total"]==127  # 126 unspecified + invalid / no today or future
     assert {p["pending_id"] for p in undated["items"]} & {"ccc-item-003"}
     assert c.get(route+"?active_only=true&status=resolved").json()["total"]==0
