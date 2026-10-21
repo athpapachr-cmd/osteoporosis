@@ -2,10 +2,10 @@
 
 **Date:** 2026-10-21 · **Mode: FRESH INDEPENDENT READ-ONLY / ONE bounded affected implementation-fidelity review / STOP.**
 
-Repository: `athpapachr-cmd/osteoporosis`  
-DRAFT PR: [#204](https://github.com/athpapachr-cmd/osteoporosis/pull/204)  
-Source/base production main at activation: `7ca04734d697eaf573c59437e987b5575e5998c7`  
-Frozen **runtime+test exact tested HEAD**: `754e32af39df52cf0cd8d0cf6d59ad073423c8f2`. Subsequent edits to CURRENT/review only are NOT changes to this target.  
+Repository: `athpapachr-cmd/osteoporosis`
+DRAFT PR: [#204](https://github.com/athpapachr-cmd/osteoporosis/pull/204)
+Source/base production main at activation: `7ca04734d697eaf573c59437e987b5575e5998c7`
+Frozen **runtime+test exact tested HEAD**: `04622288b13d4a4bfafaffd2ef3dc37f344b8a48`. Subsequent edits to CURRENT/review only are NOT changes to this target.
 Original Product Owner approval: start CCC-01, exactly one milestone at a time; CCC-02–08 are out-of-scope.
 
 ## Purpose
@@ -27,7 +27,7 @@ Verify that CCC-01 is an R1 protected read-only UI/projection extending the *exi
 2. **Source/pagination/identity:** protected same-source exact `pending_id` and patient_id, no namesake merge; full list can retrieve >100 via stable offset and filtered total/next offset with `active_only` before slicing. Query, status/category/due/sort semantics and legacy consumer response preserved. No unbounded provider calls or public routes. Schema unchanged.
 3. **Read/auth/privacy:** a denied, stale, old-success, logout or synthetic-161 shell must not leak/restore PHI; the dedicated old synthetic route MUST NOT call real `/clinical/clinical-updates`. `Clinical Inbox` remains independent, does not trigger Pending reads on opening; 'unconnected email/call' truthful. All user-supplied text inserted as textContent.
 4. **Workflow/UI:** mini Tasks popup contains only up to four current dated items + full view link; full screen works within existing Cockpit (not extra browser tab), desktop 1280/half 680/mobile 390, filters/search/page controls and exact one-click pre-existing Pending dialog; unsaved drafts and other screens preserved. Badge never reflects surgery total (Home surgery summary retained).
-5. **Evidence reuse / finite regression:** Compare exact tested runtime/test source against GitHub CI. New focused `Cockpit CCC-01 obligations and today-attention` [run 39676703377](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39676703377) SUCCESS; Home [39676703600](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39676703600) SUCCESS; Visit Brief [39676703372](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39676703372) SUCCESS; Pending Synthetic [39676703503](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39676703503) SUCCESS; Canonical Guard [39676703732](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39676703732) SUCCESS; Visit Capture CI [39676703532](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39676703532) requires final conclusion verification at review time. Do not rerun unchanged tests merely to repeat evidence.
+5. **Evidence reuse / finite regression:** Compare exact tested runtime/test source against GitHub CI. New focused `Cockpit CCC-01 obligations and today-attention` [run 39676703377](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39676703377) SUCCESS; Home [39676703600](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39676703600) SUCCESS; Visit Brief [39676703372](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39676703372) SUCCESS; Pending Synthetic [39676703503](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39676703503) SUCCESS; Canonical Guard [39676703732](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39676703732) SUCCESS; Visit Capture CI [39676703532](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39676703532) identified a *test oracle typo* (grouped-button count always 0); corrected in exact source+test head `04622288b13d4a4bfafaffd2ef3dc37f344b8a48` and is pending the replacement affected run. Verify replacement conclusion, never pass a known failing run. Do not rerun unchanged tests merely to repeat evidence.
 
 Known earlier failed runs were authored code/test corrections (invalid-date chart crash, first-page-only assertion, legacy surgery badge oracle, synthetic-161 unauthorized normal source read, Inbox read oracle); final targeted correction and inherited gates replace them. Do not reopen unrelated clinical architecture.
 
