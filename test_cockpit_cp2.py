@@ -423,9 +423,14 @@ def test_patient_task_groups_and_incoming_sources_remain_separate(setup,tmp_path
                 page.locator('#ceGlobalKey').click();page.locator('#ceGlobalKeyInput').fill(KEY)
                 page.locator('#ceGlobalLoginForm button[type=submit]').click();expect(page.locator('#ceGlobalAuthStatus')).to_contain_text('Συνδέθηκες');page.keyboard.press('Escape')
                 expect(page.locator('#visitRecentRows .clinical-patient-row')).to_have_count(2)
+                # CCC-01 may read only due-today protected Pending for the Tasks
+                # badge at login. Clicking the *separate* Inbox must add no reads.
+                assert all('due=today' in u for u in reads)
+                before_inbox=list(reads)
                 page.locator('#doctorInboxButton').click();expect(page.locator('#doctorPopoverTitle')).to_have_text('Κλινικά εισερχόμενα')
                 expect(page.locator('#doctorPopoverContent')).to_contain_text('Δεν έχει συνδεθεί')
-                expect(page.locator('#doctorPopoverContent button.doctor-action-row')).to_have_count(0);assert not reads
+                expect(page.locator('#doctorPopoverContent button.doctor-action-row')).to_have_count(0)
+                assert reads==before_inbox,"Clinical Inbox must not query clinical Pending"
                 page.locator('#doctorTasksButton').click();expect(page.locator('#doctorPopoverTitle')).to_have_text('Εργασίες σήμερα')
                 expect(page.locator('#doctorPopoverContent .ccc-obligation-row')).to_have_count(0)
                 # None of these undated source obligations is qualified as an immediate task.
