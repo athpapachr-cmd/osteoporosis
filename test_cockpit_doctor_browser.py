@@ -175,7 +175,7 @@ def exercise_obligations(page,width):
     expect(page.locator(".doctor-obligation-group")).to_have_count(4)
     expect(page.locator("#doctorObligationsRows")).to_contain_text("Εκπρόθεσμες")
     expect(page.locator("#doctorObligationsRows")).to_contain_text("Χωρίς προθεσμία")
-    page.locator("#doctorObligationsSearch").fill("Ασθενής Β")
+    page.locator("#doctorObligationsSearch").fill("Δοκιμής Β")
     expect(page.locator(".doctor-obligation-row")).to_have_count(2)
     page.locator("#doctorObligationsSearch").fill("")
     page.locator("#doctorObligationsStatusFilter").select_option("awaiting_result")
