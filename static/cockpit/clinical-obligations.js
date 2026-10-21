@@ -1,5 +1,8 @@
 (() => {
   "use strict";
+  // The legacy /clinical/synthetic-161/ shell imports shared Cockpit assets,
+  // but MUST NOT call live /clinical/ endpoints from that isolated route.
+  if(!["/static/cockpit/","/static/cockpit/index.html"].includes(location.pathname))return;
   // CCC-01: presentation only. Single protected /clinical/clinical-updates owner;
   // no local persistence, clinical writes, inferred external events or duplicate tasks.
   const $ = id => document.getElementById(id);
