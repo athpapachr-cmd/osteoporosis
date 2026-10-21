@@ -212,6 +212,60 @@ ENCOUNTER DETAIL
       </section>
     </div>
     </div>
+    <section id="doctorObligationsView" class="doctor-obligations" hidden aria-label="Υποχρεώσεις ασθενών">
+      <header class="doctor-library-header">
+        <div>
+          <p class="eyebrow">Κλινική συνέχεια</p>
+          <h2>Υποχρεώσεις ασθενών</h2>
+        </div>
+        <button id="doctorObligationsBack" class="doctor-command-button" type="button">← Αρχική</button>
+      </header>
+      <p class="doctor-obligations-intro">Όσα περιμένουν ενέργεια, από τις αποθηκευμένες επισκέψεις. Τα email ελέγχονται χωριστά στα Κλινικά Εισερχόμενα και δεν ολοκληρώνουν αυτόματα υποχρεώσεις.</p>
+      <div class="doctor-obligation-stats" aria-label="Ενδεικτικοί αριθμοί τρέχουσας προβολής">
+        <div><strong id="doctorObligationsTotal">—</strong><span>Ανοικτές</span></div>
+        <div><strong id="doctorObligationsOverdue">—</strong><span>Εκπρόθεσμες</span></div>
+        <div><strong id="doctorObligationsToday">—</strong><span>Για σήμερα</span></div>
+      </div>
+      <div class="doctor-obligation-toolbar">
+        <label>Αναζήτηση ασθενούς ή υποχρέωσης
+          <input id="doctorObligationsSearch" type="search" placeholder="Όνομα ή περιγραφή…" autocomplete="off" />
+        </label>
+        <label>Κατάσταση
+          <select id="doctorObligationsStatusFilter">
+            <option value="">Όλες οι ανοικτές</option>
+            <option value="open">Ανοικτές</option>
+            <option value="awaiting_patient">Αναμονή ασθενούς</option>
+            <option value="awaiting_result">Αναμονή αποτελέσματος</option>
+          </select>
+        </label>
+        <label>Κατηγορία
+          <select id="doctorObligationsTypeFilter">
+            <option value="">Όλες</option>
+            <option value="test">Εξετάσεις</option>
+            <option value="result">Αποτελέσματα</option>
+            <option value="document">Έγγραφα</option>
+            <option value="follow_up">Επανεξετάσεις</option>
+            <option value="referral">Παραπομπές</option>
+            <option value="other">Λοιπές</option>
+          </select>
+        </label>
+      </div>
+      <nav class="doctor-obligation-group-tabs" aria-label="Ομαδοποίηση υποχρεώσεων">
+        <button type="button" class="selected" data-doctor-obligation-group="patient" aria-pressed="true">Ανά ασθενή</button>
+        <button type="button" data-doctor-obligation-group="category" aria-pressed="false">Ανά κατηγορία</button>
+        <button type="button" data-doctor-obligation-group="date" aria-pressed="false">Ανά προθεσμία</button>
+      </nav>
+      <div class="doctor-obligation-actions">
+        <p id="doctorObligationsState" role="status" aria-live="polite"></p>
+        <button id="doctorObligationsReload" type="button" class="doctor-command-button">Ανανέωση</button>
+      </div>
+      <p class="doctor-obligations-coverage">Η πρώτη προβολή περιλαμβάνει έως 100 πρόσφατα ενημερωμένες ενεργές υποχρεώσεις. Οι αριθμοί, η αναζήτηση και τα φίλτρα αφορούν μόνο αυτές — όχι ολόκληρο το μητρώο. Η πλήρης σελιδοποίηση θα ακολουθήσει.</p>
+      <p id="doctorObligationsShown" class="doctor-obligations-shown" aria-live="polite"></p>
+      <div id="doctorObligationsRows" class="doctor-obligations-rows"></div>
+      <div class="doctor-obligations-footer">
+        <button id="doctorObligationsScope" class="doctor-command-button" type="button">Προβολή δοκιμαστικού ασθενούς</button>
+      </div>
+    </section>
     <section id="doctorLibraryView" class="doctor-library" hidden aria-label="Εργασίες ιατρείου και εργαλεία">
       <header class="doctor-library-header">
         <div><p class="eyebrow">Εργασίες και εργαλεία</p><h2>Ό,τι χρειάζεσαι, στη θέση του.</h2></div>
@@ -411,7 +465,8 @@ ENCOUNTER DETAIL
   <script src="/static/cockpit/app.js?v=chart-continuity-20261018" defer></script>
   <script src="/static/cockpit/patient-chart.js?v=visit-amendments-20261018" defer></script>
   <script src="/static/cockpit/patient-entry.js?v=chart-continuity-20261018" defer></script>
-  <script src="/static/cockpit/doctor-shell.js?v=full-day-agenda-20261018" defer></script>
+  <script src="/static/cockpit/obligations-view.js?v=20261022" defer></script>
+  <script src="/static/cockpit/doctor-shell.js?v=obligations-view-20261022" defer></script>
   <script src="/static/cockpit/shared-nav.js" defer></script>
 </body>
 </html>
