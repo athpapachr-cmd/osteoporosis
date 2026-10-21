@@ -228,6 +228,7 @@
     state.scope=state.scope==="real"?"test":"real";load();
   });
   window.addEventListener("clinical:unauthenticated",close);
+  window.addEventListener("clinical:authenticated",()=>{if(state.active)load();});
   window.addEventListener("cockpit:clinical-updates-changed",()=>{if(state.active)load();});
   window.CockpitObligations={open,close};
 })();
