@@ -43,7 +43,8 @@
     if (due < today) return "overdue";
     return due === today ? "today" : "future";
   }
-  function label(item) { return categories[item.item_type] || categories.other; }
+  function categoryKey(item) { return item.item_type==="investigation" ? "test" : (item.item_type||"other"); }
+  function label(item) { return categories[categoryKey(item)] || categories.other; }
   function validItem(row) {
     return row && typeof row === "object" &&
       typeof row.pending_id === "string" && row.pending_id &&
@@ -70,13 +71,13 @@
     const category=$("doctorObligationsTypeFilter").value;
     return state.rows.filter(item =>
       (!status || item.status===status) &&
-      (!category || (item.item_type||"other")===category) &&
+      (!category || categoryKey(item)===category) &&
       (!q || fold(item.patient_name+" "+item.description+" "+label(item)).includes(q)));
   }
   function groupRows(items){
     const mode=state.grouping,today=cyprusToday(),groups=new Map();
     for(const item of items){
-      const category=item.item_type||"other";
+      const category=categoryKey(item);
       const key=mode==="patient"?item.patient_id:
         mode==="category"?category:dateClass(item,today);
       if(!groups.has(key))groups.set(key,{key,heading:mode==="patient"?
