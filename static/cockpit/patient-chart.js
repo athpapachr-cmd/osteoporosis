@@ -8,7 +8,12 @@
   const session=crypto.randomUUID();
   const el=(parent,tag,value,cls)=>{const n=document.createElement(tag);if(value)n.textContent=value;if(cls)n.className=cls;parent.append(n);return n;};
   const button=(parent,label,fn)=>{const b=el(parent,'button',label,'clinical-secondary');b.type='button';b.onclick=fn;return b;};
-  const date=v=>v?new Intl.DateTimeFormat('el-CY',{dateStyle:'medium',timeZone:'Asia/Nicosia'}).format(new Date(v.includes('T')?v:v.slice(0,10)+'T12:00:00Z')):'';
+  const date=v=>{
+    if(!v)return '';
+    const d=new Date(String(v).includes('T')?v:String(v).slice(0,10)+'T12:00:00Z');
+    if(!Number.isFinite(d.getTime()))return 'Μη έγκυρη ημερομηνία';
+    return new Intl.DateTimeFormat('el-CY',{dateStyle:'medium',timeZone:'Asia/Nicosia'}).format(d);
+  };
   const statuses={open:'Ανοικτή',awaiting_patient:'Αναμένεται από τον ασθενή',awaiting_result:'Αναμένεται αποτέλεσμα',resolved:'Ολοκληρώθηκε',cancelled:'Ακυρώθηκε',not_yet_indicated:'Δεν έχει ακόμη ένδειξη'};
   const roles={patient:'Ασθενής',clinician:'Γιατρός',secretary:'Γραμματεία',unspecified:'Δεν προσδιορίστηκε'};
   const chart=el($('visitWorkspacePatient'),'section','','patient-chart');chart.id='patientChart';

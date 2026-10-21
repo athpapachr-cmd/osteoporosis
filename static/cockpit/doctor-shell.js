@@ -176,6 +176,15 @@
     content.append(newLink("Άνοιγμα Gmail","https://mail.google.com/","Έλεγχος μηνυμάτων απευθείας στο Gmail"));
   }
   function tasks() {
+    if(window.CockpitCCC01){
+      const ticket=state.request;
+      $("doctorPopoverTitle").textContent="Εργασίες σήμερα";
+      window.CockpitCCC01.renderPopover(content,
+        ()=>state.panel==="tasks"&&ticket===state.request,close,
+        ()=>showLibrary("obligations"));
+      return;
+    }
+    // Compatibility with existing focused mock/legacy controller only.
     if(window.CockpitStoredChart){
       const ticket=state.request;
       $("doctorPopoverTitle").textContent="Υποχρεώσεις ασθενών";
@@ -217,6 +226,8 @@
       for(const item of links.filter(x=>(x.name+" "+x.hint).toLocaleLowerCase("el").includes(q))){
         list.append(newLink(item.name,item.href,item.hint));
       }
+      list.append(action("Υποχρεώσεις ασθενών","Όλες, ανά ασθενή, κατηγορία ή προθεσμία",
+        ()=>showLibrary("obligations")));
       if(!list.children.length)list.append(text("Δεν βρέθηκε ενέργεια."));
       list.append(action("Εργασίες ιατρείου", "Χειρουργεία, έγγραφα, modules και εκπαίδευση",
         ()=>showLibrary("surgery")));
@@ -233,6 +244,12 @@
       const selected=b.dataset.doctorLibraryTab===category;
       b.classList.toggle("selected",selected);b.setAttribute("aria-pressed",String(selected));
     });
+    if(category==="obligations"&&window.CockpitCCC01){
+      window.CockpitCCC01.mountFull(
+        ()=>!$("doctorLibraryView").hidden&&
+          !document.querySelector('[data-doctor-library-panel="obligations"]').hidden,
+        showHome);
+    }
     $("doctorBackHome").focus();
   }
   function showHome() {
@@ -318,14 +335,24 @@
     target.append(newLink("Ιατρικές εκθέσεις", "/clinical/clinic-utilities/medical-report",
       "Δεν υπάρχει ακόμη αξιόπιστη καταμέτρηση."));
     target.append(action("Υποχρεώσεις ασθενών",
-      "Ανοικτές εκκρεμότητες ανά ασθενή",
-      () => openPanel("tasks", buttons.tasks)));
+      "Πλήρης προστατευμένη λίστα · ανά ασθενή, κατηγορία και προθεσμία",
+      () => showLibrary("obligations")));
   }
 
     buttons.day.addEventListener("click",()=>openPanel("day",buttons.day));
   buttons.inbox.addEventListener("click",()=>openPanel("inbox",buttons.inbox));
   window.addEventListener("cockpit:clinical-updates-changed",()=>{if(state.panel==="inbox")inbox();else if(state.panel==="tasks")tasks();});
-  window.addEventListener("clinical:unauthenticated",()=>{close();});
+  window.addEventListener("clinical:unauthenticated",()=>{
+    close();
+    $("doctorTasksBadge").hidden=true;
+    $("doctorTasksBadge").textContent="";
+  });
+  window.addEventListener("cockpit:ccc01-attention-count",e=>{
+    const n=e.detail?.total;
+    const badge=$("doctorTasksBadge");
+    badge.hidden=!Number.isInteger(n)||n<=0;
+    badge.textContent=Number.isInteger(n)&&n>0?(n>99?"99+":String(n)):"";
+  });
   buttons.tasks.addEventListener("click",()=>openPanel("tasks",buttons.tasks));
   buttons.actions.addEventListener("click",()=>openPanel("actions",buttons.actions));
   $("doctorPopoverClose").addEventListener("click",close);
@@ -378,8 +405,8 @@
         ? { date: group.date, count: 1, name: group.name, procedure: group.procedure }
         : { date: group.date, count: group.count })
     };
-    $("doctorTasksBadge").hidden = detail.total === 0;
-    $("doctorTasksBadge").textContent = String(detail.total);
+    // Surgery totals live in their own Home attention summary; the Tasks icon
+    // is reserved exclusively for qualified current-day clinical attention.
     attention();
     if (state.panel === "tasks") tasks();
   }

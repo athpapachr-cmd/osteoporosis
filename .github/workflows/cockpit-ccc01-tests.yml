@@ -1,0 +1,46 @@
+name: Cockpit CCC-01 obligations and today-attention
+
+on:
+  pull_request:
+    paths:
+      - "clinical_capture_cp1.py"
+      - "static/cockpit/**"
+      - "test_cockpit_ccc01.py"
+      - ".github/workflows/cockpit-ccc01-tests.yml"
+  push:
+    paths:
+      - "clinical_capture_cp1.py"
+      - "static/cockpit/**"
+      - "test_cockpit_ccc01.py"
+      - ".github/workflows/cockpit-ccc01-tests.yml"
+
+jobs:
+  ccc01:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Install existing app and focused browser dependencies
+        run: |
+          pip install -r requirements.txt pytest playwright
+          if ! command -v google-chrome && ! command -v chromium; then
+            python -m playwright install --with-deps chromium
+          fi
+      - name: Syntax and boundaries
+        run: |
+          python -m py_compile clinical_capture_cp1.py test_cockpit_ccc01.py
+          node --check static/cockpit/clinical-obligations.js
+          node --check static/cockpit/doctor-shell.js
+      - name: Real SQLite owner and Chromium 1280/680/390 synthetic scenarios
+        run: pytest -q test_cockpit_ccc01.py
+      - name: Existing Cockpit shell and attention regressions
+        run: |
+          node test_cockpit_doctor_shell.js
+          node test_cockpit_attention_summary.js
+      - name: Diff hygiene
+        run: git diff --check HEAD^ HEAD
