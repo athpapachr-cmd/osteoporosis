@@ -380,7 +380,8 @@ def browser_suite(width, screenshot_name):
         expect(page.locator("#doctorAttentionList")).to_contain_text("Συνθετικός Ασθενής Β")
         expect(page.locator("#doctorAttentionList")).to_contain_text("Αναμένουν απόφαση")
         expect(page.locator("#doctorAttentionList")).not_to_contain_text("Υποβλήθηκαν")
-        expect(page.locator("#doctorTasksBadge")).to_have_text("2")
+        # Surgical totals must never appear as a Task badge; this legacy shell-only smoke does not mount the protected CCC-01 source.
+        expect(page.locator("#doctorTasksBadge")).to_be_hidden()
         page.screenshot(path=str(OUT / screenshot_name), full_page=True)
 
         page.locator("#doctorDateButton").click()
