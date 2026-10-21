@@ -20,6 +20,7 @@ JS = [(ROOT / part).read_text(encoding="utf-8") for part in (
     "static/cockpit/clinical-workspace.js",
     "static/cockpit/visit-brief.js",
     "static/cockpit/app.js",
+    "static/cockpit/obligations-view.js",
     "static/cockpit/doctor-shell.js",
     "static/cockpit/shared-nav.js",
 )]
@@ -52,6 +53,22 @@ DAY = [
     {"appointment_id": "cal.com:synthetic-2", "patient_display_name": "Ασθενής Δοκιμής Β",
      "start_at": "2026-10-11T08:00:00Z", "reason": "Prolia"},
 ]
+OBLIGATION_TODAY = datetime.now(ZoneInfo("Asia/Nicosia")).date()
+OBLIGATIONS = [
+    {"pending_id":"SYN-OBL-1","patient_id":"SYN-A","patient_name":"Ασθενής Δοκιμής Α",
+     "description":"Εργαστηριακές εξετάσεις","item_type":"test","status":"awaiting_result",
+     "review_date":(OBLIGATION_TODAY-timedelta(days=1)).isoformat(),"source_date":"2026-10-10"},
+    {"pending_id":"SYN-OBL-2","patient_id":"SYN-A","patient_name":"Ασθενής Δοκιμής Α",
+     "description":"Επανεξέταση γόνατος","item_type":"follow_up","status":"open",
+     "review_date":OBLIGATION_TODAY.isoformat(),"source_date":"2026-10-10"},
+    {"pending_id":"SYN-OBL-3","patient_id":"SYN-B","patient_name":"Ασθενής Δοκιμής Β",
+     "description":"Απεικονιστική γνωμάτευση","item_type":"document","status":"awaiting_patient",
+     "review_date":(OBLIGATION_TODAY+timedelta(days=2)).isoformat(),"source_date":"2026-10-12"},
+    {"pending_id":"SYN-OBL-4","patient_id":"SYN-B","patient_name":"Ασθενής Δοκιμής Β",
+     "description":"Παραλαβή αποτελέσματος","item_type":"result","status":"awaiting_result",
+     "review_date":None,"source_date":"2026-10-12"},
+]
+
 CONTEXT = {
     "generated_at": "2026-10-11T06:00:00Z",
     "source_updated_at": "2026-10-11T05:58:00Z",
@@ -136,6 +153,72 @@ def exercise_day_navigation(page,width):
     page.locator('#doctorDateButton').click();page.locator('#doctorDateButton').click()
     expect(page.locator('#doctorPopoverContent')).to_contain_text('Ασθενής Δοκιμής Α')
     page.locator('#doctorDateButton').click()
+
+
+def exercise_obligations(page,width):
+    # Actual obligations JS/CSS with synthetic protected read, no clinical writes.
+    page.locator("#doctorTasksButton").click()
+    expect(page.locator("#doctorObligationsView")).to_be_visible()
+    expect(page.locator("#doctorMainView")).to_be_hidden()
+    expect(page.locator("#doctorLibraryView")).to_be_hidden()
+    expect(page.locator("#doctorPopover")).to_be_hidden()
+    expect(page.locator("#doctorObligationsTotal")).to_have_text("4")
+    expect(page.locator("#doctorObligationsOverdue")).to_have_text("1")
+    expect(page.locator("#doctorObligationsToday")).to_have_text("1")
+    expect(page.locator(".doctor-obligation-row")).to_have_count(4)
+    expect(page.locator(".doctor-obligation-group")).to_have_count(2)
+    assert page.evaluate("document.documentElement.scrollWidth<=innerWidth+1"), "task-screen horizontal overflow"
+    page.locator('[data-doctor-obligation-group="category"]').click()
+    expect(page.locator(".doctor-obligation-group")).to_have_count(4)
+    expect(page.locator('[data-doctor-obligation-group="category"]')).to_have_attribute("aria-pressed","true")
+    page.locator('[data-doctor-obligation-group="date"]').click()
+    expect(page.locator(".doctor-obligation-group")).to_have_count(4)
+    expect(page.locator("#doctorObligationsRows")).to_contain_text("Εκπρόθεσμες")
+    expect(page.locator("#doctorObligationsRows")).to_contain_text("Χωρίς προθεσμία")
+    page.locator("#doctorObligationsSearch").fill("Ασθενής Β")
+    expect(page.locator(".doctor-obligation-row")).to_have_count(2)
+    page.locator("#doctorObligationsSearch").fill("")
+    page.locator("#doctorObligationsStatusFilter").select_option("awaiting_result")
+    expect(page.locator(".doctor-obligation-row")).to_have_count(2)
+    page.locator("#doctorObligationsStatusFilter").select_option("")
+    page.locator("#doctorObligationsTypeFilter").select_option("document")
+    expect(page.locator(".doctor-obligation-row")).to_have_count(1)
+    page.locator("#doctorObligationsTypeFilter").select_option("")
+    # The normal click returns to Home and invokes the ORIGINAL patient/pending
+    # reader; the view itself cannot accept/complete a clinical obligation.
+    page.evaluate("""() => {
+        window.CockpitStoredChart = {openPending: (p,i) => window.__chosenObligation={patient:p,pending:i}};
+    }""")
+    page.locator('[data-pending-id="SYN-OBL-1"]').click()
+    expect(page.locator("#doctorObligationsView")).to_be_hidden()
+    expect(page.locator("#doctorMainView")).to_be_visible()
+    assert page.evaluate("window.__chosenObligation")=={"patient":"SYN-A","pending":"SYN-OBL-1"}
+    assert page.locator("#doctorObligationsRows").text_content()=="", "hidden screen retained PHI"
+    # Closing during a pending protected response must also purge a late success.
+    page.evaluate("""() => {
+        window.__priorFetch=window.fetch;
+        window.fetch=(url,opts) => {
+            if(String(url).startsWith('/clinical/clinical-updates?'))
+                return new Promise(resolve=>{window.__releaseLateObligations=()=>resolve({
+                    ok:true,json:async()=>({items:[{pending_id:'LATE',patient_id:'LATE',
+                      patient_name:'STALE_PATIENT_NAME',description:'STALE_TASK',
+                      status:'open',item_type:'other'}]})
+                });});
+            return window.__priorFetch(url,opts);
+        };
+    }""")
+    page.locator("#doctorTasksButton").click()
+    assert page.evaluate("typeof window.__releaseLateObligations === 'function'")
+    page.locator("#doctorObligationsBack").click()
+    page.evaluate("""async () => {
+        window.__releaseLateObligations();
+        await new Promise(r=>setTimeout(r,0));
+        window.fetch=window.__priorFetch;
+    }""")
+    expect(page.locator("#doctorObligationsView")).to_be_hidden()
+    assert "STALE_PATIENT_NAME" not in page.locator("#doctorObligationsRows").text_content()
+    assert page.evaluate("document.documentElement.scrollWidth<=innerWidth+1")
+    assert not page.locator("#doctorObligationsRows").locator("*").count()
 
 
 def browser_suite(width, screenshot_name):
@@ -229,6 +312,13 @@ def browser_suite(width, screenshot_name):
                 return route.fulfill(json=RECENT)
             if "/clinical/calendar/agenda?" in url:
                 return route.fulfill(json=DAY)
+            if "/clinical/clinical-updates?" in url:
+                if not auth["authenticated"]:
+                    return route.fulfill(status=401,json={"detail":"Unauthorized"})
+                args=parse_qs(urlparse(url).query)
+                rows=OBLIGATIONS if args.get("scope",["real"])[0]=="real" else []
+                assert args.get("active_only")==["true"]
+                return route.fulfill(json={"items":rows,"shown":len(rows)})
             if url.endswith("/clinical/surgeries"):
                 return route.fulfill(status=200 if auth["authenticated"] else 401,
                                      json=SURGERIES if auth["authenticated"] else {"detail": "Unauthorized"})
@@ -341,6 +431,7 @@ def browser_suite(width, screenshot_name):
         page.locator("#visitBriefClose").click()
         expect(page.locator("#visitBriefOverlay")).to_be_hidden()
         exercise_day_navigation(page,width)
+        exercise_obligations(page,width)
         if width <= 620:
             expect(page.locator("#doctorAttentionList .doctor-action-row")).to_have_count(4)
             expect(page.locator("#doctorAttentionList")).to_contain_text("Συνθετικός Ασθενής Β")
@@ -404,9 +495,8 @@ def browser_suite(width, screenshot_name):
         expect(page.locator('#doctorPopoverContent a[href="/clinical/clinic-utilities/rf"]')).to_be_visible()
         page.locator("#doctorActionsButton").click()
 
-        page.locator("#doctorTasksButton").click()
-        expect(page.locator("#doctorPopoverContent")).to_contain_text("2")
-        page.locator("#doctorPopoverContent").get_by_role("button", name="Εκκρεμή χειρουργεία").click()
+        page.locator("#doctorActionsButton").click()
+        page.locator("#doctorPopoverContent").get_by_role("button", name="Εργασίες ιατρείου").click()
         expect(page.locator("#doctorMainView")).to_be_hidden()
         expect(page.locator("#surgerySection")).to_be_visible()
         page.locator("#doctorBackHome").click()
