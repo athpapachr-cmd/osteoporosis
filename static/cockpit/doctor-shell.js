@@ -223,8 +223,25 @@
     };
     input.addEventListener("input",draw);draw();input.focus();
   }
+  function showObligations() {
+    close();
+    const screen=$("doctorObligationsView");
+    if(!screen)return;
+    $("doctorMainView").hidden=true;
+    $("doctorLibraryView").hidden=true;
+    screen.hidden=false;
+    window.CockpitObligations?.open((id,pendingId)=>{
+      // Reuse the exact existing chart+pending owner. Opening a listed task
+      // cannot grant a capability or write a clinical record by itself.
+      showHome();
+      if(window.CockpitStoredChart)window.CockpitStoredChart.openPending(id,pendingId);
+    });
+    $("doctorObligationsSearch").focus();
+  }
   function showLibrary(category="surgery") {
     close();
+    window.CockpitObligations?.close();
+    $("doctorObligationsView").hidden=true;
     $("doctorMainView").hidden=true;
     $("doctorLibraryView").hidden=false;
     const panels=document.querySelectorAll("[data-doctor-library-panel]");
@@ -236,7 +253,11 @@
     $("doctorBackHome").focus();
   }
   function showHome() {
-    close();$("doctorLibraryView").hidden=true;$("doctorMainView").hidden=false;
+    close();
+    window.CockpitObligations?.close();
+    $("doctorObligationsView").hidden=true;
+    $("doctorLibraryView").hidden=true;
+    $("doctorMainView").hidden=false;
     $("doctorActionsButton").focus();
   }
   const rfCounterNames = [
@@ -319,14 +340,15 @@
       "Δεν υπάρχει ακόμη αξιόπιστη καταμέτρηση."));
     target.append(action("Υποχρεώσεις ασθενών",
       "Ανοικτές εκκρεμότητες ανά ασθενή",
-      () => openPanel("tasks", buttons.tasks)));
+      showObligations));
   }
 
     buttons.day.addEventListener("click",()=>openPanel("day",buttons.day));
   buttons.inbox.addEventListener("click",()=>openPanel("inbox",buttons.inbox));
   window.addEventListener("cockpit:clinical-updates-changed",()=>{if(state.panel==="inbox")inbox();else if(state.panel==="tasks")tasks();});
-  window.addEventListener("clinical:unauthenticated",()=>{close();});
-  buttons.tasks.addEventListener("click",()=>openPanel("tasks",buttons.tasks));
+  window.addEventListener("clinical:unauthenticated",()=>{showHome();});
+  buttons.tasks.addEventListener("click",showObligations);
+  $("doctorObligationsBack").addEventListener("click",showHome);
   buttons.actions.addEventListener("click",()=>openPanel("actions",buttons.actions));
   $("doctorPopoverClose").addEventListener("click",close);
   if (typeof window !== "undefined" && typeof window.addEventListener === "function") window.addEventListener("clinical:authenticated", () => {
