@@ -145,6 +145,27 @@ def test_real_chromium_popup_full_screen_and_exact_pending(setup,tmp_path):
                 expect(page.locator(".patient-pending-dialog")).to_be_visible()
                 assert not errors,errors
                 assert page.evaluate("document.documentElement.scrollWidth<=innerWidth+1")
+                # Late protected response after logout cannot recreate a badge or PHI.
+                assert page.evaluate("""() => {
+                    const prior=window.fetch.bind(window);
+                    let release=null;
+                    window.fetch=(url,options) => String(url).startsWith('/clinical/clinical-updates?')
+                        ? new Promise(resolve=>{release=resolve;})
+                        : prior(url,options);
+                    window.CockpitCCC01.refreshAttention();
+                    if(!release)return false;
+                    window.dispatchEvent(new Event('clinical:unauthenticated'));
+                    release(new Response(JSON.stringify({
+                        items:[{patient_id:'SYN-OLD',pending_id:'SYN-OLD',
+                            description:'STALE_PRIVATE_TASK'}],shown:1,total:1,
+                        has_more:false,next_offset:null,today:'2026-10-21'
+                    }),{status:200,headers:{'Content-Type':'application/json'}}));
+                    window.fetch=prior;
+                    return true;
+                }""")
+                page.wait_for_timeout(100)
+                expect(page.locator("#doctorTasksBadge")).to_be_hidden()
+                expect(page.locator("#cccObligationsList")).not_to_contain_text("STALE_PRIVATE_TASK")
                 context.close()
             browser.close()
     finally:
