@@ -65,7 +65,7 @@ OBLIGATIONS = [
      "description":"Απεικονιστική γνωμάτευση","item_type":"document","status":"awaiting_patient",
      "review_date":(OBLIGATION_TODAY+timedelta(days=2)).isoformat(),"source_date":"2026-10-12"},
     {"pending_id":"SYN-OBL-4","patient_id":"SYN-B","patient_name":"Ασθενής Δοκιμής Β",
-     "description":"Παραλαβή αποτελέσματος","item_type":"result","status":"awaiting_result",
+     "description":"Παραλαβή αποτελέσματος","item_type":"test","status":"awaiting_result",
      "review_date":None,"source_date":"2026-10-12"},
 ]
 
@@ -169,8 +169,14 @@ def exercise_obligations(page,width):
     expect(page.locator(".doctor-obligation-group")).to_have_count(2)
     assert page.evaluate("document.documentElement.scrollWidth<=innerWidth+1"), "task-screen horizontal overflow"
     page.locator('[data-doctor-obligation-group="category"]').click()
-    expect(page.locator(".doctor-obligation-group")).to_have_count(4)
+    expect(page.locator(".doctor-obligation-group")).to_have_count(3)
     expect(page.locator('[data-doctor-obligation-group="category"]')).to_have_attribute("aria-pressed","true")
+    examinations=page.locator(".doctor-obligation-group").filter(has=page.locator("h3",has_text="Εξετάσεις"))
+    expect(examinations).to_have_count(1)
+    expect(examinations.locator(".doctor-obligation-subgroup")).to_have_count(2)
+    expect(examinations.locator(".doctor-obligation-subhead")).to_contain_text(["Με προθεσμία", "Χωρίς προθεσμία"])
+    assert sorted(examinations.locator(".doctor-obligation-subgroup").evaluate_all(
+        "groups => groups.map(g=>g.querySelectorAll('.doctor-obligation-row').length)"))==[1,1]
     page.locator('[data-doctor-obligation-group="date"]').click()
     expect(page.locator(".doctor-obligation-group")).to_have_count(4)
     expect(page.locator("#doctorObligationsRows")).to_contain_text("Εκπρόθεσμες")
@@ -184,14 +190,24 @@ def exercise_obligations(page,width):
     page.locator("#doctorObligationsTypeFilter").select_option("document")
     expect(page.locator(".doctor-obligation-row")).to_have_count(1)
     page.locator("#doctorObligationsTypeFilter").select_option("")
-    # The normal click returns to Home and invokes the ORIGINAL patient/pending
-    # reader; the view itself cannot accept/complete a clinical obligation.
+    # Opening a task stays INSIDE the obligations screen; going to the chart
+    # is an optional explicit action rather than forced navigation.
     page.evaluate("""() => {
         window.CockpitStoredChart = {openPending: (p,i) => window.__chosenObligation={patient:p,pending:i}};
     }""")
     page.locator("#doctorObligationsSearch").fill("Δοκιμής Α")
     expect(page.locator('[data-pending-id="SYN-OBL-1"]')).to_be_visible()
     page.locator('[data-pending-id="SYN-OBL-1"]').click()
+    expect(page.locator("#doctorObligationsView")).to_be_visible()
+    modal=page.locator("#doctorObligationDialog")
+    expect(modal).to_be_visible()
+    expect(modal).to_contain_text("Εργαστηριακές εξετάσεις")
+    expect(modal).to_contain_text("Ασθενής Δοκιμής Α")
+    expect(modal).to_contain_text("Για αλλαγές απαιτείται")
+    assert modal.bounding_box()["width"] <= width + 1
+    modal.get_by_role("button",name="Άνοιγμα στον φάκελο ασθενούς").click()
+    expect(modal).to_be_hidden()
+    assert modal.text_content()=="" , "modal retained clinical text after dismissal"
     expect(page.locator("#doctorObligationsView")).to_be_hidden()
     assert page.locator("#doctorObligationsSearch").input_value()=="" , (
         "hidden patient-name search must be purged on screen close")
