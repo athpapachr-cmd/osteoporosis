@@ -205,6 +205,12 @@ def exercise_obligations(page,width):
     expect(modal).to_contain_text("Ασθενής Δοκιμής Α")
     expect(modal).to_contain_text("Για αλλαγές απαιτείται")
     assert modal.bounding_box()["width"] <= width + 1
+    # ESC is equivalent to the close button, not just hidden retained PHI.
+    page.keyboard.press("Escape")
+    expect(modal).to_be_hidden()
+    assert modal.text_content()=="" , "Escape retained patient details"
+    page.locator('[data-pending-id="SYN-OBL-1"]').click()
+    expect(modal).to_be_visible()
     modal.get_by_role("button",name="Άνοιγμα στον φάκελο ασθενούς").click()
     expect(modal).to_be_hidden()
     assert modal.text_content()=="" , "modal retained clinical text after dismissal"
