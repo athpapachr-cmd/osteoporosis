@@ -211,6 +211,20 @@ def exercise_obligations(page,width):
     assert modal.text_content()=="" , "Escape retained patient details"
     page.locator('[data-pending-id="SYN-OBL-1"]').click()
     expect(modal).to_be_visible()
+    # Changing key can establish a new principal without a preceding explicit
+    # logout. Purge old patient details and any reversible-delete authority
+    # synchronously before the new authenticated source has returned.
+    page.evaluate("""() => {
+        document.getElementById("doctorObligationsFeedback").textContent =
+            "OLD_PRINCIPAL_UNDO";
+        window.dispatchEvent(new Event("clinical:authenticated"));
+    }""")
+    expect(modal).to_be_hidden()
+    assert modal.text_content()=="" , "principal replacement retained old patient's dialog"
+    assert "OLD_PRINCIPAL_UNDO" not in page.locator("#doctorObligationsFeedback").text_content()
+    expect(page.locator('[data-pending-id="SYN-OBL-1"]')).to_be_visible()
+    page.locator('[data-pending-id="SYN-OBL-1"]').click()
+    expect(modal).to_be_visible()
     modal.get_by_role("button",name="Άνοιγμα στον φάκελο ασθενούς").click()
     expect(modal).to_be_hidden()
     assert modal.text_content()=="" , "modal retained clinical text after dismissal"
