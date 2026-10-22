@@ -218,7 +218,11 @@
     });
     if(!response.ok){
       const error=new Error("Clinical task change refused");error.status=response.status;
-      if(response.status===401)window.dispatchEvent(new Event("clinical:request-login"));
+      if(response.status===401){
+        // An expired clinical session must immediately clear list/modal/undo.
+        window.dispatchEvent(new Event("clinical:unauthenticated"));
+        window.dispatchEvent(new Event("clinical:request-login"));
+      }
       throw error;
     }
     return response.json();
@@ -511,6 +515,8 @@
   $("doctorObligationsReload").addEventListener("click",()=>{if(state.active)load();});
   $("doctorObligationsScope").addEventListener("click",()=>{
     if(!state.active)return;
+    closeDialog();
+    resetFeedback(); // no real-patient undo authority in the synthetic scope
     state.scope=state.scope==="real"?"test":"real";load();
   });
   window.addEventListener("clinical:unauthenticated",close);
