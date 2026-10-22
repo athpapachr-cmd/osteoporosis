@@ -39,3 +39,16 @@ No separate Gmail, reception, clinical inbox, new role, schema or timer. No spec
 5. Reuse affected CP1/CP2/visit amendments, Home, Visit Brief and canonical checks; exactly one independent R2 pre-code and one post-code review (reuse unchanged evidence). Release/real-data authority is separate and requires PO approval.
 
 **State:** Product Owner explicitly requests the behavior; candidate design/implementation on a DRAFT/HOLD branch. The initial release of #205 remains LIVE/unchanged until final review and separate release authorisation.
+
+
+## Product Owner extension — in-list autonomy and due-date splits (2026-10-22)
+
+**Additional expressly approved UI behavior:** When grouping by category, obligations **with a recorded due date** and those **without** appear as separately headed subsections *within each category*. The existing patient-grouping and due-date-grouping options continue unchanged. Tasks without a due date display an explicit «Χωρίς προθεσμία» label. No inference from task status or title is treated as a recorded due date.
+
+**One-tap autonomy:** Selecting a task from the main Obligations view opens a compact **same-screen modal**, not the patient chart. It has task title, verified patient display name, current state, recorded category/due date, and the existing clinician-authorized operations: **Edit category/date (manual Save), Delete (with explicit confirmation), Undo delete when available**. An optional «Άνοιγμα στην καρτέλα» opens the original protected patient chart and task popup; it is no longer a mandatory intermediate step.
+
+**Authority reuse:** The modal calls the already-designed existing Pending metadata POST and existing lifecycle cancel/restore POST, using patient_id/pending_id and current lifecycle revision from the protected clinical-updates projection. No direct SQL, no new task writer/store/permission, no email and no invented status transition. A Cancel/Delete remains *reversible* via the existing lifecycle mechanism; permanent removal remains restricted to its existing separately guarded patient-chart flow, not shortcut on the list. The metadata editor remains available in the existing patient chart popup as an alternate path. Both paths must see identical persisted changes after fresh read.
+
+**Fail-closed and continuity:** If checkpoint_write_allowed or lifecycle revision is absent/false, no write actions are offered, only chart navigation. Explicit confirmation for Delete; focus and keyboard/ESC return to the existing list; preserve current list search/filter/grouping/scroll after edits; no back-and-forth multiple clicks. On 409 conflict/error, show the real outcome uncertainty and fresh-read option, no blind retry with a new idempotency key. Logout/close clears modal PHI and undo context, abort/generation protects against stale read responses. An audit event for metadata and lifecycle is inserted only by the existing backend owner, not this UI.
+
+**Affected R2 delta:** Keep the existing #207 release HOLD and reuse passed signed-source/actor/revision tests; new Chromium acceptance proves two category subsections, same-screen metadata Save, cancel/undo without opening chart, and chart optional. Scope excludes email, paging beyond first 100, task creation, changes to auto-completion semantics and permanent deletion authority.
