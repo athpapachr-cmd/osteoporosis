@@ -477,11 +477,13 @@
       const active=body.items.filter(x=>["open","awaiting_patient","awaiting_result"].includes(x?.status));
       if(active.some(x=>!validItem(x))||active.length>100)
         throw Error("Invalid protected projection");
+      const previousScroll=preserveRows?window.scrollY:null;
       state.rows=active;
       $("doctorObligationsState").textContent=state.scope==="test"?
         "Δοκιμαστικός φάκελος · χωρίς ανάμειξη με πραγματικές εγγραφές.":
         "Επίλεξε μια υποχρέωση για αλλαγές και διαγραφή εδώ, χωρίς επιστροφή στον φάκελο.";
       summary();render();
+      if(previousScroll!==null)window.scrollTo({top:previousScroll,behavior:"auto"});
     }catch(err){
       if(!state.active||ticket!==state.generation||view.hidden)return;
       resetContents();
