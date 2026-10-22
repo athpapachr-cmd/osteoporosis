@@ -241,6 +241,10 @@
       const chart=window.CockpitStoredChart;
       if(typeof chart?.openPending==="function")chart.openPending(id,pendingId);
       else if(window.CockpitSynthetic===true && typeof chart?.open==="function")chart.open(id);
+    },(id,pendingId)=>{
+      // A quick edit is still handled by the SAME protected chart/task owner.
+      showHome();
+      window.CockpitStoredChart?.openPending?.(id,pendingId,{editMetadata:true});
     });
     $("doctorObligationsSearch").focus();
   }
