@@ -443,6 +443,51 @@ def test_browser_metadata_edition_and_relative_title_requires_explicit_save(setu
             expect(page.locator(".doctor-obligation-entry").filter(has_text=title)).to_have_count(1)
             assert c.get("/clinical/patient/outside-synthetic-scope/chart").json()["pending"][0]["status"]==p["status"]
             expect(page.locator("#doctorObligationsView")).to_be_visible()
+            # Delayed Undo answers must not bleed across a new clinician or scope.
+            # The restore response is controlled locally; no second server writer.
+            entry=page.locator(".doctor-obligation-entry").filter(has_text=title)
+            entry.locator(".doctor-obligation-row").click()
+            modal.locator(".doctor-obligation-delete").click()
+            modal.locator(".doctor-obligation-confirm-delete").click()
+            expect(page.locator("#doctorObligationsFeedback")).to_contain_text("Η υποχρέωση διαγράφηκε")
+            page.evaluate("""() => {
+                const nativeFetch=window.fetch.bind(window);
+                window.__lateUndoReply=null;
+                window.fetch=(url,options={})=>{
+                    if(String(url).includes("/lifecycle") &&
+                       options?.method==="POST" &&
+                       JSON.parse(options.body||"{}").action==="restore"){
+                        return new Promise((resolve,reject)=>{
+                            window.__lateUndoReply={resolve,reject};
+                        });
+                    }
+                    return nativeFetch(url,options);
+                };
+            }""")
+            page.locator("#doctorObligationsFeedback").get_by_role(
+                "button",name="Αναίρεση διαγραφής").click()
+            page.wait_for_function("window.__lateUndoReply !== null")
+            if width==1280:
+                page.locator("#doctorObligationsSearch").fill("Protected sentinel")
+                page.evaluate('window.dispatchEvent(new Event("clinical:authenticated"))')
+                assert page.locator("#doctorObligationsSearch").input_value()==""
+                expect(page.locator("#doctorObligationsState")).to_contain_text(
+                    "Επίλεξε μια υποχρέωση")
+            else:
+                page.locator("#doctorObligationsScope").click()
+                expect(page.locator("#doctorObligationsState")).to_contain_text(
+                    "Δοκιμαστικός φάκελος")
+            assert page.locator("#doctorObligationsFeedback").text_content()==""
+            page.evaluate("""async success => {
+                const reply=window.__lateUndoReply;
+                if(success)reply.resolve(new Response(
+                    JSON.stringify({replayed:false}),{status:200,
+                        headers:{"Content-Type":"application/json"}}));
+                else reply.reject(new Error("Delayed restore network failure"));
+                await new Promise(resolve=>setTimeout(resolve,60));
+            }""",width==1280)
+            assert page.locator("#doctorObligationsFeedback").text_content()=="", (
+                "stale Undo response repainted the new account or scope")
             assert page.evaluate("document.documentElement.scrollWidth<=innerWidth+1")
             assert not errors,errors
             context.close();browser.close()

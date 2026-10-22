@@ -222,6 +222,8 @@ def exercise_obligations(page,width):
     expect(modal).to_be_hidden()
     assert modal.text_content()=="" , "principal replacement retained old patient's dialog"
     assert "OLD_PRINCIPAL_UNDO" not in page.locator("#doctorObligationsFeedback").text_content()
+    assert page.locator("#doctorObligationsSearch").input_value()=="", (
+        "successful principal switch retained the prior patient's search text")
     expect(page.locator('[data-pending-id="SYN-OBL-1"]')).to_be_visible()
     page.locator('[data-pending-id="SYN-OBL-1"]').click()
     expect(modal).to_be_visible()

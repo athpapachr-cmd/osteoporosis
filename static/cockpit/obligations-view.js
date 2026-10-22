@@ -233,17 +233,21 @@
     if(!state.active||!u)return;
     resetFeedback();
     feedback.append(node("span","","Επαναφορά υποχρέωσης…"));
+    // The reply belongs only to the auth/scope generation that started Undo.
+    // A successful principal switch can happen without logout.
+    const ticket=state.generation,scope=state.scope;
+    const current=()=>state.active&&state.generation===ticket&&state.scope===scope;
     // Existing reversible Pending lifecycle owner; no second task writer.
     try{
       await postTask(u,"/lifecycle",{
         action:"restore",expected_revision:u.revision,
         cancellation_event_id:u.eventId,idempotency_key:crypto.randomUUID()
       });
-      if(!state.active)return;
+      if(!current())return;
       setFeedback("Η υποχρέωση επανήλθε.");
       load(true);
     }catch(err){
-      if(!state.active)return;
+      if(!current())return;
       setFeedback(writeErrorText(err));
       load(true);
     }
@@ -542,6 +546,11 @@
     // authority synchronously, BEFORE any new protected read returns.
     closeDialog();
     resetFeedback();
+    // A successful key/account switch must not retain a previous patient name
+    // typed in search, even when no dialog is open.
+    $("doctorObligationsSearch").value="";
+    $("doctorObligationsStatusFilter").value="";
+    $("doctorObligationsTypeFilter").value="";
     load();
   });
   window.addEventListener("cockpit:clinical-updates-changed",()=>{
