@@ -257,7 +257,8 @@
     identity.append(node("p","doctor-obligation-patient",item.patient_name));
     identity.append(node("h3","",item.description));
     const headActions=node("div","doctor-obligation-dialog-head-actions");
-    makeButton(headActions,"×",closeDialog,"doctor-obligation-dialog-close")
+    makeButton(headActions,"×",()=>{if(!state.modalBusy)closeDialog();},
+      "doctor-obligation-dialog-close")
       .setAttribute("aria-label","Κλείσιμο υποχρέωσης");
     header.append(identity,headActions);dialog.append(header);
     const details=node("div","doctor-obligation-dialog-context");
@@ -316,7 +317,8 @@
         if(chosen===item.item_type&&review_date===(item.review_date||null)){
           status.textContent="Δεν υπάρχουν αλλαγές.";return;
         }
-        if(review_date&&!iso(review_date)){
+        if(!due.validity.valid||due.validity.badInput||
+            (review_date&&!iso(review_date))){
           status.textContent="Επίλεξε έγκυρη ημερομηνία.";return;
         }
         state.modalBusy=true;saveArea.querySelectorAll("button").forEach(b=>b.disabled=true);
@@ -334,9 +336,17 @@
         }catch(err){
           if(!state.active||userTurn!==state.generation)return;
           state.modalBusy=false;
-          saveArea.querySelectorAll("button").forEach(b=>b.disabled=false);
           status.textContent=writeErrorText(err);
-          // Error/409 retains clinician inputs; never retry with new key blindly.
+          if(err?.status===422){
+            saveArea.querySelectorAll("button").forEach(b=>b.disabled=false);
+          }else{
+            // A lost response may follow a committed metadata change. The
+            // revision guard stops duplicate writes, but do not offer blind
+            // resubmission with a new idempotency key.
+            makeButton(actions,"Ανανέωση καταγεγραμμένης κατάστασης",()=>{
+              closeDialog();load(true);
+            },"doctor-obligation-refresh");
+          }
         }
       },"doctor-obligation-save");
       makeButton(saveArea,"Χωρίς προθεσμία",()=>{due.value="";due.focus();});
@@ -372,8 +382,10 @@
         }catch(err){
           if(!state.active||userTurn!==state.generation)return;
           state.modalBusy=false;
-          confirmActions.querySelectorAll("button").forEach(b=>b.disabled=false);
           status.textContent=writeErrorText(err);
+          makeButton(actions,"Ανανέωση καταγεγραμμένης κατάστασης",()=>{
+            closeDialog();load(true);
+          },"doctor-obligation-refresh");
         }
       },"doctor-obligation-confirm-delete");
       makeButton(confirmActions,"Διατήρηση",()=>{confirm.hidden=true;status.textContent="";});
@@ -392,7 +404,7 @@
       closeDialog();
       state.openPending?.(item.patient_id,item.pending_id);
     },"doctor-obligation-open-chart");
-    makeButton(actions,"Κλείσιμο",closeDialog);
+    makeButton(actions,"Κλείσιμο",()=>{if(!state.modalBusy)closeDialog();});
     dialog.append(status,actions);
     dialog.showModal();
     // Keep item identifiers only while modal is visible; closing purges DOM.
@@ -521,6 +533,8 @@
   });
   window.addEventListener("clinical:unauthenticated",close);
   window.addEventListener("clinical:authenticated",()=>{if(state.active)load();});
-  window.addEventListener("cockpit:clinical-updates-changed",()=>{if(state.active)load(true);});
+  window.addEventListener("cockpit:clinical-updates-changed",()=>{
+    if(state.active&&!state.modalBusy)load(true);
+  });
   window.CockpitObligations={open,close};
 })();
