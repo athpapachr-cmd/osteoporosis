@@ -1,6 +1,7 @@
-/* Standalone Clinical Obligations view — projection ONLY over existing protected
- * /clinical/clinical-updates and existing CockpitStoredChart.openPending authority.
- * No new task store, no email ingestion, no clinical status mutations here.
+/* Standalone Clinical Obligations view: read projection from existing
+ * /clinical/clinical-updates, explicit clinician metadata Save and reversible
+ * delete/undo delegated to the SAME protected Pending clinical owner.
+ * No new task registry, email intake or automatic clinical actions.
  */
 (() => {
   "use strict";
@@ -534,7 +535,15 @@
     state.scope=state.scope==="real"?"test":"real";load();
   });
   window.addEventListener("clinical:unauthenticated",close);
-  window.addEventListener("clinical:authenticated",()=>{if(state.active)load();});
+  window.addEventListener("clinical:authenticated",()=>{
+    if(!state.active)return;
+    // A successful login can replace the current clinician without a prior
+    // logout event. Purge the prior principal's patient dialog and undo
+    // authority synchronously, BEFORE any new protected read returns.
+    closeDialog();
+    resetFeedback();
+    load();
+  });
   window.addEventListener("cockpit:clinical-updates-changed",()=>{
     if(state.active&&!state.modalBusy)load(true);
   });
