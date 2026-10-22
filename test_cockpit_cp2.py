@@ -239,6 +239,127 @@ def test_real_patient_existing_key_staff_exclusion_and_honest_actor(setup,monkey
         assert [(e.actor_principal_id,e.actor_role) for e in events]==[('shared-clinical-key','shared_clinical_key')]*2+[('clinic-clinician','clinician')]
 
 
+def test_clinician_corrects_category_and_due_with_original_signed_source_and_append_only_audit(setup):
+    from copy import deepcopy
+    app,engine=setup;c,p,path=real_seed(app,engine)
+    with Session(engine) as db:
+        original=deepcopy(db.get(EncounterORM,p['source_encounter_id']).payload_json)
+        before=db.get(ClinicalPendingORM,p['pending_id'])
+        original_state=(before.id,before.status,before.description,before.source_encounter_id,
+                        deepcopy(before.provenance_json),before.resolution_event_id)
+
+    first={"item_type":"result","review_date":"2028-04-18",
+           "expected_revision":0,"idempotency_key":uuid4().hex}
+    r=c.post(path+"/metadata",json=first);assert r.status_code==200,r.text
+    assert r.json()["current"]=={"item_type":"result","review_date":"2028-04-18",
+                                  "status":p["status"],"revision":1}
+    assert c.post(path+"/metadata",json=first).json()["replayed"] is True
+    assert c.post(path+"/metadata",json={**first,"review_date":"2026-12-03"}).status_code==409
+    assert c.post(path+"/metadata",json={**first,"expected_revision":1}).status_code==409
+    assert c.post(path+"/metadata",json={**first,"idempotency_key":uuid4().hex}).status_code==409
+
+    second=login(app)
+    chart=second.get("/clinical/patient/outside-synthetic-scope/chart").json()["pending"][0]
+    listed=next(x for x in second.get("/clinical/clinical-updates?active_only=true").json()["items"]
+                if x["pending_id"]==p["pending_id"])
+    assert chart["item_type"]==listed["item_type"]=="result"
+    assert chart["review_date"]==listed["review_date"]=="2028-04-18"
+    assert chart["lifecycle"]["revision"]==listed["lifecycle"]["revision"]==1
+    assert chart["source_excerpt"]==listed["source_excerpt"]
+
+    for badDate in ("2026-02-30","2026-13-01","2026-1-5","20261022"):
+        assert c.post(path+"/metadata",json={**first,"review_date":badDate,
+            "expected_revision":1,"idempotency_key":uuid4().hex}).status_code==422
+    assert c.post(path+"/metadata",json={**first,"item_type":"unverified_custom",
+        "expected_revision":1,"idempotency_key":uuid4().hex}).status_code==422
+    assert c.post(path.replace("outside-synthetic-scope",TEST_ID)+"/metadata",
+        json={**first,"expected_revision":1,"idempotency_key":uuid4().hex}).status_code==404
+    assert TestClient(app).post(path+"/metadata",
+        json={**first,"expected_revision":1,"idempotency_key":uuid4().hex}).status_code==401
+    clear={"item_type":p["item_type"],"review_date":None,
+           "expected_revision":1,"idempotency_key":uuid4().hex}
+    assert c.post(path+"/metadata",json=clear).status_code==200
+    assert c.post(path+"/metadata",json=clear).json()["replayed"] is True
+    assert c.post(path+"/metadata",json={**clear,"expected_revision":0,"idempotency_key":uuid4().hex}).status_code==409
+
+    with Session(engine) as db:
+        after=db.get(ClinicalPendingORM,p["pending_id"])
+        assert (after.id,after.status,after.description,after.source_encounter_id,
+                after.provenance_json,after.resolution_event_id)==original_state
+        assert after.item_type==p["item_type"] and after.review_date is None
+        assert db.get(EncounterORM,p["source_encounter_id"]).payload_json==original
+        rows=db.scalars(select(PendingCheckpointEventORM).order_by(PendingCheckpointEventORM.revision)).all()
+        assert len(rows)==2
+        assert [(e.kind,e.checkpoint_key,e.revision) for e in rows]==[
+            ("metadata_corrected","__metadata__",1),("metadata_corrected","__metadata__",2)]
+        assert rows[0].plan_json["after"]=={"item_type":"result","review_date":"2028-04-18"}
+        assert rows[1].plan_json["before"]["review_date"]=="2028-04-18"
+        assert all((e.actor_principal_id,e.actor_role)==("shared-clinical-key","shared_clinical_key") for e in rows)
+        assert all(e.idempotency_key in (first["idempotency_key"],clear["idempotency_key"]) for e in rows)
+
+
+def test_metadata_event_shares_revisions_with_checkpoints_and_no_terminal_resurrection(setup):
+    app,engine=setup;c,p,path=real_seed(app,engine)
+    update={"item_type":"follow_up","review_date":"2027-01-18",
+            "expected_revision":0,"idempotency_key":uuid4().hex}
+    assert c.post(path+"/metadata",json=update).status_code==200
+    stalePlan={"template":"completion","expected_revision":0,"idempotency_key":uuid4().hex}
+    assert c.post(path+"/checkpoint-plan",json=stalePlan).status_code==409
+    correctPlan={**stalePlan,"expected_revision":1,"idempotency_key":uuid4().hex}
+    r=c.post(path+"/checkpoint-plan",json=correctPlan);assert r.status_code==200,r.text
+    assert r.json()["current"]["revision"]==2
+    latest={"item_type":"result","review_date":"2027-03-18",
+            "expected_revision":2,"idempotency_key":uuid4().hex}
+    r=c.post(path+"/metadata",json=latest);assert r.status_code==200,r.text
+    assert r.json()["current"]["revision"]==3
+    assert c.post(path+"/checkpoint",json={"checkpoint_key":"completed",
+        "observation":"yes_confirmed","expected_revision":2,
+        "idempotency_key":uuid4().hex}).status_code==409
+    resolved=c.post(path+"/checkpoint",json={"checkpoint_key":"completed",
+        "observation":"yes_confirmed","expected_revision":3,
+        "idempotency_key":uuid4().hex})
+    assert resolved.status_code==200,resolved.text
+    assert resolved.json()["current"]["status"]=="resolved"
+    assert len(resolved.json()["current"]["history"])==1, "metadata isn't a clinical checkpoint"
+    revoked=c.post(path+"/lifecycle",json={"action":"cancel","expected_revision":4,
+        "idempotency_key":uuid4().hex})
+    assert revoked.status_code==200,revoked.text
+    assert c.post(path+"/metadata",json={**latest,"expected_revision":5,
+        "idempotency_key":uuid4().hex}).status_code==409
+    assert c.post(path+"/metadata",json=update).json()["replayed"] is True
+    with Session(engine) as db:
+        row=db.get(ClinicalPendingORM,p["pending_id"])
+        assert row.status=="cancelled" and row.review_date=="2027-03-18"
+        assert db.get(EncounterORM,p["source_encounter_id"]).payload_json["_visit_capture_v1"]["candidate"]["pending"][0]["review_date"] is None
+
+
+def test_metadata_staff_cookie_precedence_and_legacy_category_date_only(setup,monkeypatch):
+    from clinical_staff_auth import STAFF_COOKIE
+    app,engine=setup;c,p,path=real_seed(app,engine)
+    monkeypatch.setenv("COCKPIT_STAFF_AUTH_ENABLED","1")
+    monkeypatch.setenv("COCKPIT_STAFF_CLINICIAN_KEY","C"*40)
+    monkeypatch.setenv("COCKPIT_STAFF_SECRETARY_KEY","S"*40)
+    monkeypatch.setenv("COCKPIT_STAFF_SESSION_SECRET","T"*40)
+    proposal={"item_type":p["item_type"],"review_date":"2026-12-03",
+        "expected_revision":0,"idempotency_key":uuid4().hex}
+    blocked=login(app)
+    blocked.cookies.set(STAFF_COOKIE,"invalid",domain="testserver.local",path="/clinical")
+    assert blocked.post(path+"/metadata",json=proposal,headers={"X-Clinical-Key":KEY}).status_code in (401,403)
+    secretary=TestClient(app,base_url="https://testserver")
+    assert secretary.post("/clinical/login",json={"key":"S"*40}).status_code==200
+    assert secretary.post(path+"/metadata",json=proposal,headers={"X-Clinical-Key":KEY}).status_code==403
+    clinician=TestClient(app,base_url="https://testserver")
+    assert clinician.post("/clinical/login",json={"key":"C"*40}).status_code==200
+    result=clinician.post(path+"/metadata",json=proposal);assert result.status_code==200,result.text
+    monkeypatch.setenv("COCKPIT_STAFF_CLINICIAN_KEY","R"*40)
+    assert clinician.post(path+"/metadata",json=proposal,headers={"X-Clinical-Key":KEY}).status_code==401
+    with Session(engine) as db:
+        row=db.get(ClinicalPendingORM,p["pending_id"])
+        assert row.item_type==p["item_type"] and row.review_date=="2026-12-03"
+        event=db.scalar(select(PendingCheckpointEventORM))
+        assert event.actor_principal_id=="clinic-clinician" and event.actor_role=="clinician"
+
+
 def test_real_lifecycle_cancel_restore_no_plan_and_active_plan(setup):
     app,engine=setup;c,p,path=real_seed(app,engine)
     with Session(engine) as db:source=dict(db.get(EncounterORM,p['source_encounter_id']).payload_json)
