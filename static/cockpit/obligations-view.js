@@ -210,6 +210,9 @@
     return "Δεν επιβεβαιώθηκε η ενέργεια. Ανανέωσε την κατάσταση πριν επιχειρήσεις ξανά.";
   }
   async function postTask(item,suffix,body){
+    // Capture the originating session/scope BEFORE the network call; a
+    // successful key switch can supersede it without a logout event.
+    const requestGeneration=state.generation,requestScope=state.scope;
     const url="/clinical/patient/"+encodeURIComponent(item.patient_id)+
       "/pending/"+encodeURIComponent(item.pending_id)+suffix;
     const response=await fetch(url,{
@@ -219,8 +222,11 @@
     });
     if(!response.ok){
       const error=new Error("Clinical task change refused");error.status=response.status;
-      if(response.status===401){
-        // An expired clinical session must immediately clear list/modal/undo.
+      if(response.status===401 && state.active &&
+          state.generation===requestGeneration && state.scope===requestScope){
+        // Only a 401 from the CURRENT session may request sign-in. A late
+        // response from a superseded Undo/Save/Delete must not log out the
+        // newly authenticated clinician or close their protected view.
         window.dispatchEvent(new Event("clinical:unauthenticated"));
         window.dispatchEvent(new Event("clinical:request-login"));
       }

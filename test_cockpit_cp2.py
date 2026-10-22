@@ -363,6 +363,7 @@ def test_metadata_staff_cookie_precedence_and_legacy_category_date_only(setup,mo
 @pytest.mark.parametrize("title,suggested,width",[
     ("Αναλύσεις σε 1,5 μήνα","2026-12-03",1280),
     ("DXA σε 1,5 χρόνο","2028-04-18",390),
+    ("Αναλύσεις σε 1,5 μήνα","2026-12-03",680),
 ])
 def test_browser_metadata_edition_and_relative_title_requires_explicit_save(setup,title,suggested,width):
     """Real Chromium on isolated synthetic clinical source; no external providers."""
@@ -473,21 +474,47 @@ def test_browser_metadata_edition_and_relative_title_requires_explicit_save(setu
                 assert page.locator("#doctorObligationsSearch").input_value()==""
                 expect(page.locator("#doctorObligationsState")).to_contain_text(
                     "Επίλεξε μια υποχρέωση")
+            elif width==680:
+                # A real successful /clinical/login issues clinical:authenticated
+                # without an intervening logout while Undo remains in flight.
+                page.locator("#ceGlobalKey").click()
+                page.locator("#ceGlobalKeyInput").fill(KEY)
+                page.locator("#ceGlobalLoginForm button[type=submit]").click()
+                expect(page.locator("#ceGlobalAuthStatus")).to_contain_text("Συνδέθηκες")
+                page.keyboard.press("Escape")
+                expect(page.locator("#doctorObligationsState")).to_contain_text(
+                    "Επίλεξε μια υποχρέωση")
             else:
                 page.locator("#doctorObligationsScope").click()
                 expect(page.locator("#doctorObligationsState")).to_contain_text(
                     "Δοκιμαστικός φάκελος")
             assert page.locator("#doctorObligationsFeedback").text_content()==""
-            page.evaluate("""async success => {
+            page.evaluate("""() => {
+                window.__staleUndoAuthEvents={unauthenticated:0,requestLogin:0};
+                window.addEventListener("clinical:unauthenticated",
+                    ()=>window.__staleUndoAuthEvents.unauthenticated++);
+                window.addEventListener("clinical:request-login",
+                    ()=>window.__staleUndoAuthEvents.requestLogin++);
+            }""")
+            page.evaluate("""async width => {
                 const reply=window.__lateUndoReply;
-                if(success)reply.resolve(new Response(
+                if(width===1280)reply.resolve(new Response(
                     JSON.stringify({replayed:false}),{status:200,
                         headers:{"Content-Type":"application/json"}}));
+                else if(width===680)reply.resolve(new Response(null,{status:401}));
                 else reply.reject(new Error("Delayed restore network failure"));
                 await new Promise(resolve=>setTimeout(resolve,60));
-            }""",width==1280)
+            }""",width)
             assert page.locator("#doctorObligationsFeedback").text_content()=="", (
                 "stale Undo response repainted the new account or scope")
+            if width==680:
+                assert page.evaluate("window.__staleUndoAuthEvents")=={
+                    "unauthenticated":0,"requestLogin":0
+                }, "a stale Undo 401 invalidated a newer successful login"
+                expect(page.locator("#doctorObligationsView")).to_be_visible()
+                expect(page.locator("#doctorMainView")).to_be_hidden()
+                expect(page.locator("#doctorObligationsState")).to_contain_text(
+                    "Επίλεξε μια υποχρέωση")
             assert page.evaluate("document.documentElement.scrollWidth<=innerWidth+1")
             assert not errors,errors
             context.close();browser.close()
