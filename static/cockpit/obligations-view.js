@@ -154,7 +154,12 @@
     cancel();
     state.active=false;
     state.openPending=null;
-    resetContents(); // identifiers never persist in a hidden screen
+    // Clearing result rows is insufficient: a typed patient name remains in
+    // the hidden search field otherwise, including after clinician logout.
+    $("doctorObligationsSearch").value="";
+    $("doctorObligationsStatusFilter").value="";
+    $("doctorObligationsTypeFilter").value="";
+    resetContents();
   }
   async function load() {
     cancel();
