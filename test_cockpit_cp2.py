@@ -360,6 +360,78 @@ def test_metadata_staff_cookie_precedence_and_legacy_category_date_only(setup,mo
         assert event.actor_principal_id=="clinic-clinician" and event.actor_role=="clinician"
 
 
+@pytest.mark.parametrize("title,suggested,width",[
+    ("Αναλύσεις σε 1,5 μήνα","2026-12-03",1280),
+    ("DXA σε 1,5 χρόνο","2028-04-18",390),
+])
+def test_browser_metadata_edition_and_relative_title_requires_explicit_save(setup,title,suggested,width):
+    """Real Chromium on isolated synthetic clinical source; no external providers."""
+    import socket,threading,shutil
+    from copy import deepcopy
+    import uvicorn
+    from playwright.sync_api import sync_playwright,expect
+    app,engine=setup;c,p,path=real_seed(app,engine)
+    with Session(engine) as db:
+        row=db.get(ClinicalPendingORM,p["pending_id"])
+        row.description=title
+        encounter=db.get(EncounterORM,row.source_encounter_id)
+        signed=deepcopy(encounter.payload_json)
+        signed["_visit_capture_v1"]["candidate"]["pending"][0]["description"]=title
+        encounter.payload_json=signed
+        db.commit()
+
+    sock=socket.socket();sock.bind(("127.0.0.1",0));port=sock.getsockname()[1]
+    server=uvicorn.Server(uvicorn.Config(app,log_level="error"))
+    thread=threading.Thread(target=server.run,kwargs={"sockets":[sock]},daemon=True)
+    thread.start()
+    try:
+        with sync_playwright() as pw:
+            browser=pw.chromium.launch(executable_path=shutil.which("google-chrome") or shutil.which("chromium"))
+            context=browser.new_context(viewport={"width":width,"height":900})
+            page=context.new_page();errors=[]
+            page.on("pageerror",lambda error:errors.append(str(error)))
+            page.goto(f"http://localhost:{port}/static/cockpit/index.html")
+            page.locator("#ceGlobalKey").click()
+            page.locator("#ceGlobalKeyInput").fill(KEY)
+            page.locator("#ceGlobalLoginForm button[type=submit]").click()
+            expect(page.locator("#ceGlobalAuthStatus")).to_contain_text("Συνδέθηκες")
+            page.keyboard.press("Escape")
+            page.locator("#doctorTasksButton").click()
+            expect(page.locator("#doctorObligationsView")).to_be_visible()
+            entry=page.locator(".doctor-obligation-entry").filter(has_text=title)
+            expect(entry).to_have_count(1)
+            entry.locator(".doctor-obligation-edit").click()
+            expect(page.locator("#doctorObligationsView")).to_be_hidden()
+            popup=page.locator(".patient-pending-dialog")
+            expect(popup).to_be_visible()
+            editor=popup.locator(".pending-metadata-editor")
+            expect(editor).to_have_attribute("open","")
+            due=editor.get_by_label("Προθεσμία υποχρέωσης")
+            expect(due).to_have_value("")
+            suggestion=editor.get_by_role("button",name="Χρήση πρότασης",exact=False)
+            expect(suggestion).to_be_visible()
+            suggestion.click()
+            expect(due).to_have_value(suggested)
+            assert c.get("/clinical/patient/outside-synthetic-scope/chart").json()["pending"][0]["review_date"] is None
+            # Manual doctor date overrides nonauthoritative title suggestion.
+            due.fill("2029-01-12")
+            editor.get_by_label("Κατηγορία υποχρέωσης").select_option("result")
+            editor.get_by_role("button",name="Αποθήκευση",exact=True).click()
+            expect(popup).to_have_count(0)
+            chart=c.get("/clinical/patient/outside-synthetic-scope/chart").json()["pending"][0]
+            assert chart["review_date"]=="2029-01-12"
+            assert chart["item_type"]=="result"
+            assert chart["status"]==p["status"]
+            page.locator("#doctorTasksButton").click()
+            expect(page.locator("#doctorObligationsRows")).to_contain_text("Αποτελέσματα")
+            expect(page.locator("#doctorObligationsRows")).to_contain_text("12/01/2029")
+            assert page.evaluate("document.documentElement.scrollWidth<=innerWidth+1")
+            assert not errors,errors
+            context.close();browser.close()
+    finally:
+        server.should_exit=True;thread.join(10);sock.close()
+
+
 def test_real_lifecycle_cancel_restore_no_plan_and_active_plan(setup):
     app,engine=setup;c,p,path=real_seed(app,engine)
     with Session(engine) as db:source=dict(db.get(EncounterORM,p['source_encounter_id']).payload_json)
