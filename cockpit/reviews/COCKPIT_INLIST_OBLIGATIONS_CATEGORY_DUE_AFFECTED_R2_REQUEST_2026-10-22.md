@@ -1,10 +1,10 @@
 # Cockpit PR #207 — R2 source-verified in-list autonomous obligations, category/date
 
-**Date:** 2026-10-22 (Asia/Nicosia). **MODE:** ONE fresh independent READ-ONLY R2 design-semantic + affected post-code implementation fidelity. STOP after PASS/BLOCK/UNKNOWN handback; no code, merge, deploy, PHI, Aiven or Gmail operations.
+**Date:** 2026-10-22 (Asia/Nicosia). **MODE:** ONE focused independent READ-ONLY R2 P1/P2 correction closure, reusing the completed first R2 for unaffected code/design semantics. STOP after PASS/BLOCK/UNKNOWN handback; no code, merge, deploy, PHI, Aiven or Gmail operations.
 
 **Repo:** `athpapachr-cmd/osteoporosis`; **DRAFT/HOLD PR:** [#207](https://github.com/athpapachr-cmd/osteoporosis/pull/207).
 **Production base main:** `8708a37c0d4083c3f811ced6b186e9ef7e817355`.
-**Frozen corrected code+test author HEAD:** **`4088f7a1331ec2222132bd1248b69a6413dfc9f8`**. Later review/CURRENT commits MUST be docs-only, verify via compare.
+**Frozen R2 correction code+test author HEAD:** **`ee6e1f9421a5e8c2e9f879f1adbac166c027a35e`**. It supersedes original R2-reviewed source+test `4088f7a1331ec2222132bd1248b69a6413dfc9f8` only for the two reported findings. Any later commits MUST be docs-only; verify via compare.
 **Existing installed Obligations baseline:** #205; no current clinical release permission for this PR.
 
 **Design:** `cockpit/OBLIGATION_CATEGORY_DUE_DATE_EDITOR_2026-10-22.md`, including the final PO refinement on category due/undated subgroups and in-list popup autonomy. Prior phase had an author-qualified quick editor using chart navigation, source+test `4785a583c838202a05386ca79ede0eaed25d825d`. The clinician explicitly rejected that extra navigation and requested same-screen actions. Review only the bounded **new final delta** plus affected cumulative R2 semantics; reuse previously passing patient chart/CP1/CP2 authority.
@@ -23,13 +23,13 @@ For old titles e.g. «Αναλύσεις σε 1,5 μήνα» / «DXA σε 1,5 χ
 4. `static/cockpit/index.html` and `doctor-shell.css`: responsive in-place task modal and feedback/undo; no horizontal overflow at 1280/680/390; no invented task badge.
 5. `test_cockpit_cp2.py`: exact real FastAPI + isolated SQLite fixture/Chromium 1280/390; category/date Save; prior signed visit unchanged; cross-session read; soft-delete confirm/Undo same-screen; no task recreation; revision/state/audit conflict/authorization checks. `test_cockpit_doctor_browser.py`: synthetic category with both due/undated, modal independent of chart, ESC **and successful account-switch event** purge patient modal and undo feedback before new protected read. Reuse already installed #205 tests and unchanged external Inbox.
 
-**Exact corrected-head CI SUCCESS (no live data):**
-- [Home + actual Chromium 39739968385](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39739968385)
-- [Visit Capture / CP1/CP2 + metadata FastAPI / Chromium 39739968432](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39739968432)
-- [Visit Brief / synthetic #161 39739968284](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39739968284)
-- [Surgery 39739968348](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39739968348)
-- [Clinical Pending synthetic demo 39739968407](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39739968407)
-- [Canonical Impact 39739968399](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39739968399)
+**Exact final correction-head CI SUCCESS (synthetic data only; Visit Capture/CP2 36 passed):**
+- [Home + actual Chromium 39760179844](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39760179844)
+- [Visit Capture / CP1/CP2 + metadata FastAPI / Chromium 39760179853](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39760179853)
+- [Visit Brief / synthetic #161 39760179739](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39760179739)
+- [Surgery 39760179796](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39760179796)
+- [Clinical Pending synthetic demo 39760179659](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39760179659)
+- [Canonical Impact 39760179866](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39760179866)
 
 **Focused R2 privacy correction:** a successful staff login/key switch can occur without a prior `clinical:unauthenticated` event. Earlier author-frozen `a65b772...` had an `authenticated` handler that refreshed the list but retained an already-open patient dialog and delete/undo identity. Corrected `obligations-view.js` clears dialog, typed fields and undo authority synchronously **before** `load()`; actual Chromium synthetic regression verifies it. Review this material edge once; do not infer independent PASS from author CI alone.
 
@@ -40,6 +40,23 @@ For old titles e.g. «Αναλύσεις σε 1,5 μήνα» / «DXA σε 1,5 χ
 - [Surgery 39726320121](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39726320121)
 - [Clinical Pending synthetic-demo 39726320082](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39726320082)
 - [Canonical Impact 39726320087](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39726320087)
+
+## First independent R2 BLOCK and bounded author correction — closure evidence
+
+The prior independent source-reviewed R2 at `4088f7a1331ec2222132bd1248b69a6413dfc9f8` returned **BLOCK | COMPLETE_FOR_DECLARED_SCOPE | P0:P1:P2 = 0:1:1**. Its material findings were exactly:
+
+- **P1:** `clinical:authenticated` correctly purged task dialog + Undo but left a typed patient-name value in `#doctorObligationsSearch`; a successful principal/key switch without a logout could expose that previous patient's search text.
+- **P2:** an in-flight `undoLast()` restore reply, success OR failure, checked only `state.active`. After principal or scope change, it could repaint old feedback and start a stale list refresh.
+
+The clinician authorized the **specific correction only**, implemented as one code+test commit **`ee6e1f9421a5e8c2e9f879f1adbac166c027a35e`** with exactly 3 files changed: `static/cockpit/obligations-view.js`, `test_cockpit_cp2.py`, `test_cockpit_doctor_browser.py`. It does **not** change `clinical_pending_one_tap.py`, auth backend, roles/grants, schema, provider, real data, lifecycle authority or other features.
+
+For **P1**, confirm the `clinical:authenticated` handler synchronously clears modal/Undo, typed patient-name search AND scoped filters before issuing the new protected load. `test_cockpit_doctor_browser.py` asserts the search input was cleared even without prior logout.
+
+For **P2**, confirm `undoLast()` captures the current `state.generation` and `state.scope` before the async request, and ignores **both** late successes and failures if either changed. `test_cockpit_cp2.py` uses actual Chromium with the isolated real clinical owner and a deferred local response: delayed restore **success after successful principal switch (1280px)** and delayed restore **error after real/test scope switch (390px)**; neither may repaint old feedback. Existing server-side lifecycle revisions/idempotency remain untouched.
+
+**Author CI verified at exact `ee6e1f...`:** [Home 39760179844](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39760179844), [Visit Capture CP1/CP2 39760179853](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39760179853) (**36 passed**), [Visit Brief 39760179739](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39760179739), [Surgery 39760179796](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39760179796), [Pending Demo 39760179659](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39760179659), [Canonical 39760179866](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39760179866) all SUCCESS. **These are author CI, NOT independent closure approval.**
+
+**Closure instruction:** Assess these two previously BLOCKED findings against the exact corrected blobs, verify the new tests and CI, reuse the previous R2 PASS findings for unchanged material. No fresh broad pre-code/post-code cycle and no source writes. Return PASS/BLOCK/UNKNOWN for the affected P1/P2 closure with P0:P1:P2, evidence and STOP. DRAFT/HOLD remains until separate explicit release.
 
 ## Six finite review questions — no broad re-review
 
