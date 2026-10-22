@@ -401,10 +401,11 @@ def test_browser_metadata_edition_and_relative_title_requires_explicit_save(setu
             entry=page.locator(".doctor-obligation-entry").filter(has_text=title)
             expect(entry).to_have_count(1)
             entry.locator(".doctor-obligation-edit").click()
-            expect(page.locator("#doctorObligationsView")).to_be_hidden()
-            popup=page.locator(".patient-pending-dialog")
-            expect(popup).to_be_visible()
-            editor=popup.locator(".pending-metadata-editor")
+            expect(page.locator("#doctorObligationsView")).to_be_visible()
+            expect(page.locator("#doctorMainView")).to_be_hidden()
+            modal=page.locator("#doctorObligationDialog")
+            expect(modal).to_be_visible()
+            editor=modal.locator(".pending-metadata-editor")
             expect(editor).to_have_attribute("open","")
             due=editor.get_by_label("Προθεσμία υποχρέωσης")
             expect(due).to_have_value("")
@@ -417,14 +418,31 @@ def test_browser_metadata_edition_and_relative_title_requires_explicit_save(setu
             due.fill("2029-01-12")
             editor.get_by_label("Κατηγορία υποχρέωσης").select_option("result")
             editor.get_by_role("button",name="Αποθήκευση",exact=True).click()
-            expect(popup).to_have_count(0)
+            expect(modal).to_be_hidden()
+            assert modal.text_content()=="" , "the dismissed modal kept patient PHI"
+            expect(page.locator("#doctorObligationsView")).to_be_visible()
             chart=c.get("/clinical/patient/outside-synthetic-scope/chart").json()["pending"][0]
             assert chart["review_date"]=="2029-01-12"
             assert chart["item_type"]=="result"
             assert chart["status"]==p["status"]
-            page.locator("#doctorTasksButton").click()
             expect(page.locator("#doctorObligationsRows")).to_contain_text("Αποτελέσματα")
             expect(page.locator("#doctorObligationsRows")).to_contain_text("12/01/2029")
+            # Direct reversible deletion, with no patient chart navigation:
+            # first tap asks for confirmation and does not change any record.
+            entry=page.locator(".doctor-obligation-entry").filter(has_text=title)
+            entry.locator(".doctor-obligation-row").click()
+            expect(modal).to_be_visible()
+            modal.locator(".doctor-obligation-delete").click()
+            assert c.get("/clinical/patient/outside-synthetic-scope/chart").json()["pending"][0]["status"]==p["status"]
+            modal.locator(".doctor-obligation-confirm-delete").click()
+            expect(modal).to_be_hidden()
+            expect(page.locator("#doctorObligationsView")).to_be_visible()
+            expect(page.locator(".doctor-obligation-entry").filter(has_text=title)).to_have_count(0)
+            expect(page.locator("#doctorObligationsFeedback")).to_contain_text("Η υποχρέωση διαγράφηκε")
+            page.locator("#doctorObligationsFeedback").get_by_role("button",name="Αναίρεση διαγραφής").click()
+            expect(page.locator(".doctor-obligation-entry").filter(has_text=title)).to_have_count(1)
+            assert c.get("/clinical/patient/outside-synthetic-scope/chart").json()["pending"][0]["status"]==p["status"]
+            expect(page.locator("#doctorObligationsView")).to_be_visible()
             assert page.evaluate("document.documentElement.scrollWidth<=innerWidth+1")
             assert not errors,errors
             context.close();browser.close()
@@ -597,6 +615,7 @@ def test_patient_task_groups_and_incoming_sources_remain_separate(setup,tmp_path
         added=db.scalars(select(ClinicalPendingORM).where(ClinicalPendingORM.patient_id==TEST_ID)).all()
         for item in added:item.patient_id='outside-synthetic-scope'
         next(x for x in added if x.description=='Συνθετική ενέργεια 3').status='resolved'
+        next(x for x in added if x.description=='Συνθετική ενέργεια 0').review_date='2026-12-01'
         next(x for x in added if x.description=='Συνθετική ενέργεια 2').status='cancelled';db.commit()
     # A namesake is a separate identity, never merged by the display name.
     other=c.post('/clinical/patients/create',json={'creation_id':str(uuid4()),'full_name':'Protected sentinel'}).json()['patient_id']
@@ -633,9 +652,16 @@ def test_patient_task_groups_and_incoming_sources_remain_separate(setup,tmp_path
                 assert len(set(groups.locator('.doctor-obligation-row').evaluate_all('ns=>ns.map(n=>n.dataset.pendingId)')))==4
                 expect(groups.filter(has_text='Συνθετική ενέργεια 3')).to_have_count(0)
                 assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
+                page.locator('[data-doctor-obligation-group="category"]').click()
+                scheduled=page.locator('.doctor-obligation-group').filter(has_text='Συνθετική ενέργεια 0')
+                expect(scheduled.locator('.doctor-obligation-subhead')).to_contain_text(['Με προθεσμία','Χωρίς προθεσμία'])
                 page.locator('#doctorObligationsView').screenshot(path=str(tmp_path/f'task-groups-{width}.png'))
                 selected=groups.locator('button.doctor-obligation-row').first
                 label=selected.locator('strong').text_content();selected.click()
+                modal=page.locator('#doctorObligationDialog')
+                expect(modal).to_contain_text(label)
+                expect(page.locator('#doctorObligationsView')).to_be_visible()
+                modal.get_by_role('button',name='Άνοιγμα στον φάκελο ασθενούς').click()
                 expect(page.locator('.patient-pending-dialog')).to_contain_text(label)
                 context.close()
             browser.close()
