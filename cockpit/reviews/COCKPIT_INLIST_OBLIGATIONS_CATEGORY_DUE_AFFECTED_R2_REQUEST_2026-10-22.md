@@ -4,7 +4,7 @@
 
 **Repo:** `athpapachr-cmd/osteoporosis`; **DRAFT/HOLD PR:** [#207](https://github.com/athpapachr-cmd/osteoporosis/pull/207).
 **Production base main:** `8708a37c0d4083c3f811ced6b186e9ef7e817355`.
-**Frozen code+test author HEAD:** **`a65b77235ffd9c7fe3ddfd2ecbbec108df388a13`**. Later review/CURRENT commits MUST be docs-only, verify via compare.
+**Frozen corrected code+test author HEAD:** **`4088f7a1331ec2222132bd1248b69a6413dfc9f8`**. Later review/CURRENT commits MUST be docs-only, verify via compare.
 **Existing installed Obligations baseline:** #205; no current clinical release permission for this PR.
 
 **Design:** `cockpit/OBLIGATION_CATEGORY_DUE_DATE_EDITOR_2026-10-22.md`, including the final PO refinement on category due/undated subgroups and in-list popup autonomy. Prior phase had an author-qualified quick editor using chart navigation, source+test `4785a583c838202a05386ca79ede0eaed25d825d`. The clinician explicitly rejected that extra navigation and requested same-screen actions. Review only the bounded **new final delta** plus affected cumulative R2 semantics; reuse previously passing patient chart/CP1/CP2 authority.
@@ -18,12 +18,22 @@ For old titles e.g. «Αναλύσεις σε 1,5 μήνα» / «DXA σε 1,5 χ
 ## Frozen affected sources / evidence map
 
 1. `clinical_pending_one_tap.py`: same protected Pending owner; one metadata POST updates only `ClinicalPendingORM.item_type`/`review_date`, append-only `metadata_corrected` event with before/after/actor/revision/idempotency. Existing lifecycle cancel/restore POST is **reused unchanged** for in-list Delete/Undo. Signed source, task ID/title/status/provenance/checkpoints not rewritten.
-2. `static/cockpit/obligations-view.js`: category group nested dated/undated; `dialog#doctorObligationDialog`; clinician flag `checkpoint_write_allowed` and lifecycle revision guard; in-list metadata and reversible cancel/restore via pre-existing protected APIs; typed values and undo authority purge on logout/scope change/close/ESC; response uncertainty → reread rather than blind duplicate writes.
+2. `static/cockpit/obligations-view.js`: category group nested dated/undated; `dialog#doctorObligationDialog`; clinician flag `checkpoint_write_allowed` and lifecycle revision guard; in-list metadata and reversible cancel/restore via pre-existing protected APIs; typed values and undo authority purge on logout/**successful principal switch**/scope change/close/ESC; response uncertainty → reread rather than blind duplicate writes.
 3. `static/cockpit/patient-chart.js`: retains existing patient chart metadata editor; **read-only** anchored dateSuggestion exported for optional use in list dialog. `static/cockpit/doctor-shell.js`: list task opener navigates to chart only on *explicit* action, not before edit/delete.
 4. `static/cockpit/index.html` and `doctor-shell.css`: responsive in-place task modal and feedback/undo; no horizontal overflow at 1280/680/390; no invented task badge.
-5. `test_cockpit_cp2.py`: exact real FastAPI + isolated SQLite fixture/Chromium 1280/390; category/date Save; prior signed visit unchanged; cross-session read; soft-delete confirm/Undo same-screen; no task recreation; revision/state/audit conflict/authorization checks. `test_cockpit_doctor_browser.py`: synthetic category with both due/undated, modal independent of chart, ESC purges PHI. Reuse already installed #205 tests and unchanged external Inbox.
+5. `test_cockpit_cp2.py`: exact real FastAPI + isolated SQLite fixture/Chromium 1280/390; category/date Save; prior signed visit unchanged; cross-session read; soft-delete confirm/Undo same-screen; no task recreation; revision/state/audit conflict/authorization checks. `test_cockpit_doctor_browser.py`: synthetic category with both due/undated, modal independent of chart, ESC **and successful account-switch event** purge patient modal and undo feedback before new protected read. Reuse already installed #205 tests and unchanged external Inbox.
 
-**Exact frozen author CI SUCCESS:**
+**Exact corrected-head CI SUCCESS (no live data):**
+- [Home + actual Chromium 39739968385](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39739968385)
+- [Visit Capture / CP1/CP2 + metadata FastAPI / Chromium 39739968432](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39739968432)
+- [Visit Brief / synthetic #161 39739968284](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39739968284)
+- [Surgery 39739968348](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39739968348)
+- [Clinical Pending synthetic demo 39739968407](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39739968407)
+- [Canonical Impact 39739968399](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39739968399)
+
+**Focused R2 privacy correction:** a successful staff login/key switch can occur without a prior `clinical:unauthenticated` event. Earlier author-frozen `a65b772...` had an `authenticated` handler that refreshed the list but retained an already-open patient dialog and delete/undo identity. Corrected `obligations-view.js` clears dialog, typed fields and undo authority synchronously **before** `load()`; actual Chromium synthetic regression verifies it. Review this material edge once; do not infer independent PASS from author CI alone.
+
+**Prior authored CI (superseded by corrected-head run):**
 - [Home + real Chromium 39726320130](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39726320130)
 - [Visit Capture / CP2 / metadata FastAPI + Chromium 39726320102](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39726320102)
 - [Visit Brief / #161 synthetic 39726320189](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39726320189)
@@ -36,7 +46,7 @@ For old titles e.g. «Αναλύσεις σε 1,5 μήνα» / «DXA σε 1,5 χ
 1. **Clinical write provenance and lifecycle:** exact patient/pending ID + signed encounter + clinician actor, intact signed original and status, metadata/lifecycle single revision stream and existing audit; no duplicate task writer or permanent delete shortcut.
 2. **No involuntary action:** no auto due from title or email, no implicit task completion, no delete before confirmation, no duplicate Save on network uncertainty; same-key replay and stale/conflict treatment.
 3. **Autonomous UX:** within-category due/undated headings, mobile/desktop, task modal interactions keep list visible; chart route explicitly optional; original chart editor remains independent, filters/grouping/scroll preserved after mutation.
-4. **Security and privacy:** true auth backend, no task write for missing `checkpoint_write_allowed`, staff/secretary/cookie precedence, patient-name and modal inputs purged on Close/ESC/logout, no stale response repopulation; test-scope undo is not available on real scope and vice versa.
+4. **Security and privacy:** true auth backend, no task write for missing `checkpoint_write_allowed`, staff/secretary/cookie precedence, patient-name and modal inputs purged on Close/ESC/logout/**successful account switch** (even without logout event), no stale response repopulation; test-scope undo is not available on real scope and vice versa.
 5. **Rollback/compatibility:** no DB migration, backend grant, credential or provider change; 100-row list limitation honestly displayed, existing Home/VisitBrief/VisitCapture/Pending step and surgery regressions unchanged.
 6. **Evidence fidelity:** exact file blobs at frozen head, author CI outcomes, current `main`, PR branch/head; later commits docs-only. Focus on actual material defects; no extra ceremonies or broad review cycles.
 
