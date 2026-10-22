@@ -57,7 +57,7 @@
     const valid=new Date(Date.UTC(year,month-1,day,12));
     if(valid.getUTCFullYear()!==year||valid.getUTCMonth()!==month-1||valid.getUTCDate()!==day)return null;
     const words=String(description||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('el');
-    const match=words.match(/(?:^|\s)(?:σε|μετα\s+απο)\s+(\d+(?:[,.]\d+)?)\s+(μηνα|μηνες|χρονο|χρονια|ετος|ετη)\b/u);
+    const match=words.match(/(?:^|\s)(?:σε|μετα\s+απο)\s+(\d+(?:[,.]\d+)?)\s+(μηνα|μηνες|χρονο|χρονια|ετος|ετη)(?=$|[^\p{L}])/u);
     if(!match)return null;
     const quantity=Number(match[1].replace(',','.')),unit=match[2];
     if(!Number.isFinite(quantity)||quantity<=0)return null;
