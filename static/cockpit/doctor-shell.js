@@ -224,6 +224,10 @@
     input.addEventListener("input",draw);draw();input.focus();
   }
   function showObligations() {
+    // Preserve an in-progress clinical visit draft. Reuse the chart owner's
+    // existing guard and its patient-visible reason, never silently hide it.
+    if (typeof window.CockpitStoredChart?.canLeave==="function"
+        && !window.CockpitStoredChart.canLeave()) return;
     close();
     const screen=$("doctorObligationsView");
     if(!screen)return;
@@ -391,6 +395,7 @@
           + (detail.upcoming || []).reduce((sum, group) => sum + group.count, 0) > detail.total) {
       state.surgeries = null;
       $("doctorTasksBadge").hidden = true;
+      $("doctorTasksBadge").textContent = "";
       attention();
       if (state.panel === "tasks") tasks();
       return;
@@ -402,8 +407,10 @@
         ? { date: group.date, count: 1, name: group.name, procedure: group.procedure }
         : { date: group.date, count: group.count })
     };
-    $("doctorTasksBadge").hidden = detail.total === 0;
-    $("doctorTasksBadge").textContent = String(detail.total);
+    // The top icon now opens PATIENT obligations; this surgical count
+    // is not a patient task count. Keep surgery numbers in Home/library only.
+    $("doctorTasksBadge").hidden = true;
+    $("doctorTasksBadge").textContent = "";
     attention();
     if (state.panel === "tasks") tasks();
   }
