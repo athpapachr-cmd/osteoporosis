@@ -138,8 +138,13 @@ function byId(id,node=$('doctorPopoverContent')){if(node.id===id)return node;for
  windowStub.CockpitStoredChart=null;
  windowHandlers.get("cockpit:surgery-counts")({detail:{total:2,undated:1,invalid:0,overdue:0,
   upcoming:[{date:"2099-11-01",count:1,name:"Συνθετικός Ασθενής Μ",procedure:"Αρθροσκόπηση"}]}});
- assert.equal($("doctorTasksBadge").hidden,false);
- assert.equal($("doctorTasksBadge").textContent,"2");
+ assert.equal($("doctorTasksBadge").hidden,true,"surgery count cannot masquerade as patient obligations");
+ assert.equal($("doctorTasksBadge").textContent,"");
+ windowStub.CockpitStoredChart={canLeave(){return false;}};
+ $("doctorTasksButton").fire("click");
+ assert.equal($("doctorObligationsView").hidden,true,"an open clinical draft blocks navigation");
+ assert.equal(obligationsOpened,0);
+ windowStub.CockpitStoredChart={canLeave(){return true;}};
  $("doctorTasksButton").fire("click");
  assert.equal($("doctorObligationsView").hidden,false,"Tasks opens full-screen obligations");
  assert.equal($("doctorMainView").hidden,true);
