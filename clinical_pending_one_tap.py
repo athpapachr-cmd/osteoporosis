@@ -252,7 +252,7 @@ def attach_pending_one_tap_routes(router,engine,protected):
             before={"item_type":row.item_type,"review_date":row.review_date}
             if before==desired:
                 return {"unchanged":True,"replayed":False,
-                        "current":{"**before,"status":row.status,"revision":_revision(events)}}
+                        "current":{**before,"status":row.status,"revision":_revision(events)}}
             now=utcnow()
             event=PendingCheckpointEventORM(
                 id=str(uuid4()),idempotency_key=action.idempotency_key,
@@ -268,7 +268,7 @@ def attach_pending_one_tap_routes(router,engine,protected):
             db.add(event)
             commit(db)
             return {"replayed":False,"event_id":event.id,
-                    "current":{"**desired,"status":row.status,
+                    "current":{**desired,"status":row.status,
                                "revision":project_lifecycle(db,row)["revision"]}}
 
     @router.post("/patient/{patient_id}/pending/{pending_id}/checkpoint-plan",dependencies=protected)
