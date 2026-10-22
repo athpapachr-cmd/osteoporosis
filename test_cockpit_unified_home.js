@@ -24,6 +24,12 @@ assert.match(html,/<h2>Πρόσφατοι ασθενείς<\/h2><span>έως 3<\
 assert.match(html,/id="doctorAttentionList"/);
 assert.match(html,/id="doctorDateButton"/);
 assert.match(html,/id="doctorLibraryView"/);
+assert.match(html,/id="doctorObligationsView"/);
+assert.match(html,/id="doctorObligationsRows"/);
+assert.match(html,/data-doctor-obligation-group="category"/);
+assert.match(html,/data-doctor-obligation-group="date"/);
+assert.ok(html.includes("/static/cockpit/obligations-view.js"),"full-screen obligations script mounted");
+assert.ok(html.indexOf("id=\"doctorObligationsView\"") < html.indexOf("id=\"doctorLibraryView\""),"obligations own a sibling workspace");
 assert.match(html,/id="visitDiaPrompt"/);
 assert.match(html,/id="visitDiaText"/);
 assert.match(html,/href="\/static\/baseline-audit\/"/);

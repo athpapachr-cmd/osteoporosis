@@ -45,7 +45,7 @@ const doc={
  body:{classList:{contains(){return false;},toggle(){}}}
 };
 const $=id=>doc.getElementById(id);
-$("doctorPopover").hidden=true;$("doctorLibraryView").hidden=true;
+$("doctorPopover").hidden=true;$("doctorLibraryView").hidden=true;$("doctorObligationsView").hidden=true;
 $("doctorInboxBadge").hidden=true;$("doctorTasksBadge").hidden=true;
 const windowHandlers=new Map(),windowStub={
  CockpitHome:{openAppointment(row){windowStub.lastAppointment=row;}},
@@ -133,15 +133,33 @@ function byId(id,node=$('doctorPopoverContent')){if(node.id===id)return node;for
  $("doctorInboxButton").fire("click");
  assert.equal($("doctorPopover").hidden,true);
 
+ let obligationsOpened=0,obligationsCleared=0;
+ windowStub.CockpitObligations={open(){obligationsOpened++},close(){obligationsCleared++}};
  windowStub.CockpitStoredChart=null;
  windowHandlers.get("cockpit:surgery-counts")({detail:{total:2,undated:1,invalid:0,overdue:0,
   upcoming:[{date:"2099-11-01",count:1,name:"Συνθετικός Ασθενής Μ",procedure:"Αρθροσκόπηση"}]}});
- assert.equal($("doctorTasksBadge").hidden,false);
- assert.equal($("doctorTasksBadge").textContent,"2");
+ assert.equal($("doctorTasksBadge").hidden,true,"surgery count cannot masquerade as patient obligations");
+ assert.equal($("doctorTasksBadge").textContent,"");
+ windowStub.CockpitStoredChart={canLeave(){return false;}};
  $("doctorTasksButton").fire("click");
- const surgical=findButtonContent("Εκκρεμή χειρουργεία");
- assert.ok(surgical);
- surgical.fire("click");
+ assert.equal($("doctorObligationsView").hidden,true,"an open clinical draft blocks navigation");
+ assert.equal(obligationsOpened,0);
+ windowStub.CockpitStoredChart={canLeave(){return true;}};
+ $("doctorTasksButton").fire("click");
+ assert.equal($("doctorObligationsView").hidden,false,"Tasks opens full-screen obligations");
+ assert.equal($("doctorMainView").hidden,true);
+ assert.equal($("doctorLibraryView").hidden,true);
+ assert.equal($("doctorPopover").hidden,true,"no task popover");
+ assert.equal(obligationsOpened,1);
+ $("doctorObligationsBack").fire("click");
+ assert.equal($("doctorMainView").hidden,false);
+ assert.equal($("doctorObligationsView").hidden,true);
+ assert.ok(obligationsCleared>0,"hiding the screen purges cached patient data");
+ $("doctorActionsButton").fire("click");
+ const libraryAction=$("doctorPopoverContent").children[1]?.children?.at(-1);
+ assert.equal(libraryAction?.children?.[0]?.children?.[0]?.textContent,
+   "Εργασίες ιατρείου","surgery/tools launcher remains in Actions");
+ libraryAction.fire("click");
  assert.equal($("doctorLibraryView").hidden,false);
  assert.equal($("doctorMainView").hidden,true);
  assert.equal(panels[0].hidden,false);

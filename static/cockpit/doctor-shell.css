@@ -330,3 +330,55 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
 .doctor-day-today{margin-top:6px;padding:5px 13px;font-size:12px;min-height:32px}
 .doctor-day-today:disabled{opacity:.45;cursor:default}
 .doctor-day-arrow:focus-visible,.doctor-day-today:focus-visible{outline:2px solid #5fa8a1;outline-offset:2px}
+
+
+/* Full-screen Clinical Obligations — no second task engine or inbox owner. */
+.doctor-obligations[hidden]{display:none!important}
+.doctor-obligations{min-height:460px;max-width:100%;min-width:0}
+.doctor-obligations .doctor-library-header{margin-bottom:12px}
+.doctor-obligations-intro{color:#627c86;font-size:13px;line-height:1.55;max-width:900px;margin:4px 0 20px}
+.doctor-obligation-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;max-width:760px;margin-bottom:20px}
+.doctor-obligation-stats>div{display:flex;flex-direction:column;gap:3px;padding:16px 18px;background:#fff;border:1px solid #e3eae9;border-radius:14px}
+.doctor-obligation-stats strong{font-size:23px;color:#194751;font-variant-numeric:tabular-nums;line-height:1.15}
+.doctor-obligation-stats span{color:#657e88;font-size:12px}
+.doctor-obligation-toolbar{display:grid;grid-template-columns:minmax(210px,2fr) repeat(2,minmax(130px,1fr));gap:11px;max-width:100%;margin-bottom:14px}
+.doctor-obligation-toolbar label{display:grid;gap:6px;font-size:12px;font-weight:700;color:#506e78;min-width:0}
+.doctor-obligation-toolbar input,.doctor-obligation-toolbar select{box-sizing:border-box;width:100%;min-width:0;min-height:42px;border:1px solid #d9e5e5;border-radius:11px;background:#fff;color:#1f3d4a;font:inherit;font-size:13px;padding:9px 11px}
+.doctor-obligation-toolbar :is(input,select):focus-visible,.doctor-obligation-group-tabs button:focus-visible,.doctor-obligation-row:focus-visible{outline:2px solid #48998f;outline-offset:2px}
+.doctor-obligation-group-tabs{display:flex;flex-wrap:wrap;gap:5px;width:fit-content;max-width:100%;background:#ecf2f2;border-radius:12px;padding:4px}
+.doctor-obligation-group-tabs button{padding:9px 13px;border:0;background:transparent;border-radius:9px;cursor:pointer;color:#647e87;font:inherit;font-size:12px;font-weight:750}
+.doctor-obligation-group-tabs button.selected{background:#fff;color:#195450;box-shadow:0 1px 7px #18374212}
+.doctor-obligation-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:16px 0 10px}
+.doctor-obligation-actions p{font-size:12px;color:#536e7a;margin:0;line-height:1.45}
+.doctor-obligations-coverage,.doctor-obligations-shown{font-size:11px;line-height:1.5;color:#748993;margin:10px 0;max-width:900px}
+.doctor-obligation-group{background:#fff;border:1px solid #e2eae9;border-radius:15px;padding:2px 14px 4px;margin-bottom:12px;min-width:0}
+.doctor-obligation-group-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 2px 8px;border-bottom:1px solid #eff2f2}
+.doctor-obligation-group h3{font-size:14px;color:#214853;font-weight:750;margin:0;overflow-wrap:anywhere}
+.doctor-obligation-count{font-size:11px;background:#edf6f4;border-radius:9px;color:#17675f;padding:3px 8px;font-variant-numeric:tabular-nums}
+.doctor-obligation-row{font:inherit;display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-width:0;padding:12px 3px;cursor:pointer;color:#213d4b;background:transparent;border:0;border-bottom:1px solid #f0f3f3;text-align:left}
+.doctor-obligation-row:last-child{border-bottom:0}
+.doctor-obligation-row:hover{background:#f4f9f8}
+.doctor-obligation-main{display:grid;gap:4px;min-width:0}
+.doctor-obligation-main strong{font-size:13px;line-height:1.4;overflow-wrap:anywhere}
+.doctor-obligation-patient{color:#406d77;font-size:12px;overflow-wrap:anywhere}
+.doctor-obligation-meta{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:11px;line-height:1.45;color:#70858e}
+.doctor-obligation-chevron{font-size:20px;flex:0 0 auto;color:#94a9ac}
+.doctor-obligations-empty{color:#657e88;font-size:13px;padding:18px 0}
+.doctor-obligations-footer{margin-top:20px;padding-top:13px;border-top:1px solid #e8eeee}
+@media(max-width:680px){
+  .doctor-obligations .doctor-library-header{align-items:flex-start}
+  .doctor-obligation-stats{gap:7px}
+  .doctor-obligation-stats>div{padding:12px 9px}
+  .doctor-obligation-stats strong{font-size:20px}
+  .doctor-obligation-stats span{font-size:10px}
+  .doctor-obligation-toolbar{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .doctor-obligation-toolbar label:first-child{grid-column:1/-1}
+  .doctor-obligation-group{padding:2px 11px 4px}
+  .doctor-obligation-group-tabs button{padding:9px 10px;font-size:11px}
+}
+@media(max-width:390px){
+  .doctor-obligations .doctor-library-header{gap:8px}
+  .doctor-obligations .doctor-library-header h2{font-size:19px}
+  .doctor-obligation-toolbar{grid-template-columns:minmax(0,1fr)}
+  .doctor-obligation-toolbar label:first-child{grid-column:auto}
+}

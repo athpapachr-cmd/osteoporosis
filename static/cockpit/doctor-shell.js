@@ -223,8 +223,31 @@
     };
     input.addEventListener("input",draw);draw();input.focus();
   }
+  function showObligations() {
+    // Preserve an in-progress clinical visit draft. Reuse the chart owner's
+    // existing guard and its patient-visible reason, never silently hide it.
+    if (typeof window.CockpitStoredChart?.canLeave==="function"
+        && !window.CockpitStoredChart.canLeave()) return;
+    close();
+    const screen=$("doctorObligationsView");
+    if(!screen)return;
+    $("doctorMainView").hidden=true;
+    $("doctorLibraryView").hidden=true;
+    screen.hidden=false;
+    window.CockpitObligations?.open((id,pendingId)=>{
+      // Reuse the exact existing chart+pending owner. Opening a listed task
+      // cannot grant a capability or write a clinical record by itself.
+      showHome();
+      const chart=window.CockpitStoredChart;
+      if(typeof chart?.openPending==="function")chart.openPending(id,pendingId);
+      else if(window.CockpitSynthetic===true && typeof chart?.open==="function")chart.open(id);
+    });
+    $("doctorObligationsSearch").focus();
+  }
   function showLibrary(category="surgery") {
     close();
+    window.CockpitObligations?.close();
+    $("doctorObligationsView").hidden=true;
     $("doctorMainView").hidden=true;
     $("doctorLibraryView").hidden=false;
     const panels=document.querySelectorAll("[data-doctor-library-panel]");
@@ -236,7 +259,11 @@
     $("doctorBackHome").focus();
   }
   function showHome() {
-    close();$("doctorLibraryView").hidden=true;$("doctorMainView").hidden=false;
+    close();
+    window.CockpitObligations?.close();
+    $("doctorObligationsView").hidden=true;
+    $("doctorLibraryView").hidden=true;
+    $("doctorMainView").hidden=false;
     $("doctorActionsButton").focus();
   }
   const rfCounterNames = [
@@ -319,14 +346,15 @@
       "Δεν υπάρχει ακόμη αξιόπιστη καταμέτρηση."));
     target.append(action("Υποχρεώσεις ασθενών",
       "Ανοικτές εκκρεμότητες ανά ασθενή",
-      () => openPanel("tasks", buttons.tasks)));
+      showObligations));
   }
 
     buttons.day.addEventListener("click",()=>openPanel("day",buttons.day));
   buttons.inbox.addEventListener("click",()=>openPanel("inbox",buttons.inbox));
   window.addEventListener("cockpit:clinical-updates-changed",()=>{if(state.panel==="inbox")inbox();else if(state.panel==="tasks")tasks();});
-  window.addEventListener("clinical:unauthenticated",()=>{close();});
-  buttons.tasks.addEventListener("click",()=>openPanel("tasks",buttons.tasks));
+  window.addEventListener("clinical:unauthenticated",()=>{showHome();});
+  buttons.tasks.addEventListener("click",showObligations);
+  $("doctorObligationsBack").addEventListener("click",showHome);
   buttons.actions.addEventListener("click",()=>openPanel("actions",buttons.actions));
   $("doctorPopoverClose").addEventListener("click",close);
   if (typeof window !== "undefined" && typeof window.addEventListener === "function") window.addEventListener("clinical:authenticated", () => {
@@ -367,6 +395,7 @@
           + (detail.upcoming || []).reduce((sum, group) => sum + group.count, 0) > detail.total) {
       state.surgeries = null;
       $("doctorTasksBadge").hidden = true;
+      $("doctorTasksBadge").textContent = "";
       attention();
       if (state.panel === "tasks") tasks();
       return;
@@ -378,8 +407,10 @@
         ? { date: group.date, count: 1, name: group.name, procedure: group.procedure }
         : { date: group.date, count: group.count })
     };
-    $("doctorTasksBadge").hidden = detail.total === 0;
-    $("doctorTasksBadge").textContent = String(detail.total);
+    // The top icon now opens PATIENT obligations; this surgical count
+    // is not a patient task count. Keep surgery numbers in Home/library only.
+    $("doctorTasksBadge").hidden = true;
+    $("doctorTasksBadge").textContent = "";
     attention();
     if (state.panel === "tasks") tasks();
   }
