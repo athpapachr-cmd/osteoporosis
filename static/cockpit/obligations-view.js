@@ -9,7 +9,7 @@
   if (!view) return;
 
   const state = { active: false, generation: 0, controller: null, rows: [],
-    scope: "real", grouping: "patient", openPending: null };
+    scope: "real", grouping: "patient", openPending: null, openEdit: null };
   const statuses = {
     open: "Ανοικτή", awaiting_patient: "Αναμένεται από ασθενή",
     awaiting_result: "Αναμένεται αποτέλεσμα"
@@ -132,7 +132,19 @@
           // patient/pending read. No capability is created by this list row.
           state.openPending(item.patient_id,item.pending_id);
         });
-        section.append(row);
+        const entry=node("div","doctor-obligation-entry");
+        entry.append(row);
+        if(window.CockpitSynthetic!==true && typeof state.openEdit==="function"){
+          const edit=node("button","doctor-obligation-edit","✎ Επεξεργασία");
+          edit.type="button";
+          edit.setAttribute("aria-label","Επεξεργασία κατηγορίας και προθεσμίας: "+item.description);
+          edit.addEventListener("click",()=>{
+            if(!state.active||typeof state.openEdit!=="function")return;
+            state.openEdit(item.patient_id,item.pending_id);
+          });
+          entry.append(edit);
+        }
+        section.append(entry);
       }
       root.append(section);
     }
@@ -154,6 +166,7 @@
     cancel();
     state.active=false;
     state.openPending=null;
+    state.openEdit=null;
     // Clearing result rows is insufficient: a typed patient name remains in
     // the hidden search field otherwise, including after clinician logout.
     $("doctorObligationsSearch").value="";
@@ -206,9 +219,10 @@
           "Οι υποχρεώσεις δεν φορτώθηκαν. Δοκίμασε Ανανέωση.";
     }
   }
-  function open(onItem) {
+  function open(onItem,onEdit) {
     state.active=true;
     state.openPending=onItem;
+    state.openEdit=onEdit;
     state.scope="real";
     state.grouping="patient";
     $("doctorObligationsSearch").value="";
