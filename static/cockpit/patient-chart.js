@@ -49,16 +49,42 @@
         r.status===502||r.status===503?'Η μετατροπή δεν είναι διαθέσιμη αυτή τη στιγμή. Το κείμενο διατηρήθηκε.':'Η ενέργεια δεν ολοκληρώθηκε. Δοκίμασε ξανά.');failure.status=r.status;throw failure;
     }return r.json();
   }
-  function pendingControls(disabled){for(const b of chart.querySelectorAll('.pending-checkpoint-actions button,.pending-checkpoint-actions select,.pending-stage button,.pending-open'))b.disabled=disabled;}
+  // A title's relative interval is only a suggested date. The clinician
+  // explicitly adopts it and saves; no NLP or silent deadline mutation.
+  function dateSuggestion(description, sourceDate){
+    if(typeof sourceDate!=='string'||! /^\d{4}-\d{2}-\d{2}$/.test(sourceDate))return null;
+    const [year,month,day]=sourceDate.split('-').map(Number);
+    const valid=new Date(Date.UTC(year,month-1,day,12));
+    if(valid.getUTCFullYear()!==year||valid.getUTCMonth()!==month-1||valid.getUTCDate()!==day)return null;
+    const words=String(description||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('el');
+    const match=words.match(/(?:^|\s)(?:σε|μετα\s+απο)\s+(\d+(?:[,.]\d+)?)\s+(μηνα|μηνες|χρονο|χρονια|ετος|ετη)\b/u);
+    if(!match)return null;
+    const quantity=Number(match[1].replace(',','.')),unit=match[2];
+    if(!Number.isFinite(quantity)||quantity<=0)return null;
+    const years=/^(χρονο|χρονια|ετος|ετη)$/.test(unit);
+    if(quantity>(years?10:120))return null;
+    const totalMonths=years?quantity*12:quantity;
+    let whole=Math.floor(totalMonths),fraction=totalMonths-whole;
+    // A half-month has no exact calendar definition; suggest ~15 days.
+    if(!(Math.abs(fraction)<1e-9||Math.abs(fraction-0.5)<1e-9))return null;
+    const first=new Date(Date.UTC(year,month-1+whole,1,12));
+    const y=first.getUTCFullYear(),m=first.getUTCMonth();
+    const last=new Date(Date.UTC(y,m+1,0,12)).getUTCDate();
+    const result=new Date(Date.UTC(y,m,Math.min(day,last)+(fraction>0.25?15:0),12));
+    return {date:result.toISOString().slice(0,10),
+      approximate:fraction>0.25, sourceDate};
+  }
+  function pendingControls(disabled){for(const b of chart.querySelectorAll('.pending-checkpoint-actions button,.pending-checkpoint-actions select,.pending-stage button,.pending-open,.pending-metadata-editor input,.pending-metadata-editor select,.pending-metadata-editor button'))b.disabled=disabled;}
   function resetDraft(){amendment=null;pendingBindings=new Map();composerTitle.textContent='Νέα επίσκεψη από τη σύνοψη Dia';amendmentNote.hidden=true;saveButton.textContent='Αποθήκευση επίσκεψης και υποχρεώσεων';closeComposer.disabled=false;chart.hidden=false;promptStatus.textContent='';pendingControls(false);draftGeneration++;contextId=null;candidate=null;source='';busy=false;input.value='';review.replaceChildren();previews.replaceChildren();feedback.textContent='';saveButton.hidden=true;extractButton.disabled=false;input.disabled=false;visitDate.disabled=false;}
   function reset(){for(const dialog of chart.querySelectorAll('dialog[open]'))dialog.close();pendingBusy=false;chartPending=[];chartScroll=0;chartReturnPoint=null;journeyObserver?.disconnect();journeyObserver=null;generation++;patientId=null;chart.replaceChildren();resetDraft();composer.hidden=true;}
   function facts(parent,title,items){if(!items?.length)return;el(parent,'h4',title);const list=el(parent,'ul');for(const i of items)el(list,'li',typeof i==='string'?i:i.text);}
-  function showPending(id,item){
+  function showPending(id,item,editMetadata=false){
     if(!composer.hidden||pendingBusy||patientId!==id)return;
     chart.querySelector('.patient-pending-dialog')?.remove();
     const dialog=el(chart,'dialog','','patient-journey-preview patient-pending-dialog');dialog.setAttribute('aria-label','Ενημέρωση υποχρέωσης');
     button(dialog,'Κλείσιμο',()=>dialog.close()).classList.add('patient-journey-close');
     el(dialog,'h3','Ενημέρωση υποχρέωσης');renderPending(el(dialog,'div'),id,[item]);
+    if(editMetadata)dialog.querySelector('.pending-metadata-editor')?.setAttribute('open','');
     dialog.onclick=e=>{if(e.target===dialog)dialog.close();};dialog.onclose=()=>dialog.remove();dialog.showModal();
   }
   function renderPending(target,id,items,branch=false){
@@ -133,6 +159,56 @@
           button(confirmation,'Διαγραφή',()=>mutate('/lifecycle',{action:'cancel',expected_revision:item.lifecycle?.revision||0}));
           button(confirmation,'Διατήρηση',()=>{confirmation.hidden=true;remove.hidden=false;});
         }
+      }
+      if(!branch && item.checkpoint_write_allowed &&
+          ['open','awaiting_patient','awaiting_result','resolved'].includes(item.status) &&
+          target.closest('.patient-pending-dialog')){
+        const editor=el(copy,'details','','pending-metadata-editor');
+        el(editor,'summary','Κατηγορία / Προθεσμία');
+        const fields=el(editor,'div','','pending-metadata-fields');
+        const catLabel=el(fields,'label','Κατηγορία');
+        const category=el(catLabel,'select');category.setAttribute('aria-label','Κατηγορία υποχρέωσης');
+        const known=[
+          ['test','Εξετάσεις'],['result','Αποτελέσματα'],['document','Έγγραφα'],
+          ['follow_up','Επανεξέταση'],['referral','Παραπομπή'],['other','Λοιπές']
+        ];
+        const initialCategory=item.item_type==='investigation'?'test':item.item_type;
+        if(!known.some(v=>v[0]===initialCategory)){
+          const legacy=el(category,'option','Άλλη υφιστάμενη κατηγορία');legacy.value=initialCategory;
+        }
+        for(const [key,label] of known){
+          const option=el(category,'option',label);option.value=key;
+        }
+        category.value=initialCategory;
+        const dateLabel=el(fields,'label','Προθεσμία');
+        const due=el(dateLabel,'input');due.type='date';due.value=item.review_date||'';
+        due.setAttribute('aria-label','Προθεσμία υποχρέωσης');
+        const suggestion=!item.review_date?dateSuggestion(item.description,item.source_date):null;
+        if(suggestion){
+          const proposed=el(editor,'div','','pending-metadata-suggestion');
+          el(proposed,'small',suggestion.approximate?
+            'Ενδεικτική ημερομηνία (περίπου), από την καταγεγραμμένη επίσκεψη '+date(suggestion.sourceDate):
+            'Πρόταση από τίτλο, με αφετηρία την καταγεγραμμένη επίσκεψη '+date(suggestion.sourceDate));
+          button(proposed,'Χρήση πρότασης · '+date(suggestion.date),()=>{due.value=suggestion.date;due.focus();});
+        }
+        el(editor,'p','Η προθεσμία είναι ανεξάρτητη από το αν η υποχρέωση παραμένει ανοικτή. Το αρχικό κείμενο της επίσκεψης δεν αλλάζει.','clinical-muted');
+        const buttons=el(editor,'div','','pending-metadata-actions');
+        const validation=el(editor,'p','','clinical-muted');validation.setAttribute('role','status');
+        button(buttons,'Αποθήκευση',()=>{
+          const chosen=category.value===initialCategory?item.item_type:category.value;
+          const reviewDate=due.value||null;
+          if(chosen===item.item_type&&reviewDate===(item.review_date||null)){
+            validation.textContent='Δεν έχουν γίνει αλλαγές.';return;
+          }
+          validation.textContent='';
+          mutate('/metadata',{item_type:chosen,review_date:reviewDate,
+            expected_revision:item.lifecycle?.revision??0});
+        });
+        button(buttons,'Χωρίς προθεσμία',()=>{due.value='';due.focus();});
+        button(buttons,'Άκυρο',()=>{
+          category.value=initialCategory;due.value=item.review_date||'';validation.textContent='';
+          editor.open=false;
+        });
       }
       if(!branch){
       if(item.source_excerpt)el(copy,'blockquote',item.source_excerpt);
@@ -404,7 +480,7 @@
   $('visitBackHome').addEventListener('click',()=>{if(!canLeave())return;reset();const u=new URL(location.href);u.searchParams.delete('chart');history.replaceState(null,'',u);});
   window.addEventListener('clinical:unauthenticated',reset);
   window.addEventListener('clinical:authenticated',()=>{reset();const id=new URL(location.href).searchParams.get('chart');if(id)open(id);});
-  window.CockpitStoredChart={async openVisit(id,encounter){if(!canLeave()||pendingBusy)return false;if(await open(id)!==id)return false;return showVisit(id,encounter);},async openPending(id,pending){if(!canLeave())return;if(patientId!==id&&await open(id)!==id)return;const item=chartPending.find(p=>p.pending_id===pending);if(item)showPending(id,item);},open(id){if(!canLeave())return;return open(id);},reset,renderPending,renderUpdates,beginVisit,canLeave,cancelPendingRead(){generation++;}};
+  window.CockpitStoredChart={async openVisit(id,encounter){if(!canLeave()||pendingBusy)return false;if(await open(id)!==id)return false;return showVisit(id,encounter);},async openPending(id,pending,options={}){if(!canLeave())return;if(patientId!==id&&await open(id)!==id)return;const item=chartPending.find(p=>p.pending_id===pending);if(item)showPending(id,item,Boolean(options?.editMetadata));},open(id){if(!canLeave())return;return open(id);},reset,renderPending,renderUpdates,beginVisit,canLeave,cancelPendingRead(){generation++;}};
   window.addEventListener('beforeunload',e=>{if(!composer.hidden&&(input.value.trim()||candidate||busy)){e.preventDefault();e.returnValue='';}});
   const id=new URL(location.href).searchParams.get('chart');if(id)open(id);
 })();
