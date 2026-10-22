@@ -397,7 +397,10 @@
     if(e.target===dialog&&!state.modalBusy)closeDialog();
   });
   dialog.addEventListener("cancel",e=>{
-    if(state.modalBusy)e.preventDefault();
+    // ESC must synchronously purge patient identity and unsaved form values,
+    // not leave them in a closed <dialog> subtree until the next navigation.
+    e.preventDefault();
+    if(!state.modalBusy)closeDialog();
   });
 
   function resetContents() {
