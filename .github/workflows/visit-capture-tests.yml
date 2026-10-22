@@ -58,7 +58,7 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt pytest
       - name: Python syntax
-        run: python -m py_compile clinical_data.py test_visit_capture.py test_visit_capture_ui.py test_cockpit_home.py
+        run: python -m py_compile clinical_data.py clinical_pending_one_tap.py test_cockpit_cp2.py test_visit_capture.py test_visit_capture_ui.py test_cockpit_home.py
       - name: Visit Capture JavaScript syntax
         run: |
           node --check static/cockpit/visit-capture/app.js
