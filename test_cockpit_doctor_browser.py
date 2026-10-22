@@ -189,8 +189,12 @@ def exercise_obligations(page,width):
     page.evaluate("""() => {
         window.CockpitStoredChart = {openPending: (p,i) => window.__chosenObligation={patient:p,pending:i}};
     }""")
+    page.locator("#doctorObligationsSearch").fill("Δοκιμής Α")
+    expect(page.locator('[data-pending-id="SYN-OBL-1"]')).to_be_visible()
     page.locator('[data-pending-id="SYN-OBL-1"]').click()
     expect(page.locator("#doctorObligationsView")).to_be_hidden()
+    assert page.locator("#doctorObligationsSearch").input_value()=="" , (
+        "hidden patient-name search must be purged on screen close")
     expect(page.locator("#doctorMainView")).to_be_visible()
     assert page.evaluate("window.__chosenObligation")=={"patient":"SYN-A","pending":"SYN-OBL-1"}
     assert page.locator("#doctorObligationsRows").text_content()=="", "hidden screen retained PHI"
@@ -472,7 +476,7 @@ def browser_suite(width, screenshot_name):
         expect(page.locator("#doctorAttentionList")).to_contain_text("Συνθετικός Ασθενής Β")
         expect(page.locator("#doctorAttentionList")).to_contain_text("Αναμένουν απόφαση")
         expect(page.locator("#doctorAttentionList")).not_to_contain_text("Υποβλήθηκαν")
-        expect(page.locator("#doctorTasksBadge")).to_have_text("2")
+        expect(page.locator("#doctorTasksBadge")).to_be_hidden()  # surgery count is not the patient obligation badge
         page.screenshot(path=str(OUT / screenshot_name), full_page=True)
 
         page.locator("#doctorDateButton").click()
