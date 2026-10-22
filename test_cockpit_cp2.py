@@ -496,7 +496,10 @@ def test_browser_real_obligation_popup_complete_delete_restore(setup,tmp_path):
                 page.locator('#ceGlobalLoginForm button[type=submit]').click();expect(page.locator('#ceGlobalAuthStatus')).to_contain_text('Συνδέθηκες');page.keyboard.press('Escape');page.goto(url)
                 link=page.locator('.patient-chart-grid .patient-obligation-link button');link.click()
                 popup=page.locator('.patient-pending-dialog');expect(popup).to_be_visible()
-                expect(popup.locator('select')).to_have_count(0)
+                # Old universal clinical *plan template* chooser must remain absent.
+                # The NEW category picker is isolated in a collapsed metadata editor.
+                expect(popup.locator('.pending-checkpoint-actions select')).to_have_count(0)
+                expect(popup.locator('.pending-metadata-editor')).not_to_have_attribute('open','')
                 expect(popup).not_to_contain_text('CD: παραλαβή')
                 expect(popup).not_to_contain_text('Παρακολούθηση')
                 expect(popup.get_by_role('button',name='Ναι',exact=True)).to_be_enabled()
