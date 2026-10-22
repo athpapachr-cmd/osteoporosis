@@ -4,6 +4,13 @@
 Do not infer merge, release or real patient permission. Author implementation candidate is prepared on a DRAFT branch; this is NOT an independent review receipt.
 
 Base fresh `main=8708a37c0d4083c3f811ced6b186e9ef7e817355`.
+**Author source+test frozen HEAD:** `4785a583c838202a05386ca79ede0eaed25d825d` (later commits may update ONLY the review/checkpoint text; verify blob equality). **AUTHOR CI PASS**, NOT independent review: 
+- [Visit Capture / CP1-CP2 Chromium + metadata writer tests 39722211896](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39722211896) SUCCESS, including 3 new metadata API cases and two title/date Chromium cases (1280/390) and preserved step/lifecycle tests.
+- [Cockpit Home Chromium 39722211922](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39722211922) SUCCESS.
+- [Visit Brief 39722211864](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39722211864), [Surgery 39722211876](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39722211876), [Canonical Impact 39722211788](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39722211788) SUCCESS.
+**No reviewer PASS is claimed.** Reviewer must check whether the extra `metadata_corrected` event works with every existing optimistic Pending action without unintended status shifts. Correct only source-proven material findings; no broad rerun loops.
+
+
 Design: `cockpit/OBLIGATION_CATEGORY_DUE_DATE_EDITOR_2026-10-22.md`. The patient obligations screen #205 is already LIVE. Proposed deltas exclusively touch existing Pending clinical authority, event ledger and existing chart/list UI.
 
 ## PRE-CODE design review (R2)
