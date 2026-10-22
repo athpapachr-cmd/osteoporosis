@@ -85,7 +85,7 @@ class PendingLifecycleAction(BaseModel):
 class PendingMetadataEdit(BaseModel):
     """Explicit clinician correction of current task metadata, not a visit edit."""
     model_config = {"extra": "forbid"}
-    item_type: Literal["investigation", "test", "result", "document", "follow_up", "referral", "other"]
+    item_type: str = Field(min_length=1, max_length=120)
     review_date: str | None
     expected_revision: int = Field(ge=0)
     idempotency_key: str = Field(min_length=16, max_length=100, pattern=r"^[a-zA-Z0-9_-]+$")
@@ -225,6 +225,11 @@ def attach_pending_one_tap_routes(router,engine,protected):
             row,actor=load(db,patient_id,pending_id,request)
             existing=db.scalar(select(PendingCheckpointEventORM).where(
                 PendingCheckpointEventORM.idempotency_key==action.idempotency_key))
+            allowed={"investigation","test","result","document","follow_up","referral","other"}
+            # Other signed legacy categories may be retained when editing only
+            # the date, but must not be invented by this category chooser.
+            if action.item_type!=row.item_type and action.item_type not in allowed:
+                raise HTTPException(422,"Unsupported obligation category")
             desired={"item_type":action.item_type,"review_date":action.review_date}
             if existing is not None:
                 metadata=existing.plan_json or {}
