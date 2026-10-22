@@ -382,3 +382,30 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
   .doctor-obligation-toolbar{grid-template-columns:minmax(0,1fr)}
   .doctor-obligation-toolbar label:first-child{grid-column:auto}
 }
+
+
+/* Existing Pending owner: clinician-confirmed category / due-date correction. */
+.doctor-obligation-entry{display:flex;align-items:center;gap:7px;border-bottom:1px solid #f0f3f3;min-width:0}
+.doctor-obligation-entry:last-child{border-bottom:0}
+.doctor-obligation-entry .doctor-obligation-row{flex:1;min-width:0;border-bottom:0}
+.doctor-obligation-edit{border:1px solid #d9e5e4;background:#fff;border-radius:9px;padding:8px 10px;font:inherit;font-size:11px;font-weight:700;white-space:nowrap;color:#206b66;cursor:pointer;flex:0 0 auto}
+.doctor-obligation-edit:hover{background:#edf7f4}
+.doctor-obligation-edit:focus-visible{outline:2px solid #328b83;outline-offset:2px}
+.pending-metadata-editor{border:1px solid #e2ebe9;background:#f8fbfa;border-radius:12px;padding:10px 12px;margin:13px 0;min-width:0}
+.pending-metadata-editor>summary{color:#216e66;font-size:13px;font-weight:750;cursor:pointer}
+.pending-metadata-editor[open]>summary{margin-bottom:10px}
+.pending-metadata-fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.pending-metadata-fields label{display:grid;gap:5px;min-width:0;color:#45636b;font-size:12px;font-weight:700}
+.pending-metadata-fields select,.pending-metadata-fields input{box-sizing:border-box;width:100%;min-width:0;min-height:40px;padding:8px 9px;font:inherit;font-size:13px;color:#1f3b45;border:1px solid #d7e4e2;border-radius:9px;background:#fff}
+.pending-metadata-suggestion{display:grid;gap:6px;margin-top:10px}
+.pending-metadata-suggestion small{color:#536f77;font-size:11px;line-height:1.5}
+.pending-metadata-suggestion button{justify-self:start;color:#196c64}
+.pending-metadata-editor>p{font-size:11px;line-height:1.5;margin:9px 0;color:#65818a}
+.pending-metadata-actions{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0 0}
+.pending-metadata-actions button{font-size:12px;padding:9px 11px}
+.pending-metadata-fields :is(select,input):focus-visible{outline:2px solid #328b83;outline-offset:2px}
+@media(max-width:610px){
+  .doctor-obligation-entry{align-items:flex-start;gap:5px}
+  .doctor-obligation-edit{margin-top:9px;padding:7px 8px}
+  .pending-metadata-fields{grid-template-columns:minmax(0,1fr)}
+}
