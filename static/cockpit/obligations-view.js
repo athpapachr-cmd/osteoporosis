@@ -12,7 +12,7 @@
 
   const state = { active: false, generation: 0, controller: null, rows: [],
     scope: "real", grouping: "patient", openPending: null, undo: null,
-    modalToken: 0, modalBusy: false };
+    modalOpener: null, modalBusy: false };
   const statuses = {
     open: "Ανοικτή", awaiting_patient: "Αναμένεται από ασθενή",
     awaiting_result: "Αναμένεται αποτέλεσμα"
@@ -183,10 +183,12 @@
   }
 
   function closeDialog(){
-    state.modalToken++;
+    const opener=state.modalOpener;
+    state.modalOpener=null;
     state.modalBusy=false;
     if(dialog.open)dialog.close();
     dialog.replaceChildren(); // patient identity and editable form never remain hidden
+    if(opener?.isConnected&&!view.hidden)opener.focus({preventScroll:true});
   }
   function resetFeedback(){
     feedback.replaceChildren();
@@ -244,7 +246,7 @@
   function showTask(item,expandEditor=false,opener=null){
     if(!state.active||window.CockpitSynthetic===true)return;
     closeDialog();
-    const ticket=state.generation,modalToken=state.modalToken;
+    state.modalOpener=opener;
     const writeAllowed=isWritable(item);
     const header=node("div","doctor-obligation-dialog-heading");
     const identity=node("div","doctor-obligation-dialog-identity");
