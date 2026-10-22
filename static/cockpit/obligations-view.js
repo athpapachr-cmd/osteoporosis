@@ -468,7 +468,7 @@
       state.rows=active;
       $("doctorObligationsState").textContent=state.scope==="test"?
         "Δοκιμαστικός φάκελος · χωρίς ανάμειξη με πραγματικές εγγραφές.":
-        "Ενεργές κλινικές υποχρεώσεις · οι ενέργειες γίνονται μέσα στην καρτέλα.";
+        "Επίλεξε μια υποχρέωση για αλλαγές και διαγραφή εδώ, χωρίς επιστροφή στον φάκελο.";
       summary();render();
     }catch(err){
       if(!state.active||ticket!==state.generation||view.hidden)return;
