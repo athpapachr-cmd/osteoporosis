@@ -239,6 +239,289 @@ def test_real_patient_existing_key_staff_exclusion_and_honest_actor(setup,monkey
         assert [(e.actor_principal_id,e.actor_role) for e in events]==[('shared-clinical-key','shared_clinical_key')]*2+[('clinic-clinician','clinician')]
 
 
+def test_clinician_corrects_category_and_due_with_original_signed_source_and_append_only_audit(setup):
+    from copy import deepcopy
+    app,engine=setup;c,p,path=real_seed(app,engine)
+    with Session(engine) as db:
+        original=deepcopy(db.get(EncounterORM,p['source_encounter_id']).payload_json)
+        before=db.get(ClinicalPendingORM,p['pending_id'])
+        original_state=(before.id,before.status,before.description,before.source_encounter_id,
+                        deepcopy(before.provenance_json),before.resolution_event_id)
+
+    first={"item_type":"result","review_date":"2028-04-18",
+           "expected_revision":0,"idempotency_key":uuid4().hex}
+    r=c.post(path+"/metadata",json=first);assert r.status_code==200,r.text
+    assert r.json()["current"]=={"item_type":"result","review_date":"2028-04-18",
+                                  "status":p["status"],"revision":1}
+    assert c.post(path+"/metadata",json=first).json()["replayed"] is True
+    assert c.post(path+"/metadata",json={**first,"review_date":"2026-12-03"}).status_code==409
+    assert c.post(path+"/metadata",json={**first,"expected_revision":1}).status_code==409
+    assert c.post(path+"/metadata",json={**first,"idempotency_key":uuid4().hex}).status_code==409
+
+    second=login(app)
+    chart=second.get("/clinical/patient/outside-synthetic-scope/chart").json()["pending"][0]
+    listed=next(x for x in second.get("/clinical/clinical-updates?active_only=true").json()["items"]
+                if x["pending_id"]==p["pending_id"])
+    assert chart["item_type"]==listed["item_type"]=="result"
+    assert chart["review_date"]==listed["review_date"]=="2028-04-18"
+    assert chart["lifecycle"]["revision"]==listed["lifecycle"]["revision"]==1
+    assert chart["source_excerpt"]==listed["source_excerpt"]
+
+    for badDate in ("2026-02-30","2026-13-01","2026-1-5","20261022"):
+        assert c.post(path+"/metadata",json={**first,"review_date":badDate,
+            "expected_revision":1,"idempotency_key":uuid4().hex}).status_code==422
+    assert c.post(path+"/metadata",json={**first,"item_type":"unverified_custom",
+        "expected_revision":1,"idempotency_key":uuid4().hex}).status_code==422
+    assert c.post(path.replace("outside-synthetic-scope",TEST_ID)+"/metadata",
+        json={**first,"expected_revision":1,"idempotency_key":uuid4().hex}).status_code==404
+    assert TestClient(app).post(path+"/metadata",
+        json={**first,"expected_revision":1,"idempotency_key":uuid4().hex}).status_code==401
+    clear={"item_type":p["item_type"],"review_date":None,
+           "expected_revision":1,"idempotency_key":uuid4().hex}
+    assert c.post(path+"/metadata",json=clear).status_code==200
+    assert c.post(path+"/metadata",json=clear).json()["replayed"] is True
+    assert c.post(path+"/metadata",json={**clear,"expected_revision":0,"idempotency_key":uuid4().hex}).status_code==409
+
+    with Session(engine) as db:
+        after=db.get(ClinicalPendingORM,p["pending_id"])
+        assert (after.id,after.status,after.description,after.source_encounter_id,
+                after.provenance_json,after.resolution_event_id)==original_state
+        assert after.item_type==p["item_type"] and after.review_date is None
+        assert db.get(EncounterORM,p["source_encounter_id"]).payload_json==original
+        rows=db.scalars(select(PendingCheckpointEventORM).order_by(PendingCheckpointEventORM.revision)).all()
+        assert len(rows)==2
+        assert [(e.kind,e.checkpoint_key,e.revision) for e in rows]==[
+            ("metadata_corrected","__metadata__",1),("metadata_corrected","__metadata__",2)]
+        assert rows[0].plan_json["after"]=={"item_type":"result","review_date":"2028-04-18"}
+        assert rows[1].plan_json["before"]["review_date"]=="2028-04-18"
+        assert all((e.actor_principal_id,e.actor_role)==("shared-clinical-key","shared_clinical_key") for e in rows)
+        assert all(e.idempotency_key in (first["idempotency_key"],clear["idempotency_key"]) for e in rows)
+
+
+def test_metadata_event_shares_revisions_with_checkpoints_and_no_terminal_resurrection(setup):
+    app,engine=setup;c,p,path=real_seed(app,engine)
+    update={"item_type":"follow_up","review_date":"2027-01-18",
+            "expected_revision":0,"idempotency_key":uuid4().hex}
+    assert c.post(path+"/metadata",json=update).status_code==200
+    stalePlan={"template":"completion","expected_revision":0,"idempotency_key":uuid4().hex}
+    assert c.post(path+"/checkpoint-plan",json=stalePlan).status_code==409
+    correctPlan={**stalePlan,"expected_revision":1,"idempotency_key":uuid4().hex}
+    r=c.post(path+"/checkpoint-plan",json=correctPlan);assert r.status_code==200,r.text
+    assert r.json()["current"]["revision"]==2
+    latest={"item_type":"result","review_date":"2027-03-18",
+            "expected_revision":2,"idempotency_key":uuid4().hex}
+    r=c.post(path+"/metadata",json=latest);assert r.status_code==200,r.text
+    assert r.json()["current"]["revision"]==3
+    assert c.post(path+"/checkpoint",json={"checkpoint_key":"completed",
+        "observation":"yes_confirmed","expected_revision":2,
+        "idempotency_key":uuid4().hex}).status_code==409
+    resolved=c.post(path+"/checkpoint",json={"checkpoint_key":"completed",
+        "observation":"yes_confirmed","expected_revision":3,
+        "idempotency_key":uuid4().hex})
+    assert resolved.status_code==200,resolved.text
+    assert resolved.json()["current"]["status"]=="resolved"
+    assert len(resolved.json()["current"]["history"])==1, "metadata isn't a clinical checkpoint"
+    revoked=c.post(path+"/lifecycle",json={"action":"cancel","expected_revision":4,
+        "idempotency_key":uuid4().hex})
+    assert revoked.status_code==200,revoked.text
+    assert c.post(path+"/metadata",json={**latest,"expected_revision":5,
+        "idempotency_key":uuid4().hex}).status_code==409
+    assert c.post(path+"/metadata",json=update).json()["replayed"] is True
+    with Session(engine) as db:
+        row=db.get(ClinicalPendingORM,p["pending_id"])
+        assert row.status=="cancelled" and row.review_date=="2027-03-18"
+        assert db.get(EncounterORM,p["source_encounter_id"]).payload_json["_visit_capture_v1"]["candidate"]["pending"][0]["review_date"] is None
+
+
+def test_metadata_staff_cookie_precedence_and_legacy_category_date_only(setup,monkeypatch):
+    from clinical_staff_auth import STAFF_COOKIE
+    app,engine=setup;c,p,path=real_seed(app,engine)
+    monkeypatch.setenv("COCKPIT_STAFF_AUTH_ENABLED","1")
+    monkeypatch.setenv("COCKPIT_STAFF_CLINICIAN_KEY","C"*40)
+    monkeypatch.setenv("COCKPIT_STAFF_SECRETARY_KEY","S"*40)
+    monkeypatch.setenv("COCKPIT_STAFF_SESSION_SECRET","T"*40)
+    proposal={"item_type":p["item_type"],"review_date":"2026-12-03",
+        "expected_revision":0,"idempotency_key":uuid4().hex}
+    blocked=login(app)
+    blocked.cookies.set(STAFF_COOKIE,"invalid",domain="testserver.local",path="/clinical")
+    assert blocked.post(path+"/metadata",json=proposal,headers={"X-Clinical-Key":KEY}).status_code in (401,403)
+    secretary=TestClient(app,base_url="https://testserver")
+    assert secretary.post("/clinical/login",json={"key":"S"*40}).status_code==200
+    assert secretary.post(path+"/metadata",json=proposal,headers={"X-Clinical-Key":KEY}).status_code==403
+    clinician=TestClient(app,base_url="https://testserver")
+    assert clinician.post("/clinical/login",json={"key":"C"*40}).status_code==200
+    result=clinician.post(path+"/metadata",json=proposal);assert result.status_code==200,result.text
+    monkeypatch.setenv("COCKPIT_STAFF_CLINICIAN_KEY","R"*40)
+    assert clinician.post(path+"/metadata",json=proposal,headers={"X-Clinical-Key":KEY}).status_code==401
+    with Session(engine) as db:
+        row=db.get(ClinicalPendingORM,p["pending_id"])
+        assert row.item_type==p["item_type"] and row.review_date=="2026-12-03"
+        event=db.scalar(select(PendingCheckpointEventORM))
+        assert event.actor_principal_id=="clinic-clinician" and event.actor_role=="clinician"
+
+
+@pytest.mark.parametrize("title,suggested,width",[
+    ("Αναλύσεις σε 1,5 μήνα","2026-12-03",1280),
+    ("DXA σε 1,5 χρόνο","2028-04-18",390),
+    ("Αναλύσεις σε 1,5 μήνα","2026-12-03",680),
+])
+def test_browser_metadata_edition_and_relative_title_requires_explicit_save(setup,title,suggested,width):
+    """Real Chromium on isolated synthetic clinical source; no external providers."""
+    import socket,threading,shutil
+    from copy import deepcopy
+    import uvicorn
+    from playwright.sync_api import sync_playwright,expect
+    app,engine=setup;c,p,path=real_seed(app,engine)
+    with Session(engine) as db:
+        row=db.get(ClinicalPendingORM,p["pending_id"])
+        row.description=title
+        encounter=db.get(EncounterORM,row.source_encounter_id)
+        signed=deepcopy(encounter.payload_json)
+        signed["_visit_capture_v1"]["candidate"]["pending"][0]["description"]=title
+        encounter.payload_json=signed
+        db.commit()
+
+    sock=socket.socket();sock.bind(("127.0.0.1",0));port=sock.getsockname()[1]
+    server=uvicorn.Server(uvicorn.Config(app,log_level="error"))
+    thread=threading.Thread(target=server.run,kwargs={"sockets":[sock]},daemon=True)
+    thread.start()
+    try:
+        with sync_playwright() as pw:
+            browser=pw.chromium.launch(executable_path=shutil.which("google-chrome") or shutil.which("chromium"))
+            context=browser.new_context(viewport={"width":width,"height":900})
+            page=context.new_page();errors=[]
+            page.on("pageerror",lambda error:errors.append(str(error)))
+            page.goto(f"http://localhost:{port}/static/cockpit/index.html")
+            page.locator("#ceGlobalKey").click()
+            page.locator("#ceGlobalKeyInput").fill(KEY)
+            page.locator("#ceGlobalLoginForm button[type=submit]").click()
+            expect(page.locator("#ceGlobalAuthStatus")).to_contain_text("Συνδέθηκες")
+            page.keyboard.press("Escape")
+            page.locator("#doctorTasksButton").click()
+            expect(page.locator("#doctorObligationsView")).to_be_visible()
+            entry=page.locator(".doctor-obligation-entry").filter(has_text=title)
+            expect(entry).to_have_count(1)
+            entry.locator(".doctor-obligation-edit").click()
+            expect(page.locator("#doctorObligationsView")).to_be_visible()
+            expect(page.locator("#doctorMainView")).to_be_hidden()
+            modal=page.locator("#doctorObligationDialog")
+            expect(modal).to_be_visible()
+            editor=modal.locator(".pending-metadata-editor")
+            expect(editor).to_have_attribute("open","")
+            due=editor.get_by_label("Προθεσμία υποχρέωσης")
+            expect(due).to_have_value("")
+            suggestion=editor.get_by_role("button",name="Χρήση πρότασης",exact=False)
+            expect(suggestion).to_be_visible()
+            suggestion.click()
+            expect(due).to_have_value(suggested)
+            assert c.get("/clinical/patient/outside-synthetic-scope/chart").json()["pending"][0]["review_date"] is None
+            # Manual doctor date overrides nonauthoritative title suggestion.
+            due.fill("2029-01-12")
+            editor.get_by_label("Κατηγορία υποχρέωσης").select_option("result")
+            editor.get_by_role("button",name="Αποθήκευση",exact=True).click()
+            expect(modal).to_be_hidden()
+            assert modal.text_content()=="" , "the dismissed modal kept patient PHI"
+            expect(page.locator("#doctorObligationsView")).to_be_visible()
+            chart=c.get("/clinical/patient/outside-synthetic-scope/chart").json()["pending"][0]
+            assert chart["review_date"]=="2029-01-12"
+            assert chart["item_type"]=="result"
+            assert chart["status"]==p["status"]
+            expect(page.locator("#doctorObligationsRows")).to_contain_text("Αποτελέσματα")
+            expect(page.locator("#doctorObligationsRows")).to_contain_text("12/01/2029")
+            # Direct reversible deletion, with no patient chart navigation:
+            # first tap asks for confirmation and does not change any record.
+            entry=page.locator(".doctor-obligation-entry").filter(has_text=title)
+            entry.locator(".doctor-obligation-row").click()
+            expect(modal).to_be_visible()
+            modal.locator(".doctor-obligation-delete").click()
+            assert c.get("/clinical/patient/outside-synthetic-scope/chart").json()["pending"][0]["status"]==p["status"]
+            modal.locator(".doctor-obligation-confirm-delete").click()
+            expect(modal).to_be_hidden()
+            expect(page.locator("#doctorObligationsView")).to_be_visible()
+            expect(page.locator(".doctor-obligation-entry").filter(has_text=title)).to_have_count(0)
+            expect(page.locator("#doctorObligationsFeedback")).to_contain_text("Η υποχρέωση διαγράφηκε")
+            page.locator("#doctorObligationsFeedback").get_by_role("button",name="Αναίρεση διαγραφής").click()
+            expect(page.locator(".doctor-obligation-entry").filter(has_text=title)).to_have_count(1)
+            assert c.get("/clinical/patient/outside-synthetic-scope/chart").json()["pending"][0]["status"]==p["status"]
+            expect(page.locator("#doctorObligationsView")).to_be_visible()
+            # Delayed Undo answers must not bleed across a new clinician or scope.
+            # The restore response is controlled locally; no second server writer.
+            entry=page.locator(".doctor-obligation-entry").filter(has_text=title)
+            entry.locator(".doctor-obligation-row").click()
+            modal.locator(".doctor-obligation-delete").click()
+            modal.locator(".doctor-obligation-confirm-delete").click()
+            expect(page.locator("#doctorObligationsFeedback")).to_contain_text("Η υποχρέωση διαγράφηκε")
+            page.evaluate("""() => {
+                const nativeFetch=window.fetch.bind(window);
+                window.__lateUndoReply=null;
+                window.fetch=(url,options={})=>{
+                    if(String(url).includes("/lifecycle") &&
+                       options?.method==="POST" &&
+                       JSON.parse(options.body||"{}").action==="restore"){
+                        return new Promise((resolve,reject)=>{
+                            window.__lateUndoReply={resolve,reject};
+                        });
+                    }
+                    return nativeFetch(url,options);
+                };
+            }""")
+            page.locator("#doctorObligationsFeedback").get_by_role(
+                "button",name="Αναίρεση διαγραφής").click()
+            page.wait_for_function("window.__lateUndoReply !== null")
+            if width==1280:
+                page.locator("#doctorObligationsSearch").fill("Protected sentinel")
+                page.evaluate('window.dispatchEvent(new Event("clinical:authenticated"))')
+                assert page.locator("#doctorObligationsSearch").input_value()==""
+                expect(page.locator("#doctorObligationsState")).to_contain_text(
+                    "Επίλεξε μια υποχρέωση")
+            elif width==680:
+                # A real successful /clinical/login issues clinical:authenticated
+                # without an intervening logout while Undo remains in flight.
+                page.locator("#ceGlobalKey").click()
+                page.locator("#ceGlobalKeyInput").fill(KEY)
+                page.locator("#ceGlobalLoginForm button[type=submit]").click()
+                expect(page.locator("#ceGlobalAuthStatus")).to_contain_text("Συνδέθηκες")
+                page.keyboard.press("Escape")
+                expect(page.locator("#doctorObligationsState")).to_contain_text(
+                    "Επίλεξε μια υποχρέωση")
+            else:
+                page.locator("#doctorObligationsScope").click()
+                expect(page.locator("#doctorObligationsState")).to_contain_text(
+                    "Δοκιμαστικός φάκελος")
+            assert page.locator("#doctorObligationsFeedback").text_content()==""
+            page.evaluate("""() => {
+                window.__staleUndoAuthEvents={unauthenticated:0,requestLogin:0};
+                window.addEventListener("clinical:unauthenticated",
+                    ()=>window.__staleUndoAuthEvents.unauthenticated++);
+                window.addEventListener("clinical:request-login",
+                    ()=>window.__staleUndoAuthEvents.requestLogin++);
+            }""")
+            page.evaluate("""async width => {
+                const reply=window.__lateUndoReply;
+                if(width===1280)reply.resolve(new Response(
+                    JSON.stringify({replayed:false}),{status:200,
+                        headers:{"Content-Type":"application/json"}}));
+                else if(width===680)reply.resolve(new Response(null,{status:401}));
+                else reply.reject(new Error("Delayed restore network failure"));
+                await new Promise(resolve=>setTimeout(resolve,60));
+            }""",width)
+            assert page.locator("#doctorObligationsFeedback").text_content()=="", (
+                "stale Undo response repainted the new account or scope")
+            if width==680:
+                assert page.evaluate("window.__staleUndoAuthEvents")=={
+                    "unauthenticated":0,"requestLogin":0
+                }, "a stale Undo 401 invalidated a newer successful login"
+                expect(page.locator("#doctorObligationsView")).to_be_visible()
+                expect(page.locator("#doctorMainView")).to_be_hidden()
+                expect(page.locator("#doctorObligationsState")).to_contain_text(
+                    "Επίλεξε μια υποχρέωση")
+            assert page.evaluate("document.documentElement.scrollWidth<=innerWidth+1")
+            assert not errors,errors
+            context.close();browser.close()
+    finally:
+        server.should_exit=True;thread.join(10);sock.close()
+
+
 def test_real_lifecycle_cancel_restore_no_plan_and_active_plan(setup):
     app,engine=setup;c,p,path=real_seed(app,engine)
     with Session(engine) as db:source=dict(db.get(EncounterORM,p['source_encounter_id']).payload_json)
@@ -303,7 +586,10 @@ def test_browser_real_obligation_popup_complete_delete_restore(setup,tmp_path):
                 page.locator('#ceGlobalLoginForm button[type=submit]').click();expect(page.locator('#ceGlobalAuthStatus')).to_contain_text('Συνδέθηκες');page.keyboard.press('Escape');page.goto(url)
                 link=page.locator('.patient-chart-grid .patient-obligation-link button');link.click()
                 popup=page.locator('.patient-pending-dialog');expect(popup).to_be_visible()
-                expect(popup.locator('select')).to_have_count(0)
+                # Old universal clinical *plan template* chooser must remain absent.
+                # The NEW category picker is isolated in a collapsed metadata editor.
+                expect(popup.locator('.pending-checkpoint-actions select')).to_have_count(0)
+                expect(popup.locator('.pending-metadata-editor')).not_to_have_attribute('open','')
                 expect(popup).not_to_contain_text('CD: παραλαβή')
                 expect(popup).not_to_contain_text('Παρακολούθηση')
                 expect(popup.get_by_role('button',name='Ναι',exact=True)).to_be_enabled()
@@ -401,6 +687,7 @@ def test_patient_task_groups_and_incoming_sources_remain_separate(setup,tmp_path
         added=db.scalars(select(ClinicalPendingORM).where(ClinicalPendingORM.patient_id==TEST_ID)).all()
         for item in added:item.patient_id='outside-synthetic-scope'
         next(x for x in added if x.description=='Συνθετική ενέργεια 3').status='resolved'
+        next(x for x in added if x.description=='Συνθετική ενέργεια 0').review_date='2026-12-01'
         next(x for x in added if x.description=='Συνθετική ενέργεια 2').status='cancelled';db.commit()
     # A namesake is a separate identity, never merged by the display name.
     other=c.post('/clinical/patients/create',json={'creation_id':str(uuid4()),'full_name':'Protected sentinel'}).json()['patient_id']
@@ -437,9 +724,16 @@ def test_patient_task_groups_and_incoming_sources_remain_separate(setup,tmp_path
                 assert len(set(groups.locator('.doctor-obligation-row').evaluate_all('ns=>ns.map(n=>n.dataset.pendingId)')))==4
                 expect(groups.filter(has_text='Συνθετική ενέργεια 3')).to_have_count(0)
                 assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
+                page.locator('[data-doctor-obligation-group="category"]').click()
+                scheduled=page.locator('.doctor-obligation-group').filter(has_text='Συνθετική ενέργεια 0')
+                expect(scheduled.locator('.doctor-obligation-subhead')).to_contain_text(['Με προθεσμία','Χωρίς προθεσμία'])
                 page.locator('#doctorObligationsView').screenshot(path=str(tmp_path/f'task-groups-{width}.png'))
                 selected=groups.locator('button.doctor-obligation-row').first
                 label=selected.locator('strong').text_content();selected.click()
+                modal=page.locator('#doctorObligationDialog')
+                expect(modal).to_contain_text(label)
+                expect(page.locator('#doctorObligationsView')).to_be_visible()
+                modal.get_by_role('button',name='Άνοιγμα στον φάκελο ασθενούς').click()
                 expect(page.locator('.patient-pending-dialog')).to_contain_text(label)
                 context.close()
             browser.close()

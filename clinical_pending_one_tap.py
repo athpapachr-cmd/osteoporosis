@@ -5,11 +5,13 @@ from __future__ import annotations
 
 import os
 import secrets
+import re
+from datetime import date
 from typing import Literal, Optional
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import Column, DateTime, Integer, JSON, String, UniqueConstraint, select, inspect
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import IntegrityError
@@ -79,6 +81,28 @@ class PendingLifecycleAction(BaseModel):
     expected_revision: int = Field(ge=0)
     cancellation_event_id: str | None = Field(default=None, max_length=36)
     idempotency_key: str = Field(min_length=16, max_length=100, pattern=r"^[a-zA-Z0-9_-]+$")
+
+class PendingMetadataEdit(BaseModel):
+    """Explicit clinician correction of current task metadata, not a visit edit."""
+    model_config = {"extra": "forbid"}
+    item_type: str = Field(min_length=1, max_length=120)
+    review_date: str | None
+    expected_revision: int = Field(ge=0)
+    idempotency_key: str = Field(min_length=16, max_length=100, pattern=r"^[a-zA-Z0-9_-]+$")
+
+    @field_validator("review_date")
+    @classmethod
+    def real_calendar_date(cls, value):
+        if value is not None:
+            if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", value):
+                raise ValueError("Invalid calendar date")
+            try:
+                if date.fromisoformat(value).isoformat() != value:
+                    raise ValueError("Invalid calendar date")
+            except ValueError:
+                raise ValueError("Invalid calendar date") from None
+        return value
+
 
 class AdoptPlan(BaseModel):
     model_config = {"extra": "forbid"}
@@ -155,7 +179,7 @@ def project_checkpoint(session,row):
         "confirmed_keys":list(confirmed),"completed":all(step.key in confirmed for step in plan.steps),
         "history":[{"id":e.id,"checkpoint_key":e.checkpoint_key,"kind":e.kind,"recorded_at":e.recorded_at.isoformat()+"Z",
             "label":("Αναίρεση · " if e.kind=="retracted" else "Όχι ακόμη · " if e.kind=="not_yet_observed" else "")+labels.get(e.checkpoint_key,"Παρακολούθηση υποχρέωσης"),
-            "retracts_event_id":e.retracts_event_id} for e in events if e.kind not in ("plan_approved","cancelled","reopened","permanently_deleted")]}
+            "retracts_event_id":e.retracts_event_id} for e in events if e.kind not in ("plan_approved","cancelled","reopened","permanently_deleted","metadata_corrected")]}
 
 def cancel_pending(db,row,actor,expected_revision,idempotency_key):
     """Same cancellation owner, also used inside an atomic visit amendment."""
@@ -193,6 +217,59 @@ def attach_pending_one_tap_routes(router,engine,protected):
         try:db.commit()
         except IntegrityError:
             db.rollback();raise HTTPException(409,"Checkpoint changed; reload") from None
+
+    @router.post("/patient/{patient_id}/pending/{pending_id}/metadata",dependencies=protected)
+    def correct_metadata(patient_id:str,pending_id:str,action:PendingMetadataEdit,request:Request):
+        """One exact Pending row, its signed source and the existing event audit."""
+        with Session(engine) as db:
+            row,actor=load(db,patient_id,pending_id,request)
+            existing=db.scalar(select(PendingCheckpointEventORM).where(
+                PendingCheckpointEventORM.idempotency_key==action.idempotency_key))
+            allowed={"investigation","test","result","document","follow_up","referral","other"}
+            # Other signed legacy categories may be retained when editing only
+            # the date, but must not be invented by this category chooser.
+            if action.item_type!=row.item_type and action.item_type not in allowed:
+                raise HTTPException(422,"Unsupported obligation category")
+            desired={"item_type":action.item_type,"review_date":action.review_date}
+            if existing is not None:
+                metadata=existing.plan_json or {}
+                if (existing.patient_id!=patient_id or existing.pending_id!=pending_id
+                    or existing.actor_principal_id!=actor.principal_id
+                    or existing.actor_role!=actor.role
+                    or existing.kind!="metadata_corrected"
+                    or existing.checkpoint_key!="__metadata__"
+                    or existing.revision!=action.expected_revision+1
+                    or metadata.get("after")!=desired):
+                    raise HTTPException(409,"Metadata correction idempotency conflict")
+                return {"replayed":True,"event_id":existing.id,
+                        "current":{"item_type":row.item_type,"review_date":row.review_date,
+                                   "status":row.status,"revision":project_lifecycle(db,row)["revision"]}}
+            if row.status not in ("open","awaiting_patient","awaiting_result","resolved"):
+                raise HTTPException(409,"Inactive obligation cannot be edited")
+            events=_events(db,row)
+            if _revision(events)!=action.expected_revision:
+                raise HTTPException(409,"Obligation was updated; reopen it before saving")
+            before={"item_type":row.item_type,"review_date":row.review_date}
+            if before==desired:
+                return {"unchanged":True,"replayed":False,
+                        "current":{**before,"status":row.status,"revision":_revision(events)}}
+            now=utcnow()
+            event=PendingCheckpointEventORM(
+                id=str(uuid4()),idempotency_key=action.idempotency_key,
+                pending_id=row.id,patient_id=patient_id,
+                checkpoint_key="__metadata__",plan_version=1,kind="metadata_corrected",
+                revision=action.expected_revision+1,recorded_at=now,
+                actor_principal_id=actor.principal_id,actor_role=actor.role,
+                plan_json={"before":before,"after":desired}
+            )
+            row.item_type=desired["item_type"]
+            row.review_date=desired["review_date"]
+            row.updated_at=now
+            db.add(event)
+            commit(db)
+            return {"replayed":False,"event_id":event.id,
+                    "current":{**desired,"status":row.status,
+                               "revision":project_lifecycle(db,row)["revision"]}}
 
     @router.post("/patient/{patient_id}/pending/{pending_id}/checkpoint-plan",dependencies=protected)
     def adopt(patient_id:str,pending_id:str,action:AdoptPlan,request:Request):

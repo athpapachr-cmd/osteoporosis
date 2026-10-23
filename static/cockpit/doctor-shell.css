@@ -382,3 +382,77 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
   .doctor-obligation-toolbar{grid-template-columns:minmax(0,1fr)}
   .doctor-obligation-toolbar label:first-child{grid-column:auto}
 }
+
+
+/* Existing Pending owner: clinician-confirmed category / due-date correction. */
+.doctor-obligation-entry{display:flex;align-items:center;gap:7px;border-bottom:1px solid #f0f3f3;min-width:0}
+.doctor-obligation-entry:last-child{border-bottom:0}
+.doctor-obligation-entry .doctor-obligation-row{flex:1;min-width:0;border-bottom:0}
+.doctor-obligation-edit{border:1px solid #d9e5e4;background:#fff;border-radius:9px;padding:8px 10px;font:inherit;font-size:11px;font-weight:700;white-space:nowrap;color:#206b66;cursor:pointer;flex:0 0 auto}
+.doctor-obligation-edit:hover{background:#edf7f4}
+.doctor-obligation-edit:focus-visible{outline:2px solid #328b83;outline-offset:2px}
+.pending-metadata-editor{border:1px solid #e2ebe9;background:#f8fbfa;border-radius:12px;padding:10px 12px;margin:13px 0;min-width:0}
+.pending-metadata-editor>summary{color:#216e66;font-size:13px;font-weight:750;cursor:pointer}
+.pending-metadata-editor[open]>summary{margin-bottom:10px}
+.pending-metadata-fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.pending-metadata-fields label{display:grid;gap:5px;min-width:0;color:#45636b;font-size:12px;font-weight:700}
+.pending-metadata-fields select,.pending-metadata-fields input{box-sizing:border-box;width:100%;min-width:0;min-height:40px;padding:8px 9px;font:inherit;font-size:13px;color:#1f3b45;border:1px solid #d7e4e2;border-radius:9px;background:#fff}
+.pending-metadata-suggestion{display:grid;gap:6px;margin-top:10px}
+.pending-metadata-suggestion small{color:#536f77;font-size:11px;line-height:1.5}
+.pending-metadata-suggestion button{justify-self:start;color:#196c64}
+.pending-metadata-editor>p{font-size:11px;line-height:1.5;margin:9px 0;color:#65818a}
+.pending-metadata-actions{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0 0}
+.pending-metadata-actions button{font-size:12px;padding:9px 11px}
+.pending-metadata-fields :is(select,input):focus-visible{outline:2px solid #328b83;outline-offset:2px}
+@media(max-width:610px){
+  .doctor-obligation-entry{align-items:flex-start;gap:5px}
+  .doctor-obligation-edit{margin-top:9px;padding:7px 8px}
+  .pending-metadata-fields{grid-template-columns:minmax(0,1fr)}
+}
+
+
+/* Independently browsable patient obligations with exact dated/undated subgroup. */
+.doctor-obligation-subgroup{min-width:0;padding:0 2px 5px}
+.doctor-obligation-subgroup+.doctor-obligation-subgroup{border-top:1px solid #e2ecea;margin-top:6px}
+.doctor-obligation-subhead{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#f4f8f7;padding:9px 11px;margin:8px 0 3px;border-radius:10px}
+.doctor-obligation-subhead h4{font-size:12px;font-weight:750;color:#375963;margin:0}
+.doctor-obligation-subhead .doctor-obligation-count{background:white}
+.doctor-obligation-no-date{font-size:11px;color:#758b91;border:1px dashed #c5d5d5;padding:2px 7px;border-radius:7px}
+.doctor-obligation-urgent{color:#a25430;font-size:11px;font-weight:700}
+.doctor-obligations-feedback:not(:empty){display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 13px;background:#eef8f6;border:1px solid #d5eae5;border-radius:11px;margin:10px 0 14px;font-size:12px;color:#245c58}
+.doctor-obligations-feedback button{font:inherit;font-weight:750;color:#176b65;cursor:pointer;background:white;border:1px solid #c7dcd8;border-radius:9px;padding:7px 10px}
+
+/* Single in-place list modal, backed by the existing Pending metadata/lifecycle APIs. */
+.doctor-obligation-dialog{box-sizing:border-box;width:min(560px,calc(100vw - 24px));max-width:none;max-height:min(86vh,740px);margin:auto;padding:20px;border:1px solid #dce9e6;background:#fff;border-radius:17px;box-shadow:0 24px 75px #122e4340;color:#183943;overflow:auto;font:inherit}
+.doctor-obligation-dialog::backdrop{background:#0f2c3c66}
+.doctor-obligation-dialog-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px}
+.doctor-obligation-dialog-identity{min-width:0;overflow-wrap:anywhere}
+.doctor-obligation-dialog-identity h3{font-size:17px;line-height:1.4;margin:3px 0;color:#1d4651;font-weight:750}
+.doctor-obligation-dialog-identity .doctor-obligation-patient{font-size:12px;margin:0;color:#577883;font-weight:600}
+.doctor-obligation-dialog-head-actions{flex:none}
+.doctor-obligation-dialog-close{background:transparent;border:0;color:#748e95;font-size:24px;line-height:1;cursor:pointer;padding:4px 9px;min-width:33px;min-height:33px}
+.doctor-obligation-dialog-context{display:flex;gap:8px 16px;flex-wrap:wrap;border-top:1px solid #e9eeee;border-bottom:1px solid #e9eeee;margin:8px 0 15px;padding:11px 0;font-size:12px;color:#617a83}
+.doctor-obligation-dialog .pending-metadata-editor{margin:10px 0 14px}
+.doctor-obligation-dialog .pending-metadata-editor .pending-metadata-actions{display:flex;gap:7px;flex-wrap:wrap}
+.doctor-obligation-dialog .pending-metadata-actions button{font:inherit;font-size:12px;font-weight:650;border:1px solid #cfdedb;border-radius:9px;background:white;color:#32665f;min-height:35px;padding:7px 12px;cursor:pointer}
+.doctor-obligation-dialog .pending-metadata-actions button.doctor-obligation-save{background:#1d776b;color:white;border-color:#1d776b}
+.doctor-obligation-dialog .pending-metadata-actions button:disabled{opacity:.6;cursor:wait}
+.doctor-obligation-dialog .doctor-obligation-editor-help{font-size:12px;line-height:1.45;color:#667f86}
+.doctor-obligation-dialog-actions{display:flex;flex-wrap:wrap;gap:8px;padding-top:13px;border-top:1px solid #e8eeee;margin-top:12px}
+.doctor-obligation-dialog-actions button{font:inherit;font-size:12px;font-weight:700;background:#fff;border:1px solid #ccdad8;color:#2a5c59;border-radius:10px;padding:9px 11px;cursor:pointer;min-height:38px}
+.doctor-obligation-dialog-actions button.doctor-obligation-delete{color:#a04d37}
+.doctor-obligation-dialog-actions button.doctor-obligation-open-chart{background:#f1f8f6}
+.doctor-obligation-delete-confirmation{padding:12px;margin:12px 0;background:#fbf5f3;border:1px solid #ead5d1;border-radius:11px}
+.doctor-obligation-delete-confirmation[hidden]{display:none!important}
+.doctor-obligation-delete-confirmation p{color:#74493e;margin:0 0 8px;font-size:12px;line-height:1.5}
+.doctor-obligation-delete-confirmation .doctor-obligation-confirm-delete{color:#fff;background:#9b4c39;border-color:#9b4c39}
+.doctor-obligation-dialog-status{font-size:12px;color:#b0523d;line-height:1.45;margin:10px 0;min-height:0}
+.doctor-obligation-dialog-status:empty{display:none}
+.doctor-obligation-readonly{font-size:12px;color:#6b7f87;line-height:1.5}
+.doctor-obligation-dialog :is(button,input,select,summary):focus-visible{outline:2px solid #328b83;outline-offset:3px}
+@media(max-width:620px){
+  .doctor-obligation-dialog{width:calc(100vw - 16px);max-height:86vh;padding:14px;border-radius:14px}
+  .doctor-obligation-dialog-identity h3{font-size:16px}
+  .doctor-obligation-entry .doctor-obligation-edit{font-size:11px;white-space:normal;max-width:96px}
+  .doctor-obligation-dialog-actions{gap:6px}
+}
