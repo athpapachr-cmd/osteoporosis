@@ -5,6 +5,8 @@
 
 **Repo:** `athpapachr-cmd/osteoporosis`.
 **Base verified production main:** `32a87ec8757b21b64dd8837e362810b5a2b9b510`.
+**PR #208:** https://github.com/athpapachr-cmd/osteoporosis/pull/208 (DRAFT, unmerged, design-only).
+**Exact frozen DESIGN-bearing author HEAD:** `806f1523672a654e78a891ee12e330bb6d6eae65`; any later checkpoint must be documentation-only (verify Git compare).
 **New design:** `cockpit/CLINICAL_INBOX_PHASE_A_MULTI_ACCOUNT_CONTRACT_2026-10-23.md`, and affected sections of `cockpit/VISIT_BRIEF_CLINICAL_INBOX_DESIGN_2026-10-07.md`, `cockpit/PRODUCT_CONSTITUTION.md`, `CLINICAL_EXCELLENCE_PLAN.md`, `TODO.md`; exact PR author design head to be pinned after publication.
 **Product Owner:** approved Phase A now, and explicitly asked to **later connect Gmail, iCloud and Hotmail/Outlook accounts**, without activating credentials now.
 
