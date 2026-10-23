@@ -7,7 +7,7 @@
 
 Cockpit helps the clinician see what matters, prepare the encounter and take the next **clinical** action. Its three concerns are clinician attention, clinical action and visit intelligence. Osteoporosis is Module 01, not the whole Cockpit. The existing Reception/calls system remains separately owned.
 
-Home has two first-class entrances: appointment-driven floating **Visit Brief** and an independent, always-current **Clinical Inbox** for Gmail clinical inputs. New labs, MRI/X-ray/imaging reports and GESY notifications can be reviewed and lead to clinician-approved patient communication on the day they arrive, independently of appointment timing. Home should normally show only about **3–4 high-attention incoming items** and provide a direct path to the full unresolved queue. Learning, audit, improvement and utilities remain accessible after immediate clinical needs.
+Home has two first-class entrances: appointment-driven floating **Visit Brief** and an independent, always-current **Clinical Inbox** for clinical inputs from explicitly approved mailbox accounts (Gmail first; later iCloud Mail and Hotmail/Outlook). New labs, MRI/X-ray/imaging reports and GESY notifications can be reviewed and lead to clinician-approved patient communication on the day they arrive, independently of appointment timing. Home should normally show only about **3–4 high-attention incoming items** and provide a direct path to the full unresolved queue. Learning, audit, improvement and utilities remain accessible after immediate clinical needs.
 
 ## Read projections and boundaries
 
@@ -33,11 +33,11 @@ Capture once at the rightful source and reuse everywhere that the contract permi
 
 Visit Brief and Clinical Inbox are views/actions over one clinical-attention lifecycle, not duplicate patient histories or work queues. Labs yield structured candidate values; MRI/imaging yield report/document summaries; GESY notifications yield notification/action context. Linking, marking Reviewed or communicating does not silently promote data or close an awaited item/CareTask. A future deliberate acceptance reuses the protected clinical owner.
 
-Always-on intake belongs to an approved Reception-owned adapter (or a separately reviewed small intake service); the free Cockpit is the clinical consumer and may cold-start. Intake correctness must not depend on opening Cockpit. A durable delivery outbox handles sleep/recovery; its transport state is distinct from the Clinical Excellence review state. Show incomplete/stale/unavailable coverage truthfully.
+Always-on intake belongs to Reception-owned orchestration with separately scoped mailbox-account adapters (or a separately reviewed small intake service); the free Cockpit is the clinical consumer and may cold-start. Intake correctness must not depend on opening Cockpit. A durable delivery outbox handles sleep/recovery; its transport state is distinct from the Clinical Excellence review state. Show incomplete/stale/unavailable coverage truthfully.
 
 Cockpit may present clinician-approved communication actions; Reception owns admission, orchestration, action/idempotency/outcome state, and Zadarma owns transport. A disabled voice agent must not block dashboard actions. Recipient/text/item approval is explicit; provider acceptance, delivery, patient understanding and clinical closure stay distinct. Callback windows remain configured working weekdays 10:00–10:20 and 17:40–18:00 (Asia/Nicosia), without a per-patient booked slot. A standalone full D2 communication inbox remains deferred.
 
-The bounded design and integration gates are at `VISIT_BRIEF_CLINICAL_INBOX_DESIGN_2026-10-07.md`; design status/next action belongs to `CURRENT.md`. This direction does not establish provider access or runtime authority.
+The bounded design and integration gates are at `VISIT_BRIEF_CLINICAL_INBOX_DESIGN_2026-10-07.md`; provider-neutral Phase A account scoping/retention is at `CLINICAL_INBOX_PHASE_A_MULTI_ACCOUNT_CONTRACT_2026-10-23.md`, and design status/next action belongs to `CURRENT.md`. This direction does not establish provider access or runtime authority.
 
 ## Existing system ownership
 

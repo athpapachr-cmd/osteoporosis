@@ -14,7 +14,7 @@ Two independent entrances share one clinical-attention lifecycle:
 
 ```text
 Appointment → floating Visit Brief
-Gmail clinical input → independent Clinical Inbox
+Approved mailbox clinical input → independent Clinical Inbox (Gmail first; iCloud Mail and Hotmail/Outlook as later account adapters)
 
 both → verified patient link → source review → clinician disposition
      → pending clinical action / approved communication → longitudinal context
@@ -65,14 +65,14 @@ The clinical review/action state is shared with Visit Brief. Opening either entr
 Replace the old correctness path `Cockpit opens → search Gmail` with:
 
 ```text
-authorized Gmail read
-  → one always-on Reception-owned intake adapter + durable source receipt/outbox
+authorized read from a separately approved mailbox account/adapter
+  → one always-on Reception-owned intake orchestration + per-account durable source receipt/outbox
   → protected idempotent Clinical Excellence Inbox ingress
   → one protected clinical-attention record
   → Cockpit Inbox and Visit Brief projections
 ```
 
-**Proposed hosting choice:** extend the existing paid Reception service with a bounded background intake job, outside voice/booking request handling. Do not create a second Gmail reader in Cockpit, use the Cal heavy-sync job, change the daily Calendar cron or require keeping the free Cockpit awake. A separate small intake service is an alternative only if Reception cannot safely host this adjacent role; that hosting/cost/ownership change requires a bounded replan before activation.
+**Proposed hosting choice:** extend the existing paid Reception service with a bounded background intake job and provider-scoped adapters, outside voice/booking request handling. Do not create a second provider reader in Cockpit, use the Cal heavy-sync job, change the daily Calendar cron or require keeping the free Cockpit awake. A separate small intake service is an alternative only if Reception cannot safely host this adjacent role; that hosting/cost/ownership change requires a bounded replan before activation.
 
 First integration candidate uses periodic read-only incremental discovery (proposed 5-minute cadence, to be qualified before activation), approved source filters and bounded pages/deadlines. Each completed source batch is durably recorded before advancing its cursor. Page/budget exhaustion leaves coverage incomplete and resumes from a durable continuation; it is not empty-success. An expired Gmail history cursor requires a scoped rescan/reconciliation with deduplication, not loss of unresolved items. Initial discovery must include older unresolved eligible material in the approved lookback, not only today's date. The exact source filter and lookback must be frozen per adapter before enabling it.
 
@@ -104,7 +104,7 @@ All summaries/extracted values remain candidates. Optional AI processing is a se
 
 Design envelopes (not implemented schemas):
 
-- **SourceReceipt** (Reception delivery owner): opaque receipt key, mailbox/account scope, Gmail message ID, source attachment/document keys, source timestamps, adapter/type/version, discovery coverage/cursor, content revision/fingerprint where available, delivery state/attempt/acknowledgement. Gmail is the original source owner.
+- **SourceReceipt** (Reception delivery owner): opaque receipt key, stable authorized mailbox account scope, provider family and provider-native message ID scoped to that account, source attachment/document keys, source timestamps, adapter/type/version, discovery coverage/cursor, content revision/fingerprint where available, delivery state/attempt/acknowledgement. The original mailbox provider owns the source; an ID from one provider/account cannot identify another. Gmail is the first integration, not the schema.
 - **ClinicalAttentionItem** (Clinical Excellence): stable item ID; source receipt/document references; type; source-stated subject; patient-link state/evidence/reviewer/time/version; candidate artifact/provenance/version; clinical review state/reviewer/time; clinician disposition; unresolved clinical action references; Reception communication-action references; record version and sanitized audit metadata.
 - **CommunicationAction** (Reception): immutable action ID/idempotency key; originating attention item/revision; confirmed patient/contact reference; approved recipient/text snapshot and callback-policy version; clinician approval identity/time; attempt state; provider outcome/reference and delivery evidence when available. Cockpit consumes its status; no second send ledger is created there.
 
@@ -166,7 +166,7 @@ All Gmail/Zadarma credentials and tokens stay server-side, encrypted/protected u
 
 Raw email/PDF is fetched on demand by default, processed transiently and cleared after viewing/processing. Durable references support later re-fetch; a deleted/unavailable source yields an explicit unavailable state, not fabricated content. If durable document archiving becomes clinically necessary, it requires a separately approved protected retention/access/deletion contract. Source retention in Gmail is not guaranteed by this design.
 
-For review continuity, only necessary structured candidates, scoped confirmed links, dispositions and communication evidence may persist in protected stores. Before their field-level implementation/activation, freeze the minimal retained fields, owner/access, lifespan/deletion behavior and processor facts. No indefinite candidate retention or implied GDPR/compliance approval. Gmail disconnect stops new reads and marks freshness unavailable; already approved clinical/action history follows its own explicit retention policy, not an automatic erasure guess.
+For review continuity, only necessary structured candidates, scoped confirmed links, dispositions and communication evidence may persist in protected stores. Before their field-level implementation/activation, freeze the minimal retained fields, owner/access, lifespan/deletion behavior and processor facts. No indefinite candidate retention or implied GDPR/compliance approval. Disconnecting **one** mailbox account stops its new reads and marks only that account's freshness unavailable; already approved clinical/action history follows its own explicit retention policy, not an automatic erasure guess. Disconnecting Gmail must not disconnect iCloud/Hotmail and vice versa.
 
 External attachments require allowed MIME/content validation, configured size/page/decompression/time limits, safe non-executable rendering, and sanitized failure states. Do not follow email-provided URLs or execute document instructions. Unsupported/partial extraction remains visible for manual review.
 
@@ -188,7 +188,7 @@ External attachments require allowed MIME/content validation, configured size/pa
 
 **B — first live end-to-end vertical:** one approved laboratory sender family (Medicover first, exact source configuration not yet supplied), one supported PDF adapter, Reception always-on discovery/durable delivery, independent Inbox even without appointments, candidate review and clinician-approved callback/receipt messaging through Reception → Zadarma. Same item visible in later Visit Brief. Keep all source/privacy/send gates above fail-closed; qualify before live activation.
 
-**C — source-specific extensions:** approved MRI and X-ray/imaging report adapters, then GESY notification adapter under the same attention contract. They may share safe document viewing/extraction mechanics but retain their distinct semantics. Unsupported recognized items stay visible for manual handling within enabled source coverage. Broad multi-provider ingestion, image diagnosis, automatic patient matching, authoritative acceptance, automatic tasks/messages/booking and standalone full D2 remain deferred.
+**C — source-specific extensions:** approved MRI and X-ray/imaging report adapters, then GESY notification adapter under the same attention contract. They may share safe document viewing/extraction mechanics but retain their distinct semantics. Unsupported recognized items stay visible for manual handling within enabled source coverage. Multiple external email-account integrations (including iCloud Mail and Hotmail/Outlook), image diagnosis, automatic patient matching, authoritative acceptance, automatic tasks/messages/booking and standalone full D2 remain deferred beyond the first Gmail live vertical; account-neutral identity and UI contracts are frozen in Phase A to prevent replacement.
 
 This sequence supersedes the previous appointment-dependent lab workflow. Inbox identity/workflow contracts are designed now with Visit Brief; its live intake cannot be declared complete merely because the overlay shipped. Each future implementation-bearing slice must have its exact contract, writer and finite evidence plan under its governing CURRENT before code starts.
 
@@ -206,3 +206,19 @@ The independent pre-code review checks implementability and these obligations; i
 8. PHI/tokens/raw provider errors cannot escape to public artifacts, logs or browser persistent storage; document and integration limits fail closed.
 
 REPLAN if identity authority, source type meaning, intake/clinical/transport ownership, result promotion, retention/processor facts, hosting/cost, callback policy or provider feasibility changes materially. Preserve the independently verified Calendar runtime; do not reopen its closed review absent a new source-proven defect. One pre-code R2, bounded correction/closure if needed, and a later exact-head post-code fidelity review are separate gates.
+
+## 14. Product Owner multi-mailbox extension — 2026-10-23 (future, not connected)
+
+The clinician has **approved Phase A now**, and specifically requires that all selected mailbox **accounts** eventually feed one Clinical Inbox, including **Gmail, iCloud Mail and Hotmail/Outlook**. This is an explicit roadmap requirement, **not** authorization to ingest every personal or nonclinical message into the clinical system, to request credentials now, or to activate the accounts before provider/security approval. Multiple accounts of the same provider must work independently. Keep the existing appointment-independent two entrances and one clinical-attention authority.
+
+**Provider-neutral requirement (new affected R2 design delta):**
+- An immutable opaque `mailbox_account_id` uniquely identifies each approved connected account under the authorized clinician/clinic. `provider_family` is an enumeration for adapter selection (`gmail`, `icloud_mail`, `microsoft_outlook`, future extension); it is **not** a patient identity.
+- The source receipt key is uniquely namespaced by `mailbox_account_id + provider_native_message_id + provider_native_part_id + source_revision`. Gmail message IDs, Microsoft Graph item IDs and iCloud IMAP UID/UIDVALIDITY pairs are never compared or treated as globally unique. If a message is forwarded or appears in two accounts, treat them as separate source receipts; any deliberate semantic consolidation must be clinician-reviewed without merging provenance or clinical actions silently.
+- Each account has **independent** consent, allowed folders/labels/source filters, initial lookback, per-account cursor/UID validity, pagination/recovery, disconnect/reconnect state, freshness and last complete coverage time. A global “no new results” statement requires complete current coverage for every enabled account; if one is stale, show that uncertainty without hiding previously received items from other accounts.
+- The clinician sees **one** clinical queue with an optional source-account filter or small source label. Sender/display name/account address never establishes patient identity. Nonclinical emails may remain outside the enabled clinical intake scope; the future user-facing definition of eligible clinical messages/source selectors needs approval per account.
+- Credentials/tokens/passwords stay with the secure integration owner; the Cockpit receives opaque account/source references and minimal review metadata only. Apple-specific authentication (supported third-party authorization or app-specific password if applicable), Microsoft delegated Graph authorization, Google OAuth scopes/verification and processor/retention obligations are separately verified before any account activation. **No secrets, personal email addresses or account messages belong in GitHub.**
+- One account can be disconnected without removing clinical review/history belonging to another. No automatic record deletion is inferred on provider disconnect; apply the separately approved retention contract.
+
+**Implementation order remains strict:** (A) shared clinical-attention and two UI entrances on synthetic/manual typed sources, with provider-neutral data contract and no actual mailbox access; (B) first approved live sender/Gmail adapter with cold-start-safe durable intake only after security and acceptance gates; (C) subsequent iCloud Mail and Hotmail/Outlook account adapters, independently qualified and then combined into the same queue. Source-specific labs/imaging/GESY adapters are separate clinical semantics from mailbox-transport adapters. This extension does **not** move B/C into A or authorize early OAuth/IMAP.
+
+**Owning candidate:** `cockpit/CLINICAL_INBOX_PHASE_A_MULTI_ACCOUNT_CONTRACT_2026-10-23.md`. Prior independent 2026-10-08 R2 PASS for two entrances/ownership/identity is reused; only the affected persistent A contract and multi-account source namespace require bounded new pre-code R2. Neither this addition nor the earlier review grants a runtime writer or production release.
