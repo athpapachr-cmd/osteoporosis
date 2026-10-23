@@ -1,5 +1,7 @@
 # Cockpit Clinical Inbox Phase A + Future Multi-Account — Independent PRE-CODE R2
 
+> **R2 historical handback (2026-10-23):** Original affected review returned **BLOCK / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2=0:1:1**. Product Owner approved an author **design-only P1/P2 correction** at `7a79ec44ae010cfc68f87c39b6f2bc301fa3cc2c`. This request documents the **original** target; do not rerun the full Q1–Q6. Use the [one focused independent P1/P2 closure request](CLINICAL_INBOX_PHASE_A_MULTI_ACCOUNT_PRECODE_R2_P1_P2_CLOSURE_REQUEST_2026-10-23.md). **Independent closure is still PENDING.**
+
 **Date:** 2026-10-23 (Asia/Nicosia).
 **MODE:** ONE fresh independent READ-ONLY affected R2 contract/design review; review only this new bounded Phase-A data/persistence contract and future multi-mailbox source namespace. Reuse [original two-entrance pre-code R2 PASS](VISIT_BRIEF_CLINICAL_INBOX_PRECODE_R2_PASS_RECEIPT_2026-10-08.md) (Q1–Q6). STOP after PASS/BLOCK/UNKNOWN; do not code/merge/deploy/use mail or patient data.
 
