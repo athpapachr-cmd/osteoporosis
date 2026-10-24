@@ -113,51 +113,126 @@ def test_synthetic_attention_is_ephemeral_no_new_persistence(setup):
     assert clean["version"]==0 and clean["review_state"]=="unreviewed"
 
 
-def test_relink_to_different_patient_invalidates_old_review_and_disposition(setup):
-    app, engine = setup
-    c = login(app)
-    assert c.post(PREFIX + "/prepare").status_code == 200
-    endpoint = PREFIX + "/attention/SYN-ATT-MRI"
-    old_id, new_id = SYNTHETIC_161_PATIENT_IDS[:2]
+def test_corrected_source_relink_invalidates_old_patient_review_and_disposition(setup):
+    app,engine=setup
+    c=login(app)
+    assert c.post(PREFIX+"/prepare").status_code==200
+    endpoint=PREFIX+"/attention/SYN-ATT-LAB"
+    old_id,new_id=SYNTHETIC_161_PATIENT_IDS[:2]
 
-    def act(action, expected_version, **fields):
-        return c.post(endpoint + "/action", json={
-            "action": action, "expected_version": expected_version,
-            "idempotency_key": token(), **fields
+    def act(action,expected_version,**fields):
+        return c.post(endpoint+"/action",json={
+            "action":action,"expected_version":expected_version,
+            "idempotency_key":token(),**fields
         })
 
-    assert act("confirm_link", 0, patient_id=old_id, verified_dob="1971-01-01",
-               independently_verified=True).status_code == 200
-    assert act("mark_reviewed", 1).status_code == 200
-    assert act("no_communication", 2).status_code == 200
-    old_brief = c.get(PREFIX + "/attention/brief/" + old_id).json()["items"]
-    assert len(old_brief) == 1 and old_brief[0]["disposition"] == "no_communication"
-    assert act("confirm_link", 2, patient_id=new_id, verified_dob="1972-01-01",
-               independently_verified=True).status_code == 409
-    assert act("confirm_link", 3, patient_id=new_id, verified_dob="1970-01-01",
-               independently_verified=True).status_code == 409
+    old_link=act("confirm_link",0,patient_id=old_id,
+                 evidence_kind="clinician_source_comparison",
+                 evidence_ref="SYN-LAB-ORDER-P1",independently_verified=True)
+    assert old_link.status_code==200,old_link.text
+    assert act("mark_reviewed",1).status_code==200
+    assert act("no_communication",2).status_code==200
+    old_brief=c.get(PREFIX+"/attention/brief/"+old_id).json()["items"]
+    assert len(old_brief)==1 and old_brief[0]["disposition"]=="no_communication"
+    # A second patient cannot be attached on the basis of a different name,
+    # a new referral key, or an invented verification checkbox.
+    assert act("confirm_link",3,patient_id=new_id,
+               evidence_kind="clinician_source_comparison",
+               evidence_ref="SYN-LAB-ORDER-P2",independently_verified=True).status_code==409
 
-    relink = {"action": "confirm_link", "expected_version": 3,
-              "idempotency_key": token(), "patient_id": new_id,
-              "verified_dob": "1972-01-01", "independently_verified": True}
-    result = c.post(endpoint + "/action", json=relink)
-    assert result.status_code == 200, result.text
-    item = result.json()["item"]
-    assert item["item_id"] == "SYN-ATT-MRI" and item["version"] == 4
-    assert item["patient_id"] == new_id and item["identity_state"] == "clinician_confirmed"
-    assert item["review_state"] == "needs_re_review"
+    correction={"expected_version":3,"idempotency_key":token(),
+                "new_revision":"r2","subject_scope":"single_subject"}
+    changed=c.post(endpoint+"/synthetic-revision",json=correction)
+    assert changed.status_code==200,changed.text
+    assert changed.json()["item"]["patient_id"] is None
+    assert changed.json()["item"]["review_state"]=="needs_re_review"
+    assert changed.json()["item"]["disposition"]=="undecided"
+    assert c.get(PREFIX+"/attention/brief/"+old_id).json()["items"]==[]
+    assert c.post(endpoint+"/synthetic-revision",json=correction).json()["replayed"]
+    assert act("confirm_link",3,patient_id=new_id,
+               evidence_kind="clinician_source_comparison",
+               evidence_ref="SYN-LAB-ORDER-P2",independently_verified=True).status_code==409
+    assert act("confirm_link",4,patient_id=new_id,
+               evidence_kind="clinician_source_comparison",
+               evidence_ref="SYN-LAB-ORDER-P1",independently_verified=True).status_code==409
+    relink={"action":"confirm_link","expected_version":4,
+            "idempotency_key":token(),"patient_id":new_id,
+            "evidence_kind":"clinician_source_comparison",
+            "evidence_ref":"SYN-LAB-ORDER-P2","independently_verified":True}
+    result=c.post(endpoint+"/action",json=relink)
+    assert result.status_code==200,result.text
+    item=result.json()["item"]
+    assert item["item_id"]=="SYN-ATT-LAB" and item["version"]==5
+    assert item["patient_id"]==new_id and item["identity_state"]=="clinician_confirmed"
+    assert item["review_state"]=="needs_re_review"
     assert item["review_actor"] is None and item["reviewed_at"] is None
-    assert item["disposition"] == "undecided" and item["candidate_summary"] is None
-    assert c.post(endpoint + "/action", json=relink).json()["replayed"] is True
-    assert c.get(endpoint).json()["item"]["audit_event_count"] == 4
-    assert c.get(PREFIX + "/attention/brief/" + old_id).json()["items"] == []
-    new_brief = c.get(PREFIX + "/attention/brief/" + new_id).json()["items"]
-    assert len(new_brief) == 1 and new_brief[0]["item_id"] == item["item_id"]
-    assert new_brief[0]["review_state"] == "needs_re_review"
-    assert c.post(PREFIX + "/open-booking", json={"booking_uid": BOOKINGS[0]}).json()["brief"]["clinical_attention"] == []
-    assert c.post(PREFIX + "/open-booking", json={"booking_uid": BOOKINGS[1]}).json()["brief"]["clinical_attention"][0]["disposition"] == "undecided"
-    assert act("no_communication", 4).status_code == 409
-    assert act("mark_reviewed", 4).status_code == 200
-    assert act("no_communication", 5).status_code == 200
+    assert item["disposition"]=="undecided" and item["candidate_summary"] is None
+    assert c.post(endpoint+"/action",json=relink).json()["replayed"] is True
+    assert c.get(endpoint).json()["item"]["audit_event_count"]==5
+    assert c.get(PREFIX+"/attention/brief/"+old_id).json()["items"]==[]
+    new_brief=c.get(PREFIX+"/attention/brief/"+new_id).json()["items"]
+    assert len(new_brief)==1 and new_brief[0]["item_id"]==item["item_id"]
+    assert new_brief[0]["review_state"]=="needs_re_review"
+    assert c.post(PREFIX+"/open-booking",json={"booking_uid":BOOKINGS[0]}).json()["brief"]["clinical_attention"]==[]
+    assert c.post(PREFIX+"/open-booking",json={"booking_uid":BOOKINGS[1]}).json()["brief"]["clinical_attention"][0]["disposition"]=="undecided"
+    assert act("no_communication",5).status_code==409
+    assert act("mark_reviewed",5).status_code==200
+    assert act("no_communication",6).status_code==200
     with Session(engine) as db:
-        assert [p.status for p in db.scalars(select(ClinicalPendingORM)).all()] == ["awaiting_patient"] * 3
+        assert [p.status for p in db.scalars(select(ClinicalPendingORM)).all()]==["awaiting_patient"]*3
+
+
+def test_prior_verified_gesy_referral_is_linked_without_dob_not_result_or_task(setup):
+    app,engine=setup
+    c=login(app)
+    assert c.post(PREFIX+"/prepare").status_code==200
+    endpoint=PREFIX+"/attention/SYN-ATT-GESY"
+    item=c.get(endpoint).json()["item"]
+    assert item["source_type"]=="gesy_notice"
+    assert item["source_status"]=="results_available"
+    assert item["candidate_summary"] is None and item["review_state"]=="unreviewed"
+    assert item["identity_state"]=="clinician_confirmed"
+    assert item["link_evidence_kind"]=="verified_referral"
+    assert item["patient_id"]==SYNTHETIC_161_PATIENT_IDS[2]
+    assert item["verified_link_candidate"] is None
+    assert "source_identity_ref" not in item
+    clinical=c.post(PREFIX+"/open-booking",json={"booking_uid":BOOKINGS[2]}).json()
+    assert clinical["brief"]["clinical_attention"][0]["item_id"]=="SYN-ATT-GESY"
+    assert clinical["brief"]["clinical_attention"][0]["review_state"]=="unreviewed"
+    result=c.post(endpoint+"/action",json={
+        "action":"mark_reviewed","expected_version":0,"idempotency_key":token()})
+    assert result.status_code==200
+    assert result.json()["item"]["source_status"]=="results_available"
+    assert result.json()["item"]["candidate_summary"] is None
+    assert result.json()["item"]["disposition"]=="undecided"
+    with Session(engine) as db:
+        assert [p.status for p in db.scalars(select(ClinicalPendingORM)).all()]==["awaiting_patient"]*3
+
+
+def test_qualified_evidence_revocation_blocks_stale_patient_projection():
+    import pytest
+    from fastapi import HTTPException
+    from clinical_attention_phase_a import SyntheticAttentionStore, AttentionAction
+
+    store=SyntheticAttentionStore()
+    patient_id=SYNTHETIC_161_PATIENT_IDS[2]
+    assert store.brief(patient_id)[0]["item_id"]=="SYN-ATT-GESY"
+    assert store.act("SYN-ATT-GESY",AttentionAction(action="mark_reviewed",
+        expected_version=0,idempotency_key=token()),"synthetic-tester",lambda *args:None)
+    store.verified_referrals["SYN-REF-GESY-003"]["state"]="revoked"
+    assert store.brief(patient_id)==[]
+    unsafe=store.detail("SYN-ATT-GESY")["item"]
+    assert unsafe["identity_state"]=="conflict" and unsafe["patient_id"] is None
+    with pytest.raises(HTTPException) as err:
+        store.act("SYN-ATT-GESY",AttentionAction(action="no_communication",
+            expected_version=1,idempotency_key=token()),"synthetic-tester",lambda *args:None)
+    assert err.value.status_code==409
+    # Likewise a revoked or conflicting issuer ID cannot keep the MRI in a Brief.
+    mri=store.get("SYN-ATT-MRI")
+    mri.update(identity_state="clinician_confirmed",
+               patient_id=SYNTHETIC_161_PATIENT_IDS[1],
+               link_evidence_kind="verified_adt",link_evidence_ref="SYN-ADT-002")
+    assert len(store.brief(SYNTHETIC_161_PATIENT_IDS[1]))==1
+    store.verified_adts["SYN-ADT-002"]["state"]="conflict"
+    assert store.brief(SYNTHETIC_161_PATIENT_IDS[1])==[]
+    assert store.detail("SYN-ATT-MRI")["item"]["identity_state"]=="conflict"
