@@ -68,10 +68,10 @@
       if(data.mode!=="synthetic_only"||data.live_provider_connected!==false||
           !Array.isArray(data.items)||!Array.isArray(data.accounts))throw Error("Invalid scope");
       state.items=data.items;state.accounts=data.accounts;
-      const select=$("doctorClinicalInboxAccount"),old=select.value;
-      select.replaceChildren(new Option("Όλες οι δοκιμαστικές πηγές",""));
-      for(const account of data.accounts)select.append(new Option(account.label,account.mailbox_account_id));
-      select.value=data.accounts.some(x=>x.mailbox_account_id===old)?old:"";
+      const accountSelect=$("doctorClinicalInboxAccount"),old=accountSelect.value;
+      accountSelect.replaceChildren(new Option("Όλες οι δοκιμαστικές πηγές",""));
+      for(const account of data.accounts)accountSelect.append(new Option(account.label,account.mailbox_account_id));
+      accountSelect.value=data.accounts.some(x=>x.mailbox_account_id===old)?old:"";
       $("doctorClinicalInboxState").textContent="Μόνο συνθετικά δεδομένα. Καμία πραγματική θυρίδα συνδεδεμένη.";
       rows();
       if(focusItemId&&data.items.some(i=>i.item_id===focusItemId))select(focusItemId);
