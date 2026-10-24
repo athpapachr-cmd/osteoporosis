@@ -250,6 +250,8 @@ def test_real_browser_two_sessions_refresh_and_complete_chart(setup, tmp_path):
                     assert all(x["item_id"]!="SYN-ATT-LAB" for x in
                         login(app).get(PREFIX+"/attention/brief/"+SYNTHETIC_161_PATIENT_IDS[0]).json()["items"])
                 page.locator('[data-attention-id="SYN-ATT-MRI"]').click()
+                # A previous item's success must not appear under a new source.
+                expect(page.locator("#doctorClinicalInboxFeedback")).to_have_text("")
                 if index == 0:
                     details=page.locator("#doctorClinicalInboxDetails")
                     expect(details).to_contain_text("Ασθενής: Δοκιμαστικός Ασθενής 161 2")
