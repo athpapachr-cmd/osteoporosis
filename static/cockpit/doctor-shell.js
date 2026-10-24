@@ -223,12 +223,30 @@
     };
     input.addEventListener("input",draw);draw();input.focus();
   }
+  function showClinicalInbox(){
+    // Normal live Cockpit retains the honest unconnected source placeholder.
+    if(window.CockpitSynthetic!==true ||
+       window.CockpitClinicalBase!=="/clinical/synthetic-161" ||
+       !window.CockpitClinicalInbox){
+      openPanel("inbox",buttons.inbox);return;
+    }
+    if(typeof window.CockpitStoredChart?.canLeave==="function" &&
+       !window.CockpitStoredChart.canLeave())return;
+    close();window.CockpitObligations?.close();
+    $("doctorObligationsView").hidden=true;
+    $("doctorLibraryView").hidden=true;
+    $("doctorMainView").hidden=true;
+    $("doctorClinicalInboxView").hidden=false;
+    window.CockpitClinicalInbox.open();
+  }
   function showObligations() {
     // Preserve an in-progress clinical visit draft. Reuse the chart owner's
     // existing guard and its patient-visible reason, never silently hide it.
     if (typeof window.CockpitStoredChart?.canLeave==="function"
         && !window.CockpitStoredChart.canLeave()) return;
     close();
+    window.CockpitClinicalInbox?.close();
+    $("doctorClinicalInboxView").hidden=true;
     const screen=$("doctorObligationsView");
     if(!screen)return;
     $("doctorMainView").hidden=true;
@@ -246,6 +264,8 @@
   }
   function showLibrary(category="surgery") {
     close();
+    window.CockpitClinicalInbox?.close();
+    $("doctorClinicalInboxView").hidden=true;
     window.CockpitObligations?.close();
     $("doctorObligationsView").hidden=true;
     $("doctorMainView").hidden=true;
@@ -260,6 +280,8 @@
   }
   function showHome() {
     close();
+    window.CockpitClinicalInbox?.close();
+    $("doctorClinicalInboxView").hidden=true;
     window.CockpitObligations?.close();
     $("doctorObligationsView").hidden=true;
     $("doctorLibraryView").hidden=true;
@@ -350,7 +372,8 @@
   }
 
     buttons.day.addEventListener("click",()=>openPanel("day",buttons.day));
-  buttons.inbox.addEventListener("click",()=>openPanel("inbox",buttons.inbox));
+  buttons.inbox.addEventListener("click",showClinicalInbox);
+  $("doctorClinicalInboxBack").addEventListener("click",showHome);
   window.addEventListener("cockpit:clinical-updates-changed",()=>{if(state.panel==="inbox")inbox();else if(state.panel==="tasks")tasks();});
   window.addEventListener("clinical:unauthenticated",()=>{showHome();});
   buttons.tasks.addEventListener("click",showObligations);

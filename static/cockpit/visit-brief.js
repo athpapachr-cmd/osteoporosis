@@ -57,6 +57,9 @@
     $("visitBriefUnlink").hidden=true;
     for(const id of ["visitBriefPrevious","visitBriefPlan","visitBriefPending","visitBriefChecks"])
       $(id).replaceChildren();
+    const attention=$("visitBriefAttention"),heading=$("visitBriefAttentionHeading");
+    if(attention){attention.replaceChildren();attention.hidden=true;}
+    if(heading)heading.hidden=true;
   }
   function invalidate(){
     state.ticket++;
@@ -259,6 +262,19 @@
       evidence("visitBriefPending",(b.pending||[]).map(p=>
         p.description+" · "+(labels[p.status]||"Σε εκκρεμότητα")+(p.review_date?" · "+p.review_date:"")),
         "Δεν υπάρχουν ανοικτές εκκρεμότητες.");
+    }
+    // Existing exact synthetic booking-to-patient fixture is the only
+    // verified read authority. Mixed/unlinked source material never projects.
+    const attention=$("visitBriefAttention"),heading=$("visitBriefAttentionHeading");
+    if(attention&&heading&&window.CockpitSynthetic===true){
+      const safe=(b.clinical_attention||[]).filter(i=>i?.patient_id===b.patient_id
+        &&i.identity_state==="clinician_confirmed"
+        &&i.source_subject_scope==="single_subject");
+      attention.hidden=!safe.length;heading.hidden=!safe.length;
+      if(safe.length)evidence("visitBriefAttention",safe.map(i=>
+        i.source_title+" · "+(i.review_state==="reviewed"?"Ελέγχθηκε":
+          i.review_state==="needs_re_review"?"Χρειάζεται επανέλεγχο":"Δεν ελέγχθηκε")+
+        " · Δεν αποτελεί αποδεκτό κλινικό αποτέλεσμα"),"");
     }
     $("visitBriefChecksTitle").textContent=b.check_heading||"Για το ραντεβού";
     evidence("visitBriefChecks",(b.appointment_checks||[]).map(c=>c.text),
