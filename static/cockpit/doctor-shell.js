@@ -181,7 +181,7 @@
     const ticket=++state.request;
     content.replaceChildren();
     if(!syntheticInbox()){
-      content.append(text("Δεν έχει συνδεθεί ακόμη πραγματική πηγή Clinical Inbox. Δεν υπάρχει αξιόπιστη μέτρηση νέων μηνυμάτων."));
+      content.append(text("Δεν έχει συνδεθεί ακόμη το Clinical Inbox με πραγματική πηγή. Δεν υπάρχει αξιόπιστη μέτρηση νέων κλινικών μηνυμάτων."));
       content.append(newLink("Άνοιγμα Gmail","https://mail.google.com/","Χωρίς σύνδεση με το Cockpit"));
       return;
     }
