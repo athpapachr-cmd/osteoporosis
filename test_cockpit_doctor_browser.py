@@ -158,6 +158,12 @@ def exercise_day_navigation(page,width):
 def exercise_obligations(page,width):
     # Actual obligations JS/CSS with synthetic protected read, no clinical writes.
     page.locator("#doctorTasksButton").click()
+    expect(page.locator("#doctorPopover")).to_be_visible()
+    expect(page.locator("#doctorPopoverContent button.doctor-action-row")).to_have_count(5)
+    expect(page.locator("#doctorPopoverContent")).to_contain_text("Ασθενής Δοκιμής Α")
+    expect(page.locator("#doctorObligationsView")).to_be_hidden()
+    # Top icon only peeks; full-screen list is a deliberate second control.
+    page.locator("#doctorPopoverContent").get_by_role("button",name="Όλες οι υποχρεώσεις").click()
     expect(page.locator("#doctorObligationsView")).to_be_visible()
     expect(page.locator("#doctorMainView")).to_be_hidden()
     expect(page.locator("#doctorLibraryView")).to_be_hidden()
@@ -251,16 +257,17 @@ def exercise_obligations(page,width):
     }""")
     page.locator("#doctorTasksButton").click()
     assert page.evaluate("typeof window.__releaseLateObligations === 'function'")
-    page.locator("#doctorObligationsBack").click()
+    page.locator("#doctorPopoverClose").click()
     page.evaluate("""async () => {
         window.__releaseLateObligations();
         await new Promise(r=>setTimeout(r,0));
         window.fetch=window.__priorFetch;
     }""")
+    expect(page.locator("#doctorPopover")).to_be_hidden()
+    assert "STALE_PATIENT_NAME" not in page.locator("#doctorPopoverContent").text_content()
     expect(page.locator("#doctorObligationsView")).to_be_hidden()
-    assert "STALE_PATIENT_NAME" not in page.locator("#doctorObligationsRows").text_content()
     assert page.evaluate("document.documentElement.scrollWidth<=innerWidth+1")
-    assert not page.locator("#doctorObligationsRows").locator("*").count()
+    assert not page.locator("#doctorPopoverContent").locator("*").count()
     page.evaluate("delete window.CockpitStoredChart; delete window.__chosenObligation;")
 
 
