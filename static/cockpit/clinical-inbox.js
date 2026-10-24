@@ -76,7 +76,16 @@
       rows();
     }catch(e){
       if(!current(g))return;
+      if(e.status===401){
+        // Only the current clinician's denied read may invalidate a session.
+        window.dispatchEvent(new Event("clinical:unauthenticated"));
+        window.dispatchEvent(new Event("clinical:request-login"));
+        return;
+      }
+      // Never keep a formerly authorized patient projection after an error.
+      state.items=[];state.accounts=[];state.id=null;
       $("doctorClinicalInboxRows").replaceChildren();
+      $("doctorClinicalInboxDetails").replaceChildren();
       $("doctorClinicalInboxState").textContent="Η συνθετική πηγή δεν είναι διαθέσιμη. Δεν δηλώνεται ότι δεν υπάρχουν μηνύματα.";
     }
   }
@@ -92,6 +101,11 @@
       render(data.item,g);
     }catch(e){
       if(!current(g,id)||ticket!==state.selection)return;
+      if(e.status===401){
+        window.dispatchEvent(new Event("clinical:unauthenticated"));
+        window.dispatchEvent(new Event("clinical:request-login"));
+        return;
+      }
       box.replaceChildren(make("p","clinical-inbox-note","Δεν επιβεβαιώθηκε το αντικείμενο."));
     }
   }
