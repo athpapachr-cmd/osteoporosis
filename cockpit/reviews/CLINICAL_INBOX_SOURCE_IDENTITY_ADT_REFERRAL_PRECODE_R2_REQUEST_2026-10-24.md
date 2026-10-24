@@ -3,7 +3,10 @@
 **Date:** 2026-10-24 Asia/Nicosia. **MODE:** ONE independent **READ-ONLY affected design R2** on a strictly docs-only new patient/source identity contract, with previously reviewed ClinicalAttention/Visit Brief contracts reused. STOP at `PASS/BLOCK/UNKNOWN`; no code, DB, PHI, provider connection, merge, deploy, patient identity lookup or external communication.
 
 **Repo:** `athpapachr-cmd/osteoporosis`. **Verified production main:** `bccaf10aead6394f545ec44f735aa12abcb37fed`, PR #208 synthetic Inbox deployed but no live mailbox.
-**Design:** `cockpit/CLINICAL_INBOX_VERIFIED_SOURCE_IDENTITY_ADT_REFERRAL_2026-10-24.md`, exact blob/PR head to be pinned at publication.
+**PR #210:** https://github.com/athpapachr-cmd/osteoporosis/pull/210 (DRAFT, unmerged).
+**Frozen substantive design HEAD:** `50944643cc5c0c40e1e6d698b79269559beddde1`.
+**Contract blob:** `4f1f1111814d841989954ec0d6095635d8f2ccd7`. **Original R2 request blob:** `126735f22acbc5acefe222cc66511330bb5f414c`.
+**Design:** `cockpit/CLINICAL_INBOX_VERIFIED_SOURCE_IDENTITY_ADT_REFERRAL_2026-10-24.md`. Any later PR HEAD must be compared to the substantive head and be documentation/current-only.
 **Prior independent source:** [two-entry clinical Inbox](../VISIT_BRIEF_CLINICAL_INBOX_DESIGN_2026-10-07.md), [multi-account source/identity contract](../CLINICAL_INBOX_PHASE_A_MULTI_ACCOUNT_CONTRACT_2026-10-23.md), #208 pre-code and post-code 0:0:0. No re-review of Q1–Q6 or P1/P2; inspect direct affected delta only.
 **Product Owner correction:** DOB is an impractical mandatory second identity field; use **already verified ADT/qualified clinical identifier, or existing verified patient-to-referral source evidence**, with manual clinician verification when strong mapping is absent. This is **not** authorization to harvest personal IDs from mail or the separate surgery queue.
 **Parallel UI:** [PR #209](https://github.com/athpapachr-cmd/osteoporosis/pull/209) handles top-right dropdown peeks separately under R1. No overlap or identity code in that PR.
