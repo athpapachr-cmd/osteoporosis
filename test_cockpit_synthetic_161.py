@@ -204,6 +204,19 @@ def test_real_browser_two_sessions_refresh_and_complete_chart(setup, tmp_path):
                 expect(page.locator("#doctorPopover")).to_be_visible()
                 expect(page.locator("#doctorPopoverContent")).to_contain_text("Συνθετική γνωμάτευση MRI")
                 expect(page.locator("#doctorClinicalInboxView")).to_be_hidden()
+                # Regression: a recent-item click must focus the actual synthetic
+                # detail, not call the account <select> DOM element as a function.
+                page.locator("#doctorPopoverContent").get_by_role(
+                    "button",name="Συνθετική γνωμάτευση MRI").click()
+                expect(page.locator("#doctorClinicalInboxView")).to_be_visible()
+                expect(page.locator("#doctorClinicalInboxDetails")).to_contain_text("Συνθετική γνωμάτευση MRI")
+                expect(page.locator('#doctorClinicalInboxRows [data-attention-id="SYN-ATT-MRI"]')).to_have_attribute(
+                    "aria-pressed","true")
+                assert not errors, errors
+                page.locator("#doctorClinicalInboxBack").click()
+                expect(page.locator("#doctorClinicalInboxDetails")).to_be_empty()
+                page.locator("#doctorInboxButton").click()
+                expect(page.locator("#doctorPopover")).to_be_visible()
                 page.locator("#doctorPopoverContent").get_by_role("button",name="Όλα τα κλινικά εισερχόμενα").click()
                 expect(page.locator("#doctorClinicalInboxView")).to_be_visible()
                 expect(page.locator("#doctorClinicalInboxState")).to_contain_text("Καμία πραγματική")
