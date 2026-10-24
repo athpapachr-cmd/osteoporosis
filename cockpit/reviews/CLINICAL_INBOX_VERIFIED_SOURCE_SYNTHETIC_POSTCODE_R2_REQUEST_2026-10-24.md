@@ -20,7 +20,7 @@
 | `test_cockpit_attention_phase_a.py` | `e7bafdd974303946ab3ee5a6f9388a31bc6d2f62` |
 | `test_cockpit_synthetic_161.py` | `b45d5f8a0b4f77c8cc75baa60565c26c42fb11bf` |
 
-Author evidence: GitHub Actions [Visit Brief/#161 workflow](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/40118327298), plus current PR checks, are the appropriate targeted harness. **Record actual outcomes; CI trigger/running is NOT a PASS.** Do not run broad duplicate tests solely for review.
+Author evidence: On the exact frozen substantive code/test HEAD, GitHub Actions [Visit Brief/#161 workflow 40118327298](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/40118327298) **SUCCESS**, observed job logs **51 existing Python tests PASSED + 16 synthetic/backend/actual Chromium tests PASSED**, with V3 JS, V4 real-Chromium popovers, syntax and diff hygiene PASS. Relevant [Home 40118327337](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/40118327337), [Canonical 40118327274](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/40118327274), Visit Capture and Surgery CI SUCCESS. Reuse this author evidence without treating it as **independent post-code R2 PASS** or as merge/deploy authority. Do not run duplicate broad tests merely to review the same bytes.
 
 ## Five finite affected questions
 
