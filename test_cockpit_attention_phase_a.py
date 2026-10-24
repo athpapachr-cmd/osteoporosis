@@ -95,3 +95,53 @@ def test_synthetic_attention_is_ephemeral_no_new_persistence(setup):
     other=login(application(engine))
     clean=other.get(PREFIX+"/attention/SYN-ATT-LAB").json()["item"]
     assert clean["version"]==0 and clean["review_state"]=="unreviewed"
+
+
+def test_relink_to_different_patient_invalidates_old_review_and_disposition(setup):
+    app, engine = setup
+    c = login(app)
+    assert c.post(PREFIX + "/prepare").status_code == 200
+    endpoint = PREFIX + "/attention/SYN-ATT-MRI"
+    old_id, new_id = SYNTHETIC_161_PATIENT_IDS[:2]
+
+    def act(action, expected_version, **fields):
+        return c.post(endpoint + "/action", json={
+            "action": action, "expected_version": expected_version,
+            "idempotency_key": token(), **fields
+        })
+
+    assert act("confirm_link", 0, patient_id=old_id, verified_dob="1971-01-01",
+               independently_verified=True).status_code == 200
+    assert act("mark_reviewed", 1).status_code == 200
+    assert act("no_communication", 2).status_code == 200
+    old_brief = c.get(PREFIX + "/attention/brief/" + old_id).json()["items"]
+    assert len(old_brief) == 1 and old_brief[0]["disposition"] == "no_communication"
+    assert act("confirm_link", 2, patient_id=new_id, verified_dob="1972-01-01",
+               independently_verified=True).status_code == 409
+    assert act("confirm_link", 3, patient_id=new_id, verified_dob="1970-01-01",
+               independently_verified=True).status_code == 409
+
+    relink = {"action": "confirm_link", "expected_version": 3,
+              "idempotency_key": token(), "patient_id": new_id,
+              "verified_dob": "1972-01-01", "independently_verified": True}
+    result = c.post(endpoint + "/action", json=relink)
+    assert result.status_code == 200, result.text
+    item = result.json()["item"]
+    assert item["item_id"] == "SYN-ATT-MRI" and item["version"] == 4
+    assert item["patient_id"] == new_id and item["identity_state"] == "clinician_confirmed"
+    assert item["review_state"] == "needs_re_review"
+    assert item["review_actor"] is None and item["reviewed_at"] is None
+    assert item["disposition"] == "undecided" and item["candidate_summary"] is None
+    assert c.post(endpoint + "/action", json=relink).json()["replayed"] is True
+    assert c.get(endpoint).json()["item"]["audit_event_count"] == 4
+    assert c.get(PREFIX + "/attention/brief/" + old_id).json()["items"] == []
+    new_brief = c.get(PREFIX + "/attention/brief/" + new_id).json()["items"]
+    assert len(new_brief) == 1 and new_brief[0]["item_id"] == item["item_id"]
+    assert new_brief[0]["review_state"] == "needs_re_review"
+    assert c.post(PREFIX + "/open-booking", json={"booking_uid": BOOKINGS[0]}).json()["brief"]["clinical_attention"] == []
+    assert c.post(PREFIX + "/open-booking", json={"booking_uid": BOOKINGS[1]}).json()["brief"]["clinical_attention"][0]["disposition"] == "undecided"
+    assert act("no_communication", 4).status_code == 409
+    assert act("mark_reviewed", 4).status_code == 200
+    assert act("no_communication", 5).status_code == 200
+    with Session(engine) as db:
+        assert [p.status for p in db.scalars(select(ClinicalPendingORM)).all()] == ["awaiting_patient"] * 3

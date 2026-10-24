@@ -368,3 +368,85 @@ def test_obligation_origin_and_updates_share_persisted_history(setup):
     assert item["history"] == second.get(route).json()["pending"][0]["history"] == reopened["history"]
     assert [e["kind"] for e in item["history"]] == ["created", "received", "reopened"]
     assert second.get(route).json()["visits"] == chart["visits"]  # source is never rewritten
+
+
+def test_browser_eligible_patient_lookup_401_is_current_session_only(setup):
+    """Real #161 browser: superseded 401 ignored, current 401 purges and asks for login."""
+    import shutil
+    import socket
+    import threading
+    import uvicorn
+    from playwright.sync_api import sync_playwright, expect
+
+    app, engine = setup
+    sock = socket.socket()
+    sock.bind(("127.0.0.1", 0))
+    port = sock.getsockname()[1]
+    server = uvicorn.Server(uvicorn.Config(app, log_level="error"))
+    thread = threading.Thread(target=server.run, kwargs={"sockets": [sock]}, daemon=True)
+    thread.start()
+    try:
+        with sync_playwright() as pw:
+            browser = pw.chromium.launch(executable_path=shutil.which("google-chrome") or shutil.which("chromium"))
+            context = browser.new_context(viewport={"width": 680, "height": 900})
+            page = context.new_page()
+            page.set_default_timeout(10000)
+            page.goto(f"http://localhost:{port}" + PREFIX + "/")
+            page.locator("#ceGlobalKey").click()
+            page.locator("#ceGlobalKeyInput").fill(KEY)
+            page.locator("#ceGlobalLoginForm button[type=submit]").click()
+            page.locator("#synthetic161Prepare").click()
+            expect(page.locator("#synthetic161Status")).to_contain_text("Η δοκιμή αποθηκεύτηκε")
+            page.locator("#doctorInboxButton").click()
+            expect(page.locator("#doctorClinicalInboxRows [data-attention-id]")).to_have_count(3)
+            page.evaluate("""() => {
+                window.__unauthedEligibleCount = 0;
+                window.addEventListener("clinical:unauthenticated",
+                    () => window.__unauthedEligibleCount++);
+                window.__realEligibleFetch = window.fetch.bind(window);
+                window.fetch = (url,opts) =>
+                    String(url).endsWith("/attention/eligible-patients")
+                    ? new Promise(resolve => {
+                        window.__releaseOldEligible401 = () =>
+                            resolve(new Response(null,{status:401}));
+                      })
+                    : window.__realEligibleFetch(url,opts);
+            }""")
+            page.locator('[data-attention-id="SYN-ATT-LAB"]').click()
+            page.wait_for_function('typeof window.__releaseOldEligible401==="function"')
+            expect(page.locator("#doctorClinicalInboxDetails form")).to_have_count(1)
+            # Submit the ACTUAL protected login, which replaces the in-flight
+            # source context; dispatching a fabricated auth event is insufficient.
+            if page.locator("#ceGlobalAccessPanel").is_hidden():
+                page.locator("#ceGlobalKey").click()
+            page.locator("#ceGlobalKeyInput").fill(KEY)
+            page.locator("#ceGlobalLoginForm button[type=submit]").click()
+            expect(page.locator("#ceGlobalAuthStatus")).to_contain_text("Συνδέθηκες")
+            expect(page.locator("#doctorClinicalInboxRows [data-attention-id]")).to_have_count(3)
+            page.evaluate("""async () => {
+                window.__releaseOldEligible401();
+                await new Promise(resolve => setTimeout(resolve, 50));
+            }""")
+            assert page.evaluate("window.__unauthedEligibleCount") == 0
+            expect(page.locator("#doctorClinicalInboxView")).to_be_visible()
+            expect(page.locator("#doctorClinicalInboxDetails")).to_be_empty()
+
+            # A 401 from the CURRENT eligible-patients read must immediately
+            # remove all protected rows and forms and show the existing login.
+            page.evaluate("""() => {
+                window.fetch = (url,opts) =>
+                    String(url).endsWith("/attention/eligible-patients")
+                    ? Promise.resolve(new Response(null,{status:401}))
+                    : window.__realEligibleFetch(url,opts);
+            }""")
+            page.locator('[data-attention-id="SYN-ATT-MRI"]').click()
+            expect(page.locator("#doctorClinicalInboxView")).to_be_hidden()
+            expect(page.locator("#doctorClinicalInboxDetails")).to_be_empty()
+            expect(page.locator("#doctorClinicalInboxRows")).to_be_empty()
+            expect(page.locator("#ceGlobalAccessPanel")).to_be_visible()
+            assert page.evaluate("window.__unauthedEligibleCount") == 1
+            context.close()
+            browser.close()
+    finally:
+        server.should_exit = True
+        thread.join(timeout=5)

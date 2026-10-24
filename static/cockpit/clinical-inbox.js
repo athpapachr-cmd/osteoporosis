@@ -179,9 +179,22 @@
     });
     box.append(form);
     api("/eligible-patients").then(d=>{
-      if(!current(g,item.item_id)||!box.contains(form)||!Array.isArray(d.patients))return;
+      if(!current(g,item.item_id)||!box.contains(form))return;
+      if(d.mode!=="synthetic_only"||!Array.isArray(d.patients))
+        throw Error("Invalid synthetic patient scope");
       for(const p of d.patients)patient.append(new Option(p.name,p.patient_id));
-    }).catch(()=>{});
+    }).catch(e=>{
+      // A superseded read must not revoke the replacement clinician session.
+      if(!current(g,item.item_id)||!box.contains(form))return;
+      form.remove(); // No patient-link action survives failed identity coverage.
+      if(e.status===401){
+        window.dispatchEvent(new Event("clinical:unauthenticated"));
+        window.dispatchEvent(new Event("clinical:request-login"));
+      }else{
+        box.append(make("p","clinical-inbox-warning",
+          "Δεν επιβεβαιώθηκαν οι συνθετικοί ασθενείς. Ανανέωσε πριν από σύνδεση."));
+      }
+    });
   }
   function open(){
     clear();state.active=true;view.hidden=false;

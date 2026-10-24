@@ -122,6 +122,13 @@ class SyntheticAttentionStore:
                 if not req.independently_verified or not req.patient_id or not req.verified_dob:
                     raise HTTPException(422,"Independent identifier verification required")
                 verify(req.patient_id,req.verified_dob)
+                # An earlier clinical review/disposition belongs to the OLD
+                # confirmed patient. Never carry it to another patient/Brief.
+                if (item["identity_state"]=="clinician_confirmed"
+                        and item["patient_id"]!=req.patient_id):
+                    item.update(review_state="needs_re_review",review_actor=None,
+                                reviewed_at=None,disposition="undecided",
+                                candidate_summary=None)
                 item.update(patient_id=req.patient_id,identity_state="clinician_confirmed",
                             link_evidence_kind="synthetic_exact_id_dob")
             elif req.action=="mark_reviewed":
