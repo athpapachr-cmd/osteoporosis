@@ -145,6 +145,11 @@ class SyntheticAttentionStore:
             if replay is not None:return replay
             if req.expected_version!=item["version"] or req.new_revision==item["active_source_revision"]:
                 raise HTTPException(409,"Stale or duplicate source revision")
+            # A mixed/unknown document must never become single-subject merely
+            # because a synthetic adapter claims so; safe segmentation needs
+            # separately reviewed evidence and explicit clinician verification.
+            if item["source_subject_scope"]!="single_subject" and req.subject_scope=="single_subject":
+                raise HTTPException(409,"Independent subject segmentation required")
             if req.subject_scope!=item["source_subject_scope"]:
                 item.update(patient_id=None,identity_state="unlinked",link_evidence_kind=None)
             item.update(active_source_revision=req.new_revision,
