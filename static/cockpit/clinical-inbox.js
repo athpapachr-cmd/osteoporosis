@@ -99,6 +99,8 @@
     if(!state.active||state.busy)return;
     const g=state.generation,ticket=++state.selection;state.id=id;
     const box=$("doctorClinicalInboxDetails");box.replaceChildren(make("p","clinical-inbox-note","Φόρτωση…"));
+    // A confirmation belongs to the PREVIOUS item only, never the new selection.
+    $("doctorClinicalInboxFeedback").textContent="";
     rows();
     try{
       const data=await api("/"+encodeURIComponent(id));
@@ -235,6 +237,7 @@
   $("doctorClinicalInboxAccount").addEventListener("change",rows);
   $("doctorClinicalInboxReviewFilter").addEventListener("change",rows);
   $("doctorClinicalInboxReload").addEventListener("click",()=>{state.id=null;
+    $("doctorClinicalInboxFeedback").textContent="";
     $("doctorClinicalInboxDetails").replaceChildren();load();});
   window.addEventListener("clinical:unauthenticated",close);
   window.addEventListener("clinical:authenticated",()=>{
