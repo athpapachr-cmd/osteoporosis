@@ -220,23 +220,31 @@ def test_real_browser_two_sessions_refresh_and_complete_chart(setup, tmp_path):
                 page.locator("#doctorPopoverContent").get_by_role("button",name="Όλα τα κλινικά εισερχόμενα").click()
                 expect(page.locator("#doctorClinicalInboxView")).to_be_visible()
                 expect(page.locator("#doctorClinicalInboxState")).to_contain_text("Καμία πραγματική")
-                expect(page.locator("#doctorClinicalInboxRows [data-attention-id]")).to_have_count(3)
+                expect(page.locator("#doctorClinicalInboxRows [data-attention-id]")).to_have_count(4)
                 page.locator("#doctorClinicalInboxAccount").select_option("syn-icloud")
                 expect(page.locator("#doctorClinicalInboxRows [data-attention-id]")).to_have_count(1)
                 expect(page.locator('[data-attention-id="SYN-ATT-LAB"]')).to_be_visible()
                 page.locator("#doctorClinicalInboxAccount").select_option("")
-                expect(page.locator("#doctorClinicalInboxRows [data-attention-id]")).to_have_count(3)
+                expect(page.locator("#doctorClinicalInboxRows [data-attention-id]")).to_have_count(4)
                 expect(page.locator("#doctorInboxBadge")).to_be_hidden()
                 page.locator('[data-attention-id="SYN-ATT-MIXED"]').click()
                 expect(page.locator("#doctorClinicalInboxDetails")).to_contain_text("μόνο στο Inbox")
                 expect(page.locator("#doctorClinicalInboxDetails form")).to_have_count(0)
+                page.locator('[data-attention-id="SYN-ATT-GESY"]').click()
+                expect(page.locator("#doctorClinicalInboxDetails")).to_contain_text("Αποτελέσματα διαθέσιμα")
+                expect(page.locator("#doctorClinicalInboxDetails")).to_contain_text("παραπεμπτικό")
+                expect(page.locator("#doctorClinicalInboxDetails form")).to_have_count(0)
+                page.locator('[data-attention-id="SYN-ATT-LAB"]').click()
+                expect(page.locator("#doctorClinicalInboxDetails")).to_contain_text("Το όνομα δεν αρκεί")
+                expect(page.locator("#doctorClinicalInboxDetails form")).to_have_count(1)
                 page.locator('[data-attention-id="SYN-ATT-MRI"]').click()
                 if index == 0:
                     details=page.locator("#doctorClinicalInboxDetails")
-                    details.get_by_label("Δοκιμαστικός ασθενής").select_option(SYNTHETIC_161_PATIENT_IDS[1])
-                    details.get_by_label("Ανεξάρτητη ημερομηνία γέννησης").fill("1972-01-01")
-                    details.locator('input[type="checkbox"]').check()
-                    details.get_by_role("button",name="Επιβεβαίωση συνθετικής σύνδεσης").click()
+                    expect(details.get_by_label("Δοκιμαστικός ασθενής")).to_have_value(SYNTHETIC_161_PATIENT_IDS[1])
+                    expect(details.get_by_label("Δοκιμαστικός ασθενής")).to_be_disabled()
+                    expect(details.get_by_label("Ανεξάρτητη ημερομηνία γέννησης")).to_have_count(0)
+                    expect(details.get_by_role("button",name="Επιβεβαίωση ασθενούς")).to_be_enabled()
+                    details.get_by_role("button",name="Επιβεβαίωση ασθενούς").click()
                     expect(details).to_contain_text(SYNTHETIC_161_PATIENT_IDS[1])
                     details.get_by_role("button",name="Ελέγχθηκε",exact=True).click()
                     expect(details).to_contain_text("reviewed")
@@ -283,7 +291,7 @@ def test_real_browser_two_sessions_refresh_and_complete_chart(setup, tmp_path):
                     page.locator('[data-attention-id="SYN-ATT-LAB"]').click()
                     page.wait_for_function("typeof window.__releaseLateAttention401==='function'")
                     page.evaluate('window.dispatchEvent(new Event("clinical:authenticated"))')
-                    expect(page.locator("#doctorClinicalInboxRows [data-attention-id]")).to_have_count(3)
+                    expect(page.locator("#doctorClinicalInboxRows [data-attention-id]")).to_have_count(4)
                     page.evaluate("""async () => {
                         window.__releaseLateAttention401();
                         await new Promise(resolve=>setTimeout(resolve,30));
@@ -425,7 +433,7 @@ def test_browser_eligible_patient_lookup_401_is_current_session_only(setup):
             page.locator("#doctorInboxButton").click()
             expect(page.locator("#doctorPopover")).to_be_visible()
             page.locator("#doctorPopoverContent").get_by_role("button",name="Όλα τα κλινικά εισερχόμενα").click()
-            expect(page.locator("#doctorClinicalInboxRows [data-attention-id]")).to_have_count(3)
+            expect(page.locator("#doctorClinicalInboxRows [data-attention-id]")).to_have_count(4)
             page.evaluate("""() => {
                 window.__unauthedEligibleCount = 0;
                 window.addEventListener("clinical:unauthenticated",
@@ -449,7 +457,7 @@ def test_browser_eligible_patient_lookup_401_is_current_session_only(setup):
             page.locator("#ceGlobalKeyInput").fill(KEY)
             page.locator("#ceGlobalLoginForm button[type=submit]").click()
             expect(page.locator("#ceGlobalAuthStatus")).to_contain_text("Συνδέθηκες")
-            expect(page.locator("#doctorClinicalInboxRows [data-attention-id]")).to_have_count(3)
+            expect(page.locator("#doctorClinicalInboxRows [data-attention-id]")).to_have_count(4)
             page.evaluate("""async () => {
                 window.__releaseOldEligible401();
                 await new Promise(resolve => setTimeout(resolve, 50));
