@@ -184,8 +184,7 @@ def build_synthetic_161_router(engine):
 
     def synthetic_patients():
         with Session(engine) as db:
-            return [{"patient_id":p.patient_id,"name":p.demographics_json["full_name"],
-                     "dob":p.demographics_json["dob"]}
+            return [{"patient_id":p.patient_id,"name":p.demographics_json["full_name"]}
                     for p in (_test_patient(db,pid) for pid in SYNTHETIC_161_PATIENT_IDS)]
 
     router.include_router(build_synthetic_attention_router(
