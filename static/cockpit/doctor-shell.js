@@ -205,7 +205,7 @@
         content.append(action(item.source_title,
           (account?.label||"Συνθετική πηγή")+" · "+
           (item.review_state==="needs_re_review"?"Επανέλεγχος":
-           item.review_state==="reviewed"?"Ελέγχθηκε":"Δεν ελέγχθηκε"),
+           item.review_state==="reviewed"?"Επισκοπήθηκε":"Δεν επισκοπήθηκε"),
           ()=>showClinicalInbox(item.item_id)));
       }
       if(!data.items.length)content.append(text("Δεν υπάρχουν συνθετικές εγγραφές στην τρέχουσα δοκιμή."));
