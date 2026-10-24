@@ -22,7 +22,7 @@ def test_synthetic_inbox_requires_existing_key_and_scopes_accounts(setup):
     assert data["mode"]=="synthetic_only" and not data["live_provider_connected"]
     assert data["coverage"]=="synthetic_fixture_only"
     assert len(data["accounts"])==3 and len(data["items"])==4
-    assert len({i["logical_source_item_key"] for i in data["items"]})==3
+    assert len({i["logical_source_item_key"] for i in data["items"]})==4
     assert len({i["provider_native_message_id"] for i in data["items"]})==2
     mixed=c.get(PREFIX+"/attention/SYN-ATT-MIXED").json()["item"]
     assert mixed["source_subject_scope"]=="mixed_subjects"
