@@ -245,7 +245,7 @@
         ["open","awaiting_patient","awaiting_result"].includes(i.status));
       active.sort((a,b)=>String(b.updated_at||"").localeCompare(String(a.updated_at||"")));
       content.replaceChildren();
-      content.append(text("Οι 4 πιο πρόσφατες ανοικτές υποχρεώσεις από την τρέχουσα προστατευμένη προβολή (έως 100 εγγραφές)."));
+      content.append(text("Πρόσφατες ανοικτές υποχρεώσεις (έως 4, από την προστατευμένη προβολή έως 100 εγγραφών)."));
       if(!active.length)content.append(text(
         "Δεν υπάρχουν ανοικτές υποχρεώσεις στην τρέχουσα προβολή."));
       for(const item of active.slice(0,4)){
