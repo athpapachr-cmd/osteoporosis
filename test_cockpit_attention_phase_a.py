@@ -27,6 +27,11 @@ def test_synthetic_inbox_requires_existing_key_and_scopes_accounts(setup):
     mixed=c.get(PREFIX+"/attention/SYN-ATT-MIXED").json()["item"]
     assert mixed["source_subject_scope"]=="mixed_subjects"
     assert mixed["candidate_summary"] is None and mixed["patient_id"] is None
+    # A mixed document cannot be promoted to one patient just by changing its scope.
+    assert c.post(PREFIX+"/attention/SYN-ATT-MIXED/synthetic-revision",json={
+        "expected_version":0,"idempotency_key":token(),"new_revision":"r2",
+        "subject_scope":"single_subject"
+    }).status_code==409
     assert c.get(PREFIX+"/attention/brief/outside-synthetic-scope").status_code==404
     with Session(engine) as db:
         assert db.scalar(select(func.count()).select_from(ClinicalPendingORM))==0
