@@ -215,6 +215,8 @@ def test_qualified_evidence_revocation_blocks_stale_patient_projection():
     from clinical_attention_phase_a import SyntheticAttentionStore, AttentionAction
 
     store=SyntheticAttentionStore()
+    # Protected synthetic patient setup, not a raw source-claimed patient ID.
+    store.establish_previously_verified_referral(lambda patient_id,dob=None: None)
     patient_id=SYNTHETIC_161_PATIENT_IDS[2]
     assert store.brief(patient_id)[0]["item_id"]=="SYN-ATT-GESY"
     assert store.act("SYN-ATT-GESY",AttentionAction(action="mark_reviewed",
