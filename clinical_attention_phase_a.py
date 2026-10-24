@@ -34,7 +34,7 @@ class SyntheticRevision(BaseModel):
 
 def fixture(item_id,account,kind,subject_scope,title,summary,*,
             source_identity_kind=None,source_identity_ref=None,
-            linked_patient=None,source_status=None,native="syn-msg-01"):
+            source_status=None,native="syn-msg-01"):
     # Default native key is deliberately repeated across DIFFERENT accounts.
     logical="/".join((account,native,"part-1","subject-1"))
     return dict(item_id=item_id,origin_kind="synthetic_fixture",
@@ -46,11 +46,8 @@ def fixture(item_id,account,kind,subject_scope,title,summary,*,
                 candidate_summary=summary if subject_scope=="single_subject" else None,
                 source_time="2026-10-23T09:17:00+03:00",
                 review_state="unreviewed",disposition="undecided",
-                identity_state="clinician_confirmed" if linked_patient else "unlinked",
-                patient_id=linked_patient,
-                link_evidence_kind="verified_referral" if linked_patient else None,
-                link_evidence_ref=source_identity_ref if linked_patient else None,
-                linked_revision="r1" if linked_patient else None,
+                identity_state="unlinked",patient_id=None,link_evidence_kind=None,
+                link_evidence_ref=None,linked_revision=None,
                 review_actor=None,reviewed_at=None,version=0,audit=[])
 
 
@@ -83,11 +80,25 @@ class SyntheticAttentionStore:
                     "Συνθετική ειδοποίηση ΓεΣΥ — αποτελέσματα διαθέσιμα",None,
                     source_identity_kind="verified_referral",
                     source_identity_ref="SYN-REF-GESY-003",
-                    linked_patient=SYNTHETIC_161_PATIENT_IDS[2],
                     source_status="results_available",native="syn-msg-gesy-01"),
         )
         self.items={row["item_id"]:row for row in items}
         self.replays={}
+
+    def establish_previously_verified_referral(self,verify):
+        """Only after protected synthetic patients exist may prior evidence bind a Brief."""
+        ref=self.verified_referrals["SYN-REF-GESY-003"]
+        verify(ref["patient_id"],None)
+        with self.lock:
+            item=self.get("SYN-ATT-GESY")
+            if (item["version"]==0 and item["identity_state"]=="unlinked"
+                    and self._strong_link(item)==(ref["patient_id"],"verified_referral")):
+                item.update(identity_state="clinician_confirmed",patient_id=ref["patient_id"],
+                            link_evidence_kind="verified_referral",
+                            link_evidence_ref="SYN-REF-GESY-003",linked_revision="r1",
+                            link_actor="synthetic_preverified_clinician",
+                            link_at="2026-10-21T12:00:00+03:00")
+            # Repeated prepare never overwrites a corrected or reviewed attention item.
 
     def get(self,item_id):
         item=self.items.get(item_id)
