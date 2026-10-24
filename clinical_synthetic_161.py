@@ -23,6 +23,7 @@ from clinical_data import (
     _fold_patient_lookup,
 )
 from clinical_staff_auth import StaffActor
+from clinical_attention_phase_a import SyntheticAttentionStore, build_synthetic_attention_router
 from clinical_visit_brief import (attach_visit_brief_routes, BookingIntent,
                                   _minimal_brief, _booking_card, _record_access, VisitBriefStaffAuditORM)
 
@@ -172,6 +173,24 @@ def _pending_view(p, db):
 def build_synthetic_161_router(engine):
     router = APIRouter(prefix=PREFIX, tags=["cockpit-synthetic-161"])
     protected = [Depends(require_test_access)]
+    attention = SyntheticAttentionStore()
+
+    def verify_synthetic_patient(patient_id, dob=None):
+        with Session(engine) as db:
+            p = _test_patient(db, patient_id)
+            if dob is not None and p.demographics_json.get("dob") != dob:
+                raise HTTPException(409, "Synthetic identifiers do not match")
+            return p
+
+    def synthetic_patients():
+        with Session(engine) as db:
+            return [{"patient_id":p.patient_id,"name":p.demographics_json["full_name"],
+                     "dob":p.demographics_json["dob"]}
+                    for p in (_test_patient(db,pid) for pid in SYNTHETIC_161_PATIENT_IDS)]
+
+    router.include_router(build_synthetic_attention_router(
+        attention, require_test_access, verify_synthetic_patient, synthetic_patients))
+
 
     def booking(db, uid):
         if uid not in BOOKINGS:
@@ -226,6 +245,7 @@ def build_synthetic_161_router(engine):
             patient_id = SYNTHETIC_161_PATIENT_IDS[BOOKINGS.index(req.booking_uid)]
             patient = _test_patient(db, patient_id)
             brief = _minimal_brief(db, patient_id, actual)
+            brief["clinical_attention"] = attention.brief(patient_id)
             brief["pending"] = [_pending_view(p, db) for p in db.scalars(
                 select(ClinicalPendingORM).where(ClinicalPendingORM.patient_id == patient_id, ClinicalPendingORM.status != "deleted"))]
             _record_access(db, actor, req.booking_uid, "synthetic_brief_read", "allowed", patient_id)
