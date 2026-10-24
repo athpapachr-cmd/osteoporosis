@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 from sqlalchemy import select,func
 from clinical_data import ClinicalPendingORM
-from test_cockpit_synthetic_161 import setup,application,login,PREFIX,SYNTHETIC_161_PATIENT_IDS
+from test_cockpit_synthetic_161 import setup,application,login,PREFIX,BOOKINGS,SYNTHETIC_161_PATIENT_IDS
 
 
 def token():return str(uuid4())
@@ -58,6 +58,10 @@ def test_synthetic_review_link_revision_replay_and_mixed_document_fail_closed(se
     mark={"action":"mark_reviewed","expected_version":1,"idempotency_key":token()}
     assert b.post(endpoint+"/action",json=mark).status_code==200
     assert b.get(PREFIX+"/attention/brief/"+SYNTHETIC_161_PATIENT_IDS[1]).json()["items"][0]["review_state"]=="reviewed"
+    # Existing booking owner consumes the SAME attention item, not a copied Inbox record.
+    visit=b.post(PREFIX+"/open-booking",json={"booking_uid":BOOKINGS[1]}).json()
+    assert visit["brief"]["clinical_attention"][0]["item_id"]=="SYN-ATT-MRI"
+    assert visit["brief"]["clinical_attention"][0]["review_state"]=="reviewed"
     assert b.get(PREFIX+"/attention/brief/"+SYNTHETIC_161_PATIENT_IDS[0]).json()["items"]==[]
     assert b.post(PREFIX+"/attention/SYN-ATT-MIXED/action",json={
         **payload,"idempotency_key":token()}).status_code==409
@@ -76,6 +80,8 @@ def test_synthetic_review_link_revision_replay_and_mixed_document_fail_closed(se
         "action":"no_communication","expected_version":2,"idempotency_key":token()
     }).status_code==409
     assert a.get(PREFIX+"/attention/brief/"+SYNTHETIC_161_PATIENT_IDS[1]).json()["items"]==[]
+    after=a.post(PREFIX+"/open-booking",json={"booking_uid":BOOKINGS[1]}).json()
+    assert after["brief"]["clinical_attention"]==[]
     with Session(engine) as db:
         assert [p.status for p in db.scalars(select(ClinicalPendingORM)).all()]==["awaiting_patient"]*3
 
