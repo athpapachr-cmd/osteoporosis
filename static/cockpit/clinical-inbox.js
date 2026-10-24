@@ -147,7 +147,9 @@
         "Αποτελέσματα διαθέσιμα — εκκρεμεί ιατρικός έλεγχος. Δεν υπάρχουν τιμές εξετάσεων."));
     const safe=item.source_subject_scope==="single_subject";
     box.append(make("p",safe?"clinical-inbox-note":"clinical-inbox-warning",
-      safe?(item.candidate_summary||"Προηγούμενη εξαγωγή άκυρη· απαιτείται επανέλεγχος."):
+      safe?(item.source_type==="gesy_notice"?
+          "Ειδοποίηση διαθεσιμότητας — δεν περιλαμβάνει κλινική ερμηνεία ή αποτελέσματα.":
+          (item.candidate_summary||"Προηγούμενη εξαγωγή άκυρη· απαιτείται επανέλεγχος.")):
         "Πολλοί/άγνωστοι ασθενείς. Το έγγραφο παραμένει μόνο στο Inbox."));
     box.append(make("p","clinical-inbox-note",item.identity_state==="clinician_confirmed"?
       "Συνδεδεμένος συνθετικός ασθενής: "+item.patient_id+" · "+
