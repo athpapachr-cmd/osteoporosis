@@ -193,10 +193,31 @@ def test_real_browser_two_sessions_refresh_and_complete_chart(setup, tmp_path):
                 expect(page.locator(".patient-visit[open] .patient-obligation-origin")).to_contain_text("Υποχρεώσεις που δημιουργήθηκαν στην επίσκεψη")
                 expect(page.locator(".patient-timeline-event")).not_to_have_count(0)
                 page.locator("#doctorTasksButton").click()
+                expect(page.locator("#doctorPopover")).to_be_visible()
+                expect(page.locator("#doctorPopoverContent")).to_contain_text("Δοκιμαστικός Ασθενής 161")
+                expect(page.locator("#doctorObligationsView")).to_be_hidden()
+                page.locator("#doctorPopoverContent").get_by_role("button",name="Όλες οι υποχρεώσεις").click()
                 expect(page.locator("#doctorObligationsView")).to_be_visible()
                 expect(page.locator("#doctorObligationsTotal")).to_have_text("3")
                 expect(page.locator("#doctorObligationsRows")).to_contain_text("Δοκιμαστικός Ασθενής 161 2")
                 page.locator("#doctorInboxButton").click()
+                expect(page.locator("#doctorPopover")).to_be_visible()
+                expect(page.locator("#doctorPopoverContent")).to_contain_text("Συνθετική γνωμάτευση MRI")
+                expect(page.locator("#doctorClinicalInboxView")).to_be_hidden()
+                # Regression: a recent-item click must focus the actual synthetic
+                # detail, not call the account <select> DOM element as a function.
+                page.locator("#doctorPopoverContent").get_by_role(
+                    "button",name="Συνθετική γνωμάτευση MRI").click()
+                expect(page.locator("#doctorClinicalInboxView")).to_be_visible()
+                expect(page.locator("#doctorClinicalInboxDetails")).to_contain_text("Συνθετική γνωμάτευση MRI")
+                expect(page.locator('#doctorClinicalInboxRows [data-attention-id="SYN-ATT-MRI"]')).to_have_attribute(
+                    "aria-pressed","true")
+                assert not errors, errors
+                page.locator("#doctorClinicalInboxBack").click()
+                expect(page.locator("#doctorClinicalInboxDetails")).to_be_empty()
+                page.locator("#doctorInboxButton").click()
+                expect(page.locator("#doctorPopover")).to_be_visible()
+                page.locator("#doctorPopoverContent").get_by_role("button",name="Όλα τα κλινικά εισερχόμενα").click()
                 expect(page.locator("#doctorClinicalInboxView")).to_be_visible()
                 expect(page.locator("#doctorClinicalInboxState")).to_contain_text("Καμία πραγματική")
                 expect(page.locator("#doctorClinicalInboxRows [data-attention-id]")).to_have_count(3)
@@ -223,6 +244,8 @@ def test_real_browser_two_sessions_refresh_and_complete_chart(setup, tmp_path):
                 expect(page.locator("#doctorClinicalInboxView")).to_be_hidden()
                 expect(page.locator("#doctorClinicalInboxDetails")).to_be_empty()
                 page.locator("#doctorTasksButton").click()
+                expect(page.locator("#doctorPopover")).to_be_visible()
+                page.locator("#doctorPopoverContent").get_by_role("button",name="Όλες οι υποχρεώσεις").click()
                 page.locator("#doctorObligationsRows .doctor-obligation-group").filter(
                     has_text="Δοκιμαστικός Ασθενής 161 2").locator(".doctor-obligation-row").first.click()
                 expect(page.locator("#visitSelectedName")).to_have_text("Δοκιμαστικός Ασθενής 161 2")
@@ -239,6 +262,8 @@ def test_real_browser_two_sessions_refresh_and_complete_chart(setup, tmp_path):
                     # A delayed 401 from the old detail read may not log out
                     # the newly authenticated synthetic clinician.
                     page.locator("#doctorInboxButton").click()
+                    expect(page.locator("#doctorPopover")).to_be_visible()
+                    page.locator("#doctorPopoverContent").get_by_role("button",name="Όλα τα κλινικά εισερχόμενα").click()
                     expect(page.locator("#doctorClinicalInboxView")).to_be_visible()
                     page.evaluate("""() => {
                         window.__savedFetch=window.fetch;
@@ -398,6 +423,8 @@ def test_browser_eligible_patient_lookup_401_is_current_session_only(setup):
             page.locator("#synthetic161Prepare").click()
             expect(page.locator("#synthetic161Status")).to_contain_text("Η δοκιμή αποθηκεύτηκε")
             page.locator("#doctorInboxButton").click()
+            expect(page.locator("#doctorPopover")).to_be_visible()
+            page.locator("#doctorPopoverContent").get_by_role("button",name="Όλα τα κλινικά εισερχόμενα").click()
             expect(page.locator("#doctorClinicalInboxRows [data-attention-id]")).to_have_count(3)
             page.evaluate("""() => {
                 window.__unauthedEligibleCount = 0;

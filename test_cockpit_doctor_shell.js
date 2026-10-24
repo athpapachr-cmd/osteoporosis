@@ -69,6 +69,19 @@ async function fakeFetch(url,opts){
      counts:{issued_unknown:1,pending:2,approved:1,rejected:0,scheduled:1,performed:1,mine_actionable:1}
    })};
  }
+ if(url.startsWith("/clinical/clinical-updates?")){
+   assert.equal(opts.method||"GET","GET");
+   assert.equal(opts.cache,"no-store");
+   return {ok:authenticated,status:authenticated?200:401,json:async()=>({
+     items:[0,1,2,3,4].map(i=>({
+       pending_id:"SYN-PENDING-"+i,patient_id:"SYN-PATIENT-"+i,
+       patient_name:"Συνθετικός πρόσφατος "+i,description:"Συνθετική υποχρέωση "+i,
+       status:"open",updated_at:"2026-10-"+String(10+i).padStart(2,"0")+"T08:00:00Z"
+     })).concat([{pending_id:"DONE",patient_id:"SYN-PATIENT-9",
+       patient_name:"Παλιός ασθενής",description:"Ολοκληρωμένη υποχρέωση",
+       status:"resolved",updated_at:"2026-10-24T18:00:00Z"}])
+   })};
+ }
  if(!url.startsWith("/clinical/calendar/agenda?"))throw Error("unexpected URL "+url);
  if(deferred)return deferred.promise;
  return {ok:authenticated,status:authenticated?200:401,json:async()=>mockAppointments};
@@ -133,28 +146,43 @@ function byId(id,node=$('doctorPopoverContent')){if(node.id===id)return node;for
  $("doctorInboxButton").fire("click");
  assert.equal($("doctorPopover").hidden,true);
 
- let obligationsOpened=0,obligationsCleared=0;
- windowStub.CockpitObligations={open(){obligationsOpened++},close(){obligationsCleared++}};
+ let obligationsOpened=0,obligationsCleared=0,focused=null;
+ windowStub.CockpitObligations={open(fn,pendingId){obligationsOpened++;focused=pendingId;},close(){obligationsCleared++}};
  windowStub.CockpitStoredChart=null;
  windowHandlers.get("cockpit:surgery-counts")({detail:{total:2,undated:1,invalid:0,overdue:0,
-  upcoming:[{date:"2099-11-01",count:1,name:"Συνθετικός Ασθενής Μ",procedure:"Αρθροσκόπηση"}]}});
+   upcoming:[{date:"2099-11-01",count:1,name:"Συνθετικός Ασθενής Μ",procedure:"Αρθροσκόπηση"}]}});
  assert.equal($("doctorTasksBadge").hidden,true,"surgery count cannot masquerade as patient obligations");
  assert.equal($("doctorTasksBadge").textContent,"");
  windowStub.CockpitStoredChart={canLeave(){return false;}};
- $("doctorTasksButton").fire("click");
- assert.equal($("doctorObligationsView").hidden,true,"an open clinical draft blocks navigation");
- assert.equal(obligationsOpened,0);
+ $("doctorTasksButton").fire("click");await tick();await tick();
+ assert.equal($("doctorPopover").hidden,false,"top-right icon opens a peek");
+ assert.equal($("doctorPopover").dataset.kind,"tasks");
+ assert.equal($("doctorObligationsView").hidden,true,"no automatic full-screen navigation");
+ assert.equal($("doctorTasksButton").attributes["aria-expanded"],"true");
+ const peekButtons=$("doctorPopoverContent").children.filter(x=>x.tagName==="button");
+ assert.equal(peekButtons.length,5,"four most-recent active tasks and full-list action");
+ assert.ok(findButtonContent("Συνθετικός πρόσφατος 4"));
+ assert.ok(!findButtonContent("Συνθετικός πρόσφατος 0"),"only four newest");
+ assert.ok(!findButtonContent("Παλιός ασθενής"),"resolved row cannot masquerade as active");
+ findButtonContent("Συνθετικός πρόσφατος 4").fire("click");
+ assert.equal(obligationsOpened,0,"unsaved draft blocks full-screen item navigation");
+ assert.equal($("doctorPopover").hidden,false);
  windowStub.CockpitStoredChart={canLeave(){return true;}};
- $("doctorTasksButton").fire("click");
- assert.equal($("doctorObligationsView").hidden,false,"Tasks opens full-screen obligations");
+ findButtonContent("Συνθετικός πρόσφατος 4").fire("click");
+ assert.equal(focused,"SYN-PENDING-4","preview routes to exact on-screen pending dialog");
+ assert.equal($("doctorObligationsView").hidden,false);
  assert.equal($("doctorMainView").hidden,true);
- assert.equal($("doctorLibraryView").hidden,true);
- assert.equal($("doctorPopover").hidden,true,"no task popover");
+ assert.equal($("doctorPopover").hidden,true);
  assert.equal(obligationsOpened,1);
  $("doctorObligationsBack").fire("click");
  assert.equal($("doctorMainView").hidden,false);
  assert.equal($("doctorObligationsView").hidden,true);
  assert.ok(obligationsCleared>0,"hiding the screen purges cached patient data");
+ $("doctorTasksButton").fire("click");await tick();await tick();
+ findButtonContent("Όλες οι υποχρεώσεις").fire("click");
+ assert.equal(obligationsOpened,2);
+ assert.equal(focused,null,"full list does not force an arbitrary patient");
+ $("doctorObligationsBack").fire("click");
  $("doctorActionsButton").fire("click");
  const libraryAction=$("doctorPopoverContent").children[1]?.children?.at(-1);
  assert.equal(libraryAction?.children?.[0]?.children?.[0]?.textContent,

@@ -170,30 +170,101 @@
         "/static/clinical-calendar/"));
     }
   }
-  function inbox() {
+  // The icons are PEEKS, not navigation shortcuts. Separate full-screen
+  // actions remain explicit, and every read is scoped to the active popover.
+  const syntheticInbox=()=>window.CockpitSynthetic===true &&
+    window.CockpitClinicalBase==="/clinical/synthetic-161";
+  const activePeek=(kind,ticket)=>state.panel===kind &&
+    !popover.hidden && state.request===ticket;
+
+  async function inbox() {
+    const ticket=++state.request;
     content.replaceChildren();
-    content.append(text("Δεν έχει συνδεθεί ακόμη το Clinical Inbox με το Cockpit. Δεν υπάρχει αξιόπιστη μέτρηση νέων κλινικών μηνυμάτων, συνεπώς δεν εμφανίζεται αριθμός."));
-    content.append(newLink("Άνοιγμα Gmail","https://mail.google.com/","Έλεγχος μηνυμάτων απευθείας στο Gmail"));
-  }
-  function tasks() {
-    if(window.CockpitStoredChart){
-      const ticket=state.request;
-      $("doctorPopoverTitle").textContent="Υποχρεώσεις ασθενών";
-      window.CockpitStoredChart.renderUpdates(content,()=>state.panel==="tasks"&&ticket===state.request,close);
+    if(!syntheticInbox()){
+      content.append(text("Δεν έχει συνδεθεί ακόμη το Clinical Inbox με πραγματική πηγή. Δεν υπάρχει αξιόπιστη μέτρηση νέων κλινικών μηνυμάτων."));
+      content.append(newLink("Άνοιγμα Gmail","https://mail.google.com/","Χωρίς σύνδεση με το Cockpit"));
       return;
     }
-    content.replaceChildren();
-    const s=state.surgeries;
-    content.append(sectionTitle("Κλινική εργασία"));
-    if(s){
-      content.append(action("Εκκρεμή χειρουργεία · "+s.total,
-        s.undated+" χωρίς ορισμένη ημερομηνία",()=>showLibrary("surgery")));
-    }else{
-      content.append(action("Χειρουργεία","Άνοιγμα της προστατευμένης λίστας",()=>showLibrary("surgery")));
+    content.append(text("Φόρτωση συνθετικών εισερχομένων…"));
+    try{
+      const response=await fetch(window.CockpitClinicalBase+"/attention",{
+        credentials:"same-origin",cache:"no-store",headers:{"Accept":"application/json"}
+      });
+      if(!response.ok){const e=new Error("Unavailable");e.status=response.status;throw e;}
+      const data=await response.json();
+      if(!activePeek("inbox",ticket))return;
+      if(data?.mode!=="synthetic_only"||data.live_provider_connected!==false ||
+         !Array.isArray(data.items)||!Array.isArray(data.accounts) ||
+         data.items.some(i=>!i||typeof i.item_id!=="string"||
+           typeof i.source_title!=="string"||typeof i.review_state!=="string"))
+        throw Error("Invalid synthetic source");
+      content.replaceChildren();
+      content.append(text("Μόνο συνθετικές εγγραφές · καμία πραγματική θυρίδα συνδεδεμένη."));
+      for(const item of data.items.slice(0,4)){
+        const account=data.accounts.find(a=>a.mailbox_account_id===item.mailbox_account_ref);
+        content.append(action(item.source_title,
+          (account?.label||"Συνθετική πηγή")+" · "+
+          (item.review_state==="needs_re_review"?"Επανέλεγχος":
+           item.review_state==="reviewed"?"Ελέγχθηκε":"Δεν ελέγχθηκε"),
+          ()=>showClinicalInbox(item.item_id)));
+      }
+      if(!data.items.length)content.append(text("Δεν υπάρχουν συνθετικές εγγραφές στην τρέχουσα δοκιμή."));
+      content.append(action("Όλα τα κλινικά εισερχόμενα",
+        "Άνοιγμα πλήρους συνθετικής δοκιμής",()=>showClinicalInbox()));
+    }catch(err){
+      if(!activePeek("inbox",ticket))return;
+      content.replaceChildren();
+      content.append(text(err.status===401||err.status===403?
+        "Απαιτείται κλινική σύνδεση. Δεν εμφανίζονται εισερχόμενα.":
+        "Η συνθετική πηγή δεν είναι διαθέσιμη. Δεν γνωρίζουμε εάν υπάρχουν νέα στοιχεία."));
+      content.append(action("Πρόσβαση","Σύνδεση με το υπάρχον Clinical Key",
+        ()=>window.dispatchEvent(new Event("clinical:request-login"))));
     }
-    content.append(newLink("Ιατρική έκθεση","/clinical/clinic-utilities/medical-report"));
-    content.append(newLink("Ραδιοκύματα / RF","/clinical/clinic-utilities/rf"));
-    content.append(text("Το Clinical Inbox και οι εργασίες Dia/Heidi δεν έχουν συνδεθεί με την παρακολούθηση."));
+  }
+  async function tasks() {
+    const ticket=++state.request;
+    $("doctorPopoverTitle").textContent="Υποχρεώσεις ασθενών";
+    content.replaceChildren();
+    content.append(text("Φόρτωση πρόσφατων ανοικτών υποχρεώσεων…"));
+    const base=syntheticInbox()?window.CockpitClinicalBase:"/clinical";
+    try{
+      // Existing protected ClinicalPending projection owns these records.
+      // First 100 active rows, sorted by updated_at; no new task store/count.
+      const response=await fetch(base+"/clinical-updates?scope=real&active_only=true",{
+        credentials:"same-origin",cache:"no-store",headers:{"Accept":"application/json"}
+      });
+      if(!response.ok){const e=new Error("Unavailable");e.status=response.status;throw e;}
+      const data=await response.json();
+      if(!activePeek("tasks",ticket))return;
+      if(!data||!Array.isArray(data.items)||data.items.length>100 ||
+         data.items.some(i=>!i||typeof i.status!=="string"||
+           typeof i.patient_id!=="string"||typeof i.pending_id!=="string"||
+           typeof i.description!=="string"||typeof i.patient_name!=="string"))
+        throw Error("Invalid clinical source");
+      const active=data.items.filter(i=>
+        ["open","awaiting_patient","awaiting_result"].includes(i.status));
+      active.sort((a,b)=>String(b.updated_at||"").localeCompare(String(a.updated_at||"")));
+      content.replaceChildren();
+      content.append(text("Πρόσφατες ανοικτές υποχρεώσεις (έως 4, από την προστατευμένη προβολή έως 100 εγγραφών)."));
+      if(!active.length)content.append(text(
+        "Δεν υπάρχουν ανοικτές υποχρεώσεις στην τρέχουσα προβολή."));
+      for(const item of active.slice(0,4)){
+        const when=/^\d{4}-\d{2}-\d{2}$/.test(item.review_date||"")?
+          " · Προθεσμία "+item.review_date:"";
+        content.append(action(item.patient_name,item.description+when,
+          ()=>showObligations(item.pending_id)));
+      }
+      content.append(action("Όλες οι υποχρεώσεις",
+        "Πλήρης προβολή, αλλαγή κατηγορίας και προθεσμίας",()=>showObligations()));
+    }catch(err){
+      if(!activePeek("tasks",ticket))return;
+      content.replaceChildren();
+      content.append(text(err.status===401||err.status===403?
+        "Απαιτείται κλινική σύνδεση. Δεν εμφανίζονται υποχρεώσεις.":
+        "Η προστατευμένη λίστα δεν είναι διαθέσιμη. Δεν θεωρούμε ότι είναι κενή."));
+      content.append(action("Όλες οι υποχρεώσεις",
+        "Άνοιγμα της υπάρχουσας προστατευμένης λίστας",()=>showObligations()));
+    }
   }
   const links=[
     {name:"Καταγραφή επίσκεψης",hint:"Visit Capture",href:"/static/cockpit/visit-capture/"},
@@ -223,7 +294,7 @@
     };
     input.addEventListener("input",draw);draw();input.focus();
   }
-  function showClinicalInbox(){
+  function showClinicalInbox(itemId=null){
     // Normal live Cockpit retains the honest unconnected source placeholder.
     if(window.CockpitSynthetic!==true ||
        window.CockpitClinicalBase!=="/clinical/synthetic-161" ||
@@ -237,9 +308,9 @@
     $("doctorLibraryView").hidden=true;
     $("doctorMainView").hidden=true;
     $("doctorClinicalInboxView").hidden=false;
-    window.CockpitClinicalInbox.open();
+    window.CockpitClinicalInbox.open(itemId);
   }
-  function showObligations() {
+  function showObligations(pendingId=null) {
     // Preserve an in-progress clinical visit draft. Reuse the chart owner's
     // existing guard and its patient-visible reason, never silently hide it.
     if (typeof window.CockpitStoredChart?.canLeave==="function"
@@ -259,7 +330,7 @@
       const chart=window.CockpitStoredChart;
       if(typeof chart?.openPending==="function")chart.openPending(id,pendingId);
       else if(window.CockpitSynthetic===true && typeof chart?.open==="function")chart.open(id);
-    });
+    },pendingId);
     $("doctorObligationsSearch").focus();
   }
   function showLibrary(category="surgery") {
@@ -372,16 +443,18 @@
   }
 
     buttons.day.addEventListener("click",()=>openPanel("day",buttons.day));
-  buttons.inbox.addEventListener("click",showClinicalInbox);
+  buttons.inbox.addEventListener("click",()=>openPanel("inbox",buttons.inbox));
   $("doctorClinicalInboxBack").addEventListener("click",showHome);
   window.addEventListener("cockpit:clinical-updates-changed",()=>{if(state.panel==="inbox")inbox();else if(state.panel==="tasks")tasks();});
   window.addEventListener("clinical:unauthenticated",()=>{showHome();});
-  buttons.tasks.addEventListener("click",showObligations);
+  buttons.tasks.addEventListener("click",()=>openPanel("tasks",buttons.tasks));
   $("doctorObligationsBack").addEventListener("click",showHome);
   buttons.actions.addEventListener("click",()=>openPanel("actions",buttons.actions));
   $("doctorPopoverClose").addEventListener("click",close);
   if (typeof window !== "undefined" && typeof window.addEventListener === "function") window.addEventListener("clinical:authenticated", () => {
     if(state.panel === "day") loadDay();
+    if(state.panel === "tasks") tasks();
+    if(state.panel === "inbox") inbox();
     loadRfAttention();
   });
   $("doctorBackHome").addEventListener("click",showHome);
