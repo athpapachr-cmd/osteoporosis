@@ -122,7 +122,8 @@ class SyntheticAttentionStore:
         return None
 
     def _link_current(self,item):
-        if item["identity_state"]!="clinician_confirmed" or not item["patient_id"]:
+        if (item["identity_state"]!="clinician_confirmed" or not item["patient_id"]
+                or item.get("linked_revision")!=item["active_source_revision"]):
             return False
         kind=item.get("link_evidence_kind")
         if kind in ("verified_adt","verified_referral"):
@@ -178,13 +179,20 @@ class SyntheticAttentionStore:
         if previous:
             if previous["payload"]!=payload:
                 raise HTTPException(409,"Idempotency key reused with new payload")
-            return {**deepcopy(previous["result"]),"replayed":True}
+            # A once-valid response must not resurrect an earlier patient's
+            # projection or disposition after a source revision/re-link.
+            if previous["result"]["item"]["version"]!=item["version"]:
+                raise HTTPException(409,"Replay refers to an outdated source state")
+            return {"item":self.projection(item),"replayed":True}
 
-    def _save(self,item,actor,key,payload,kind):
+    def _save(self,item,actor,key,payload,kind,*,audit_context=None):
         item["version"]+=1
-        item["audit"].append({"kind":kind,"version":item["version"],
-                              "actor":actor,"at":datetime.now(timezone.utc).isoformat(),
-                              "evidence_kind":item.get("link_evidence_kind")})
+        audit_event={"kind":kind,"version":item["version"],
+                     "actor":actor,"at":datetime.now(timezone.utc).isoformat(),
+                     "evidence_kind":item.get("link_evidence_kind")}
+        if audit_context:
+            audit_event.update(audit_context)
+        item["audit"].append(audit_event)
         result={"item":self.projection(item),"replayed":False}
         self.replays[(item["item_id"],actor,str(key))]={
             "payload":payload,"result":deepcopy(result)}
@@ -254,16 +262,25 @@ class SyntheticAttentionStore:
             # separately reviewed evidence and explicit clinician verification.
             if item["source_subject_scope"]!="single_subject" and req.subject_scope=="single_subject":
                 raise HTTPException(409,"Independent subject segmentation required")
-            if (req.subject_scope!=item["source_subject_scope"]
-                    or item.get("link_evidence_kind")=="clinician_source_comparison"):
-                item.update(patient_id=None,identity_state="unlinked",link_evidence_kind=None,
-                            link_evidence_ref=None,linked_revision=None)
+            # A new document revision has NO qualified patient/source identity
+            # continuity proof, even when both revisions say "single_subject".
+            # Revoke the old chart projection AND old issuer/referral evidence:
+            # retaining the latter would silently re-offer an obsolete match.
+            prior_kind=item.get("link_evidence_kind")
+            prior_revision=item["active_source_revision"]
+            item.update(patient_id=None,identity_state="unlinked",link_evidence_kind=None,
+                        link_evidence_ref=None,linked_revision=None,
+                        link_actor=None,link_at=None,
+                        source_identity_kind=None,source_identity_ref=None)
             item.update(active_source_revision=req.new_revision,
                         source_receipt_version_key=item["logical_source_item_key"]+"/"+req.new_revision,
                         source_subject_scope=req.subject_scope,candidate_summary=None,
                         review_state="needs_re_review",review_actor=None,
                         reviewed_at=None,disposition="undecided")
-            return self._save(item,actor,req.idempotency_key,payload,"source_revised")
+            return self._save(item,actor,req.idempotency_key,payload,"source_revised",
+                              audit_context={"previous_link_evidence_kind":prior_kind,
+                                             "previous_source_revision":prior_revision,
+                                             "identity_recheck_required":True})
 
 
 def build_synthetic_attention_router(store,require_test_access,verify,patients):
