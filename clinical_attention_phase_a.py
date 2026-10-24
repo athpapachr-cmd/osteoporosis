@@ -6,6 +6,7 @@ from typing import Literal
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
+from clinical_data import SYNTHETIC_161_PATIENT_IDS
 
 ACCOUNTS=(("syn-gmail","gmail","Δοκιμή Gmail"),
           ("syn-icloud","icloud_mail","Δοκιμή iCloud"),
@@ -18,7 +19,8 @@ class AttentionAction(BaseModel):
     expected_version:int=Field(ge=0)
     idempotency_key:UUID
     patient_id:str|None=Field(default=None,max_length=128)
-    verified_dob:str|None=Field(default=None,max_length=10)
+    evidence_kind:Literal["verified_adt","verified_referral","clinician_source_comparison"]|None=None
+    evidence_ref:str|None=Field(default=None,max_length=64)
     independently_verified:bool=False
 
 
@@ -30,18 +32,25 @@ class SyntheticRevision(BaseModel):
     subject_scope:Literal["single_subject","unknown","mixed_subjects"]="single_subject"
 
 
-def fixture(item_id,account,kind,subject_scope,title,summary):
-    native="syn-msg-01"  # deliberately repeated across different accounts
+def fixture(item_id,account,kind,subject_scope,title,summary,*,
+            source_identity_kind=None,source_identity_ref=None,
+            linked_patient=None,source_status=None,native="syn-msg-01"):
+    # Default native key is deliberately repeated across DIFFERENT accounts.
     logical="/".join((account,native,"part-1","subject-1"))
     return dict(item_id=item_id,origin_kind="synthetic_fixture",
                 mailbox_account_ref=account,provider_native_message_id=native,
                 logical_source_item_key=logical,source_receipt_version_key=logical+"/r1",
-                active_source_revision="r1",source_type=kind,
+                active_source_revision="r1",source_type=kind,source_status=source_status,
+                source_identity_kind=source_identity_kind,source_identity_ref=source_identity_ref,
                 source_subject_scope=subject_scope,source_title=title,
                 candidate_summary=summary if subject_scope=="single_subject" else None,
                 source_time="2026-10-23T09:17:00+03:00",
                 review_state="unreviewed",disposition="undecided",
-                identity_state="unlinked",patient_id=None,link_evidence_kind=None,
+                identity_state="clinician_confirmed" if linked_patient else "unlinked",
+                patient_id=linked_patient,
+                link_evidence_kind="verified_referral" if linked_patient else None,
+                link_evidence_ref=source_identity_ref if linked_patient else None,
+                linked_revision="r1" if linked_patient else None,
                 review_actor=None,reviewed_at=None,version=0,audit=[])
 
 
@@ -49,13 +58,33 @@ class SyntheticAttentionStore:
     """A single in-memory source of truth per #161 test router, not a real database."""
     def __init__(self):
         self.lock=RLock()
+        # Invented issuer-qualified evidence. NEVER a live ADT/beneficiary registry.
+        self.verified_adts={"SYN-ADT-002":{
+            "patient_id":SYNTHETIC_161_PATIENT_IDS[1],"issuer":"SYN-CY-CIVIL",
+            "state":"verified","provenance":"synthetic_clinician_verification"}}
+        self.verified_referrals={"SYN-REF-GESY-003":{
+            "patient_id":SYNTHETIC_161_PATIENT_IDS[2],"issuer":"SYN-GESY",
+            "item_id":"SYN-ATT-GESY","state":"verified",
+            "provenance":"synthetic_prior_referral_confirmation"}}
+        # Fictional independent original-order evidence scoped to item AND revision.
+        self.chart_evidence={
+            ("SYN-ATT-LAB","r1","SYN-LAB-ORDER-P1"):SYNTHETIC_161_PATIENT_IDS[0],
+            ("SYN-ATT-LAB","r2","SYN-LAB-ORDER-P2"):SYNTHETIC_161_PATIENT_IDS[1],
+        }
         items=(
             fixture("SYN-ATT-MRI","syn-gmail","imaging_mri","single_subject",
-                    "Συνθετική γνωμάτευση MRI","Δοκιμαστική γνωμάτευση γόνατος — όχι ιατρική ερμηνεία."),
+                    "Συνθετική γνωμάτευση MRI","Δοκιμαστική γνωμάτευση γόνατος — όχι ιατρική ερμηνεία.",
+                    source_identity_kind="verified_adt",source_identity_ref="SYN-ADT-002"),
             fixture("SYN-ATT-LAB","syn-icloud","lab","single_subject",
                     "Συνθετική εργαστηριακή αναφορά","Δοκιμαστική αναφορά — μη αποδεκτά κλινικά αποτελέσματα."),
             fixture("SYN-ATT-MIXED","syn-outlook","imaging_xray","mixed_subjects",
                     "Συνθετικό PDF πολλών ασθενών",None),
+            fixture("SYN-ATT-GESY","syn-gmail","gesy_notice","single_subject",
+                    "Συνθετική ειδοποίηση ΓεΣΥ — αποτελέσματα διαθέσιμα",None,
+                    source_identity_kind="verified_referral",
+                    source_identity_ref="SYN-REF-GESY-003",
+                    linked_patient=SYNTHETIC_161_PATIENT_IDS[2],
+                    source_status="results_available",native="syn-msg-gesy-01"),
         )
         self.items={row["item_id"]:row for row in items}
         self.replays={}
