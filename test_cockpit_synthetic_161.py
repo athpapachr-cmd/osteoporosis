@@ -235,19 +235,33 @@ def test_real_browser_two_sessions_refresh_and_complete_chart(setup, tmp_path):
                 expect(page.locator("#doctorClinicalInboxDetails")).to_contain_text("παραπεμπτικό")
                 expect(page.locator("#doctorClinicalInboxDetails form")).to_have_count(0)
                 page.locator('[data-attention-id="SYN-ATT-LAB"]').click()
-                expect(page.locator("#doctorClinicalInboxDetails")).to_contain_text("Το όνομα δεν αρκεί")
-                expect(page.locator("#doctorClinicalInboxDetails form")).to_have_count(1)
+                expect(page.locator("#doctorClinicalInboxDetails")).to_contain_text("Δεν υπάρχει επαληθευμένη αντιστοίχιση")
+                expect(page.locator("#doctorClinicalInboxDetails .clinical-inbox-link")).to_have_count(0)
+                expect(page.locator("#doctorClinicalInboxDetails input")).to_have_count(0)
+                if index == 0:
+                    # A single tap visibly marks source review; never clinically
+                    # accepts values or attaches the weak source to any patient.
+                    page.locator("#doctorClinicalInboxDetails").get_by_role(
+                        "button",name="Το είδα").click()
+                    expect(page.locator('[data-attention-id="SYN-ATT-LAB"]')).to_contain_text("✓ Επισκοπήθηκε")
+                    expect(page.locator("#doctorClinicalInboxDetails")).to_contain_text("✓ Το εισερχόμενο επισκοπήθηκε")
+                    expect(page.locator("#doctorClinicalInboxDetails").get_by_role(
+                        "button",name="Το είδα")).to_have_count(0)
+                    assert all(x["item_id"]!="SYN-ATT-LAB" for x in
+                        login(app).get(PREFIX+"/attention/brief/"+SYNTHETIC_161_PATIENT_IDS[0]).json()["items"])
                 page.locator('[data-attention-id="SYN-ATT-MRI"]').click()
+                # A previous item's success must not appear under a new source.
+                expect(page.locator("#doctorClinicalInboxFeedback")).to_have_text("")
                 if index == 0:
                     details=page.locator("#doctorClinicalInboxDetails")
-                    expect(details.get_by_label("Δοκιμαστικός ασθενής")).to_have_value(SYNTHETIC_161_PATIENT_IDS[1])
-                    expect(details.get_by_label("Δοκιμαστικός ασθενής")).to_be_disabled()
-                    expect(details.get_by_label("Ανεξάρτητη ημερομηνία γέννησης")).to_have_count(0)
+                    expect(details).to_contain_text("Ασθενής: Δοκιμαστικός Ασθενής 161 2")
+                    expect(details.locator(".clinical-inbox-link input")).to_have_count(0)
                     expect(details.get_by_role("button",name="Επιβεβαίωση ασθενούς")).to_be_enabled()
                     details.get_by_role("button",name="Επιβεβαίωση ασθενούς").click()
                     expect(details).to_contain_text(SYNTHETIC_161_PATIENT_IDS[1])
-                    details.get_by_role("button",name="Ελέγχθηκε",exact=True).click()
-                    expect(details).to_contain_text("reviewed")
+                    details.get_by_role("button",name="Το είδα",exact=True).click()
+                    expect(details).to_contain_text("✓ Το εισερχόμενο επισκοπήθηκε")
+                    expect(page.locator('[data-attention-id="SYN-ATT-MRI"]')).to_contain_text("✓ Επισκοπήθηκε")
                 page.locator("#doctorClinicalInboxBack").click()
                 expect(page.locator("#doctorClinicalInboxView")).to_be_hidden()
                 expect(page.locator("#doctorClinicalInboxDetails")).to_be_empty()
@@ -447,9 +461,9 @@ def test_browser_eligible_patient_lookup_401_is_current_session_only(setup):
                       })
                     : window.__realEligibleFetch(url,opts);
             }""")
-            page.locator('[data-attention-id="SYN-ATT-LAB"]').click()
+            page.locator('[data-attention-id="SYN-ATT-MRI"]').click()
             page.wait_for_function('typeof window.__releaseOldEligible401==="function"')
-            expect(page.locator("#doctorClinicalInboxDetails form")).to_have_count(1)
+            expect(page.locator("#doctorClinicalInboxDetails .clinical-inbox-link")).to_have_count(1)
             # Submit the ACTUAL protected login, which replaces the in-flight
             # source context; dispatching a fabricated auth event is insufficient.
             if page.locator("#ceGlobalAccessPanel").is_hidden():
