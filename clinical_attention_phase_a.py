@@ -18,7 +18,8 @@ class AttentionAction(BaseModel):
     expected_version:int=Field(ge=0)
     idempotency_key:UUID
     patient_id:str|None=Field(default=None,max_length=128)
-    verified_dob:str|None=Field(default=None,max_length=10)
+    evidence_ref:str|None=Field(default=None,max_length=96)
+    evidence_kind:Literal["verified_referral","verified_adt"]|None=None
     independently_verified:bool=False
 
 
@@ -32,7 +33,8 @@ class SyntheticRevision(BaseModel):
 
 def fixture(item_id,account,kind,subject_scope,title,summary):
     native="syn-msg-01"  # deliberately repeated across different accounts
-    logical="/".join((account,native,"part-1","subject-1"))
+    # Two documents in one synthetic mailbox message have distinct part scopes.
+    logical="/".join((account,native,"part-"+item_id,"subject-1"))
     return dict(item_id=item_id,origin_kind="synthetic_fixture",
                 mailbox_account_ref=account,provider_native_message_id=native,
                 logical_source_item_key=logical,source_receipt_version_key=logical+"/r1",
@@ -47,17 +49,43 @@ def fixture(item_id,account,kind,subject_scope,title,summary):
 
 class SyntheticAttentionStore:
     """A single in-memory source of truth per #161 test router, not a real database."""
-    def __init__(self):
+    def __init__(self,patient_ids):
         self.lock=RLock()
+        if len(patient_ids)!=3 or len(set(patient_ids))!=3:
+            raise ValueError("Only the three isolated synthetic patient IDs are allowed")
         items=(
             fixture("SYN-ATT-MRI","syn-gmail","imaging_mri","single_subject",
                     "Συνθετική γνωμάτευση MRI","Δοκιμαστική γνωμάτευση γόνατος — όχι ιατρική ερμηνεία."),
             fixture("SYN-ATT-LAB","syn-icloud","lab","single_subject",
                     "Συνθετική εργαστηριακή αναφορά","Δοκιμαστική αναφορά — μη αποδεκτά κλινικά αποτελέσματα."),
+            fixture("SYN-ATT-GESY","syn-gmail","gesy_notice","single_subject",
+                    "Συνθετική ειδοποίηση ΓεΣΥ · αποτελέσματα διαθέσιμα",
+                    "Συνθετική ειδοποίηση: αποτελέσματα διαθέσιμα στην πύλη. Δεν έχουν αναγνωστεί ή ελεγχθεί εργαστηριακές τιμές."),
+            fixture("SYN-ATT-NAME","syn-icloud","other","single_subject",
+                    "Συνθετική ειδοποίηση μόνο με όνομα",
+                    "Μη επιβεβαιωμένος δικαιούχος: το όνομα δεν αρκεί για σύνδεση."),
             fixture("SYN-ATT-MIXED","syn-outlook","imaging_xray","mixed_subjects",
                     "Συνθετικό PDF πολλών ασθενών",None),
         )
         self.items={row["item_id"]:row for row in items}
+        # Simulate verified PRIOR source-to-patient relationships without raw
+        # ADT values, real referral numbers, email or an identity registry.
+        # The proof is per source item, unique and server-owned; names never
+        # qualify it, and the UI cannot choose a new target by assertion.
+        self.verified_proofs={
+            "SYN-ATT-MRI":{"patient_id":patient_ids[1],
+                "evidence_kind":"verified_referral",
+                "evidence_ref":"syn-proof-referral-mri-2",
+                "description":"Προηγουμένως επαληθευμένο συνθετικό παραπεμπτικό MRI"},
+            "SYN-ATT-LAB":{"patient_id":patient_ids[0],
+                "evidence_kind":"verified_adt",
+                "evidence_ref":"syn-proof-adt-lab-1",
+                "description":"Συνθετικός επαληθευμένος ΑΔΤ στο προστατευμένο μητρώο"},
+            "SYN-ATT-GESY":{"patient_id":patient_ids[1],
+                "evidence_kind":"verified_referral",
+                "evidence_ref":"syn-proof-referral-gesy-2",
+                "description":"Προηγουμένως επαληθευμένο συνθετικό παραπεμπτικό ΓεΣΥ"},
+        }
         self.replays={}
 
     def get(self,item_id):
@@ -84,7 +112,14 @@ class SyntheticAttentionStore:
                     "items":[self.projection(x) for x in self.items.values()]}
 
     def detail(self,item_id):
-        with self.lock:return {"mode":"synthetic_only","item":self.projection(self.get(item_id))}
+        with self.lock:
+            item=self.get(item_id)
+            proposal=(self.verified_proofs.get(item_id)
+                      if item["source_subject_scope"]=="single_subject" else None)
+            # Display only an opaque fake evidence token and approved synthetic
+            # patient ID, never a raw national ID or sender-derived identity.
+            return {"mode":"synthetic_only","item":self.projection(item),
+                    "verified_source_match":deepcopy(proposal) if proposal else None}
 
     def brief(self,patient_id):
         with self.lock:
@@ -119,9 +154,14 @@ class SyntheticAttentionStore:
             if req.action=="confirm_link":
                 if item["source_subject_scope"]!="single_subject":
                     raise HTTPException(409,"Mixed/unknown subject is Inbox-only")
-                if not req.independently_verified or not req.patient_id or not req.verified_dob:
-                    raise HTTPException(422,"Independent identifier verification required")
-                verify(req.patient_id,req.verified_dob)
+                if not req.independently_verified or not req.patient_id or not req.evidence_ref or not req.evidence_kind:
+                    raise HTTPException(422,"Source-scoped clinician confirmation required")
+                proposal=self.verified_proofs.get(item_id)
+                if (not proposal or proposal["patient_id"]!=req.patient_id
+                        or proposal["evidence_ref"]!=req.evidence_ref
+                        or proposal["evidence_kind"]!=req.evidence_kind):
+                    raise HTTPException(409,"No qualified identity evidence for this subject")
+                verify(req.patient_id,None)
                 # An earlier clinical review/disposition belongs to the OLD
                 # confirmed patient. Never carry it to another patient/Brief.
                 if (item["identity_state"]=="clinician_confirmed"
@@ -130,7 +170,7 @@ class SyntheticAttentionStore:
                                 reviewed_at=None,disposition="undecided",
                                 candidate_summary=None)
                 item.update(patient_id=req.patient_id,identity_state="clinician_confirmed",
-                            link_evidence_kind="synthetic_exact_id_dob")
+                            link_evidence_kind="synthetic_"+req.evidence_kind)
             elif req.action=="mark_reviewed":
                 item["review_state"]="reviewed"
                 item["review_actor"]=actor
