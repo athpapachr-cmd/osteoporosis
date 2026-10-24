@@ -142,48 +142,81 @@
     box.append(make("h3","",item.source_title),
       make("p","clinical-inbox-note","Πηγή: "+item.mailbox_account_ref+" · "+
         item.review_state+" · έκδοση "+item.active_source_revision));
+    if(item.source_type==="gesy_notice"&&item.source_status==="results_available")
+      box.append(make("p","clinical-inbox-note",
+        "Αποτελέσματα διαθέσιμα — εκκρεμεί ιατρικός έλεγχος. Δεν υπάρχουν τιμές εξετάσεων."));
     const safe=item.source_subject_scope==="single_subject";
     box.append(make("p",safe?"clinical-inbox-note":"clinical-inbox-warning",
-      safe?(item.candidate_summary||"Προηγούμενη εξαγωγή άκυρη· απαιτείται επανέλεγχος."):
+      safe?(item.source_type==="gesy_notice"?
+          "Ειδοποίηση διαθεσιμότητας — δεν περιλαμβάνει κλινική ερμηνεία ή αποτελέσματα.":
+          (item.candidate_summary||"Προηγούμενη εξαγωγή άκυρη· απαιτείται επανέλεγχος.")):
         "Πολλοί/άγνωστοι ασθενείς. Το έγγραφο παραμένει μόνο στο Inbox."));
     box.append(make("p","clinical-inbox-note",item.identity_state==="clinician_confirmed"?
-      "Επιβεβαιωμένος συνθετικός ασθενής: "+item.patient_id:
+      "Συνδεδεμένος συνθετικός ασθενής: "+item.patient_id+" · "+
+        (item.link_evidence_kind==="verified_referral"?"προηγουμένως επιβεβαιωμένο παραπεμπτικό":
+         "επαληθευμένη σύνδεση"):
+      item.identity_state==="conflict"?"Σύγκρουση τεκμηρίων — παραμένει χωρίς σύνδεση.":
       "Δεν υπάρχει επιβεβαιωμένη σύνδεση με ασθενή."));
     const actions=make("div","clinical-inbox-actions");box.append(actions);
     button(actions,"Ελέγχθηκε",()=>action(item,"mark_reviewed"));
     button(actions,"Απαιτείται επανέλεγχος",()=>action(item,"needs_review"));
     if(item.review_state==="reviewed"&&item.identity_state==="clinician_confirmed")
       button(actions,"Χωρίς επικοινωνία",()=>action(item,"no_communication"));
-    if(!safe||item.identity_state==="clinician_confirmed")return;
+    if(!safe||item.identity_state==="clinician_confirmed"||item.identity_state==="conflict")return;
     const form=make("form","clinical-inbox-link");
-    form.append(make("p","clinical-inbox-note",
-      "Επίλεξε δοκιμαστικό φάκελο και επαλήθευσε ξεχωριστά την ημερομηνία γέννησης."));
+    const strong=item.verified_link_candidate;
+    form.append(make("p","clinical-inbox-note",strong?
+      strong.reason+" — σύγκρινε με τον συνθετικό φάκελο και επιβεβαίωσε μία φορά. Δεν απαιτείται ημερομηνία γέννησης.":
+      "Μόνο πιθανή ταυτοποίηση. Το όνομα δεν αρκεί· απαιτείται ανεξάρτητο τεκμήριο από τον προστατευμένο φάκελο ή παραμένει ασύνδετο."));
     const patient=make("select");patient.required=true;patient.setAttribute("aria-label","Δοκιμαστικός ασθενής");
     patient.append(new Option("Επιλογή συνθετικού φακέλου",""));
-    const birth=make("input");birth.type="text";birth.maxLength=10;birth.required=true;
-    birth.autocomplete="off";birth.placeholder="YYYY-MM-DD";
-    birth.setAttribute("aria-label","Ανεξάρτητη ημερομηνία γέννησης");
     const pLabel=make("label","","Δοκιμαστικός ασθενής");pLabel.append(patient);
-    const bLabel=make("label","","Ημερομηνία γέννησης");bLabel.append(birth);
-    const confirmLabel=make("label","clinical-inbox-checkbox");
-    const confirm=make("input");confirm.type="checkbox";confirm.required=true;
-    confirmLabel.append(confirm,make("span","",
-      "Επαλήθευσα ανεξάρτητα τα στοιχεία του συνθετικού ασθενούς."));
-    form.append(pLabel,bLabel,confirmLabel);
-    const submit=make("button","doctor-command-button","Επιβεβαίωση συνθετικής σύνδεσης");
-    submit.type="submit";form.append(submit);
+    form.append(pLabel);
+    let evidence=null,confirm=null;
+    if(!strong){
+      const eLabel=make("label","","Κωδικός ανεξάρτητου συνθετικού τεκμηρίου");
+      evidence=make("input");evidence.type="text";evidence.maxLength=64;evidence.required=true;
+      evidence.autocomplete="off";evidence.placeholder="Αρχικό παραπεμπτικό από φάκελο";
+      evidence.setAttribute("aria-label","Ανεξάρτητο συνθετικό τεκμήριο");
+      eLabel.append(evidence);form.append(eLabel);
+      const confirmLabel=make("label","clinical-inbox-checkbox");
+      confirm=make("input");confirm.type="checkbox";confirm.required=true;
+      confirmLabel.append(confirm,make("span","",
+        "Σύγκρινα το αρχικό τεκμήριο με τον προστατευμένο συνθετικό φάκελο."));
+      form.append(confirmLabel);
+    }
+    const submit=make("button","doctor-command-button","Επιβεβαίωση ασθενούς");
+    submit.type="submit";submit.disabled=true;form.append(submit);
     form.addEventListener("submit",e=>{
       e.preventDefault();
-      if(!patient.value||!confirm.checked||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(birth.value))return;
-      action(item,"confirm_link",{patient_id:patient.value,verified_dob:birth.value,
-                                   independently_verified:true});
+      if(!patient.value||submit.disabled)return;
+      if(strong){
+        if(patient.value!==strong.patient_id)return;
+        action(item,"confirm_link",{patient_id:patient.value,
+          evidence_kind:strong.evidence_kind,independently_verified:true});
+      }else{
+        if(!confirm.checked||!evidence.value.trim())return;
+        action(item,"confirm_link",{patient_id:patient.value,
+          evidence_kind:"clinician_source_comparison",
+          evidence_ref:evidence.value.trim(),independently_verified:true});
+      }
     });
     box.append(form);
     api("/eligible-patients").then(d=>{
       if(!current(g,item.item_id)||!box.contains(form))return;
       if(d.mode!=="synthetic_only"||!Array.isArray(d.patients))
         throw Error("Invalid synthetic patient scope");
-      for(const p of d.patients)patient.append(new Option(p.name,p.patient_id));
+      for(const p of d.patients){
+        if(!strong||p.patient_id===strong.patient_id)patient.append(new Option(p.name,p.patient_id));
+      }
+      if(strong){
+        if(!d.patients.some(p=>p.patient_id===strong.patient_id)){
+          form.remove();box.append(make("p","clinical-inbox-warning",
+            "Ο επαληθευμένος φάκελος δεν βρέθηκε· η σύνδεση δεν επιτρέπεται."));return;
+        }
+        patient.value=strong.patient_id;patient.disabled=true;
+      }
+      submit.disabled=false;
     }).catch(e=>{
       // A superseded read must not revoke the replacement clinician session.
       if(!current(g,item.item_id)||!box.contains(form))return;
