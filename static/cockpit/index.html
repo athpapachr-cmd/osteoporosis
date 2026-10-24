@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="/static/cockpit/styles.css" />
   <link rel="stylesheet" href="/static/cockpit/clinical-workspace.css" />
   <link rel="stylesheet" href="/static/cockpit/doctor-shell.css?v=pending-metadata-20261022" />
+  <link rel="stylesheet" href="/static/cockpit/clinical-inbox.css?v=phase-a-20261024" />
   <link rel="stylesheet" href="/static/cockpit/shared-nav.css" />
 </head>
 <body>
@@ -200,6 +201,8 @@ ENCOUNTER DETAIL
           <div id="visitBriefPlan"></div>
           <h3 id="visitBriefPendingHeading">Καταγεγραμμένες εκκρεμότητες</h3>
           <div id="visitBriefPending"></div>
+          <h3 id="visitBriefAttentionHeading" hidden>Νέο κλινικό υλικό — συνθετική προεπισκόπηση</h3>
+          <div id="visitBriefAttention" hidden></div>
           <h3 id="visitBriefChecksTitle">Για το ραντεβού</h3>
           <div id="visitBriefChecks"></div>
         </section>
@@ -266,6 +269,32 @@ ENCOUNTER DETAIL
       <dialog id="doctorObligationDialog" class="doctor-obligation-dialog" aria-label="Ενέργειες υποχρέωσης"></dialog>
       <div class="doctor-obligations-footer">
         <button id="doctorObligationsScope" class="doctor-command-button" type="button">Προβολή δοκιμαστικού ασθενούς</button>
+      </div>
+    </section>
+    <section id="doctorClinicalInboxView" class="doctor-library" hidden aria-label="Κλινικά εισερχόμενα — συνθετική δοκιμή">
+      <header class="doctor-library-header">
+        <div><p class="eyebrow">Κλινική προσοχή · Phase A</p><h2>Κλινικά εισερχόμενα</h2></div>
+        <button id="doctorClinicalInboxBack" class="doctor-command-button" type="button">← Αρχική</button>
+      </header>
+      <p class="clinical-inbox-banner">Μόνο συνθετικά δεδομένα. Δεν συνδέεται κανένας λογαριασμός Gmail, iCloud ή Outlook. Δεν επιτρέπονται πραγματικά στοιχεία ασθενών ή αποστολή μηνυμάτων.</p>
+      <div class="clinical-inbox-tools">
+        <label>Δοκιμαστική πηγή <select id="doctorClinicalInboxAccount"><option value="">Όλες οι δοκιμαστικές πηγές</option></select></label>
+        <label>Κατάσταση <select id="doctorClinicalInboxReviewFilter">
+          <option value="">Όλα</option><option value="unreviewed">Δεν ελέγχθηκαν</option>
+          <option value="reviewed">Ελέγχθηκαν</option><option value="needs_re_review">Επανέλεγχος</option>
+        </select></label>
+        <button id="doctorClinicalInboxReload" class="doctor-command-button" type="button">Ανανέωση</button>
+      </div>
+      <p id="doctorClinicalInboxState" role="status" aria-live="polite"></p>
+      <p id="doctorClinicalInboxShown"></p>
+      <div class="clinical-inbox-layout">
+        <section class="clinical-inbox-list" aria-label="Συνθετικά εισερχόμενα">
+          <div id="doctorClinicalInboxRows"></div>
+        </section>
+        <section class="clinical-inbox-detail" aria-label="Ασφαλής δοκιμαστική αξιολόγηση">
+          <div id="doctorClinicalInboxDetails"></div>
+          <p id="doctorClinicalInboxFeedback" role="status" aria-live="polite"></p>
+        </section>
       </div>
     </section>
     <section id="doctorLibraryView" class="doctor-library" hidden aria-label="Εργασίες ιατρείου και εργαλεία">
@@ -468,7 +497,8 @@ ENCOUNTER DETAIL
   <script src="/static/cockpit/patient-chart.js?v=pending-metadata-20261022" defer></script>
   <script src="/static/cockpit/patient-entry.js?v=chart-continuity-20261018" defer></script>
   <script src="/static/cockpit/obligations-view.js?v=pending-metadata-20261022" defer></script>
-  <script src="/static/cockpit/doctor-shell.js?v=pending-metadata-20261022" defer></script>
+  <script src="/static/cockpit/clinical-inbox.js?v=phase-a-20261024" defer></script>
+  <script src="/static/cockpit/doctor-shell.js?v=phase-a-20261024" defer></script>
   <script src="/static/cockpit/shared-nav.js" defer></script>
 </body>
 </html>

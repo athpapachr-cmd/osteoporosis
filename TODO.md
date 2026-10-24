@@ -437,6 +437,7 @@ Permanent: `Appointment != CareTask`.
 - [x] Complete reviewed synthetic/manual Visit Capture implementation and independently close R2: P2-F2-01 CLOSED / 0:0:0; PR #139 merged to main as `dd14cd0df1ca84d051ba7bf784b5b33226ed20b0`; production deploy LIVE at `8dbc9a78d032d710be4530875d4fa02a15628268` (`dep-db4k2r3ncjis73dnc6p0`); Product Owner browser smoke pending; real-data qualification remains open.
 - [ ] After separate authority, freeze/implement the shared contracts and both entry surfaces, reusing confirmed clinical records/G3 summary and preserving identity/authority boundaries.
 - [ ] Qualify the first live Medicover vertical: authorized always-on Gmail intake, cold-start-safe delivery, independent review and clinician-approved Reception → Zadarma communication without appointment dependency.
+- [ ] FUTURE (explicit PO requirement): connect approved iCloud Mail and Hotmail/Outlook mailboxes alongside Gmail, including multiple accounts, to the **same** Clinical Inbox with independent account consent/freshness/cursors and no automatic promotion of nonclinical email. Phase A data model is account-neutral; no provider activation now.
 - [ ] Extend source adapters for MRI/X-ray/imaging reports and GESY notification context under the same lifecycle; do not promote notifications into completed results.
 - [ ] Later explicit result acceptance reuses the authoritative clinical persistence owner; no automatic writes, tasks, booking or patient messaging.
 

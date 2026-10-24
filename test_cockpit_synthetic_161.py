@@ -197,10 +197,32 @@ def test_real_browser_two_sessions_refresh_and_complete_chart(setup, tmp_path):
                 expect(page.locator("#doctorObligationsTotal")).to_have_text("3")
                 expect(page.locator("#doctorObligationsRows")).to_contain_text("Δοκιμαστικός Ασθενής 161 2")
                 page.locator("#doctorInboxButton").click()
-                expect(page.locator("#doctorPopoverTitle")).to_have_text("Κλινικά εισερχόμενα")
-                expect(page.locator("#doctorPopoverContent")).to_contain_text("Δεν έχει συνδεθεί")
-                expect(page.locator("#doctorPopoverContent button.doctor-action-row")).to_have_count(0)
-                page.locator("#doctorInboxButton").click()
+                expect(page.locator("#doctorClinicalInboxView")).to_be_visible()
+                expect(page.locator("#doctorClinicalInboxState")).to_contain_text("Καμία πραγματική")
+                expect(page.locator("#doctorClinicalInboxRows [data-attention-id]")).to_have_count(3)
+                page.locator("#doctorClinicalInboxAccount").select_option("syn-icloud")
+                expect(page.locator("#doctorClinicalInboxRows [data-attention-id]")).to_have_count(1)
+                expect(page.locator('[data-attention-id="SYN-ATT-LAB"]')).to_be_visible()
+                page.locator("#doctorClinicalInboxAccount").select_option("")
+                expect(page.locator("#doctorClinicalInboxRows [data-attention-id]")).to_have_count(3)
+                expect(page.locator("#doctorInboxBadge")).to_be_hidden()
+                page.locator('[data-attention-id="SYN-ATT-MIXED"]').click()
+                expect(page.locator("#doctorClinicalInboxDetails")).to_contain_text("μόνο στο Inbox")
+                expect(page.locator("#doctorClinicalInboxDetails form")).to_have_count(0)
+                page.locator('[data-attention-id="SYN-ATT-MRI"]').click()
+                if index == 0:
+                    details=page.locator("#doctorClinicalInboxDetails")
+                    details.get_by_label("Δοκιμαστικός ασθενής").select_option(SYNTHETIC_161_PATIENT_IDS[1])
+                    details.get_by_label("Ανεξάρτητη ημερομηνία γέννησης").fill("1972-01-01")
+                    details.locator('input[type="checkbox"]').check()
+                    details.get_by_role("button",name="Επιβεβαίωση συνθετικής σύνδεσης").click()
+                    expect(details).to_contain_text(SYNTHETIC_161_PATIENT_IDS[1])
+                    details.get_by_role("button",name="Ελέγχθηκε",exact=True).click()
+                    expect(details).to_contain_text("reviewed")
+                page.locator("#doctorClinicalInboxBack").click()
+                expect(page.locator("#doctorClinicalInboxView")).to_be_hidden()
+                expect(page.locator("#doctorClinicalInboxDetails")).to_be_empty()
+                page.locator("#doctorTasksButton").click()
                 page.locator("#doctorObligationsRows .doctor-obligation-group").filter(
                     has_text="Δοκιμαστικός Ασθενής 161 2").locator(".doctor-obligation-row").first.click()
                 expect(page.locator("#visitSelectedName")).to_have_text("Δοκιμαστικός Ασθενής 161 2")
@@ -214,6 +236,46 @@ def test_real_browser_two_sessions_refresh_and_complete_chart(setup, tmp_path):
                     expect(page.locator("#synthetic161Chart")).to_contain_text("2 αποθηκευμένες επισκέψεις")
                     expect(page.locator("#visitSelectedName")).to_have_text("Δοκιμαστικός Ασθενής 161 1")
                     assert "chart=cockpit-synthetic-161-1" in page.url
+                    # A delayed 401 from the old detail read may not log out
+                    # the newly authenticated synthetic clinician.
+                    page.locator("#doctorInboxButton").click()
+                    expect(page.locator("#doctorClinicalInboxView")).to_be_visible()
+                    page.evaluate("""() => {
+                        window.__savedFetch=window.fetch;
+                        window.__staleAttentionLogout=0;
+                        window.addEventListener("clinical:unauthenticated",
+                            ()=>window.__staleAttentionLogout++);
+                        window.__releaseLateAttention401=null;
+                        window.fetch=(url,opts)=>{
+                            if(String(url).endsWith("/attention/SYN-ATT-LAB"))
+                                return new Promise(resolve=>{
+                                    window.__releaseLateAttention401=()=>
+                                        resolve(new Response(null,{status:401}));
+                                });
+                            return window.__savedFetch(url,opts);
+                        };
+                    }""")
+                    page.locator('[data-attention-id="SYN-ATT-LAB"]').click()
+                    page.wait_for_function("typeof window.__releaseLateAttention401==='function'")
+                    page.evaluate('window.dispatchEvent(new Event("clinical:authenticated"))')
+                    expect(page.locator("#doctorClinicalInboxRows [data-attention-id]")).to_have_count(3)
+                    page.evaluate("""async () => {
+                        window.__releaseLateAttention401();
+                        await new Promise(resolve=>setTimeout(resolve,30));
+                    }""")
+                    assert page.evaluate("window.__staleAttentionLogout")==0
+                    expect(page.locator("#doctorClinicalInboxView")).to_be_visible()
+                    # A genuine CURRENT 401 on detail must purge patient-facing
+                    # UI and request the existing clinical login.
+                    page.evaluate("""() => {
+                        window.fetch=(url,opts)=>
+                            String(url).endsWith("/attention/SYN-ATT-MIXED")?
+                                Promise.resolve(new Response(null,{status:401})):
+                                window.__savedFetch(url,opts);
+                    }""")
+                    page.locator('[data-attention-id="SYN-ATT-MIXED"]').click()
+                    expect(page.locator("#doctorClinicalInboxView")).to_be_hidden()
+                    expect(page.locator("#doctorClinicalInboxDetails")).to_be_empty()
                 context.close()
             browser.close()
         with Session(engine) as db:
@@ -306,3 +368,85 @@ def test_obligation_origin_and_updates_share_persisted_history(setup):
     assert item["history"] == second.get(route).json()["pending"][0]["history"] == reopened["history"]
     assert [e["kind"] for e in item["history"]] == ["created", "received", "reopened"]
     assert second.get(route).json()["visits"] == chart["visits"]  # source is never rewritten
+
+
+def test_browser_eligible_patient_lookup_401_is_current_session_only(setup):
+    """Real #161 browser: superseded 401 ignored, current 401 purges and asks for login."""
+    import shutil
+    import socket
+    import threading
+    import uvicorn
+    from playwright.sync_api import sync_playwright, expect
+
+    app, engine = setup
+    sock = socket.socket()
+    sock.bind(("127.0.0.1", 0))
+    port = sock.getsockname()[1]
+    server = uvicorn.Server(uvicorn.Config(app, log_level="error"))
+    thread = threading.Thread(target=server.run, kwargs={"sockets": [sock]}, daemon=True)
+    thread.start()
+    try:
+        with sync_playwright() as pw:
+            browser = pw.chromium.launch(executable_path=shutil.which("google-chrome") or shutil.which("chromium"))
+            context = browser.new_context(viewport={"width": 680, "height": 900})
+            page = context.new_page()
+            page.set_default_timeout(10000)
+            page.goto(f"http://localhost:{port}" + PREFIX + "/")
+            page.locator("#ceGlobalKey").click()
+            page.locator("#ceGlobalKeyInput").fill(KEY)
+            page.locator("#ceGlobalLoginForm button[type=submit]").click()
+            page.locator("#synthetic161Prepare").click()
+            expect(page.locator("#synthetic161Status")).to_contain_text("Η δοκιμή αποθηκεύτηκε")
+            page.locator("#doctorInboxButton").click()
+            expect(page.locator("#doctorClinicalInboxRows [data-attention-id]")).to_have_count(3)
+            page.evaluate("""() => {
+                window.__unauthedEligibleCount = 0;
+                window.addEventListener("clinical:unauthenticated",
+                    () => window.__unauthedEligibleCount++);
+                window.__realEligibleFetch = window.fetch.bind(window);
+                window.fetch = (url,opts) =>
+                    String(url).endsWith("/attention/eligible-patients")
+                    ? new Promise(resolve => {
+                        window.__releaseOldEligible401 = () =>
+                            resolve(new Response(null,{status:401}));
+                      })
+                    : window.__realEligibleFetch(url,opts);
+            }""")
+            page.locator('[data-attention-id="SYN-ATT-LAB"]').click()
+            page.wait_for_function('typeof window.__releaseOldEligible401==="function"')
+            expect(page.locator("#doctorClinicalInboxDetails form")).to_have_count(1)
+            # Submit the ACTUAL protected login, which replaces the in-flight
+            # source context; dispatching a fabricated auth event is insufficient.
+            if page.locator("#ceGlobalAccessPanel").is_hidden():
+                page.locator("#ceGlobalKey").click()
+            page.locator("#ceGlobalKeyInput").fill(KEY)
+            page.locator("#ceGlobalLoginForm button[type=submit]").click()
+            expect(page.locator("#ceGlobalAuthStatus")).to_contain_text("Συνδέθηκες")
+            expect(page.locator("#doctorClinicalInboxRows [data-attention-id]")).to_have_count(3)
+            page.evaluate("""async () => {
+                window.__releaseOldEligible401();
+                await new Promise(resolve => setTimeout(resolve, 50));
+            }""")
+            assert page.evaluate("window.__unauthedEligibleCount") == 0
+            expect(page.locator("#doctorClinicalInboxView")).to_be_visible()
+            expect(page.locator("#doctorClinicalInboxDetails")).to_be_empty()
+
+            # A 401 from the CURRENT eligible-patients read must immediately
+            # remove all protected rows and forms and show the existing login.
+            page.evaluate("""() => {
+                window.fetch = (url,opts) =>
+                    String(url).endsWith("/attention/eligible-patients")
+                    ? Promise.resolve(new Response(null,{status:401}))
+                    : window.__realEligibleFetch(url,opts);
+            }""")
+            page.locator('[data-attention-id="SYN-ATT-MRI"]').click()
+            expect(page.locator("#doctorClinicalInboxView")).to_be_hidden()
+            expect(page.locator("#doctorClinicalInboxDetails")).to_be_empty()
+            expect(page.locator("#doctorClinicalInboxRows")).to_be_empty()
+            expect(page.locator("#ceGlobalAccessPanel")).to_be_visible()
+            assert page.evaluate("window.__unauthedEligibleCount") == 1
+            context.close()
+            browser.close()
+    finally:
+        server.should_exit = True
+        thread.join(timeout=5)
