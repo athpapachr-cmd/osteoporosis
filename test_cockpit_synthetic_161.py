@@ -249,6 +249,8 @@ def test_real_browser_two_sessions_refresh_and_complete_chart(setup, tmp_path):
                     # A delayed 401 from the old detail read may not log out
                     # the newly authenticated synthetic clinician.
                     page.locator("#doctorInboxButton").click()
+                    expect(page.locator("#doctorPopover")).to_be_visible()
+                    page.locator("#doctorPopoverContent").get_by_role("button",name="Όλα τα κλινικά εισερχόμενα").click()
                     expect(page.locator("#doctorClinicalInboxView")).to_be_visible()
                     page.evaluate("""() => {
                         window.__savedFetch=window.fetch;
@@ -408,6 +410,8 @@ def test_browser_eligible_patient_lookup_401_is_current_session_only(setup):
             page.locator("#synthetic161Prepare").click()
             expect(page.locator("#synthetic161Status")).to_contain_text("Η δοκιμή αποθηκεύτηκε")
             page.locator("#doctorInboxButton").click()
+            expect(page.locator("#doctorPopover")).to_be_visible()
+            page.locator("#doctorPopoverContent").get_by_role("button",name="Όλα τα κλινικά εισερχόμενα").click()
             expect(page.locator("#doctorClinicalInboxRows [data-attention-id]")).to_have_count(3)
             page.evaluate("""() => {
                 window.__unauthedEligibleCount = 0;
