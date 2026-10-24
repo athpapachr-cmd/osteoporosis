@@ -233,6 +233,7 @@ def build_synthetic_161_router(engine):
     @router.post("/prepare", dependencies=protected)
     def prepare():
         _prepare(engine)
+        attention.establish_previously_verified_referral(verify_synthetic_patient)
         return {"ready": True, "storage": engine.dialect.name, "scenario": SCENARIO}
 
     @router.post("/open-booking")
