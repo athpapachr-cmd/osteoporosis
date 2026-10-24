@@ -39,6 +39,8 @@ def test_synthetic_inbox_requires_existing_key_and_scopes_accounts(setup):
     # Synthetic patients must first be created by the existing protected
     # scenario; no real registry records are examined by this test endpoint.
     assert c.get(PREFIX+"/attention/eligible-patients").status_code==409
+    with Session(engine) as db:
+        assert db.scalar(select(func.count()).select_from(ClinicalPendingORM))==0
     assert c.post(PREFIX+"/prepare").status_code==200
     assert "dob" not in c.get(PREFIX+"/attention/eligible-patients").json()["patients"][0]
     # A mixed document cannot be promoted to one patient just by changing its scope.
@@ -48,7 +50,7 @@ def test_synthetic_inbox_requires_existing_key_and_scopes_accounts(setup):
     }).status_code==409
     assert c.get(PREFIX+"/attention/brief/outside-synthetic-scope").status_code==404
     with Session(engine) as db:
-        assert db.scalar(select(func.count()).select_from(ClinicalPendingORM))==0
+        assert db.scalar(select(func.count()).select_from(ClinicalPendingORM))==3
 
 
 def test_synthetic_review_link_revision_replay_and_mixed_document_fail_closed(setup):
