@@ -11,6 +11,11 @@
     const e=document.createElement(tag);if(cls)e.className=cls;
     if(value!==undefined)e.textContent=String(value);return e;
   };
+  const reviewLabel=status=>({
+    unreviewed:"Δεν επισκοπήθηκε",
+    reviewed:"✓ Επισκοπήθηκε",
+    needs_re_review:"Απαιτείται επανέλεγχος"
+  })[status]||"Άγνωστη κατάσταση";
   function button(parent,label,fn){
     const b=make("button","doctor-command-button",label);
     b.type="button";b.addEventListener("click",fn);parent.append(b);return b;
@@ -50,7 +55,7 @@
       b.dataset.attentionId=item.item_id;b.setAttribute("aria-pressed",String(state.id===item.item_id));
       const body=make("span");body.append(make("strong","",item.source_title));
       const label=state.accounts.find(x=>x.mailbox_account_id===item.mailbox_account_ref)?.label||"Δοκιμή";
-      body.append(make("small","",label+" · "+item.review_state+
+      body.append(make("small","",label+" · "+reviewLabel(item.review_state)+
         (item.source_subject_scope!=="single_subject"?" · μόνο Inbox":"")));
       b.append(body,make("span","","›"));b.addEventListener("click",()=>select(item.item_id));
       box.append(b);
@@ -112,21 +117,31 @@
   }
   async function action(item,kind,extra={}){
     if(state.busy||!state.active||state.id!==item.item_id)return;
-    const id=item.item_id,g=state.generation;state.busy=true;
-    $("doctorClinicalInboxFeedback").textContent="Αποθήκευση συνθετικής ενέργειας…";
+    const id=item.item_id,g=state.generation,ticket=++state.selection;
+    state.busy=true;
+    $("doctorClinicalInboxFeedback").textContent="Αποθήκευση…";
     try{
       const data=await api("/"+encodeURIComponent(id)+"/action",{
         method:"POST",body:JSON.stringify({action:kind,expected_version:item.version,
           idempotency_key:crypto.randomUUID(),...extra})
       });
-      if(!current(g,id))return;
-      if(data.item?.item_id!==id)throw Error("Unexpected response");
-      state.busy=false;state.id=null;
-      $("doctorClinicalInboxDetails").replaceChildren();await load();
-      if(state.active)select(id);
-      $("doctorClinicalInboxFeedback").textContent="Η συνθετική ενέργεια καταγράφηκε.";
+      if(!current(g,id)||ticket!==state.selection)return;
+      if(data.item?.item_id!==id||data.item.version<=item.version)
+        throw Error("Unexpected action response");
+      // Display the authoritative updated state at once. Avoid an async
+      // list/detail reload that can hide an otherwise successful one-tap action.
+      state.items=state.items.map(row=>row.item_id===id?data.item:row);
+      state.busy=false;
+      rows();
+      render(data.item,g);
+      $("doctorClinicalInboxFeedback").textContent={
+        mark_reviewed:"✓ Επισκοπήθηκε το εισερχόμενο. Δεν σημαίνει ιατρικό έλεγχο αποτελεσμάτων.",
+        needs_review:"Καταγράφηκε ότι απαιτείται επανέλεγχος.",
+        confirm_link:"✓ Επιβεβαιώθηκε η σύνδεση με τον συνθετικό ασθενή.",
+        no_communication:"Καταγράφηκε ότι δεν απαιτείται επικοινωνία."
+      }[kind]||"Η ενέργεια καταγράφηκε.";
     }catch(e){
-      if(!current(g,id))return;
+      if(!current(g,id)||ticket!==state.selection)return;
       state.busy=false;
       if(e.status===401){
         window.dispatchEvent(new Event("clinical:unauthenticated"));
@@ -141,7 +156,7 @@
     const box=$("doctorClinicalInboxDetails");box.replaceChildren();
     box.append(make("h3","",item.source_title),
       make("p","clinical-inbox-note","Πηγή: "+item.mailbox_account_ref+" · "+
-        item.review_state+" · έκδοση "+item.active_source_revision));
+        reviewLabel(item.review_state)+" · έκδοση "+item.active_source_revision));
     if(item.source_type==="gesy_notice"&&item.source_status==="results_available")
       box.append(make("p","clinical-inbox-note",
         "Αποτελέσματα διαθέσιμα — εκκρεμεί ιατρικός έλεγχος. Δεν υπάρχουν τιμές εξετάσεων."));
@@ -157,76 +172,58 @@
          "επαληθευμένη σύνδεση"):
       item.identity_state==="conflict"?"Σύγκρουση τεκμηρίων — παραμένει χωρίς σύνδεση.":
       "Δεν υπάρχει επιβεβαιωμένη σύνδεση με ασθενή."));
+    if(item.review_state==="reviewed")
+      box.append(make("p","clinical-inbox-note",
+        "✓ Το εισερχόμενο επισκοπήθηκε. Αυτό δεν είναι ιατρική αποδοχή αποτελεσμάτων."));
     const actions=make("div","clinical-inbox-actions");box.append(actions);
-    button(actions,"Ελέγχθηκε",()=>action(item,"mark_reviewed"));
+    if(item.review_state!=="reviewed")
+      button(actions,"Το είδα",()=>action(item,"mark_reviewed"));
     button(actions,"Απαιτείται επανέλεγχος",()=>action(item,"needs_review"));
     if(item.review_state==="reviewed"&&item.identity_state==="clinician_confirmed")
       button(actions,"Χωρίς επικοινωνία",()=>action(item,"no_communication"));
     if(!safe||item.identity_state==="clinician_confirmed"||item.identity_state==="conflict")return;
-    const form=make("form","clinical-inbox-link");
     const strong=item.verified_link_candidate;
-    form.append(make("p","clinical-inbox-note",strong?
-      strong.reason+" — σύγκρινε με τον συνθετικό φάκελο και επιβεβαίωσε μία φορά. Δεν απαιτείται ημερομηνία γέννησης.":
-      "Μόνο πιθανή ταυτοποίηση. Το όνομα δεν αρκεί· απαιτείται ανεξάρτητο τεκμήριο από τον προστατευμένο φάκελο ή παραμένει ασύνδετο."));
-    const patient=make("select");patient.required=true;patient.setAttribute("aria-label","Δοκιμαστικός ασθενής");
-    patient.append(new Option("Επιλογή συνθετικού φακέλου",""));
-    const pLabel=make("label","","Δοκιμαστικός ασθενής");pLabel.append(patient);
-    form.append(pLabel);
-    let evidence=null,confirm=null;
     if(!strong){
-      const eLabel=make("label","","Κωδικός ανεξάρτητου συνθετικού τεκμηρίου");
-      evidence=make("input");evidence.type="text";evidence.maxLength=64;evidence.required=true;
-      evidence.autocomplete="off";evidence.placeholder="Αρχικό παραπεμπτικό από φάκελο";
-      evidence.setAttribute("aria-label","Ανεξάρτητο συνθετικό τεκμήριο");
-      eLabel.append(evidence);form.append(eLabel);
-      const confirmLabel=make("label","clinical-inbox-checkbox");
-      confirm=make("input");confirm.type="checkbox";confirm.required=true;
-      confirmLabel.append(confirm,make("span","",
-        "Σύγκρινα το αρχικό τεκμήριο με τον προστατευμένο συνθετικό φάκελο."));
-      form.append(confirmLabel);
+      // No typed synthetic secret or checkbox can create qualified evidence.
+      // Keep the weak source Inbox-only until the protected source owner
+      // independently establishes a current, unique patient association.
+      box.append(make("p","clinical-inbox-warning",
+        "Δεν υπάρχει επαληθευμένη αντιστοίχιση με ασθενή. " +
+        "Το έγγραφο παραμένει στα εισερχόμενα. Δεν χρειάζεται να εισαγάγεις κωδικό."));
+      return;
     }
+    const form=make("div","clinical-inbox-link");
+    form.append(make("p","clinical-inbox-note",
+      strong.reason+" — μία επιβεβαίωση, χωρίς καταχώριση στοιχείων."));
+    const patientLabel=make("p","clinical-inbox-note","Έλεγχος συνθετικού φακέλου…");
     const submit=make("button","doctor-command-button","Επιβεβαίωση ασθενούς");
-    submit.type="submit";submit.disabled=true;form.append(submit);
-    form.addEventListener("submit",e=>{
-      e.preventDefault();
-      if(!patient.value||submit.disabled)return;
-      if(strong){
-        if(patient.value!==strong.patient_id)return;
-        action(item,"confirm_link",{patient_id:patient.value,
-          evidence_kind:strong.evidence_kind,independently_verified:true});
-      }else{
-        if(!confirm.checked||!evidence.value.trim())return;
-        action(item,"confirm_link",{patient_id:patient.value,
-          evidence_kind:"clinician_source_comparison",
-          evidence_ref:evidence.value.trim(),independently_verified:true});
-      }
-    });
-    box.append(form);
+    submit.type="button";submit.disabled=true;
+    submit.addEventListener("click",()=>action(item,"confirm_link",{
+      patient_id:strong.patient_id,evidence_kind:strong.evidence_kind,
+      independently_verified:true
+    }));
+    form.append(patientLabel,submit);box.append(form);
     api("/eligible-patients").then(d=>{
       if(!current(g,item.item_id)||!box.contains(form))return;
       if(d.mode!=="synthetic_only"||!Array.isArray(d.patients))
         throw Error("Invalid synthetic patient scope");
-      for(const p of d.patients){
-        if(!strong||p.patient_id===strong.patient_id)patient.append(new Option(p.name,p.patient_id));
+      const matches=d.patients.filter(p=>p.patient_id===strong.patient_id);
+      if(matches.length!==1){
+        form.remove();box.append(make("p","clinical-inbox-warning",
+          "Δεν υπάρχει μοναδικός επαληθευμένος συνθετικός φάκελος. Η σύνδεση δεν επιτρέπεται."));
+        return;
       }
-      if(strong){
-        if(!d.patients.some(p=>p.patient_id===strong.patient_id)){
-          form.remove();box.append(make("p","clinical-inbox-warning",
-            "Ο επαληθευμένος φάκελος δεν βρέθηκε· η σύνδεση δεν επιτρέπεται."));return;
-        }
-        patient.value=strong.patient_id;patient.disabled=true;
-      }
+      patientLabel.textContent="Ασθενής: "+matches[0].name;
       submit.disabled=false;
     }).catch(e=>{
-      // A superseded read must not revoke the replacement clinician session.
       if(!current(g,item.item_id)||!box.contains(form))return;
-      form.remove(); // No patient-link action survives failed identity coverage.
+      form.remove();
       if(e.status===401){
         window.dispatchEvent(new Event("clinical:unauthenticated"));
         window.dispatchEvent(new Event("clinical:request-login"));
       }else{
         box.append(make("p","clinical-inbox-warning",
-          "Δεν επιβεβαιώθηκαν οι συνθετικοί ασθενείς. Ανανέωσε πριν από σύνδεση."));
+          "Δεν επιβεβαιώθηκε ο συνθετικός φάκελος. Ανανέωσε πριν από σύνδεση."));
       }
     });
   }
