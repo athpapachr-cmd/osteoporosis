@@ -138,7 +138,9 @@ class SyntheticAttentionStore:
             if strong and item["identity_state"]!="clinician_confirmed" else None)
         if item["identity_state"]=="clinician_confirmed" and not self._link_current(item):
             visible.update(identity_state="conflict",patient_id=None,
-                           verified_link_candidate=None)
+                           verified_link_candidate=None,
+                           review_state="needs_re_review",disposition="undecided",
+                           review_actor=None,reviewed_at=None,candidate_summary=None)
         visible["audit_event_count"]=len(item["audit"])
         return deepcopy(visible)
 
