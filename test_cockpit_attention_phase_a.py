@@ -36,6 +36,10 @@ def test_synthetic_inbox_requires_existing_key_and_scopes_accounts(setup):
     assert gesy["verified_source_match"]["evidence_kind"]=="verified_referral"
     assert c.get(PREFIX+"/attention/SYN-ATT-NAME").json()["verified_source_match"] is None
     assert c.get(PREFIX+"/attention/SYN-ATT-MIXED").json()["verified_source_match"] is None
+    # Synthetic patients must first be created by the existing protected
+    # scenario; no real registry records are examined by this test endpoint.
+    assert c.get(PREFIX+"/attention/eligible-patients").status_code==409
+    assert c.post(PREFIX+"/prepare").status_code==200
     assert "dob" not in c.get(PREFIX+"/attention/eligible-patients").json()["patients"][0]
     # A mixed document cannot be promoted to one patient just by changing its scope.
     assert c.post(PREFIX+"/attention/SYN-ATT-MIXED/synthetic-revision",json={
