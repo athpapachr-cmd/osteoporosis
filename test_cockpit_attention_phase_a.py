@@ -21,9 +21,9 @@ def test_synthetic_inbox_requires_existing_key_and_scopes_accounts(setup):
     c=login(app);data=c.get(PREFIX+"/attention").json()
     assert data["mode"]=="synthetic_only" and not data["live_provider_connected"]
     assert data["coverage"]=="synthetic_fixture_only"
-    assert len(data["accounts"])==3 and len(data["items"])==3
+    assert len(data["accounts"])==3 and len(data["items"])==4
     assert len({i["logical_source_item_key"] for i in data["items"]})==3
-    assert len({i["provider_native_message_id"] for i in data["items"]})==1
+    assert len({i["provider_native_message_id"] for i in data["items"]})==2
     mixed=c.get(PREFIX+"/attention/SYN-ATT-MIXED").json()["item"]
     assert mixed["source_subject_scope"]=="mixed_subjects"
     assert mixed["candidate_summary"] is None and mixed["patient_id"] is None
@@ -44,27 +44,43 @@ def test_synthetic_review_link_revision_replay_and_mixed_document_fail_closed(se
     endpoint=PREFIX+"/attention/SYN-ATT-MRI"
     payload={"action":"confirm_link","expected_version":0,"idempotency_key":token(),
              "patient_id":SYNTHETIC_161_PATIENT_IDS[1],
-             "verified_dob":"1972-01-01","independently_verified":True}
+             "evidence_kind":"verified_adt","independently_verified":True}
+    # A name, a different patient, a DOB or an unchecked assertion is never
+    # equivalent to an issuer-qualified clinical registry identity match.
     assert a.post(endpoint+"/action",json={**payload,"idempotency_key":token(),
-                                            "verified_dob":"1970-01-01"}).status_code==409
+              "patient_id":SYNTHETIC_161_PATIENT_IDS[0]}).status_code==409
+    assert a.post(endpoint+"/action",json={**payload,"idempotency_key":token(),
+              "independently_verified":False}).status_code==422
+    assert a.post(endpoint+"/action",json={**payload,"idempotency_key":token(),
+              "verified_dob":"1972-01-01"}).status_code==422
     result=a.post(endpoint+"/action",json=payload)
     assert result.status_code==200,result.text
     before=result.json()["item"]
     assert before["patient_id"]==SYNTHETIC_161_PATIENT_IDS[1] and before["version"]==1
+    assert before["link_evidence_kind"]=="verified_adt"
+    assert "source_identity_ref" not in before and "link_evidence_ref" not in before
     assert a.post(endpoint+"/action",json=payload).json()["replayed"] is True
-    assert a.post(endpoint+"/action",json={**payload,"verified_dob":"1971-01-01"}).status_code==409
+    assert a.post(endpoint+"/action",json={**payload,"evidence_kind":"verified_referral"}).status_code==409
     assert b.post(endpoint+"/action",json={"action":"mark_reviewed","expected_version":0,
                                            "idempotency_key":token()}).status_code==409
     mark={"action":"mark_reviewed","expected_version":1,"idempotency_key":token()}
     assert b.post(endpoint+"/action",json=mark).status_code==200
     assert b.get(PREFIX+"/attention/brief/"+SYNTHETIC_161_PATIENT_IDS[1]).json()["items"][0]["review_state"]=="reviewed"
-    # Existing booking owner consumes the SAME attention item, not a copied Inbox record.
+    # Existing booking owner consumes the SAME attention item, not a second Inbox record.
     visit=b.post(PREFIX+"/open-booking",json={"booking_uid":BOOKINGS[1]}).json()
     assert visit["brief"]["clinical_attention"][0]["item_id"]=="SYN-ATT-MRI"
     assert visit["brief"]["clinical_attention"][0]["review_state"]=="reviewed"
     assert b.get(PREFIX+"/attention/brief/"+SYNTHETIC_161_PATIENT_IDS[0]).json()["items"]==[]
     assert b.post(PREFIX+"/attention/SYN-ATT-MIXED/action",json={
         **payload,"idempotency_key":token()}).status_code==409
+    # Weak source, matching patient names, and free-form unverified tokens fail closed.
+    weak=PREFIX+"/attention/SYN-ATT-LAB"
+    assert a.post(weak+"/action",json={
+        **payload,"idempotency_key":token()}).status_code==409
+    assert a.post(weak+"/action",json={**payload,"idempotency_key":token(),
+        "evidence_kind":"clinician_source_comparison",
+        "evidence_ref":"UNVERIFIED-NAME"}).status_code==409
+    assert a.get(weak).json()["item"]["verified_link_candidate"] is None
     revision={"expected_version":2,"idempotency_key":token(),
               "new_revision":"r2","subject_scope":"mixed_subjects"}
     changed=a.post(endpoint+"/synthetic-revision",json=revision)
