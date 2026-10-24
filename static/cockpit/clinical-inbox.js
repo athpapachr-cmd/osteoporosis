@@ -57,7 +57,7 @@
     }
     if(!items.length)box.append(make("p","clinical-inbox-note","Δεν υπάρχουν αντικείμενα σε αυτό το δοκιμαστικό φίλτρο."));
   }
-  async function load(){
+  async function load(focusItemId=null){
     if(!enabled||!state.active)return;
     const g=++state.generation;
     state.controller?.abort();const ac=new AbortController();state.controller=ac;
@@ -74,6 +74,7 @@
       select.value=data.accounts.some(x=>x.mailbox_account_id===old)?old:"";
       $("doctorClinicalInboxState").textContent="Μόνο συνθετικά δεδομένα. Καμία πραγματική θυρίδα συνδεδεμένη.";
       rows();
+      if(focusItemId&&data.items.some(i=>i.item_id===focusItemId))select(focusItemId);
     }catch(e){
       if(!current(g))return;
       if(e.status===401){
@@ -196,9 +197,9 @@
       }
     });
   }
-  function open(){
+  function open(focusItemId=null){
     clear();state.active=true;view.hidden=false;
-    if(enabled)load();
+    if(enabled)load(focusItemId);
     else $("doctorClinicalInboxState").textContent="Καμία πραγματική πηγή email δεν είναι συνδεδεμένη.";
   }
   $("doctorClinicalInboxAccount").addEventListener("change",rows);

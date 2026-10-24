@@ -13,7 +13,7 @@
 
   const state = { active: false, generation: 0, controller: null, rows: [],
     scope: "real", grouping: "patient", openPending: null, undo: null,
-    modalOpener: null, modalBusy: false };
+    modalOpener: null, modalBusy: false, focusPending: null };
   const statuses = {
     open: "Ανοικτή", awaiting_patient: "Αναμένεται από ασθενή",
     awaiting_result: "Αναμένεται αποτέλεσμα"
@@ -451,6 +451,7 @@
     resetFeedback();
     state.active=false;
     state.openPending=null;
+    state.focusPending=null;
     // Clearing result rows is insufficient: a typed patient name remains in
     // the hidden search field otherwise, including after clinician logout.
     $("doctorObligationsSearch").value="";
@@ -494,6 +495,19 @@
         "Δοκιμαστικός φάκελος · χωρίς ανάμειξη με πραγματικές εγγραφές.":
         "Επίλεξε μια υποχρέωση για αλλαγές και διαγραφή εδώ, χωρίς επιστροφή στον φάκελο.";
       summary();render();
+      const focusId=state.focusPending;
+      state.focusPending=null;
+      if(focusId){
+        const item=active.find(x=>x.pending_id===focusId);
+        if(item&&window.CockpitSynthetic!==true)showTask(item);
+        else if(item){
+          // #161 retains its existing read-only chart/test authority.
+          const matching=[...document.querySelectorAll(".doctor-obligation-row")]
+            .find(x=>x.dataset.pendingId===focusId);
+          matching?.focus();
+        }else $("doctorObligationsState").textContent=
+          "Η υποχρέωση δεν περιλαμβάνεται στην τρέχουσα προβολή έως 100 εγγραφών.";
+      }
       if(previousScroll!==null)window.scrollTo({top:previousScroll,behavior:"auto"});
     }catch(err){
       if(!state.active||ticket!==state.generation||view.hidden)return;
@@ -505,9 +519,10 @@
           "Οι υποχρεώσεις δεν φορτώθηκαν. Δοκίμασε Ανανέωση.";
     }
   }
-  function open(onItem) {
+  function open(onItem,focusPendingId=null) {
     state.active=true;
     state.openPending=onItem;
+    state.focusPending=typeof focusPendingId==="string"&&focusPendingId.length<=120?focusPendingId:null;
     closeDialog();
     resetFeedback();
     state.scope="real";
