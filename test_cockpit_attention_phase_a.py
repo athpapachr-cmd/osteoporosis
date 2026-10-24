@@ -1,5 +1,6 @@
 """Phase-A synthetic ClinicalAttention contract tests. No external providers or PHI."""
 from uuid import uuid4
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 from sqlalchemy import select,func
@@ -233,8 +234,121 @@ def test_qualified_evidence_revocation_blocks_stale_patient_projection():
     mri=store.get("SYN-ATT-MRI")
     mri.update(identity_state="clinician_confirmed",
                patient_id=SYNTHETIC_161_PATIENT_IDS[1],
-               link_evidence_kind="verified_adt",link_evidence_ref="SYN-ADT-002")
+               link_evidence_kind="verified_adt",link_evidence_ref="SYN-ADT-002",
+               linked_revision="r1")
     assert len(store.brief(SYNTHETIC_161_PATIENT_IDS[1]))==1
     store.verified_adts["SYN-ADT-002"]["state"]="conflict"
     assert store.brief(SYNTHETIC_161_PATIENT_IDS[1])==[]
     assert store.detail("SYN-ATT-MRI")["item"]["identity_state"]=="conflict"
+
+
+@pytest.mark.parametrize("item_id,kind,patient_index", [
+    ("SYN-ATT-MRI","verified_adt",1),
+    ("SYN-ATT-GESY","verified_referral",2),
+])
+def test_same_subject_corrected_revision_revokes_strong_link_and_old_replays(
+        setup,item_id,kind,patient_index):
+    """P1: unchanged subject_scope cannot attest identity continuity across revisions."""
+    app,engine=setup
+    c=login(app)
+    assert c.post(PREFIX+"/prepare").status_code==200
+    pid=SYNTHETIC_161_PATIENT_IDS[patient_index]
+    endpoint=PREFIX+"/attention/"+item_id
+    initial=c.get(endpoint).json()["item"]
+    assert initial["source_subject_scope"]=="single_subject"
+    if kind=="verified_adt":
+        assert initial["verified_link_candidate"]["patient_id"]==pid
+        confirmed=c.post(endpoint+"/action",json={
+            "action":"confirm_link","expected_version":0,"idempotency_key":token(),
+            "patient_id":pid,"evidence_kind":kind,"independently_verified":True})
+        assert confirmed.status_code==200,confirmed.text
+        version=1
+    else:
+        assert initial["identity_state"]=="clinician_confirmed"
+        assert initial["link_evidence_kind"]=="verified_referral"
+        version=0
+
+    assert c.post(endpoint+"/action",json={
+        "action":"mark_reviewed","expected_version":version,
+        "idempotency_key":token()}).status_code==200
+    version+=1
+    prior_disposition={"action":"no_communication","expected_version":version,
+                       "idempotency_key":token()}
+    approved=c.post(endpoint+"/action",json=prior_disposition)
+    assert approved.status_code==200,approved.text
+    version+=1
+    linked=c.get(PREFIX+"/attention/brief/"+pid).json()["items"]
+    assert len([x for x in linked if x["item_id"]==item_id])==1
+    assert c.get(endpoint).json()["item"]["disposition"]=="no_communication"
+
+    revision={"expected_version":version,"idempotency_key":token(),
+              "new_revision":"r2","subject_scope":"single_subject"}
+    updated=c.post(endpoint+"/synthetic-revision",json=revision)
+    assert updated.status_code==200,updated.text
+    item=updated.json()["item"]
+    assert item["item_id"]==item_id
+    assert item["active_source_revision"]=="r2" and item["version"]==version+1
+    assert item["source_subject_scope"]=="single_subject"
+    assert item["identity_state"]=="unlinked" and item["patient_id"] is None
+    assert item["verified_link_candidate"] is None
+    assert item["source_identity_kind"] is None and item["link_evidence_kind"] is None
+    assert item["linked_revision"] is None
+    assert item["review_state"]=="needs_re_review" and item["review_actor"] is None
+    assert item["reviewed_at"] is None and item["disposition"]=="undecided"
+    assert "source_identity_ref" not in item and "link_evidence_ref" not in item
+    assert c.get(PREFIX+"/attention/brief/"+pid).json()["items"]==[]
+    booking=c.post(PREFIX+"/open-booking",json={
+        "booking_uid":BOOKINGS[patient_index]}).json()
+    assert all(x["item_id"]!=item_id for x in booking["brief"]["clinical_attention"])
+
+    # The old qualified identifier and previously approved disposition are
+    # bound to r1. Neither a fresh action nor an old idempotency replay may
+    # reattach/approve them on the corrected r2 document.
+    stale=c.post(endpoint+"/action",json=prior_disposition)
+    assert stale.status_code==409,stale.text
+    attempt=c.post(endpoint+"/action",json={
+        "action":"confirm_link","expected_version":version+1,
+        "idempotency_key":token(),"patient_id":pid,
+        "evidence_kind":kind,"independently_verified":True})
+    assert attempt.status_code==409,attempt.text
+    assert c.post(endpoint+"/action",json={
+        "action":"no_communication","expected_version":version+1,
+        "idempotency_key":token()}).status_code==409
+    assert c.post(endpoint+"/synthetic-revision",json=revision).json()["replayed"]
+
+    # Repeated preparation cannot silently restore the prior GESY referral
+    # after the source has been corrected and its evidence invalidated.
+    assert c.post(PREFIX+"/prepare").status_code==200
+    again=c.get(endpoint).json()["item"]
+    assert again["patient_id"] is None and again["verified_link_candidate"] is None
+    assert c.get(PREFIX+"/attention/brief/"+pid).json()["items"]==[]
+    with Session(engine) as db:
+        assert [p.status for p in db.scalars(select(ClinicalPendingORM)).all()]==[
+            "awaiting_patient"]*3
+
+
+def test_corrected_source_audit_keeps_sanitized_prior_link_provenance():
+    """Revision clears current evidence but retains minimal append-only audit."""
+    from clinical_attention_phase_a import SyntheticAttentionStore, SyntheticRevision, AttentionAction
+
+    store=SyntheticAttentionStore()
+    patient_id=SYNTHETIC_161_PATIENT_IDS[1]
+    store.act("SYN-ATT-MRI",AttentionAction(
+        action="confirm_link",expected_version=0,idempotency_key=token(),
+        patient_id=patient_id,evidence_kind="verified_adt",
+        independently_verified=True),"synthetic-clinician",lambda *_:None)
+    confirmed=store.get("SYN-ATT-MRI")
+    assert confirmed["linked_revision"]=="r1"
+    store.revise("SYN-ATT-MRI",SyntheticRevision(
+        expected_version=1,idempotency_key=token(),new_revision="r2",
+        subject_scope="single_subject"),"synthetic-clinician")
+    now=store.get("SYN-ATT-MRI")
+    assert now["source_identity_kind"] is None and now["source_identity_ref"] is None
+    assert now["link_evidence_ref"] is None and now["linked_revision"] is None
+    assert store.brief(patient_id)==[]
+    audit=now["audit"][-1]
+    assert audit["kind"]=="source_revised"
+    assert audit["previous_link_evidence_kind"]=="verified_adt"
+    assert audit["previous_source_revision"]=="r1"
+    assert audit["identity_recheck_required"] is True
+    assert "SYN-ADT-002" not in str(audit)
