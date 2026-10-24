@@ -5,6 +5,8 @@ on:
     paths:
       - "clinical_visit_brief.py"
       - "clinical_synthetic_161.py"
+      - "clinical_attention_phase_a.py"
+      - "test_cockpit_attention_phase_a.py"
       - "test_cockpit_synthetic_161.py"
       - "clinical_calendar.py"
       - "static/cockpit/**"
@@ -16,6 +18,8 @@ on:
     paths:
       - "clinical_visit_brief.py"
       - "clinical_synthetic_161.py"
+      - "clinical_attention_phase_a.py"
+      - "test_cockpit_attention_phase_a.py"
       - "test_cockpit_synthetic_161.py"
       - "clinical_calendar.py"
       - "static/cockpit/**"
@@ -39,9 +43,10 @@ jobs:
         run: pip install -r requirements.txt pytest
       - name: Syntax
         run: |
-          python -m py_compile clinical_calendar.py clinical_visit_brief.py test_clinical_visit_brief.py
+          python -m py_compile clinical_calendar.py clinical_visit_brief.py clinical_synthetic_161.py clinical_attention_phase_a.py test_clinical_visit_brief.py test_cockpit_attention_phase_a.py
           node --check static/cockpit/clinical-workspace.js
           node --check static/cockpit/visit-brief.js
+          node --check static/cockpit/clinical-inbox.js
           node --check test_cockpit_visit_brief_ui.js
       - name: Exact-booking linkage and temporal evidence
         run: pytest -q test_clinical_visit_brief.py test_clinical_calendar_snapshot.py test_visit_capture.py
@@ -58,6 +63,6 @@ jobs:
       - name: Real Chromium booking-only/privacy and layout
         run: python test_cockpit_doctor_browser.py
       - name: Persistent synthetic backend and actual browser sessions
-        run: pytest -q test_cockpit_synthetic_161.py
+        run: pytest -q test_cockpit_synthetic_161.py test_cockpit_attention_phase_a.py
       - name: Diff hygiene
         run: git diff --check HEAD^ HEAD
