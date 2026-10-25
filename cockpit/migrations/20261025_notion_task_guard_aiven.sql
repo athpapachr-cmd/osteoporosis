@@ -1,7 +1,7 @@
 -- Priority 2: install the empty Notion confirmation guard on the existing
 -- osteoporosis PostgreSQL database. Run once as the existing Aiven migration
 -- owner, never as cockpit_app and never on application startup.
--- Eight ordinary statements fit Aiven PG Studio's 10-query execution limit.
+-- Nine ordinary statements fit Aiven PG Studio's 10-query execution limit.
 -- Select and run the entire batch. A failed assertion aborts the transaction.
 -- No Notion task text, transcript, audio, or patient rows are read or written.
 BEGIN;
@@ -26,12 +26,16 @@ CREATE TABLE public.cockpit_notion_task_attempts (
 );
 REVOKE ALL ON TABLE public.cockpit_notion_task_attempts FROM PUBLIC;
 REVOKE ALL ON TABLE public.cockpit_notion_task_attempts FROM cockpit_app;
-GRANT SELECT, INSERT, UPDATE ON TABLE public.cockpit_notion_task_attempts TO cockpit_app;
+GRANT SELECT, INSERT ON TABLE public.cockpit_notion_task_attempts TO cockpit_app;
+GRANT UPDATE (state) ON TABLE public.cockpit_notion_task_attempts TO cockpit_app;
 SELECT
   'NOTION TASK GUARD READY' AS result,
   1 / ((has_table_privilege('cockpit_app', 'public.cockpit_notion_task_attempts', 'SELECT')
         AND has_table_privilege('cockpit_app', 'public.cockpit_notion_task_attempts', 'INSERT')
-        AND has_table_privilege('cockpit_app', 'public.cockpit_notion_task_attempts', 'UPDATE')
+        AND has_column_privilege('cockpit_app', 'public.cockpit_notion_task_attempts', 'state', 'UPDATE')
+        AND NOT has_column_privilege('cockpit_app', 'public.cockpit_notion_task_attempts', 'attempt_id', 'UPDATE')
+        AND NOT has_column_privilege('cockpit_app', 'public.cockpit_notion_task_attempts', 'source_page_id', 'UPDATE')
+        AND NOT has_column_privilege('cockpit_app', 'public.cockpit_notion_task_attempts', 'source_revision', 'UPDATE')
         AND NOT has_table_privilege('cockpit_app', 'public.cockpit_notion_task_attempts', 'DELETE')
         AND NOT has_table_privilege('cockpit_app', 'public.cockpit_notion_task_attempts', 'TRUNCATE')
         AND NOT has_schema_privilege('cockpit_app', 'public', 'CREATE'))::integer)
