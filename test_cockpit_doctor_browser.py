@@ -94,6 +94,36 @@ CALL_PEEK = {
     ],
 }
 
+NOTION_TASK = {
+    "id": "00000000-0000-4000-8000-000000000001",
+    "title": "<img src=x onerror=alert(1)> Συνθετική εργασία",
+    "status": "Not started", "due": "2026-10-30", "category": "Ιατρείο",
+    "revision": "2026-10-25T08:00:00.000Z",
+    "url": "https://www.notion.so/00000000000040008000000000000001",
+}
+
+
+def exercise_notion_tasks(page, width, source):
+    page.locator("#doctorNotionButton").click()
+    popover = page.locator("#doctorPopover")
+    expect(popover).to_be_visible()
+    expect(popover).to_contain_text("Συνθετική εργασία")
+    assert popover.locator("img").count() == 0, "Notion title must render as text"
+    expect(popover.locator(".doctor-notion-entry")).to_have_count(1)
+    expect(popover.locator(".doctor-notion-entry a")).to_have_attribute("href", NOTION_TASK["url"])
+    page.locator(".doctor-notion-entry").get_by_role("button", name="Ενημέρωση").click()
+    expect(popover.locator(".doctor-notion-form")).to_be_visible()
+    assert source["writes"] == 0
+    popover.locator(".doctor-notion-checkbox input").check()
+    popover.locator(".doctor-notion-field textarea").first.fill("Συνθετική ολοκλήρωση")
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
+    if width <= 620:
+        popover.screenshot(path=str(OUT / "cockpit-notion-review-mobile.png"))
+    popover.get_by_role("button", name="Επιβεβαίωση στο Notion").click()
+    expect(popover).to_contain_text("Δεν υπάρχουν ενεργές εργασίες")
+    assert source["writes"] == 1
+    page.locator("#doctorNotionButton").click()
+
 def assert_delayed_recent_purged_after_logout(page):
     # A successful old clinician response arriving AFTER logout cannot restore PHI.
     assert page.evaluate("""() => {
@@ -398,9 +428,10 @@ def browser_suite(width, screenshot_name):
     outbound = []
     auth = {"authenticated": False, "linked": False, "confirmations": 0}
     call_source = {"status": 200, "handled": False, "write_status": 200}
+    notion_source = {"writes": 0}
     with sync_playwright() as pw:
         executable = shutil.which("google-chrome") or shutil.which("chromium")
-        browser = pw.chromium.launch(headless=True, executable_path=executable, args=["--no-sandbox"])
+        browser = pw.chromium.launch(headless=True, executable_path=executable or None, args=["--no-sandbox"])
         page = browser.new_page(viewport={"width": width, "height": 820}, device_scale_factor=1)
         page.on("pageerror", lambda err: errors.append(str(err)))
         def handle(route):
@@ -424,6 +455,22 @@ def browser_suite(width, screenshot_name):
                 if code == 200:
                     call_source["handled"] = True
                 return route.fulfill(status=code, json={"handled": True} if code == 200 else {"detail": "Unavailable"})
+            if url.endswith("/clinical/notion-tasks/peek"):
+                assert route.request.method == "GET"
+                return route.fulfill(status=200 if auth["authenticated"] else 401,
+                    json={"source": "notion", "voice_available": False,
+                          "database_url": "https://app.notion.com/p/241379c6877a40fc8ab4a0efc042c887",
+                          "tasks": [] if notion_source["writes"] else [NOTION_TASK]})
+            if url.endswith("/clinical/notion-tasks/confirm"):
+                assert route.request.method == "POST"
+                body = route.request.post_data_json
+                assert body["task_id"] == NOTION_TASK["id"]
+                assert body["revision"] == NOTION_TASK["revision"]
+                assert body["mark_done"] is True
+                assert body["completion_note"] == "Συνθετική ολοκλήρωση"
+                notion_source["writes"] += 1
+                return route.fulfill(json={"source": "notion", "updated": True,
+                    "followup_created": False, "task_url": NOTION_TASK["url"]})
             if url.endswith("/clinical/login"):
                 assert route.request.method == "POST"
                 assert route.request.post_data_json is not None
@@ -621,6 +668,7 @@ def browser_suite(width, screenshot_name):
         expect(page.locator("#visitBriefOverlay")).to_be_hidden()
         exercise_day_navigation(page,width)
         exercise_obligations(page,width)
+        exercise_notion_tasks(page,width,notion_source)
         if width <= 620:
             expect(page.locator("#doctorAttentionList .doctor-action-row")).to_have_count(4)
             expect(page.locator("#doctorAttentionList")).to_contain_text("Συνθετικός Ασθενής Β")

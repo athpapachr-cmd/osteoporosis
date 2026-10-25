@@ -38,6 +38,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
 .doctor-call-control{font:inherit;font-size:11px;font-weight:700;color:#17685f;background:#f3f9f7;border:1px solid #d6e6e1;border-radius:8px;padding:6px 9px;text-decoration:none;cursor:pointer}
 .doctor-call-control:disabled{opacity:.55;cursor:default}
 .doctor-call-control:focus-visible{outline:2px solid #5fa8a1;outline-offset:2px}
+.doctor-notion-entry{border-bottom:1px solid #eef1f2;min-width:0}
+.doctor-notion-entry .doctor-action-row{border-bottom:0}
+.doctor-notion-controls{display:flex;flex-wrap:wrap;gap:7px;padding:5px 2px 10px}
+.doctor-notion-controls .doctor-action-row{width:auto;border:1px solid #d6e6e1;border-radius:8px;padding:7px 10px;background:#f3f9f7}
+.doctor-notion-controls .doctor-action-row>span:last-child{display:none}
+.doctor-notion-form{display:grid;gap:10px;min-width:0}
+.doctor-notion-field{display:grid;gap:5px;font-size:12px;font-weight:700;color:#26434d}
+.doctor-notion-field input,.doctor-notion-field textarea{box-sizing:border-box;width:100%;max-width:100%;border:1px solid #cedddc;border-radius:8px;padding:8px;font:inherit;font-size:13px;color:#203b47;background:#fff}
+.doctor-notion-field textarea{min-height:62px;resize:vertical}
+.doctor-notion-checkbox{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700}
+.doctor-notion-confirm{border:0;border-radius:8px;background:#17685f;color:#fff;font:inherit;font-size:12px;font-weight:700;padding:9px 12px;cursor:pointer}
+.doctor-notion-confirm:disabled,.doctor-notion-controls button:disabled{opacity:.55;cursor:default}
+.doctor-notion-transcript{white-space:pre-wrap;overflow-wrap:anywhere;border:1px solid #edf1f1;border-radius:8px;padding:8px;max-height:110px;overflow:auto}
 .doctor-command-search{font:inherit;font-size:14px;border:1px solid #dce6e6;background:#f9fbfb;border-radius:11px;padding:11px 12px;width:100%;outline-color:#90bdbc;margin:7px 0}
 .doctor-command-results{max-height:350px;overflow-y:auto}
 #doctorMainView{min-height:400px}
@@ -108,8 +121,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
 @media(max-width:560px){
  .shell{width:calc(100% - 20px);padding-top:10px}
  .doctor-topbar{flex-wrap:wrap;align-items:center;gap:10px}
- .doctor-command-bar{width:100%;justify-content:space-between}
- .doctor-date-button{flex:1;justify-content:flex-start}
+ .doctor-command-bar{width:100%;flex-wrap:wrap;justify-content:flex-start}
+ .doctor-date-button{flex:1 1 100%;justify-content:flex-start}
  .doctor-brand .subtitle{display:none}
  .doctor-popover{right:0;top:calc(100% - 4px);max-height:68vh}
  .clinical-workspace{padding-top:0}

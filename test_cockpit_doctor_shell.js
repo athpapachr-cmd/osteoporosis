@@ -8,6 +8,7 @@ assert.match(html,/id="doctorDateButton"/);
 assert.match(html,/id="doctorInboxButton"/);
 assert.match(html,/id="doctorCallsButton"/);
 assert.match(html,/id="doctorTasksButton"/);
+assert.match(html,/id="doctorNotionButton"/);
 assert.match(html,/id="doctorLibraryView"/);
 assert.match(html,/id="visitBriefOverlay"/);
 assert.doesNotMatch(script,/localStorage|sessionStorage/);
@@ -50,10 +51,14 @@ $("doctorPopover").hidden=true;$("doctorLibraryView").hidden=true;$("doctorOblig
 $("doctorInboxBadge").hidden=true;$("doctorTasksBadge").hidden=true;
 const windowHandlers=new Map(),windowStub={
  CockpitHome:{openAppointment(row){windowStub.lastAppointment=row;}},
+ crypto:{randomUUID(){return "00000000-0000-4000-8000-000000000010";}},
  addEventListener(name,fn){windowHandlers.set(name,fn);},
  CockpitSurgerySummary:null
 };
-let deferred=null,authenticated=true,callHandled=false;
+let deferred=null,authenticated=true,callHandled=false,notionDone=false;
+const notionTask={id:"00000000-0000-4000-8000-000000000001",title:"Συνθετική εργασία",
+ status:"Not started",revision:"2026-10-25T08:00:00.000Z",due:"2026-10-30",
+ url:"https://www.notion.so/00000000000040008000000000000001"};
 const mockAppointments=[
  {appointment_id:"cal.com:synthetic-1",patient_display_name:"Συνθετικός Ασθενής Α",
   start_at:"2026-10-10T22:20:00Z",reason:"Συνθετική οστεοπόρωση"},
@@ -102,13 +107,29 @@ async function fakeFetch(url,opts){
    callHandled=true;
    return {ok:true,status:200,json:async()=>({handled:true})};
  }
+ if(url==="/clinical/notion-tasks/peek"){
+   return {ok:authenticated,status:authenticated?200:401,json:async()=>({
+     source:"notion",database_url:"https://app.notion.com/p/241379c6877a40fc8ab4a0efc042c887",
+     voice_available:false,tasks:notionDone?[]:[notionTask]})};
+ }
+ if(url==="/clinical/notion-tasks/confirm"){
+   assert.equal(opts.method,"POST");
+   const body=JSON.parse(opts.body);
+   assert.equal(body.task_id,notionTask.id);
+   assert.equal(body.revision,notionTask.revision);
+   assert.equal(body.mark_done,true);
+   assert.equal(body.completion_note,"Συνθετική ολοκλήρωση");
+   notionDone=true;
+   return {ok:true,status:200,json:async()=>({source:"notion",updated:true,
+     followup_created:false,task_url:notionTask.url})};
+ }
  if(!url.startsWith("/clinical/calendar/agenda?"))throw Error("unexpected URL "+url);
  if(deferred)return deferred.promise;
  return {ok:authenticated,status:authenticated?200:401,json:async()=>mockAppointments};
 }
 class CalendarClock extends Date{constructor(...args){super(...(args.length?args:['2026-12-31T12:00:00Z']));}}
 vm.runInNewContext(script.replace("  function text(message) {","  window.dayRangeForTest=todayRange;\n  function text(message) {"),{document:doc,window:windowStub,fetch:fakeFetch,
- URLSearchParams,Date:CalendarClock,Intl,console});
+ URL,URLSearchParams,Date:CalendarClock,Intl,console});
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 function findButtonContent(title) {
  return $("doctorPopoverContent").children.find(item=>
@@ -116,6 +137,11 @@ function findButtonContent(title) {
      c.children?.some(n=>n.textContent?.includes(title))));
 }
 function byId(id,node=$('doctorPopoverContent')){if(node.id===id)return node;for(const child of node.children||[]){const found=byId(id,child);if(found)return found;}return null;}
+function findTextNode(value,node=$('doctorPopoverContent')){
+ if(node.textContent===value)return node;
+ for(const child of node.children||[]){const found=findTextNode(value,child);if(found)return found;}
+ return null;
+}
 (async()=>{
  for(const [day,hours] of [['2026-03-29',23],['2026-10-25',25],['2026-12-31',24]]){
    const range=windowStub.dayRangeForTest(new Date(day+'T12:00:00Z'));
@@ -140,6 +166,19 @@ function byId(id,node=$('doctorPopoverContent')){if(node.id===id)return node;for
  assert.ok(calls.some(c=>c.url==="/clinical/reception-calls/peek"),"protected call route");
  $("doctorCallsButton").fire("click");
  assert.equal($("doctorPopover").hidden,true);
+ $("doctorNotionButton").fire("click");await tick();await tick();
+ assert.equal($("doctorPopover").hidden,false);
+ assert.ok(findTextNode("Συνθετική εργασία"),"actual Notion row shown");
+ assert.ok(!findTextNode("Υπαγόρευση"),"voice hidden without separate provider gate");
+ const notionEntry=$("doctorPopoverContent").children.find(n=>n.className==="doctor-notion-entry");
+ notionEntry.children[1].children[0].fire("click");
+ const form=$("doctorPopoverContent").children.find(n=>n.className==="doctor-notion-form");
+ form.children[0].children[0].checked=true;
+ form.children[1].children[1].value="Συνθετική ολοκλήρωση";
+ form.children.at(-1).children[1].fire("click");await tick();await tick();
+ assert.equal(notionDone,true,"explicit confirmation updates Notion source");
+ assert.ok($("doctorPopoverContent").children.some(n=>n.textContent?.includes("Δεν υπάρχουν ενεργές")));
+ $("doctorNotionButton").fire("click");
  assert.equal($("doctorInboxBadge").hidden,true,"no invented unread email count");
  assert.equal($("doctorAttentionList").children.length,4);
  $("doctorDateButton").fire("click");
@@ -269,8 +308,8 @@ function byId(id,node=$('doctorPopoverContent')){if(node.id===id)return node;for
  assert.equal($("doctorPopoverContent").children.length,inboxState);
  assert.ok(calls.every(x=>x.method==="GET" || (x.method==="POST"
    && ["/clinical/clinic-utilities/rf/api/outcomes/search",
-       "/clinical/reception-calls/handled"].includes(x.url))),
-   "only RF search and explicit Reception completion use POST");
+       "/clinical/reception-calls/handled", "/clinical/notion-tasks/confirm"].includes(x.url))),
+   "only named source actions use POST");
  assert.ok(calls.every(x=>!x.url.includes("patient_id")),"no patient identifiers in URLs");
  console.log("PASS Cockpit Doctor Shell: contextual day, Peek route, Inbox truth, tasks, actions, library, stale isolation");
 })().catch(e=>{console.error(e);process.exitCode=1;});

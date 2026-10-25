@@ -5,10 +5,17 @@
   // protected clinical calendar; summaries or unread counts are never invented.
   const $ = id => document.getElementById(id);
   const buttons = {day: $("doctorDateButton"), calls: $("doctorCallsButton"), inbox: $("doctorInboxButton"),
-    tasks: $("doctorTasksButton"), actions: $("doctorActionsButton")};
+    tasks: $("doctorTasksButton"), notion: $("doctorNotionButton"), actions: $("doctorActionsButton")};
   const popover = $("doctorPopover"), content = $("doctorPopoverContent");
   const state = {panel: null, opener: null, request: 0, day: null, surgeries: null, rf: null};
   let rfGeneration = 0;
+  let notionRecorder=null,notionStream=null,notionTimer=null;
+  function clearNotionMedia(){
+    if(notionTimer){clearTimeout(notionTimer);notionTimer=null;}
+    if(notionRecorder&&notionRecorder.state!=="inactive")notionRecorder.stop();
+    notionRecorder=null;
+    notionStream?.getTracks().forEach(track=>track.stop());notionStream=null;
+  }
   const zone = "Asia/Nicosia";
   const dateLabel = new Intl.DateTimeFormat("el-CY", {
     timeZone: zone, weekday: "short", day: "numeric", month: "short"
@@ -98,6 +105,7 @@
   }
   function close() {
     state.request++;
+    clearNotionMedia();
     if(state.opener)state.opener.setAttribute("aria-expanded","false");
     const focus=state.opener;
     state.panel=null;state.opener=null;popover.hidden=true;
@@ -108,18 +116,20 @@
     if(state.panel===kind && !popover.hidden){close();return;}
     if(state.opener)state.opener.setAttribute("aria-expanded","false");
     state.request++;
+    clearNotionMedia();
     state.panel=kind;state.opener=opener;opener.setAttribute("aria-expanded","true");
     popover.hidden=false;
     popover.dataset.kind=kind;
     content.replaceChildren();
     $("doctorPopoverTitle").textContent={
       day:"Πρόγραμμα ημέρας",calls:"Κλήσεις γραμματέα",inbox:"Κλινικά εισερχόμενα",
-      tasks:"Εκκρεμότητες ιατρείου",actions:"Ενέργειες"
+      tasks:"Εκκρεμότητες ιατρείου",notion:"Οι εργασίες μου",actions:"Ενέργειες"
     }[kind];
     if(kind==="day"){state.day=dayKey();loadDay();}
     else if(kind==="calls")callPeek();
     else if(kind==="inbox")inbox();
     else if(kind==="tasks")tasks();
+    else if(kind==="notion")notionTasks();
     else commands();
   }
   async function loadDay(focusId) {
@@ -359,6 +369,187 @@
         "Άνοιγμα της υπάρχουσας προστατευμένης λίστας",()=>showObligations()));
     }
   }
+  const notionURL=href=>{
+    try{const url=new URL(href);return url.protocol==="https:"&&
+      ["www.notion.so","notion.so","app.notion.com","www.notion.com"].includes(url.hostname)?href:null;
+    }catch(_){return null;}
+  };
+  function notionAttemptId(){
+    if(window.crypto?.randomUUID)return window.crypto.randomUUID();
+    const bytes=new Uint8Array(16);window.crypto.getRandomValues(bytes);
+    bytes[6]=(bytes[6]&15)|64;bytes[8]=(bytes[8]&63)|128;
+    const hex=Array.from(bytes,b=>b.toString(16).padStart(2,"0")).join("");
+    return hex.slice(0,8)+"-"+hex.slice(8,12)+"-"+hex.slice(12,16)+"-"+hex.slice(16,20)+"-"+hex.slice(20);
+  }
+  function notionField(label,value,multiline=false){
+    const wrap=document.createElement("label");wrap.className="doctor-notion-field";
+    const caption=document.createElement("span");caption.textContent=label;
+    const control=document.createElement(multiline?"textarea":"input");
+    if(!multiline)control.type="text";
+    control.value=value||"";control.autocomplete="off";
+    wrap.append(caption,control);return {wrap,control};
+  }
+  function notionReview(task,suggestion={},transcript="",attemptId=null){
+    if(state.panel!=="notion")return;
+    const ticket=++state.request;
+    content.replaceChildren();
+    content.append(sectionTitle("Επιβεβαίωση για συγκεκριμένη εργασία"),
+      text(task.title));
+    if(transcript){
+      const spoken=text("Υπαγόρευση: "+transcript);spoken.className="doctor-notion-transcript";
+      content.append(spoken);
+    }
+    const form=document.createElement("div");form.className="doctor-notion-form";
+    const done=document.createElement("label");done.className="doctor-notion-checkbox";
+    const doneInput=document.createElement("input");doneInput.type="checkbox";
+    doneInput.checked=suggestion.mark_done===true;
+    const doneLabel=document.createElement("span");doneLabel.textContent="Σήμανση ως Done στο Notion";
+    done.append(doneInput,doneLabel);
+    const note=notionField("Τι ολοκληρώθηκε / σημείωση στην υπάρχουσα εργασία",suggestion.completion_note,true);
+    note.control.maxLength=800;
+    const title=notionField("Νέα εργασία παρακολούθησης (προαιρετική)",suggestion.followup_title);
+    title.control.maxLength=180;
+    const details=notionField("Σημειώσεις νέας εργασίας (προαιρετικές)",suggestion.followup_notes,true);
+    details.control.maxLength=1000;
+    const status=text("Ελέγξτε και διορθώστε τα πεδία πριν την καταχώριση. Η επιβεβαίωση ενημερώνει το Notion.");
+    status.setAttribute("role","status");
+    const controls=document.createElement("div");controls.className="doctor-notion-controls";
+    const cancel=document.createElement("button");cancel.type="button";cancel.textContent="Άκυρο";
+    cancel.addEventListener("click",()=>{if(activePeek("notion",ticket))notionTasks();});
+    const confirm=document.createElement("button");confirm.type="button";
+    confirm.className="doctor-notion-confirm";confirm.textContent="Επιβεβαίωση στο Notion";
+    confirm.addEventListener("click",async()=>{
+      const completion=note.control.value.trim(),followup=title.control.value.trim();
+      if((!doneInput.checked&&!completion)||(details.control.value.trim()&&!followup)){
+        status.textContent="Χρειάζεται σημείωση ή Done στην υπάρχουσα εργασία· οι σημειώσεις νέας εργασίας χρειάζονται τίτλο.";
+        return;
+      }
+      confirm.disabled=true;cancel.disabled=true;status.textContent="Καταχώριση στο Notion…";
+      try{
+        const response=await fetch(clinicalURL("/clinical/notion-tasks/confirm"),{
+          method:"POST",credentials:"same-origin",cache:"no-store",
+          headers:{"Content-Type":"application/json","Accept":"application/json"},
+          body:JSON.stringify({attempt_id:attemptId||notionAttemptId(),task_id:task.id,
+            revision:task.revision,mark_done:doneInput.checked,completion_note:completion,
+            followup_title:followup,followup_notes:details.control.value.trim()})
+        });
+        if(!activePeek("notion",ticket))return;
+        if(response.status===401||response.status===403){
+          window.dispatchEvent(new Event("clinical:unauthenticated"));return;
+        }
+        if(!response.ok)throw Error("Notion confirmation uncertain");
+        const result=await response.json();
+        if(result?.source!=="notion"||result.updated!==true)throw Error("Notion confirmation uncertain");
+        notionTasks();
+      }catch(_){
+        if(activePeek("notion",ticket)){
+          status.textContent="Η έκβαση δεν επιβεβαιώθηκε. Ελέγξτε την εργασία και το follow-up στο Notion πριν από νέα ενέργεια.";
+          const url=notionURL(task.url);if(url)form.append(newLink("Άνοιγμα της εργασίας στο Notion",url));
+          // Never repeat an uncertain external write from this review.
+        }
+      }
+    });
+    controls.append(cancel,confirm);
+    form.append(done,note.wrap,title.wrap,details.wrap,status,controls);
+    content.append(form);
+    const url=notionURL(task.url);if(url)content.append(newLink("Άνοιγμα εργασίας στο Notion",url));
+  }
+  async function notionDictate(task){
+    if(state.panel!=="notion")return;
+    const ticket=++state.request;
+    content.replaceChildren(sectionTitle("Σύντομη υπαγόρευση"),text(task.title));
+    if(!window.MediaRecorder||!navigator.mediaDevices?.getUserMedia||
+       !window.MediaRecorder.isTypeSupported?.("audio/webm")){
+      content.append(text("Η συσκευή δεν υποστηρίζει αυτή την καταγραφή. Μπορείτε να γράψετε την ενημέρωση."));
+      content.append(action("Συμπλήρωση με κείμενο","Χωρίς μικρόφωνο",()=>notionReview(task)));
+      return;
+    }
+    const status=text("Αναμονή άδειας μικροφώνου…");status.setAttribute("role","status");
+    content.append(status);
+    try{
+      const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+      if(!activePeek("notion",ticket)){stream.getTracks().forEach(t=>t.stop());return;}
+      notionStream=stream;
+      const chunks=[],recorder=new window.MediaRecorder(stream,{mimeType:"audio/webm"});
+      notionRecorder=recorder;const start=Date.now();
+      const stop=document.createElement("button");stop.type="button";
+      stop.className="doctor-notion-confirm";stop.textContent="Σταμάτημα και πρόταση";
+      recorder.ondataavailable=event=>{if(event.data?.size)chunks.push(event.data);};
+      recorder.onstop=async()=>{
+        stream.getTracks().forEach(t=>t.stop());
+        if(!activePeek("notion",ticket))return;
+        stop.disabled=true;status.textContent="Μεταγραφή και προετοιμασία πρότασης…";
+        const duration=Date.now()-start,blob=new Blob(chunks,{type:"audio/webm"});
+        if(duration<1000||duration>60000||blob.size>2_000_000){
+          status.textContent="Η καταγραφή πρέπει να είναι 1–60 δευτερόλεπτα και έως 2 MB.";return;
+        }
+        try{
+          const response=await fetch(clinicalURL("/clinical/notion-tasks/propose"),{
+            method:"POST",credentials:"same-origin",cache:"no-store",
+            headers:{"Content-Type":"audio/webm","Accept":"application/json",
+              "X-Task-Id":task.id,"X-Task-Revision":task.revision,
+              "X-Audio-Duration-Ms":String(duration)},body:blob
+          });
+          if(!activePeek("notion",ticket))return;
+          if(response.status===401||response.status===403){window.dispatchEvent(new Event("clinical:unauthenticated"));return;}
+          if(!response.ok)throw Error("Voice unavailable");
+          const data=await response.json();
+          if(data?.task?.id!==task.id||data?.task?.revision!==task.revision||
+             typeof data.transcript!=="string"||typeof data.attempt_id!=="string")throw Error("Voice response invalid");
+          notionReview(task,data.suggestion,data.transcript,data.attempt_id);
+        }catch(_){
+          if(activePeek("notion",ticket)){
+            status.textContent="Η πρόταση δεν είναι διαθέσιμη. Δεν έγινε αλλαγή στο Notion.";
+            content.append(action("Συμπλήρωση με κείμενο","Χωρίς μεταγραφή",()=>notionReview(task)));
+          }
+        }
+      };
+      stop.addEventListener("click",()=>{if(recorder.state!=="inactive")recorder.stop();});
+      recorder.start();status.textContent="Η καταγραφή ξεκίνησε. Μέγιστη διάρκεια 60 δευτερόλεπτα.";
+      content.append(stop);
+      notionTimer=setTimeout(()=>{if(recorder.state!=="inactive")recorder.stop();},60000);
+    }catch(_){
+      if(activePeek("notion",ticket)){
+        status.textContent="Δεν επιτράπηκε το μικρόφωνο. Μπορείτε να γράψετε την ενημέρωση.";
+        content.append(action("Συμπλήρωση με κείμενο","Χωρίς μικρόφωνο",()=>notionReview(task)));
+      }
+    }
+  }
+  async function notionTasks(){
+    const ticket=++state.request;
+    content.replaceChildren();content.append(text("Φόρτωση από τις εργασίες μου στο Notion…"));
+    try{
+      const response=await fetch(clinicalURL("/clinical/notion-tasks/peek"),{
+        credentials:"same-origin",cache:"no-store",headers:{"Accept":"application/json"}
+      });
+      if(!response.ok){const e=Error("Notion unavailable");e.status=response.status;throw e;}
+      const data=await response.json();
+      if(!activePeek("notion",ticket))return;
+      if(data?.source!=="notion"||!Array.isArray(data.tasks)||data.tasks.length>4||
+         !notionURL(data.database_url)||data.tasks.some(t=>!t||typeof t.id!=="string"||
+           typeof t.title!=="string"||typeof t.revision!=="string"||!notionURL(t.url)||
+           !["Not started","In progress"].includes(t.status)))throw Error("Invalid Notion source");
+      content.replaceChildren();
+      content.append(text("Έως 4 ενεργές εργασίες από την υπάρχουσα προβολή «Εκκρεμείς»."));
+      if(!data.tasks.length)content.append(text("Δεν υπάρχουν ενεργές εργασίες στην τρέχουσα προβολή."));
+      for(const task of data.tasks){
+        const item=document.createElement("div");item.className="doctor-notion-entry";
+        item.append(newLink(task.title,task.url,
+          (task.status==="In progress"?"Σε εξέλιξη":"Δεν ξεκίνησε")+
+          (task.due?" · Προθεσμία "+task.due:"")));
+        const controls=document.createElement("div");controls.className="doctor-notion-controls";
+        controls.append(action("Ενημέρωση","Σύντομη επιβεβαίωση",()=>notionReview(task)));
+        if(data.voice_available===true)controls.append(action("Υπαγόρευση","Έως 60 δευτερόλεπτα",()=>notionDictate(task)));
+        item.append(controls);content.append(item);
+      }
+      content.append(newLink("Όλες οι εργασίες μου",data.database_url,"Άνοιγμα της βάσης στο Notion"));
+    }catch(error){
+      if(!activePeek("notion",ticket))return;
+      content.replaceChildren();content.append(text(error.status===401||error.status===403?
+        "Απαιτείται κλινική σύνδεση. Δεν εμφανίζονται εργασίες.":
+        "Η σύνδεση Notion δεν είναι διαθέσιμη. Δεν θεωρούμε ότι η λίστα είναι κενή."));
+    }
+  }
   const links=[
     {name:"Καταγραφή επίσκεψης",hint:"Visit Capture",href:"/static/cockpit/visit-capture/"},
     {name:"Παραπεμπτικό φυσιοθεραπείας",hint:"Κείμενο για ΓεΣΥ",href:"/clinical/clinic-utilities/physio-referral"},
@@ -542,6 +733,7 @@
   window.addEventListener("cockpit:clinical-updates-changed",()=>{if(state.panel==="inbox")inbox();else if(state.panel==="tasks")tasks();});
   window.addEventListener("clinical:unauthenticated",()=>{showHome();});
   buttons.tasks.addEventListener("click",()=>openPanel("tasks",buttons.tasks));
+  buttons.notion.addEventListener("click",()=>openPanel("notion",buttons.notion));
   $("doctorObligationsBack").addEventListener("click",showHome);
   buttons.actions.addEventListener("click",()=>openPanel("actions",buttons.actions));
   $("doctorPopoverClose").addEventListener("click",close);
@@ -550,6 +742,7 @@
     if(state.panel === "tasks") tasks();
     if(state.panel === "inbox") inbox();
     if(state.panel === "calls") callPeek();
+    if(state.panel === "notion") notionTasks();
     loadRfAttention();
   });
   $("doctorBackHome").addEventListener("click",showHome);
