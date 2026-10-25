@@ -79,12 +79,15 @@ CONTEXT = {
 
 CALL_PEEK = {
     "source": "reception_dashboard", "is_unread_count": False,
+    "coverage": "available_call_log_max_200", "unhandled_count": 2,
     "calls": [
-        {"call_id": None, "logged_at": "2026-10-25T09:00:00+02:00",
+        {"call_id": "RM-SYN-1", "todo_id": "td_RM-SYN-1", "handled": False,
+         "logged_at": "2026-10-25T09:00:00+02:00",
          "name": "<img src=x onerror=alert(1)>", "phone": "0000000001",
          "summary": "<svg onload=alert(1)> Ζήτησε ενημέρωση", "summary_pending": False,
          "kind": "message"},
-        {"call_id": "RM-SYN-2", "logged_at": "2026-10-25T08:00:00+02:00",
+        {"call_id": None, "todo_id": None, "handled": False,
+         "logged_at": "2026-10-25T08:00:00+02:00",
          "name": "Συνθετική δεύτερη κλήση", "phone": "",
          "summary": "Η τελική σύνοψη ετοιμάζεται", "summary_pending": True,
          "kind": "information"},
@@ -306,7 +309,7 @@ def exercise_reception_call_peek(page, width, call_source):
     links = content.locator("a.doctor-action-row")
     dashboard = "https://ortho-reception-backend-v2.onrender.com/dashboard"
 
-    call_source["status"] = 200
+    call_source.update(status=200, handled=False, write_status=503)
     phone.click()
     expect(popover).to_be_visible()
     expect(phone).to_have_attribute("aria-expanded", "true")
@@ -316,7 +319,18 @@ def exercise_reception_call_peek(page, width, call_source):
     expect(content).to_contain_text("<img src=x onerror=alert(1)>")
     expect(content).to_contain_text("<svg onload=alert(1)>")
     expect(content).to_contain_text("Η τελική σύνοψη ετοιμάζεται")
+    expect(content).to_contain_text("2 μη σημειωμένες ως διεκπεραιωμένες")
     expect(content).not_to_contain_text("Χρειάζεται προσοχή")
+    assert content.locator("a[href^='tel:']").count() == 1
+    assert content.locator("button.doctor-call-control").count() == 1
+    content.locator("button.doctor-call-control").click()
+    expect(content).to_contain_text("Η ολοκλήρωση δεν επιβεβαιώθηκε")
+    assert call_source["handled"] is False
+    call_source["write_status"] = 200
+    content.locator("button.doctor-call-control").click()
+    expect(content).to_contain_text("1 μη σημειωμένες ως διεκπεραιωμένες")
+    expect(content).to_contain_text("Σημειώθηκε ως διεκπεραιωμένη")
+    assert call_source["handled"] is True
     assert content.locator("img, svg").count() == 0, "source text parsed as unsafe markup"
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
     box = popover.bounding_box()
@@ -383,7 +397,7 @@ def browser_suite(width, screenshot_name):
     errors = []
     outbound = []
     auth = {"authenticated": False, "linked": False, "confirmations": 0}
-    call_source = {"status": 200}
+    call_source = {"status": 200, "handled": False, "write_status": 200}
     with sync_playwright() as pw:
         executable = shutil.which("google-chrome") or shutil.which("chromium")
         browser = pw.chromium.launch(headless=True, executable_path=executable, args=["--no-sandbox"])
@@ -398,8 +412,18 @@ def browser_suite(width, screenshot_name):
                 assert route.request.method == "GET"
                 assert not any(k.lower() == "x-clinical-key" for k in route.request.headers)
                 code = call_source["status"] if auth["authenticated"] else 401
+                source = {**CALL_PEEK, "unhandled_count": 1 if call_source["handled"] else 2,
+                    "calls": [{**CALL_PEEK["calls"][0], "handled": call_source["handled"]},
+                              CALL_PEEK["calls"][1]]}
                 return route.fulfill(status=code,
-                    json=CALL_PEEK if code == 200 else {"detail": "Unavailable"})
+                    json=source if code == 200 else {"detail": "Unavailable"})
+            if url.endswith("/clinical/reception-calls/handled"):
+                assert route.request.method == "POST"
+                assert route.request.post_data_json == {"todo_id": "td_RM-SYN-1", "handled": True}
+                code = call_source["write_status"] if auth["authenticated"] else 401
+                if code == 200:
+                    call_source["handled"] = True
+                return route.fulfill(status=code, json={"handled": True} if code == 200 else {"detail": "Unavailable"})
             if url.endswith("/clinical/login"):
                 assert route.request.method == "POST"
                 assert route.request.post_data_json is not None

@@ -31,6 +31,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
 .doctor-action-row strong{font-size:12.5px;line-height:1.45;overflow-wrap:anywhere}
 .doctor-action-row small{font-size:11px;color:#748992;line-height:1.4;overflow-wrap:anywhere}
 .doctor-action-row>span:last-child{font-size:19px;color:#a0b0b3}
+.doctor-call-entry{border-bottom:1px solid #eef1f2;min-width:0}
+.doctor-call-entry .doctor-action-row{border-bottom:0}
+.doctor-call-controls{display:flex;align-items:center;flex-wrap:wrap;gap:6px 9px;padding:0 7px 10px;min-width:0}
+.doctor-call-state{font-size:11px;color:#667e84;margin:0;flex:1 1 100%;overflow-wrap:anywhere}
+.doctor-call-control{font:inherit;font-size:11px;font-weight:700;color:#17685f;background:#f3f9f7;border:1px solid #d6e6e1;border-radius:8px;padding:6px 9px;text-decoration:none;cursor:pointer}
+.doctor-call-control:disabled{opacity:.55;cursor:default}
+.doctor-call-control:focus-visible{outline:2px solid #5fa8a1;outline-offset:2px}
 .doctor-command-search{font:inherit;font-size:14px;border:1px solid #dce6e6;background:#f9fbfb;border-radius:11px;padding:11px 12px;width:100%;outline-color:#90bdbc;margin:7px 0}
 .doctor-command-results{max-height:350px;overflow-y:auto}
 #doctorMainView{min-height:400px}
