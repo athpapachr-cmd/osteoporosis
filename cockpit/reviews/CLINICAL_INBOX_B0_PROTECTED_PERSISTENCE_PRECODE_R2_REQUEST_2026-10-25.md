@@ -3,6 +3,8 @@
 **Date:** 2026-10-25 Asia/Nicosia. **MODE:** fresh independent READ-ONLY affected PRE-CODE R2, one bounded pass and STOP. No new architecture chain, code changes, DDL, Aiven/Render configuration, GitHub merge/deploy, credentials, patient rows, real provider connection, actual PHI or external communication.
 
 **Repository:** `athpapachr-cmd/osteoporosis`
+**PR:** [#214](https://github.com/athpapachr-cmd/osteoporosis/pull/214) — DRAFT, unmerged; no runtime or patient-data authority.
+**Frozen substantive B0 design blob:** `16fcdf12d41553d93f7a75b934e4c0b722605094` (`cockpit/CLINICAL_INBOX_B0_PROTECTED_PERSISTENCE_PRECODE_DESIGN_2026-10-25.md`). Any later PR-HEAD changes in the review request / CURRENT Markdown are documentation-only unless they actually alter this frozen design blob; report the exact HEAD examined.
 **Baseline production main at B0 start:** `3204bc7722b5bb45241c5b23d788f6f51c6fb502` (PR #213 guarded merged, no runtime changes in this B0).
 **Source-of-truth candidate:** `cockpit/CLINICAL_INBOX_B0_PROTECTED_PERSISTENCE_PRECODE_DESIGN_2026-10-25.md` in the proposed B0 design PR. Reviewer MUST resolve and report its **exact blob SHA** at review time and compare latest PR HEAD with design freeze for any substantive changes.
 **Reused approved design:** [#210](https://github.com/athpapachr-cmd/osteoporosis/pull/210), substantive blob `4f1f1111814d841989954ec0d6095635d8f2ccd7`, independent affected R2 PASS 0:0:0; Phase-A contract `cockpit/CLINICAL_INBOX_PHASE_A_MULTI_ACCOUNT_CONTRACT_2026-10-23.md`; released #208, #209, #212 and #213. Keep their exact completed security/UX/correction regression findings CLOSED. New identity/retention/persistence gates are not approved merely by previous synthetic PASS.
