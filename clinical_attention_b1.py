@@ -168,7 +168,7 @@ class SyntheticAttentionPostgresB1:
 
     def create_fixture(self, actor: StaffActor, *, item_id: str, source_key: str,
                        source_type: str, source_scope: str = "single_subject") -> dict:
-        self._actor(actor, item_id, "create_fixture")
+        self._actor(actor, item_id, "fixture_created")
         if (not _KEY.fullmatch(item_id) or len(item_id) > 64
                 or not _KEY.fullmatch(source_key) or len(source_key) > 100
                 or source_type not in _TYPES or source_scope not in _SCOPES):

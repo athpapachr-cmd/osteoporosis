@@ -157,6 +157,24 @@ def check():
         with connect() as admin:
             assert event_count(admin) == 2  # one attributable secretary denial
 
+        # Regression: secretary fixture denial must be auditable without an
+        # invalid event_type or any mutation to the existing synthetic item.
+        expect(B1Forbidden, lambda: store.create_fixture(
+            secretary, item_id="SYN-B1-A", source_key="SYN-B1-MESSAGE-A",
+            source_type="lab_notice",
+        ))
+        with connect() as admin:
+            assert event_count(admin) == 3
+            assert admin.execute(
+                "SELECT count(*) FROM clinical_attention_events "
+                "WHERE item_id=%s AND actor_id=%s AND event_type=%s AND outcome=%s",
+                ("SYN-B1-A", secretary.principal_id, "fixture_created", "denied_403"),
+            ).fetchone()[0] == 1
+            assert admin.execute(
+                "SELECT version, review_state FROM clinical_attention_items "
+                "WHERE item_id=%s", ("SYN-B1-A",),
+            ).fetchone() == (0, "unreviewed")
+
         before = store.read(doctor, "SYN-B1-A")
         assert before["identity_state"] == "unlinked"
         expect(B1NotFound, lambda: store.read(doctor, "SYN-B1-NOT-FOUND"))
