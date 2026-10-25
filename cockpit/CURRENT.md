@@ -1,3 +1,5 @@
+> **2026-10-25 PRIORITY 2 — PR #221 CI GREEN / ADMIN INSTALL PENDING:** Exact head `b26ba14` passed latest canonical guard and surgery queue workflows; earlier canonical failure was corrected in PR declaration. SQL R2 PASS 0:0:0. Merge gate next; no Aiven SQL, source task read or voice call yet.
+
 > **2026-10-25 PRIORITY 2 — GUARD SQL R2 PASS / PR #221 DRAFT:** Corrected state-column-only migration `d57aeb1` independent PASS 0:0:0; docs head `58d2644` in [draft PR #221](https://github.com/athpapachr-cmd/osteoporosis/pull/221). Aiven admin sign-in and live installation pending; SQLSTATE 42501 continues to block peek/voice. No live SQL or task/provider action.
 
 > **2026-10-25 PRIORITY 2 — MIGRATION CANDIDATE UNDER REVIEW:** `d94209f` adds a one-time Aiven guard-table migration; local PostgreSQL install/privilege/uniqueness checks PASS. No live SQL. Independent affected review pending; Aiven browser requires login, so production guard remains blocked at `42501`.
