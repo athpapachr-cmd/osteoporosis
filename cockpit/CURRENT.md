@@ -1264,3 +1264,5 @@ Use the live Pending Surgery Queue in the Cockpit. Further additions (for exampl
 - Canonical impact, Clinical Calendar snapshot, Surgery Queue and Cockpit Home gates: PASS.
 
 **As-of 2026-09-30 follow-up:** observe the automatic Render deploy and then use the live controls. Verify deploy state afresh before making a current-state claim.
+> **2026-10-25 PRIORITY 2 — PRE-CODE R2 CORRECTION / HOLD:** Design `93892a8` received independent BLOCK / 0:2:0 on completion-note persistence and duplicate follow-ups. Corrected design uses an append-preserving `Σημειώσεις` update in the source-page PATCH and a durable unique `(page, revision)` attempt guard before any Notion write; partial/unknown results require source reconciliation. Focused independent closure pending; no runtime mutation or real task/provider action.
+
