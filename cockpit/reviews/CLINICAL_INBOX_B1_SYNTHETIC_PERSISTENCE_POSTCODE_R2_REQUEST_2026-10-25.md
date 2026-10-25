@@ -2,10 +2,10 @@
 
 **Date:** 2026-10-25 Asia/Nicosia. **MODE:** fresh independent READ-ONLY affected POST-CODE R2, one bounded pass and STOP. No implementation/fixes, additional architecture review chain, production patient data, DDL/grants execution, Aiven/Render/config, provider login, merge/deploy, credentials or external communications.
 
-**Repository:** `athpapachr-cmd/osteoporosis`  
-**Implementation:** [PR #215](https://github.com/athpapachr-cmd/osteoporosis/pull/215), DRAFT / UNMERGED, **stacked on B0 PR #214** (also DRAFT/unmerged).  
-**Production main at implementation start:** `3204bc7722b5bb45241c5b23d788f6f51c6fb502`.  
-**Frozen B0 base / PR #214 head:** `816d6dc9079909ddf82bce082ca8c8441dd38756`, design blob `16fcdf12d41553d93f7a75b934e4c0b722605094`.  
+**Repository:** `athpapachr-cmd/osteoporosis`
+**Implementation:** [PR #215](https://github.com/athpapachr-cmd/osteoporosis/pull/215), DRAFT / UNMERGED, **stacked on B0 PR #214** (also DRAFT/unmerged).
+**Production main at implementation start:** `3204bc7722b5bb45241c5b23d788f6f51c6fb502`.
+**Frozen B0 base / PR #214 head:** `816d6dc9079909ddf82bce082ca8c8441dd38756`, design blob `16fcdf12d41553d93f7a75b934e4c0b722605094`.
 **Frozen B1 implementation + tests + migration + CI head:** `eb21a23282075842842a8ddee3596906f504bb76`. Review the EXACT source blobs:
 - `clinical_attention_b1.py` = `8fa9a52fcbbfc09644beeb88771fcab52eb9bf55`
 - `test_clinical_attention_b1_postgres.py` = `e05fbcdc1862c24c66b00745d102cc83ce6e1fdd`
