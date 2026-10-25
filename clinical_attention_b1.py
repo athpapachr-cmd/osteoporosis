@@ -191,6 +191,7 @@ class SyntheticAttentionPostgresB1:
                 version=0, created_at=stamp, updated_at=stamp,
             )
             session.add(row)
+            session.flush()  # insert parent before append-only FK audit, same transaction
             self._event(session, actor, row, "fixture_created", "allowed")
             try:
                 session.commit()
