@@ -1,3 +1,5 @@
+> **2026-10-25 PRIORITY 2 — AUTHENTICATED PEEK BLOCKED AT GUARD INIT:** Live activation deploy `dep-dbf6ta29lscs739193k0` accepted enabled/token/source settings but protected peek returned generic `Notion confirmation guard unavailable` before any Notion row. No task/provider call or write. Free Render Shell unavailable, no Render-managed Postgres instance; safe SQLSTATE-only diagnostics and bounded fix next, retaining durable uniqueness.
+
 > **2026-10-25 PRIORITY 2 — ACTIVATION DEPLOY LIVE / SOURCE SMOKE PENDING:** Render config deploy `dep-dbf6ta29lscs739193k0` at `aee6180` terminal LIVE; fixed source and task/voice/provider flags set, token supplied by Product Owner and unread by agent. Protected Notion source and voice availability still unverified. No task write/audio sent.
 
 > **2026-10-25 PRIORITY 2 — FLAGS SET / RENDER DEPLOY BUILDING:** Four fixed Notion/voice flags merged via Render MCP, `replace=false`; no token value read. Deploy `dep-dbf6ta29lscs739193k0` at `aee6180` building, prior `dep-dbf6s0oae00c73f059gg` live. Await terminal deploy and protected source/voice-availability smoke; no task write or audio sent.
