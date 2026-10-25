@@ -10,6 +10,7 @@ from fastapi.responses import RedirectResponse
 
 from legacy_main import app, engine
 from clinical_auth import ClinicalCookieMiddleware, build_auth_router
+from clinical_reception_calls import build_reception_calls_router
 from clinical_calendar import build_clinical_calendar_router
 from clinical_data import build_clinical_router
 from clinical_synthetic_161 import build_synthetic_161_router
@@ -61,6 +62,7 @@ def clinical_workspace_root() -> RedirectResponse:
 
 app.add_middleware(ClinicalCookieMiddleware)
 app.include_router(build_auth_router())
+app.include_router(build_reception_calls_router())
 app.include_router(build_clinical_status_router(engine))
 app.include_router(build_clinical_router(engine))
 app.include_router(build_clinical_ext_router(engine))

@@ -6,6 +6,7 @@ const html=fs.readFileSync("static/cockpit/index.html","utf8");
 const script=fs.readFileSync("static/cockpit/doctor-shell.js","utf8");
 assert.match(html,/id="doctorDateButton"/);
 assert.match(html,/id="doctorInboxButton"/);
+assert.match(html,/id="doctorCallsButton"/);
 assert.match(html,/id="doctorTasksButton"/);
 assert.match(html,/id="doctorLibraryView"/);
 assert.match(html,/id="visitBriefOverlay"/);
@@ -52,7 +53,7 @@ const windowHandlers=new Map(),windowStub={
  addEventListener(name,fn){windowHandlers.set(name,fn);},
  CockpitSurgerySummary:null
 };
-let deferred=null,authenticated=true;
+let deferred=null,authenticated=true,callHandled=false;
 const mockAppointments=[
  {appointment_id:"cal.com:synthetic-1",patient_display_name:"Συνθετικός Ασθενής Α",
   start_at:"2026-10-10T22:20:00Z",reason:"Συνθετική οστεοπόρωση"},
@@ -82,6 +83,25 @@ async function fakeFetch(url,opts){
        status:"resolved",updated_at:"2026-10-24T18:00:00Z"}])
    })};
  }
+ if(url==="/clinical/reception-calls/peek"){
+   assert.equal(opts.cache,"no-store");
+   return {ok:authenticated,status:authenticated?200:401,json:async()=>({
+     source:"reception_dashboard",is_unread_count:false,
+     coverage:"available_call_log_max_200",unhandled_count:callHandled?0:1,calls:[{
+       call_id:"RM-TEST",todo_id:"td_RM-TEST",handled:callHandled,
+       logged_at:"2026-10-25T07:00:00+02:00",
+       name:"Συνθετικός καλών",phone:"0000000000",
+       summary:"Ζήτησε τηλεφώνημα",summary_pending:false,
+       kind:"message"
+     }]
+   })};
+ }
+ if(url==="/clinical/reception-calls/handled"){
+   assert.equal(opts.method,"POST");
+   assert.deepEqual(JSON.parse(opts.body),{todo_id:"td_RM-TEST",handled:true});
+   callHandled=true;
+   return {ok:true,status:200,json:async()=>({handled:true})};
+ }
  if(!url.startsWith("/clinical/calendar/agenda?"))throw Error("unexpected URL "+url);
  if(deferred)return deferred.promise;
  return {ok:authenticated,status:authenticated?200:401,json:async()=>mockAppointments};
@@ -103,6 +123,23 @@ function byId(id,node=$('doctorPopoverContent')){if(node.id===id)return node;for
  }
 
  assert.equal($("doctorLibraryView").hidden,true);
+ $("doctorCallsButton").fire("click");await tick();await tick();
+ assert.equal($("doctorPopover").hidden,false,"phone popover opens");
+ assert.equal($("doctorCallsButton").attributes["aria-expanded"],"true");
+ const entry=$("doctorPopoverContent").children.find(n=>n.className==="doctor-call-entry");
+ const callLink=entry.children[0];
+ assert.match(callLink.children[0].children[0].textContent,/Συνθετικός καλών/);
+ assert.doesNotMatch(callLink.children[0].children[1].textContent,/Χρειάζεται προσοχή/);
+ assert.match(callLink.children[0].children[1].textContent,/Μήνυμα/);
+ assert.match($("doctorPopoverContent").children[0].textContent,/μη σημειωμένες/);
+ const complete=entry.children[1].children.find(n=>n.tagName==="button");
+ assert.ok(complete,"explicit Reception completion action");
+ await complete.fire("click");await tick();await tick();
+ assert.equal(callHandled,true);
+ assert.ok(calls.some(c=>c.url==="/clinical/reception-calls/handled"&&c.method==="POST"));
+ assert.ok(calls.some(c=>c.url==="/clinical/reception-calls/peek"),"protected call route");
+ $("doctorCallsButton").fire("click");
+ assert.equal($("doctorPopover").hidden,true);
  assert.equal($("doctorInboxBadge").hidden,true,"no invented unread email count");
  assert.equal($("doctorAttentionList").children.length,4);
  $("doctorDateButton").fire("click");
@@ -231,8 +268,9 @@ function byId(id,node=$('doctorPopoverContent')){if(node.id===id)return node;for
  assert.equal($("doctorPopover").dataset.kind,"inbox","late day response cannot replace Inbox");
  assert.equal($("doctorPopoverContent").children.length,inboxState);
  assert.ok(calls.every(x=>x.method==="GET" || (x.method==="POST"
-   && x.url==="/clinical/clinic-utilities/rf/api/outcomes/search")),
-   "the RF search is the only new read-intent POST");
+   && ["/clinical/clinic-utilities/rf/api/outcomes/search",
+       "/clinical/reception-calls/handled"].includes(x.url))),
+   "only RF search and explicit Reception completion use POST");
  assert.ok(calls.every(x=>!x.url.includes("patient_id")),"no patient identifiers in URLs");
  console.log("PASS Cockpit Doctor Shell: contextual day, Peek route, Inbox truth, tasks, actions, library, stale isolation");
 })().catch(e=>{console.error(e);process.exitCode=1;});

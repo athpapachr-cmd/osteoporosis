@@ -7,7 +7,7 @@
 
 Cockpit helps the clinician see what matters, prepare the encounter and take the next **clinical** action. Its three concerns are clinician attention, clinical action and visit intelligence. Osteoporosis is Module 01, not the whole Cockpit. The existing Reception/calls system remains separately owned.
 
-Home has two first-class entrances: appointment-driven floating **Visit Brief** and an independent, always-current **Clinical Inbox** for clinical inputs from explicitly approved mailbox accounts (Gmail first; later iCloud Mail and Hotmail/Outlook). New labs, MRI/X-ray/imaging reports and GESY notifications can be reviewed and lead to clinician-approved patient communication on the day they arrive, independently of appointment timing. Home should normally show only about **3–4 high-attention incoming items** and provide a direct path to the full unresolved queue. Learning, audit, improvement and utilities remain accessible after immediate clinical needs.
+Home has two first-class entrances: appointment-driven floating **Visit Brief** and an independent, always-current **Clinical Inbox** for clinical inputs from explicitly approved mailbox accounts (Hotmail/Outlook for GESY notifications and iCloud Mail for patient-supplied results; Gmail is not the clinical-results source). New labs, MRI/X-ray/imaging reports and GESY notifications can be reviewed and lead to clinician-approved patient communication on the day they arrive, independently of appointment timing. Home should normally show only about **3–4 high-attention incoming items** and provide a direct path to the full unresolved queue. Learning, audit, improvement and utilities remain accessible after immediate clinical needs.
 
 ## Read projections and boundaries
 

@@ -4,7 +4,7 @@
   // Read-only Cockpit shell. Appointment content comes from the EXISTING
   // protected clinical calendar; summaries or unread counts are never invented.
   const $ = id => document.getElementById(id);
-  const buttons = {day: $("doctorDateButton"), inbox: $("doctorInboxButton"),
+  const buttons = {day: $("doctorDateButton"), calls: $("doctorCallsButton"), inbox: $("doctorInboxButton"),
     tasks: $("doctorTasksButton"), actions: $("doctorActionsButton")};
   const popover = $("doctorPopover"), content = $("doctorPopoverContent");
   const state = {panel: null, opener: null, request: 0, day: null, surgeries: null, rf: null};
@@ -113,10 +113,11 @@
     popover.dataset.kind=kind;
     content.replaceChildren();
     $("doctorPopoverTitle").textContent={
-      day:"Πρόγραμμα ημέρας",inbox:"Κλινικά εισερχόμενα",
+      day:"Πρόγραμμα ημέρας",calls:"Κλήσεις γραμματέα",inbox:"Κλινικά εισερχόμενα",
       tasks:"Εκκρεμότητες ιατρείου",actions:"Ενέργειες"
     }[kind];
     if(kind==="day"){state.day=dayKey();loadDay();}
+    else if(kind==="calls")callPeek();
     else if(kind==="inbox")inbox();
     else if(kind==="tasks")tasks();
     else commands();
@@ -176,6 +177,98 @@
     window.CockpitClinicalBase==="/clinical/synthetic-161";
   const activePeek=(kind,ticket)=>state.panel===kind &&
     !popover.hidden && state.request===ticket;
+
+  async function callPeek() {
+    const ticket=++state.request;
+    content.replaceChildren();
+    content.append(text("Φόρτωση πρόσφατων κλήσεων από τη Γραμματεία…"));
+    const dashboard="https://ortho-reception-backend-v2.onrender.com/dashboard";
+    try {
+      const response=await fetch(clinicalURL("/clinical/reception-calls/peek"),{
+        credentials:"same-origin",cache:"no-store",headers:{"Accept":"application/json"}
+      });
+      if(!response.ok){const error=new Error("Unavailable");error.status=response.status;throw error;}
+      const data=await response.json();
+      if(!activePeek("calls",ticket))return;
+      if(!data||data.source!=="reception_dashboard"||data.is_unread_count!==false||
+          !["available_call_log_max_200","ambiguous_call_identity"].includes(data.coverage)||
+          !(data.unhandled_count===null||(Number.isInteger(data.unhandled_count)&&
+            data.unhandled_count>=0&&data.unhandled_count<=200))||
+          !Array.isArray(data.calls)||data.calls.length>4||
+          data.calls.some(c=>!c||(c.call_id!==null&&typeof c.call_id!=="string")||
+            typeof c.logged_at!=="string"||typeof c.name!=="string"||
+            typeof c.summary!=="string"||typeof c.kind!=="string"||
+            ![true,false,null].includes(c.handled)||
+            !(c.todo_id===null||(typeof c.todo_id==="string"&&c.todo_id.length>0))))
+        throw Error("Invalid Reception source");
+      content.replaceChildren();
+      content.append(text(data.unhandled_count===null?
+        "Ο αριθμός μη σημειωμένων κλήσεων δεν είναι διαθέσιμος λόγω ασαφούς ταυτότητας στην πηγή.":
+        data.unhandled_count+" μη σημειωμένες ως διεκπεραιωμένες στη διαθέσιμη προβολή (έως 200 καταγεγραμμένες κλήσεις)."));
+      if(!data.calls.length)content.append(text("Δεν υπάρχουν κλήσεις στην τρέχουσα προβολή της Γραμματείας."));
+      for(const row of data.calls){
+        const date=new Date(row.logged_at);
+        const when=Number.isNaN(date.getTime())?"Χρόνος άγνωστος":
+          dateLabel.format(date)+" · "+timeLabel.format(date);
+        const status=row.summary_pending?" · Η τελική σύνοψη ετοιμάζεται":"";
+        const kind=row.kind==="message"?" · Μήνυμα":"";
+        const name=row.name+(row.phone?" · "+row.phone:"");
+        const entry=document.createElement("div");entry.className="doctor-call-entry";
+        entry.append(newLink(name,dashboard,when+kind+status+" · "+row.summary));
+        const controls=document.createElement("div");controls.className="doctor-call-controls";
+        const handled=text(row.handled===true?"✓ Σημειώθηκε ως διεκπεραιωμένη":
+          row.handled===false?"Δεν έχει σημειωθεί ως διεκπεραιωμένη":
+          "Η ατομική κατάσταση δεν είναι διαθέσιμη");
+        handled.className="doctor-call-state";controls.append(handled);
+        const dial=String(row.phone||"").trim();
+        const dialTarget=dial.replace(/[^0-9+]/g,"");
+        if(/^\+?[0-9 ()-]{5,40}$/.test(dial)&&dialTarget.replace(/\D/g,"").length>=5){
+          const tel=document.createElement("a");tel.className="doctor-call-control";
+          tel.href="tel:"+dialTarget;tel.textContent="Κλήση";
+          tel.setAttribute("aria-label","Κλήση στο "+dial);controls.append(tel);
+        }
+        if(row.handled===false&&row.todo_id){
+          const button=document.createElement("button");button.type="button";
+          button.className="doctor-call-control";button.textContent="Σημείωση ολοκλήρωσης";
+          button.addEventListener("click",async()=>{
+            button.disabled=true;handled.textContent="Καταχώριση στη Γραμματεία…";
+            try{
+              const response=await fetch(clinicalURL("/clinical/reception-calls/handled"),{
+                method:"POST",credentials:"same-origin",cache:"no-store",
+                headers:{"Accept":"application/json","Content-Type":"application/json"},
+                body:JSON.stringify({todo_id:row.todo_id,handled:true})
+              });
+              if((response.status===401||response.status===403)&&activePeek("calls",ticket)){
+                window.dispatchEvent(new Event("clinical:unauthenticated"));return;
+              }
+              if(!response.ok)throw Error("Reception write failed");
+              const result=await response.json();
+              if(result?.handled!==true)throw Error("Reception write not confirmed");
+              if(activePeek("calls",ticket))callPeek();
+            }catch(_error){
+              if(activePeek("calls",ticket)){
+                handled.textContent="Η ολοκλήρωση δεν επιβεβαιώθηκε. Ελέγξτε ξανά την πηγή.";
+                button.disabled=false;
+              }
+            }
+          });controls.append(button);
+        }
+        entry.append(controls);content.append(entry);
+      }
+      content.append(newLink("Όλες οι κλήσεις και ο χειρισμός τους",dashboard,
+        "Το dashboard του γραμματέα παραμένει η μοναδική πηγή κατάστασης."));
+    }catch(error){
+      if(!activePeek("calls",ticket))return;
+      content.replaceChildren();
+      content.append(text(error.status===401||error.status===403?
+        "Απαιτείται κλινική σύνδεση. Δεν εμφανίζονται στοιχεία κλήσεων.":
+        "Οι κλήσεις της Γραμματείας δεν είναι συνδεδεμένες ή η πηγή δεν είναι διαθέσιμη. Δεν συμπεραίνουμε ότι δεν υπάρχουν κλήσεις."));
+      if(error.status===401||error.status===403)
+        content.append(action("Σύνδεση","Χρήση του υπάρχοντος Clinical Key",
+          ()=>window.dispatchEvent(new Event("clinical:request-login"))));
+      content.append(newLink("Άνοιγμα dashboard Γραμματείας",dashboard));
+    }
+  }
 
   async function inbox() {
     const ticket=++state.request;
@@ -443,6 +536,7 @@
   }
 
     buttons.day.addEventListener("click",()=>openPanel("day",buttons.day));
+  buttons.calls.addEventListener("click",()=>openPanel("calls",buttons.calls));
   buttons.inbox.addEventListener("click",()=>openPanel("inbox",buttons.inbox));
   $("doctorClinicalInboxBack").addEventListener("click",showHome);
   window.addEventListener("cockpit:clinical-updates-changed",()=>{if(state.panel==="inbox")inbox();else if(state.panel==="tasks")tasks();});
@@ -455,6 +549,7 @@
     if(state.panel === "day") loadDay();
     if(state.panel === "tasks") tasks();
     if(state.panel === "inbox") inbox();
+    if(state.panel === "calls") callPeek();
     loadRfAttention();
   });
   $("doctorBackHome").addEventListener("click",showHome);
