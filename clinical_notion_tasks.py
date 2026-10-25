@@ -174,7 +174,7 @@ async def _complete_notes(token: str, page: dict, note: str) -> list[dict]:
         raise HTTPException(409, "Notion notes property unavailable")
     # Retrieve the full property instead of using the possibly truncated page projection.
     response = await _notion(token, "GET", "/pages/" + page["id"] +
-                             "/properties/" + quote(property_id, safe="") + "?page_size=100")
+                             "/properties/" + quote(property_id, safe="%") + "?page_size=100")
     if response.get("object") != "list" or response.get("has_more") is not False:
         raise HTTPException(409, "Notion notes exceed safe update bounds")
     values = response.get("results")
@@ -276,14 +276,18 @@ def build_notion_tasks_router(engine: Engine) -> APIRouter:
             raise HTTPException(422, "Invalid task ID") from None
         if not 1000 <= x_audio_duration_ms <= 60000 or request.headers.get("content-type", "").split(";")[0] != "audio/webm":
             raise HTTPException(413, "Audio format or duration is outside the short task limit")
-        audio = await request.body()
-        if not 100 <= len(audio) <= 2_000_000:
+        audio_buffer = bytearray()
+        async for chunk in request.stream():
+            if len(audio_buffer) + len(chunk) > 2_000_000:
+                raise HTTPException(413, "Audio is outside the short task limit")
+            audio_buffer.extend(chunk)
+        if len(audio_buffer) < 100:
             raise HTTPException(413, "Audio is outside the short task limit")
         page = await _notion(token, "GET", "/pages/" + task_id)
         task = _task(page)
         if task["revision"] != x_task_revision:
             raise HTTPException(409, "Task changed in Notion; reopen it")
-        result = await _proposal(audio, "audio/webm", task)
+        result = await _proposal(bytes(audio_buffer), "audio/webm", task)
         return {"attempt_id": str(uuid.uuid4()), "task": task, **result}
 
     @router.post("/confirm", dependencies=[Depends(_require_clinical_key)])

@@ -2,6 +2,10 @@
 from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from uuid import uuid4
+import asyncio
+import json
+
+import httpx
 
 from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
@@ -23,7 +27,7 @@ def source_page(status="Not started"):
             "Status": {"type": "status", "status": {"name": status}},
             "Due": {"type": "date", "date": {"start": "2026-10-30"}},
             "Κατηγορία": {"type": "select", "select": {"name": "Ιατρείο"}},
-            "Σημειώσεις": {"id": "notes-id", "type": "rich_text", "rich_text": []},
+            "Σημειώσεις": {"id": "notes%3Aid", "type": "rich_text", "rich_text": []},
         },
     }
 
@@ -90,6 +94,8 @@ def test_peek_auth_and_confirm_preserves_notes(monkeypatch, tmp_path):
     rich = patches[0]["properties"]["Σημειώσεις"]["rich_text"]
     assert rich[0]["text"]["content"] == "Υπάρχουσα σημείωση"
     assert rich[1]["text"]["content"] == "\nΟλοκληρώθηκε συνθετικά"
+    assert any("/properties/notes%3Aid?" in path for method, path, _ in calls if method == "GET")
+    assert not any("%253A" in path for _, path, _ in calls)
     assert creates[0]["parent"]["data_source_id"] == tasks.DATA_SOURCE_ID
 
 
@@ -188,12 +194,48 @@ def test_voice_route_uses_current_task_and_bounded_audio(monkeypatch, tmp_path):
     headers = {"X-Clinical-Key": "synthetic-key", "X-Task-Id": TASK_ID,
                "X-Task-Revision": REVISION, "X-Audio-Duration-Ms": "2500",
                "Content-Type": "audio/webm"}
+    sent = []
+    def oversized_chunks():
+        for index in range(4):
+            sent.append(index)
+            yield b"x" * 1_000_000
     too_large = client.post("/clinical/notion-tasks/propose", headers=headers,
-                            content=b"x" * 2_000_001)
+                            content=oversized_chunks())
     assert too_large.status_code == 413
+    assert len(sent) >= 3
     assert not invoked
     result = client.post("/clinical/notion-tasks/propose", headers=headers, content=b"x" * 100)
     assert result.status_code == 200
     assert result.json()["transcript"] == "Συνθετική υπαγόρευση"
     assert invoked == [(100, "audio/webm", TASK_ID)]
     assert not any(c[0] in {"PATCH", "POST"} and c[1] == "/pages" for c in calls)
+
+
+def test_voice_provider_contract_has_no_write_tool_or_storage(monkeypatch):
+    monkeypatch.setenv("OPENAI_API_KEY", "synthetic-only")
+    calls = []
+    class FakeClient:
+        def __init__(self, **_kwargs):
+            pass
+        async def __aenter__(self):
+            return self
+        async def __aexit__(self, *_args):
+            pass
+        async def post(self, url, **kwargs):
+            calls.append((url, kwargs))
+            if url.endswith("/audio/transcriptions"):
+                return httpx.Response(200, json={"text": "Ολοκληρώθηκε συνθετική εργασία"})
+            return httpx.Response(200, json={"output": [{"content": [{"type": "output_text",
+                "text": json.dumps({"mark_done": True, "completion_note": "Συνθετική ολοκλήρωση",
+                                    "followup_title": "Συνθετικό follow-up",
+                                    "followup_notes": "Συνθετικό επόμενο βήμα"})}]}]})
+    monkeypatch.setattr(tasks.httpx, "AsyncClient", FakeClient)
+    result = asyncio.run(tasks._proposal(b"synthetic-webm", "audio/webm", {
+        "title": "Συνθετική εργασία", "id": TASK_ID})
+    )
+    assert result["suggestion"]["mark_done"] is True
+    assert len(calls) == 2
+    assert calls[0][1]["data"]["model"] == "gpt-transcribe"
+    assert calls[1][1]["json"]["model"] == "gpt-6-luna"
+    assert calls[1][1]["json"]["store"] is False
+    assert "tools" not in calls[1][1]["json"]
