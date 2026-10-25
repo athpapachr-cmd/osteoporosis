@@ -6,6 +6,7 @@ const html=fs.readFileSync("static/cockpit/index.html","utf8");
 const script=fs.readFileSync("static/cockpit/doctor-shell.js","utf8");
 assert.match(html,/id="doctorDateButton"/);
 assert.match(html,/id="doctorInboxButton"/);
+assert.match(html,/id="doctorCallsButton"/);
 assert.match(html,/id="doctorTasksButton"/);
 assert.match(html,/id="doctorLibraryView"/);
 assert.match(html,/id="visitBriefOverlay"/);
@@ -82,6 +83,17 @@ async function fakeFetch(url,opts){
        status:"resolved",updated_at:"2026-10-24T18:00:00Z"}])
    })};
  }
+ if(url==="/clinical/reception-calls/peek"){
+   assert.equal(opts.cache,"no-store");
+   return {ok:authenticated,status:authenticated?200:401,json:async()=>({
+     source:"reception_dashboard",is_unread_count:false,calls:[{
+       call_id:"RM-SYNTHETIC-1",logged_at:"2026-10-25T07:00:00+02:00",
+       name:"Συνθετικός καλών",phone:"0000000000",
+       summary:"Ζήτησε τηλεφώνημα",summary_pending:false,
+       kind:"message",requires_action:true
+     }]
+   })};
+ }
  if(!url.startsWith("/clinical/calendar/agenda?"))throw Error("unexpected URL "+url);
  if(deferred)return deferred.promise;
  return {ok:authenticated,status:authenticated?200:401,json:async()=>mockAppointments};
@@ -103,6 +115,15 @@ function byId(id,node=$('doctorPopoverContent')){if(node.id===id)return node;for
  }
 
  assert.equal($("doctorLibraryView").hidden,true);
+ $("doctorCallsButton").fire("click");await tick();await tick();
+ assert.equal($("doctorPopover").hidden,false,"phone popover opens");
+ assert.equal($("doctorCallsButton").attributes["aria-expanded"],"true");
+ const callLinks=$("doctorPopoverContent").children.filter(n=>n.tagName==="a");
+ assert.equal(callLinks.length,2,"one bounded Reception call and full-dashboard link");
+ assert.match(callLinks[0].children[0].children[0].textContent,/Συνθετικός καλών/);
+ assert.ok(calls.some(c=>c.url==="/clinical/reception-calls/peek"),"protected call route");
+ $("doctorCallsButton").fire("click");
+ assert.equal($("doctorPopover").hidden,true);
  assert.equal($("doctorInboxBadge").hidden,true,"no invented unread email count");
  assert.equal($("doctorAttentionList").children.length,4);
  $("doctorDateButton").fire("click");
