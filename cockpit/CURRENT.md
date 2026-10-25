@@ -1,3 +1,5 @@
+> **2026-10-25 PRIORITY 2 — MIGRATION CANDIDATE UNDER REVIEW:** `d94209f` adds a one-time Aiven guard-table migration; local PostgreSQL install/privilege/uniqueness checks PASS. No live SQL. Independent affected review pending; Aiven browser requires login, so production guard remains blocked at `42501`.
+
 > **2026-10-25 PRIORITY 2 — LIVE GUARD BLOCKED / SQLSTATE 42501:** At Render `dep-dbf77abbc2fs738term0`, authenticated peek returned generic 503; the safe diagnostic logged SQLAlchemy `ProgrammingError` / PostgreSQL `42501` at guard initialization. This establishes insufficient privilege, not the precise missing grant. No Notion read, voice/provider call or task mutation occurred. Inspect existing Aiven admin migration process and prepare an additive table/grant fix with durable uniqueness; feature acceptance remains blocked.
 
 > **2026-10-25 PRIORITY 2 — DIAGNOSTIC DEPLOY LIVE / ONE PEEK NEXT:** Reviewed diagnostic code merge `4417fffe65ef187d8dd57c981d6e583767905af6` terminal LIVE at Render `dep-dbf77abbc2fs738term0`. Only class/SQLSTATE logging added. Next protected peek and safe log code; no task/provider mutation.
