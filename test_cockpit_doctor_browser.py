@@ -77,6 +77,20 @@ CONTEXT = {
     "next": DAY[0], "upcoming_today": DAY,
 }
 
+CALL_PEEK = {
+    "source": "reception_dashboard", "is_unread_count": False,
+    "calls": [
+        {"call_id": None, "logged_at": "2026-10-25T09:00:00+02:00",
+         "name": "<img src=x onerror=alert(1)>", "phone": "0000000001",
+         "summary": "<svg onload=alert(1)> Ζήτησε ενημέρωση", "summary_pending": False,
+         "kind": "message"},
+        {"call_id": "RM-SYN-2", "logged_at": "2026-10-25T08:00:00+02:00",
+         "name": "Συνθετική δεύτερη κλήση", "phone": "",
+         "summary": "Η τελική σύνοψη ετοιμάζεται", "summary_pending": True,
+         "kind": "information"},
+    ],
+}
+
 def assert_delayed_recent_purged_after_logout(page):
     # A successful old clinician response arriving AFTER logout cannot restore PHI.
     assert page.evaluate("""() => {
@@ -284,10 +298,92 @@ def exercise_obligations(page,width):
     page.evaluate("delete window.CockpitStoredChart; delete window.__chosenObligation;")
 
 
+def exercise_reception_call_peek(page, width, call_source):
+    """Actual Chromium: DOM, auth failures, stale network, logout and XSS."""
+    phone = page.locator("#doctorCallsButton")
+    popover = page.locator("#doctorPopover")
+    content = page.locator("#doctorPopoverContent")
+    links = content.locator("a.doctor-action-row")
+    dashboard = "https://ortho-reception-backend-v2.onrender.com/dashboard"
+
+    call_source["status"] = 200
+    phone.click()
+    expect(popover).to_be_visible()
+    expect(phone).to_have_attribute("aria-expanded", "true")
+    expect(links).to_have_count(3)
+    expect(links.first).to_have_attribute("href", dashboard)
+    expect(links.first).to_have_attribute("rel", "noopener noreferrer")
+    expect(content).to_contain_text("<img src=x onerror=alert(1)>")
+    expect(content).to_contain_text("<svg onload=alert(1)>")
+    expect(content).to_contain_text("Η τελική σύνοψη ετοιμάζεται")
+    expect(content).not_to_contain_text("Χρειάζεται προσοχή")
+    assert content.locator("img, svg").count() == 0, "source text parsed as unsafe markup"
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
+    box = popover.bounding_box()
+    assert box and box["x"] >= -1 and box["x"] + box["width"] <= width + 1
+    if width == 390:
+        popover.screenshot(path=str(OUT / "cockpit-reception-calls-mobile.png"))
+
+    page.keyboard.press("Escape")
+    expect(popover).to_be_hidden()
+    expect(phone).to_be_focused()
+    assert content.locator("*").count() == 0, "dismissed caller content retained in DOM"
+    phone.click()
+    page.evaluate("document.body.dispatchEvent(new PointerEvent('pointerdown', {bubbles: true}))")
+    expect(popover).to_be_hidden()
+    assert content.locator("*").count() == 0, "outside close retained caller content"
+
+    for code in (401, 403, 503):
+        call_source["status"] = code
+        phone.click()
+        expect(content).to_contain_text(
+            "Απαιτείται κλινική σύνδεση" if code in (401, 403)
+            else "δεν είναι συνδεδεμένες")
+        expect(links).to_have_count(1)
+        expect(links.first).to_have_attribute("href", dashboard)
+        assert "Συνθετική δεύτερη κλήση" not in content.inner_text()
+        phone.click()
+        expect(popover).to_be_hidden()
+    call_source["status"] = 200
+
+    # An obsolete successful result must not restore caller details after panel switch.
+    held = []
+    def pause(route):
+        held.append(route)
+    page.route("**/clinical/reception-calls/peek", pause)
+    phone.click()
+    page.wait_for_timeout(60)
+    assert len(held) == 1, "expected one pending source request"
+    page.locator("#doctorInboxButton").click()
+    expect(popover).to_be_visible()
+    expect(popover).to_have_attribute("data-kind", "inbox")
+    held.pop().fulfill(json=CALL_PEEK)
+    page.wait_for_timeout(60)
+    expect(content).not_to_contain_text("<img src=x")
+    page.unroute("**/clinical/reception-calls/peek", pause)
+    page.locator("#doctorInboxButton").click()
+
+    # Closing/logout purges the DOM and fences an already-issued late response.
+    held = []
+    page.route("**/clinical/reception-calls/peek", pause)
+    phone.click()
+    page.wait_for_timeout(60)
+    assert len(held) == 1
+    page.evaluate("window.dispatchEvent(new Event('clinical:unauthenticated'))")
+    expect(popover).to_be_hidden()
+    assert content.locator("*").count() == 0
+    held.pop().fulfill(json=CALL_PEEK)
+    page.wait_for_timeout(60)
+    assert content.locator("*").count() == 0
+    assert "<img src=x" not in content.inner_text()
+    page.unroute("**/clinical/reception-calls/peek", pause)
+
+
 def browser_suite(width, screenshot_name):
     errors = []
     outbound = []
     auth = {"authenticated": False, "linked": False, "confirmations": 0}
+    call_source = {"status": 200}
     with sync_playwright() as pw:
         executable = shutil.which("google-chrome") or shutil.which("chromium")
         browser = pw.chromium.launch(headless=True, executable_path=executable, args=["--no-sandbox"])
@@ -298,6 +394,12 @@ def browser_suite(width, screenshot_name):
             if url.endswith("/clinical/status"):
                 return route.fulfill(status=200 if auth["authenticated"] else 401,
                                      json={"authenticated": auth["authenticated"]})
+            if url.endswith("/clinical/reception-calls/peek"):
+                assert route.request.method == "GET"
+                assert not any(k.lower() == "x-clinical-key" for k in route.request.headers)
+                code = call_source["status"] if auth["authenticated"] else 401
+                return route.fulfill(status=code,
+                    json=CALL_PEEK if code == 200 else {"detail": "Unavailable"})
             if url.endswith("/clinical/login"):
                 assert route.request.method == "POST"
                 assert route.request.post_data_json is not None
@@ -502,6 +604,7 @@ def browser_suite(width, screenshot_name):
             expect(page.locator("#doctorAttentionList")).to_contain_text("Δεν υπάρχει ακόμη αξιόπιστη καταμέτρηση")
             assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1")
             # Actual Chromium: hidden registry and Dia details are removed on auth loss.
+            exercise_reception_call_peek(page, width, call_source)
             assert_delayed_recent_purged_after_logout(page)
             page.evaluate("""() => {
                 document.getElementById('visitDiaPreviewText').textContent='SYN-PHI';
@@ -577,6 +680,7 @@ def browser_suite(width, screenshot_name):
             expect(page.locator("#visitSidebarPrevious")).to_be_disabled()
             expect(page.locator("#visitBriefOverlay")).to_be_hidden()
         assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1"), "horizontal overflow"
+        exercise_reception_call_peek(page, width, call_source)
         assert_delayed_recent_purged_after_logout(page)
         page.evaluate("""() => {
             document.getElementById('visitDiaPreviewText').textContent='SYN-PHI';

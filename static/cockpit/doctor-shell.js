@@ -192,9 +192,9 @@
       if(!activePeek("calls",ticket))return;
       if(!data||data.source!=="reception_dashboard"||data.is_unread_count!==false||
           !Array.isArray(data.calls)||data.calls.length>4||
-          data.calls.some(c=>!c||typeof c.call_id!=="string"||
+          data.calls.some(c=>!c||(c.call_id!==null&&typeof c.call_id!=="string")||
             typeof c.logged_at!=="string"||typeof c.name!=="string"||
-            typeof c.summary!=="string"||typeof c.requires_action!=="boolean"))
+            typeof c.summary!=="string"||typeof c.kind!=="string"))
         throw Error("Invalid Reception source");
       content.replaceChildren();
       content.append(text("Πρόσφατες κλήσεις από το dashboard · δεν δηλώνεται αριθμός μη αναγνωσμένων."));
@@ -204,9 +204,10 @@
         const when=Number.isNaN(date.getTime())?"Χρόνος άγνωστος":
           dateLabel.format(date)+" · "+timeLabel.format(date);
         const status=row.summary_pending?" · Η τελική σύνοψη ετοιμάζεται":"";
-        const flag=row.requires_action?" · Χρειάζεται προσοχή":"";
+        // Factual call kind only; completion/handled status remains with Reception.
+        const kind=row.kind==="message"?" · Μήνυμα":"";
         const name=row.name+(row.phone?" · "+row.phone:"");
-        content.append(newLink(name,dashboard,when+flag+status+" · "+row.summary));
+        content.append(newLink(name,dashboard,when+kind+status+" · "+row.summary));
       }
       content.append(newLink("Όλες οι κλήσεις και ο χειρισμός τους",dashboard,
         "Το dashboard του γραμματέα παραμένει η μοναδική πηγή κατάστασης."));

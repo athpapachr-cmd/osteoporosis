@@ -80,9 +80,9 @@ def _project(data: dict[str, Any]) -> list[dict[str, Any]]:
         when = _timestamp(_value(row, "logged_at", 64))
         if when is None:
             continue
+        # The Reception dashboard can legitimately contain calls without a
+        # call ID. Keep these actual rows visible without minting an identity.
         call_id = _value(row, "call_id", 120)
-        if not call_id:
-            continue
         first = _value(row, "first_name", 100)
         last = _value(row, "last_name", 100)
         name = " ".join(p for p in (first, last) if p)
@@ -95,13 +95,13 @@ def _project(data: dict[str, Any]) -> list[dict[str, Any]]:
                     or _value(row, "reason_for_call", 300))
         summary = narrative or fallback or "Δεν υπάρχει ακόμη διαθέσιμη σύνοψη."
         kind = _value(row, "type", 32)
-        actionable = bool(row.get("is_urgent") or row.get("caller_wants_callback")
-                          or kind == "message" or row.get("native_message_operation_id"))
+        # Reception tracks completion in its own separate todo/handled state.
+        # A message or callback request is not proof of an open obligation.
         projected.append({
-            "call_id": call_id, "logged_at": when.isoformat(),
+            "call_id": call_id or None, "logged_at": when.isoformat(),
             "name": name, "phone": _value(row, "phone", 40),
             "summary": summary, "summary_pending": narrative_status in ("pending", "processing", "retrying"),
-            "kind": kind, "requires_action": actionable,
+            "kind": kind,
         })
     projected.sort(key=lambda x: x["logged_at"], reverse=True)
     # Only a small, transient protected peek. Complete state stays in Reception.

@@ -87,10 +87,10 @@ async function fakeFetch(url,opts){
    assert.equal(opts.cache,"no-store");
    return {ok:authenticated,status:authenticated?200:401,json:async()=>({
      source:"reception_dashboard",is_unread_count:false,calls:[{
-       call_id:"RM-SYNTHETIC-1",logged_at:"2026-10-25T07:00:00+02:00",
+       call_id:null,logged_at:"2026-10-25T07:00:00+02:00",
        name:"Συνθετικός καλών",phone:"0000000000",
        summary:"Ζήτησε τηλεφώνημα",summary_pending:false,
-       kind:"message",requires_action:true
+       kind:"message"
      }]
    })};
  }
@@ -121,6 +121,8 @@ function byId(id,node=$('doctorPopoverContent')){if(node.id===id)return node;for
  const callLinks=$("doctorPopoverContent").children.filter(n=>n.tagName==="a");
  assert.equal(callLinks.length,2,"one bounded Reception call and full-dashboard link");
  assert.match(callLinks[0].children[0].children[0].textContent,/Συνθετικός καλών/);
+ assert.doesNotMatch(callLinks[0].children[0].children[1].textContent,/Χρειάζεται προσοχή/);
+ assert.match(callLinks[0].children[0].children[1].textContent,/Μήνυμα/);
  assert.ok(calls.some(c=>c.url==="/clinical/reception-calls/peek"),"protected call route");
  $("doctorCallsButton").fire("click");
  assert.equal($("doctorPopover").hidden,true);

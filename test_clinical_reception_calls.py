@@ -54,7 +54,8 @@ def test_source_mapping_minimizes_response_and_uses_real_coverage(client, monkey
     rows = response.json()["calls"]
     assert [row["call_id"] for row in rows] == ["RM-new", "RM-old"]
     assert rows[0]["summary"] == "Ζήτησε τηλεφώνημα"
-    assert rows[0]["requires_action"] is True
+    assert "requires_action" not in rows[0]
+    assert rows[0]["kind"] == "message"
     assert "MUST-NOT-LEAK" not in response.text
     assert "transcript" not in response.text
 
@@ -82,3 +83,67 @@ def test_pending_narrative_is_not_reported_as_finished(client, monkeypatch):
     assert row["summary_pending"] is True
     assert row["summary"] == "Έγινε κλήση"
     assert "NOT-YET-VALID" not in response.text
+
+
+def test_real_call_without_call_id_stays_visible_with_null_identity(client, monkeypatch):
+    """Reception records can lack a usable call ID; do not omit actual calls."""
+    async def source(_):
+        return {"calls": [
+            {"call_id": "", "logged_at": "2026-10-25T08:00:00+02:00",
+             "caller_name": "Χωρίς αναγνωριστικό", "phone": "0000000001",
+             "display_message": "Πραγματική συνθετική κλήση"},
+            {"logged_at": "2026-10-25T09:00:00+02:00",
+             "first_name": "Δεύτερη", "last_name": "Κλήση",
+             "type": "message", "message_clean": "Απλό μήνυμα"},
+            {"call_id": "RM-older", "logged_at": "2026-10-25T07:00:00+02:00",
+             "display_message": "Παλαιότερη κλήση"},
+        ]}
+    monkeypatch.setattr(calls, "_fetch_calls", source)
+    response = client.get("/clinical/reception-calls/peek",
+                          headers={"X-Clinical-Key": "local-test-clinical-key"})
+    assert response.status_code == 200
+    rows = response.json()["calls"]
+    assert len(rows) == 3
+    assert [r["call_id"] for r in rows] == [None, None, "RM-older"]
+    assert rows[0]["name"] == "Δεύτερη Κλήση"
+    assert rows[1]["summary"] == "Πραγματική συνθετική κλήση"
+    assert all("requires_action" not in r for r in rows)
+    assert "0000000001" in response.text
+
+
+def test_message_or_callback_never_asserts_unhandled_state(client, monkeypatch):
+    """Reception keeps its handled checkbox outside /dashboard/calls."""
+    async def source(_):
+        return {"calls": [{
+            "call_id": "RM-already-handled",
+            "logged_at": "2026-10-25T09:00:00+02:00",
+            "type": "message", "is_urgent": True,
+            "caller_wants_callback": True,
+            "native_message_operation_id": "synthetic-operation",
+            "display_message": "Η κατάσταση διεκπεραίωσης δεν είναι γνωστή.",
+        }]}
+    monkeypatch.setattr(calls, "_fetch_calls", source)
+    response = client.get("/clinical/reception-calls/peek",
+                          headers={"X-Clinical-Key": "local-test-clinical-key"})
+    assert response.status_code == 200
+    row = response.json()["calls"][0]
+    assert row["kind"] == "message"
+    assert "requires_action" not in row
+    assert "is_urgent" not in row
+    assert "native_message_operation_id" not in row
+
+
+def test_anonymous_rows_still_obey_four_call_cap(client, monkeypatch):
+    async def source(_):
+        return {"calls": [{
+            "logged_at": f"2026-10-25T{hour:02d}:00:00+02:00",
+            "display_message": f"Κλήση {hour}",
+        } for hour in range(5, 11)]}
+    monkeypatch.setattr(calls, "_fetch_calls", source)
+    response = client.get("/clinical/reception-calls/peek",
+                          headers={"X-Clinical-Key": "local-test-clinical-key"})
+    assert response.status_code == 200
+    rows = response.json()["calls"]
+    assert len(rows) == 4
+    assert [r["summary"] for r in rows] == ["Κλήση 10", "Κλήση 9", "Κλήση 8", "Κλήση 7"]
+    assert all(r["call_id"] is None for r in rows)
