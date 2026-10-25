@@ -1,0 +1,51 @@
+name: Clinical Inbox B1 isolated PostgreSQL (synthetic only)
+
+on:
+  pull_request:
+    paths:
+      - "clinical_attention_b1.py"
+      - "test_clinical_attention_b1_postgres.py"
+      - "cockpit/migrations/20261025_clinical_attention_b1_empty.sql"
+      - ".github/workflows/clinical-inbox-b1-postgres.yml"
+  push:
+    paths:
+      - "clinical_attention_b1.py"
+      - "test_clinical_attention_b1_postgres.py"
+      - "cockpit/migrations/20261025_clinical_attention_b1_empty.sql"
+      - ".github/workflows/clinical-inbox-b1-postgres.yml"
+
+jobs:
+  b1-synthetic-postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_DB: postgres
+          POSTGRES_PASSWORD: synthetic-ci-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      B1_SYNTHETIC_TEST_ONLY: "yes"
+      B1_SYNTHETIC_PASSWORD: synthetic-ci-only
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install only required isolated test packages
+        run: pip install "sqlalchemy>=2" "psycopg[binary]>=3.1" "fastapi>=0.115"
+      - name: Compile B1 code and tests
+        run: python -m py_compile clinical_attention_b1.py test_clinical_attention_b1_postgres.py
+      - name: Disposable PostgreSQL 17 migration and synthetic persistence checks
+        run: python test_clinical_attention_b1_postgres.py
+      - name: Diff hygiene
+        run: git diff --check HEAD^ HEAD
