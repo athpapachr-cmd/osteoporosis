@@ -6,6 +6,7 @@ contains no task prose, transcript or audio. This router is OFF by default.
 from __future__ import annotations
 
 import os
+import logging
 import uuid
 from typing import Any
 from urllib.parse import quote, urlparse
@@ -27,6 +28,7 @@ NOTION_VERSION = "2026-03-11"
 ACTIVE = {"Not started", "In progress"}
 CATEGORIES = {"Ιατρείο", "Cockpit", "Προσωπικά"}
 _metadata = MetaData()
+_log = logging.getLogger(__name__)
 _attempts = Table(
     "cockpit_notion_task_attempts", _metadata,
     Column("attempt_id", String(36), primary_key=True),
@@ -80,7 +82,13 @@ def _voice_available() -> bool:
 def _ensure_guard(engine: Engine) -> None:
     try:
         _metadata.create_all(engine, tables=[_attempts], checkfirst=True)
-    except SQLAlchemyError:
+    except SQLAlchemyError as error:
+        # SQLSTATE and exception class identify the DB failure without logging
+        # SQL, connection details, credentials, or task content.
+        original = getattr(error, "orig", None)
+        code = getattr(original, "sqlstate", None) or getattr(original, "pgcode", None)
+        _log.error("Notion guard init failed: class=%s sqlstate=%s",
+                   type(error).__name__, code or "unavailable")
         raise HTTPException(503, "Notion confirmation guard unavailable") from None
 
 

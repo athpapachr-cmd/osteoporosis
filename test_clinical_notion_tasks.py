@@ -4,12 +4,15 @@ from copy import deepcopy
 from uuid import uuid4
 import asyncio
 import json
+import logging
 
 import httpx
+import pytest
 
 from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
+from sqlalchemy.exc import ProgrammingError
 
 import clinical_notion_tasks as tasks
 
@@ -239,3 +242,19 @@ def test_voice_provider_contract_has_no_write_tool_or_storage(monkeypatch):
     assert calls[1][1]["json"]["model"] == "gpt-6-luna"
     assert calls[1][1]["json"]["store"] is False
     assert "tools" not in calls[1][1]["json"]
+
+
+def test_guard_diagnostic_reports_only_safe_error_code(monkeypatch, caplog, tmp_path):
+    class SyntheticPrivilegeError(Exception):
+        sqlstate = "42501"
+    def deny_create(*_args, **_kwargs):
+        raise ProgrammingError("SQL and synthetic-secret-must-stay-hidden", {},
+                               SyntheticPrivilegeError("synthetic-secret-must-stay-hidden"))
+    monkeypatch.setattr(tasks._metadata, "create_all", deny_create)
+    engine = create_engine("sqlite:///" + str(tmp_path / "guard.sqlite"))
+    with caplog.at_level(logging.ERROR, logger="clinical_notion_tasks"):
+        with pytest.raises(HTTPException) as raised:
+            tasks._ensure_guard(engine)
+    assert raised.value.status_code == 503
+    assert "class=ProgrammingError sqlstate=42501" in caplog.text
+    assert "synthetic-secret-must-stay-hidden" not in caplog.text
