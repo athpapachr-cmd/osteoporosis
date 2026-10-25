@@ -2,7 +2,10 @@
 -- osteoporosis PostgreSQL database. Run once as the existing Aiven migration
 -- owner, never as cockpit_app and never on application startup.
 -- Nine ordinary statements fit Aiven PG Studio's 10-query execution limit.
--- Select and run the entire batch. A failed assertion aborts the transaction.
+-- Execute BEGIN through COMMIT on one verified PostgreSQL connection (psql is
+-- suitable). PG Studio's documented limit alone does not establish that its
+-- selected statements share one connection. A failed assertion aborts the
+-- transaction only when the batch uses one connection.
 -- No Notion task text, transcript, audio, or patient rows are read or written.
 BEGIN;
 SELECT
