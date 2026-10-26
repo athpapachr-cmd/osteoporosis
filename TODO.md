@@ -1,5 +1,7 @@
 # TODO.md — Clinical Excellence long-range compass
 
+> **2026-10-26 Priority 4 local visit audio installed:** Web/API is LIVE and the FileVault Mac companion has pinned local Whisper/Krikri/FFmpeg/Ollama installed. Final real loopback synthetic mixed Greek/English run passed with exact-source review and explicit unclassified accounting; no cloud audio/transcript, background recording or automatic clinical write. First informed-patient clinician use, accuracy and elapsed-time acceptance remain. Exact release evidence in root/Cockpit CURRENT.
+
 > **2026-10-18 Next-day preparation installed:** Top-right date popover now browses previous/next days with explicit Cyprus date and Today return. Full minimal agenda includes all actual appointment categories from the existing Reception source, preserving the separate weekly Osteoporosis filter. Live read-only1280/390 verified8tomorrowappointments and Home-next continuity; personal POusepending, later phases unchanged. Exact evidence in root/Cockpit CURRENT.
 
 > **2026-10-18 Stored visit correction installed:** #198 adds explicit editing of existing signed structured visits on the same encounter, with previous versions retained. Full prefilled clinical fields or optional re-extraction, task effect review and explicit correction Save; unchanged task history preserved, removed/replaced tasks cancelled through their existing owner without terminal resurrection. Local/CI writes and live read-only edit/cancel1280/390 verified; personal PO use pending. No later-phase activation; exact evidence in root/Cockpit CURRENT.
