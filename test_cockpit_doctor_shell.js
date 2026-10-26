@@ -22,7 +22,7 @@ function el(id="",tag="div"){
   setAttribute(name,value){obj.attributes[name]=String(value);},
   addEventListener(name,fn){handlers.set(name,fn);},
   fire(name,event={}){const fn=handlers.get(name);assert.ok(fn,"handler "+id+"/"+name);return fn(event);},
-  replaceChildren(){obj.children=[];},
+  replaceChildren(...children){obj.children=[...children];},
   append(...children){obj.children.push(...children);},
   focus(){},
   contains(target){return target===obj||obj.children.some(c=>c===target||typeof c.contains==="function"&&c.contains(target));}
@@ -55,7 +55,15 @@ const windowHandlers=new Map(),windowStub={
  addEventListener(name,fn){windowHandlers.set(name,fn);},
  CockpitSurgerySummary:null
 };
-let deferred=null,authenticated=true,callHandled=false,notionDone=false;
+const navigatorStub={mediaDevices:{async getUserMedia(){return {getTracks(){return [{stop(){}}];}};}}};
+class SyntheticRecorder{
+ static isTypeSupported(type){return type==="audio/webm";}
+ constructor(){this.state="inactive";}
+ start(){this.state="recording";}
+ stop(){this.state="inactive";this.ondataavailable({data:new Blob(["x".repeat(100)],{type:"audio/webm"})});this.onstop();}
+}
+windowStub.MediaRecorder=SyntheticRecorder;
+let deferred=null,authenticated=true,callHandled=false,notionDone=false,notionVoice=false;
 const notionTask={id:"00000000-0000-4000-8000-000000000001",title:"Συνθετική εργασία",
  status:"Not started",revision:"2026-10-25T08:00:00.000Z",due:"2026-10-30",
  url:"https://www.notion.so/00000000000040008000000000000001"};
@@ -110,7 +118,26 @@ async function fakeFetch(url,opts){
  if(url==="/clinical/notion-tasks/peek"){
    return {ok:authenticated,status:authenticated?200:401,json:async()=>({
      source:"notion",database_url:"https://app.notion.com/p/241379c6877a40fc8ab4a0efc042c887",
-     voice_available:false,tasks:notionDone?[]:[notionTask]})};
+     voice_available:notionVoice,tasks:notionDone?[]:[notionTask]})};
+ }
+ if(url==="/clinical/notion-tasks/create"){
+   assert.equal(opts.method,"POST");
+   const body=JSON.parse(opts.body);
+   assert.equal(body.title,"Συνθετική νέα εργασία");
+   assert.equal(body.notes,"Συνθετική σημείωση");
+   assert.equal(body.due_date,"2026-10-30");
+   assert.equal(body.category,"Ιατρείο");
+   assert.equal(body.priority,"Κανονική");
+   return {ok:true,status:200,json:async()=>({source:"notion",created:true,
+     task_url:"https://www.notion.so/00000000000040008000000000000002"})};
+ }
+ if(url==="/clinical/notion-tasks/propose-new"){
+   assert.equal(opts.method,"POST");
+   assert.equal(opts.headers["Content-Type"],"audio/webm");
+   return {ok:true,status:200,json:async()=>({attempt_id:"00000000-0000-4000-8000-000000000011",
+     transcript:"Συνθετική νέα εργασία μέχρι τις 30 Οκτωβρίου",
+     suggestion:{title:"Συνθετική νέα εργασία",notes:"Συνθετική σημείωση",
+       due_date:"2026-10-30",category:"Ιατρείο",priority:"Κανονική"}})};
  }
  if(url==="/clinical/notion-tasks/confirm"){
    assert.equal(opts.method,"POST");
@@ -127,9 +154,13 @@ async function fakeFetch(url,opts){
  if(deferred)return deferred.promise;
  return {ok:authenticated,status:authenticated?200:401,json:async()=>mockAppointments};
 }
-class CalendarClock extends Date{constructor(...args){super(...(args.length?args:['2026-12-31T12:00:00Z']));}}
+let voiceClock=0;
+class CalendarClock extends Date{
+ constructor(...args){super(...(args.length?args:['2026-12-31T12:00:00Z']));}
+ static now(){return voiceClock?voiceClock+=2500:Date.now();}
+}
 vm.runInNewContext(script.replace("  function text(message) {","  window.dayRangeForTest=todayRange;\n  function text(message) {"),{document:doc,window:windowStub,fetch:fakeFetch,
- URL,URLSearchParams,Date:CalendarClock,Intl,console});
+ URL,URLSearchParams,Date:CalendarClock,Intl,console,navigator:navigatorStub,Blob,setTimeout,clearTimeout});
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 function findButtonContent(title) {
  return $("doctorPopoverContent").children.find(item=>
@@ -140,6 +171,12 @@ function byId(id,node=$('doctorPopoverContent')){if(node.id===id)return node;for
 function findTextNode(value,node=$('doctorPopoverContent')){
  if(node.textContent===value)return node;
  for(const child of node.children||[]){const found=findTextNode(value,child);if(found)return found;}
+ return null;
+}
+function findAction(label,node=$('doctorPopoverContent')){
+ if(node.tagName==="button" && node.children?.some(c=>
+   c.children?.some(n=>n.textContent===label)))return node;
+ for(const child of node.children||[]){const found=findAction(label,child);if(found)return found;}
  return null;
 }
 (async()=>{
@@ -178,6 +215,39 @@ function findTextNode(value,node=$('doctorPopoverContent')){
  form.children.at(-1).children[1].fire("click");await tick();await tick();
  assert.equal(notionDone,true,"explicit confirmation updates Notion source");
  assert.ok($("doctorPopoverContent").children.some(n=>n.textContent?.includes("Δεν υπάρχουν ενεργές")));
+ assert.ok(findAction("Νέα εργασία"),"general create remains above an empty task list");
+ findAction("Νέα εργασία").fire("click");
+ const newForm=$("doctorPopoverContent").children.find(n=>n.className==="doctor-notion-form");
+ assert.ok(newForm,"new task review opens without selecting an existing row");
+ newForm.children[0].children[1].value="Συνθετική νέα εργασία";
+ newForm.children[1].children[1].value="Συνθετική σημείωση";
+ newForm.children[2].children[1].value="2026-10-30";
+ newForm.children[3].children[1].value="Ιατρείο";
+ newForm.children[4].children[1].value="Κανονική";
+ assert.equal(calls.filter(c=>c.url==="/clinical/notion-tasks/create").length,0,
+   "editing is not a Notion write");
+ await newForm.children.at(-1).children[1].fire("click");await tick();
+ assert.equal(calls.filter(c=>c.url==="/clinical/notion-tasks/create").length,1,
+   "one explicit confirmation creates a task");
+ assert.ok(findTextNode("Η εργασία δημιουργήθηκε στο Notion"));
+ $("doctorNotionButton").fire("click");
+ notionVoice=true;
+ $("doctorNotionButton").fire("click");await tick();await tick();
+ assert.ok(findAction("Υπαγόρευση νέας"),"general dictation action is visible when voice is enabled");
+ voiceClock=1;
+ findAction("Υπαγόρευση νέας").fire("click");await tick();
+ const stopVoice=$("doctorPopoverContent").children.find(n=>n.tagName==="button"&&
+   n.textContent==="Σταμάτημα και πρόταση");
+ assert.ok(stopVoice,"voice capture started for a new task");
+ stopVoice.fire("click");await tick();await tick();
+ const dictatedForm=$("doctorPopoverContent").children.find(n=>n.className==="doctor-notion-form");
+ assert.equal(dictatedForm.children[0].children[1].value,"Συνθετική νέα εργασία");
+ assert.equal(dictatedForm.children[1].children[1].value,"Συνθετική σημείωση");
+ assert.equal(dictatedForm.children[2].children[1].value,"2026-10-30");
+ assert.equal(dictatedForm.children[3].children[1].value,"Ιατρείο");
+ assert.equal(dictatedForm.children[4].children[1].value,"Κανονική");
+ assert.equal(calls.filter(c=>c.url==="/clinical/notion-tasks/create").length,1,
+   "dictation prefills review without a second write");
  $("doctorNotionButton").fire("click");
  assert.equal($("doctorInboxBadge").hidden,true,"no invented unread email count");
  assert.equal($("doctorAttentionList").children.length,4);
@@ -308,7 +378,8 @@ function findTextNode(value,node=$('doctorPopoverContent')){
  assert.equal($("doctorPopoverContent").children.length,inboxState);
  assert.ok(calls.every(x=>x.method==="GET" || (x.method==="POST"
    && ["/clinical/clinic-utilities/rf/api/outcomes/search",
-       "/clinical/reception-calls/handled", "/clinical/notion-tasks/confirm"].includes(x.url))),
+       "/clinical/reception-calls/handled", "/clinical/notion-tasks/confirm",
+       "/clinical/notion-tasks/create", "/clinical/notion-tasks/propose-new"].includes(x.url))),
    "only named source actions use POST");
  assert.ok(calls.every(x=>!x.url.includes("patient_id")),"no patient identifiers in URLs");
  console.log("PASS Cockpit Doctor Shell: contextual day, Peek route, Inbox truth, tasks, actions, library, stale isolation");

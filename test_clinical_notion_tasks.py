@@ -58,6 +58,9 @@ def app_and_calls(monkeypatch, tmp_path):
         if method == "POST" and path == "/pages":
             followup = source_page()
             followup["id"] = "00000000-0000-4000-8000-000000000002"
+            if payload["properties"]["Task name"]["title"]:
+                followup["properties"]["Task name"]["title"][0]["plain_text"] = (
+                    payload["properties"]["Task name"]["title"][0]["text"]["content"])
             return followup
         raise AssertionError((method, path))
 
@@ -74,6 +77,64 @@ def confirm_payload(**overrides):
               "followup_title": "Συνθετικό follow-up", "followup_notes": "Συνθετική ενέργεια"}
     result.update(overrides)
     return result
+
+
+def create_payload(**overrides):
+    result = {"attempt_id": str(uuid4()), "title": "Συνθετική νέα εργασία",
+              "notes": "Συνθετική σημείωση", "due_date": "2026-10-30",
+              "category": "Ιατρείο", "priority": "Κανονική"}
+    result.update(overrides)
+    return result
+
+
+def test_new_task_create_requires_confirmation_and_has_one_shot_guard(monkeypatch, tmp_path):
+    client, _engine, _page, calls = app_and_calls(monkeypatch, tmp_path)
+    path = "/clinical/notion-tasks/create"
+    body = create_payload()
+    assert client.post(path, json=body).status_code == 401
+    assert not calls
+    headers = {"X-Clinical-Key": "synthetic-key"}
+    response = client.post(path, headers=headers, json=body)
+    assert response.status_code == 200, response.text
+    assert response.json()["created"] is True
+    assert response.json()["task_url"].startswith("https://www.notion.so/")
+    creates = [payload for method, route, payload in calls if method == "POST" and route == "/pages"]
+    assert len(creates) == 1
+    props = creates[0]["properties"]
+    assert creates[0]["parent"]["data_source_id"] == tasks.DATA_SOURCE_ID
+    assert props["Status"]["status"]["name"] == "Not started"
+    assert props["Due"]["date"]["start"] == body["due_date"]
+    assert props["Κατηγορία"]["select"]["name"] == body["category"]
+    assert props["Προτεραιότητα"]["select"]["name"] == body["priority"]
+    assert client.post(path, headers=headers, json=body).status_code == 409
+    assert len([1 for method, route, _ in calls if method == "POST" and route == "/pages"]) == 1
+
+
+def test_new_task_rejects_invalid_fields_before_write(monkeypatch, tmp_path):
+    client, _engine, _page, calls = app_and_calls(monkeypatch, tmp_path)
+    path = "/clinical/notion-tasks/create"
+    headers = {"X-Clinical-Key": "synthetic-key"}
+    for body in (create_payload(title=" "), create_payload(due_date="2026-02-30"),
+                 create_payload(category="unknown"), create_payload(priority="unknown")):
+        assert client.post(path, headers=headers, json=body).status_code == 422
+    assert not calls
+
+
+def test_new_task_unknown_outcome_freezes_attempt(monkeypatch, tmp_path):
+    client, _engine, _page, calls = app_and_calls(monkeypatch, tmp_path)
+    original = tasks._notion
+    async def uncertain(token, method, route, *, payload=None):
+        if method == "POST" and route == "/pages":
+            calls.append((method, route, payload))
+            raise HTTPException(503, "synthetic timeout")
+        return await original(token, method, route, payload=payload)
+    monkeypatch.setattr(tasks, "_notion", uncertain)
+    path = "/clinical/notion-tasks/create"
+    headers = {"X-Clinical-Key": "synthetic-key"}
+    body = create_payload()
+    assert client.post(path, headers=headers, json=body).status_code == 503
+    assert client.post(path, headers=headers, json=body).status_code == 409
+    assert len([1 for method, route, _ in calls if method == "POST" and route == "/pages"]) == 1
 
 
 def test_peek_auth_and_confirm_preserves_notes(monkeypatch, tmp_path):
@@ -212,6 +273,37 @@ def test_voice_route_uses_current_task_and_bounded_audio(monkeypatch, tmp_path):
     assert result.json()["transcript"] == "Συνθετική υπαγόρευση"
     assert invoked == [(100, "audio/webm", TASK_ID)]
     assert not any(c[0] in {"PATCH", "POST"} and c[1] == "/pages" for c in calls)
+
+
+def test_new_voice_proposes_editable_fields_without_notion_write(monkeypatch, tmp_path):
+    client, _engine, _page, calls = app_and_calls(monkeypatch, tmp_path)
+    async def synthetic_proposal(audio, mime):
+        assert len(audio) == 100 and mime == "audio/webm"
+        return {"transcript": "Συνθετική υπαγόρευση νέας εργασίας",
+                "suggestion": {"title": "Συνθετική νέα εργασία", "notes": "Συνθετική σημείωση",
+                               "due_date": "2026-10-30", "category": "Ιατρείο",
+                               "priority": "Κανονική"}}
+    monkeypatch.setattr(tasks, "_proposal_new", synthetic_proposal)
+    headers = {"X-Clinical-Key": "synthetic-key", "X-Audio-Duration-Ms": "2500",
+               "Content-Type": "audio/webm"}
+    response = client.post("/clinical/notion-tasks/propose-new", headers=headers, content=b"x" * 100)
+    assert response.status_code == 200
+    assert response.json()["suggestion"]["title"] == "Συνθετική νέα εργασία"
+    assert not any(route == "/pages" for _, route, _ in calls)
+
+
+def test_future_tense_existing_voice_prefills_note_without_done(monkeypatch):
+    monkeypatch.setenv("OPENAI_API_KEY", "synthetic-only")
+    async def transcribe(_client, _key, _audio, _mime):
+        return "Θα ετοιμάσω το συνθετικό έγγραφο σήμερα."
+    async def propose(_client, _key, **_kwargs):
+        return {"mark_done": False, "completion_note": "", "followup_title": "",
+                "followup_notes": ""}
+    monkeypatch.setattr(tasks, "_transcribe", transcribe)
+    monkeypatch.setattr(tasks, "_structured_proposal", propose)
+    result = asyncio.run(tasks._proposal(b"x" * 100, "audio/webm", {"title": "Συνθετική εργασία"}))
+    assert result["suggestion"]["mark_done"] is False
+    assert result["suggestion"]["completion_note"] == result["transcript"]
 
 
 def test_voice_provider_contract_has_no_write_tool_or_storage(monkeypatch):
