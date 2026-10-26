@@ -13,6 +13,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.exc import ProgrammingError
+from types import SimpleNamespace
 
 import clinical_notion_tasks as tasks
 
@@ -135,6 +136,35 @@ def test_new_task_unknown_outcome_freezes_attempt(monkeypatch, tmp_path):
     assert client.post(path, headers=headers, json=body).status_code == 503
     assert client.post(path, headers=headers, json=body).status_code == 409
     assert len([1 for method, route, _ in calls if method == "POST" and route == "/pages"]) == 1
+
+
+def test_parallel_new_task_claim_accepts_only_one_attempt(monkeypatch, tmp_path):
+    _client, engine, _page, _calls = app_and_calls(monkeypatch, tmp_path)
+    tasks._ensure_guard(engine)
+    attempt = uuid4()
+    def claim(_):
+        try:
+            tasks._claim_new(engine, attempt)
+            return 200
+        except HTTPException as error:
+            return error.status_code
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        assert sorted(pool.map(claim, range(2))) == [200, 409]
+
+
+def test_new_voice_requires_explicit_provider_gate(monkeypatch):
+    engine = SimpleNamespace(dialect=SimpleNamespace(name="postgresql"))
+    monkeypatch.setenv("NOTION_TASKS_ENABLED", "1")
+    monkeypatch.setenv("NOTION_TASKS_TOKEN", "synthetic-only")
+    monkeypatch.setenv("NOTION_TASKS_DATA_SOURCE_ID", tasks.DATA_SOURCE_ID)
+    monkeypatch.setenv("OPENAI_API_KEY", "synthetic-only")
+    monkeypatch.setenv("NOTION_TASKS_VOICE_ENABLED", "1")
+    monkeypatch.delenv("NOTION_TASKS_VOICE_PHI_PROVIDER_APPROVED", raising=False)
+    with pytest.raises(HTTPException) as error:
+        tasks._settings(engine, voice=True)
+    assert error.value.status_code == 503
+    monkeypatch.setenv("NOTION_TASKS_VOICE_PHI_PROVIDER_APPROVED", "1")
+    assert tasks._settings(engine, voice=True) == "synthetic-only"
 
 
 def test_peek_auth_and_confirm_preserves_notes(monkeypatch, tmp_path):
@@ -290,6 +320,49 @@ def test_new_voice_proposes_editable_fields_without_notion_write(monkeypatch, tm
     assert response.status_code == 200
     assert response.json()["suggestion"]["title"] == "Συνθετική νέα εργασία"
     assert not any(route == "/pages" for _, route, _ in calls)
+
+
+def test_new_voice_rejects_unbounded_audio_before_provider(monkeypatch, tmp_path):
+    client, _engine, _page, calls = app_and_calls(monkeypatch, tmp_path)
+    invoked = []
+    async def proposal(*_args):
+        invoked.append(True)
+        raise AssertionError("provider must not be called")
+    monkeypatch.setattr(tasks, "_proposal_new", proposal)
+    path = "/clinical/notion-tasks/propose-new"
+    headers = {"X-Clinical-Key": "synthetic-key", "X-Audio-Duration-Ms": "2500",
+               "Content-Type": "audio/webm"}
+    assert client.post(path, headers={**headers, "X-Audio-Duration-Ms": "61000"},
+                       content=b"x" * 100).status_code == 413
+    assert client.post(path, headers=headers, content=b"x" * 2_000_001).status_code == 413
+    assert not invoked and not any(route == "/pages" for _, route, _ in calls)
+
+
+def test_new_voice_provider_contract_is_bounded_and_draft_only(monkeypatch):
+    monkeypatch.setenv("OPENAI_API_KEY", "synthetic-only")
+    calls = []
+    class FakeClient:
+        def __init__(self, **_kwargs):
+            pass
+        async def __aenter__(self):
+            return self
+        async def __aexit__(self, *_args):
+            pass
+        async def post(self, url, **kwargs):
+            calls.append((url, kwargs))
+            if url.endswith("/audio/transcriptions"):
+                return httpx.Response(200, json={"text": "Συνθετική νέα εργασία αύριο"})
+            return httpx.Response(200, json={"output": [{"content": [{"type": "output_text",
+                "text": json.dumps({"title": "Συνθετική νέα εργασία", "notes": "",
+                                    "due_date": "", "category": "", "priority": ""})}]}]})
+    monkeypatch.setattr(tasks.httpx, "AsyncClient", FakeClient)
+    result = asyncio.run(tasks._proposal_new(b"synthetic-webm", "audio/webm"))
+    assert result["suggestion"]["title"] == "Συνθετική νέα εργασία"
+    assert len(calls) == 2
+    assert calls[0][1]["data"]["model"] == "gpt-transcribe"
+    assert calls[1][1]["json"]["model"] == "gpt-6-luna"
+    assert calls[1][1]["json"]["store"] is False
+    assert "tools" not in calls[1][1]["json"]
 
 
 def test_future_tense_existing_voice_prefills_note_without_done(monkeypatch):

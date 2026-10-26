@@ -63,7 +63,7 @@ class SyntheticRecorder{
  stop(){this.state="inactive";this.ondataavailable({data:new Blob(["x".repeat(100)],{type:"audio/webm"})});this.onstop();}
 }
 windowStub.MediaRecorder=SyntheticRecorder;
-let deferred=null,authenticated=true,callHandled=false,notionDone=false,notionVoice=false;
+let deferred=null,deferredVoice=null,authenticated=true,callHandled=false,notionDone=false,notionVoice=false;
 const notionTask={id:"00000000-0000-4000-8000-000000000001",title:"Συνθετική εργασία",
  status:"Not started",revision:"2026-10-25T08:00:00.000Z",due:"2026-10-30",
  url:"https://www.notion.so/00000000000040008000000000000001"};
@@ -134,6 +134,7 @@ async function fakeFetch(url,opts){
  if(url==="/clinical/notion-tasks/propose-new"){
    assert.equal(opts.method,"POST");
    assert.equal(opts.headers["Content-Type"],"audio/webm");
+   if(deferredVoice)return deferredVoice;
    return {ok:true,status:200,json:async()=>({attempt_id:"00000000-0000-4000-8000-000000000011",
      transcript:"Συνθετική νέα εργασία μέχρι τις 30 Οκτωβρίου",
      suggestion:{title:"Συνθετική νέα εργασία",notes:"Συνθετική σημείωση",
@@ -249,6 +250,36 @@ function findAction(label,node=$('doctorPopoverContent')){
  assert.equal(calls.filter(c=>c.url==="/clinical/notion-tasks/create").length,1,
    "dictation prefills review without a second write");
  $("doctorNotionButton").fire("click");
+ let trackStops=0;
+ navigatorStub.mediaDevices.getUserMedia=async()=>({getTracks(){return [{stop(){trackStops++;}}];}});
+ const proposalsBeforeFailure=calls.filter(c=>c.url==="/clinical/notion-tasks/propose-new").length;
+ for(const Failure of [
+   class ConstructorFailure extends SyntheticRecorder{constructor(){super();throw Error("synthetic");}},
+   class StartFailure extends SyntheticRecorder{start(){throw Error("synthetic");}}
+ ]){
+   windowStub.MediaRecorder=Failure;
+   $("doctorNotionButton").fire("click");await tick();await tick();
+   findAction("Υπαγόρευση νέας").fire("click");await tick();
+   assert.ok(findAction("Συμπλήρωση με κείμενο"),"recorder failure offers manual review");
+   $("doctorNotionButton").fire("click");
+ }
+ assert.equal(trackStops,2,"acquired microphone tracks stop on constructor and start failure");
+ assert.equal(calls.filter(c=>c.url==="/clinical/notion-tasks/propose-new").length,
+   proposalsBeforeFailure,"recorder failure sends no audio");
+ windowStub.MediaRecorder=SyntheticRecorder;
+ let resolveStaleVoice;
+ deferredVoice=new Promise(done=>{resolveStaleVoice=done;});
+ $("doctorNotionButton").fire("click");await tick();await tick();
+ findAction("Υπαγόρευση νέας").fire("click");await tick();
+ $("doctorPopoverContent").children.find(n=>n.tagName==="button"&&
+   n.textContent==="Σταμάτημα και πρόταση").fire("click");await tick();
+ $("doctorNotionButton").fire("click");
+ resolveStaleVoice({ok:true,status:200,json:async()=>({
+   attempt_id:"00000000-0000-4000-8000-000000000012",transcript:"Συνθετική όψιμη πρόταση",
+   suggestion:{title:"Συνθετική όψιμη εργασία",notes:"",due_date:"",category:"",priority:""}})});
+ deferredVoice=null;await tick();await tick();
+ assert.equal($("doctorPopover").hidden,true,"late new-task proposal cannot reopen a closed panel");
+ assert.equal($("doctorPopoverContent").children.length,0,"late proposal cannot expose task details");
  assert.equal($("doctorInboxBadge").hidden,true,"no invented unread email count");
  assert.equal($("doctorAttentionList").children.length,4);
  $("doctorDateButton").fire("click");

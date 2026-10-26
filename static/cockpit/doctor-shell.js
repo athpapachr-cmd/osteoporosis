@@ -594,6 +594,8 @@
       notionTimer=setTimeout(()=>{if(recorder.state!=="inactive")recorder.stop();},60000);
     }catch(_){
       if(activePeek("notion",ticket)){
+        if(notionRecorder){notionRecorder.onstop=null;notionRecorder.ondataavailable=null;}
+        clearNotionMedia();
         status.textContent="Δεν επιτράπηκε το μικρόφωνο. Μπορείτε να γράψετε την ενημέρωση.";
         content.append(action("Συμπλήρωση με κείμενο","Χωρίς μικρόφωνο",
           ()=>task?notionReview(task):notionCreateReview()));
