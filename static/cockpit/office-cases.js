@@ -8,7 +8,8 @@
     rejected:"Απορρίφθηκε", scheduled:"Προγραμματίστηκε", performed:"Πραγματοποιήθηκε"};
   let activeTab = "surgery", generation = 0, detailGeneration = 0,
     caseRows = [], caseOffset = 0, selectedCase = null;
-  let rfRows = [], rfCursor = "", pendingPaymentId = "", pendingPaymentCaseId = "";
+  let rfRows = [], rfCursor = "", rfTransferGeneration = 0,
+    pendingPaymentId = "", pendingPaymentCaseId = "";
   let needsPaymentReconciliation = false;
 
   const show = (id, value) => { $(id).textContent = value; };
@@ -71,6 +72,7 @@
     if (pendingPaymentId) needsPaymentReconciliation = true;
     ++generation;
     ++detailGeneration;
+    ++rfTransferGeneration;
     caseRows = []; caseOffset = 0; selectedCase = null; rfRows = []; rfCursor = "";
     pendingPaymentId = ""; pendingPaymentCaseId = "";
     resetAccidentForm();
@@ -280,8 +282,27 @@
           : "Συνδεδεμένο χειρουργείο: " + card.surgery_id));
       }
       else if (["approved","scheduled"].includes(card.stage))
-        actions.append(button("Προσθήκη στη λίστα χειρουργείων", () => window.CockpitSurgeryQueue?.prefillFromRF?.(card)));
+        actions.append(button("Προσθήκη στη λίστα χειρουργείων", () => prepareRF(card)));
       item.append(actions); list.append(item);
+    }
+  }
+  async function prepareRF(selected) {
+    const token = generation, transfer = ++rfTransferGeneration;
+    show("officeRfNote", "Έλεγχος της επιλεγμένης RF…");
+    try {
+      const current = await api("/clinical/office-cases/rf/" + encodeURIComponent(selected.id));
+      if (token !== generation || transfer !== rfTransferGeneration || activeTab !== "rf") return;
+      if (current.id !== selected.id || current.revision !== selected.revision ||
+          !["approved", "scheduled"].includes(current.stage) || current.surgery_id ||
+          !current.surgery_prefill) {
+        await window.CockpitOfficeCases.showRFConflict(selected.id);
+        return;
+      }
+      if (!window.CockpitSurgeryQueue?.prefillFromRF?.(current))
+        show("officeRfNote", "Η λίστα χειρουργείων δεν είναι έτοιμη. Ανανέωσε την οθόνη.");
+    } catch (error) {
+      if (token === generation && transfer === rfTransferGeneration && activeTab === "rf")
+        show("officeRfNote", errorText(error));
     }
   }
   async function loadRF(reset, conflict=false) {

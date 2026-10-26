@@ -321,11 +321,17 @@ async function testReusableRFFieldsAndDraftRestore() {
   assert.strictEqual(get('identityNumber').value, 'PAT-ONE');
   assert.strictEqual(get('indicationSelect').value, 'KNEE_OA_KL34');
   assert.strictEqual(get('lateralitySelect').value, 'left');
+  get('patientDob').value = '1959-01-01';
+  get('patientPhone').value = '+357 99000001';
+  assert.strictEqual(browser.__rfTest.buildDraft().date_of_birth, '1959-01-01');
+  assert.strictEqual(browser.__rfTest.buildDraft().patient_phone, '+357 99000001');
   assert.throws(() => browser.__rfTest.populateRfFields({
     identity_number:'OTHER-IDENTITY', patient_name:'Other person'
   }), /άλλη ταυτότητα/);
   assert.strictEqual(get('identityNumber').value, 'PAT-ONE');
   const saved = browser.__rfTest.savedDraftFields();
+  assert.strictEqual(saved.date_of_birth, '1959-01-01');
+  assert.strictEqual(saved.patient_phone, '+357 99000001');
   assert(!Object.hasOwn(saved, 'imaging_review_confirmed'), 'imaging confirmation is not saved');
   assert(!Object.hasOwn(saved, 'imaging_report') && !Object.hasOwn(saved, 'horos_jpegs'),
     'draft cannot include binary attachment fields');
@@ -333,7 +339,8 @@ async function testReusableRFFieldsAndDraftRestore() {
   get('imagingStatus').hidden = false;
   await browser.__rfTest.restoreRfDraft({
     pathway:'A2', doctor_key:'physicianB', patient_name:'Saved patient',
-    identity_number:'DRAFT-001', age:68, gesy_number:'SYN-GESY',
+    identity_number:'DRAFT-001', age:68, date_of_birth:'1958-01-01',
+    patient_phone:'000000', gesy_number:'SYN-GESY',
     indication_code:'KNEE_OA_KL34', laterality:'left',
     exact_location:'Saved site', additional_notes:'Saved note',
     a2_current_followup_date:'2026-09-05', a2_current_followup_vas:5,
@@ -344,6 +351,8 @@ async function testReusableRFFieldsAndDraftRestore() {
   assert.strictEqual(get('doctorSelect').value, '', 'inactive issuer requires explicit selection');
   assert.strictEqual(get('patientName').value, 'Saved patient');
   assert.strictEqual(get('age').value, '68');
+  assert.strictEqual(get('patientDob').value, '1958-01-01');
+  assert.strictEqual(get('patientPhone').value, '000000');
   assert.strictEqual(get('imagingReport').value, '', 'attached files must be reattached');
   assert.strictEqual(get('imagingStatus').hidden, true);
   assert.strictEqual(get('rfCurrentFollowupVas').value, '5');

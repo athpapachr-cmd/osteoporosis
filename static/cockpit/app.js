@@ -624,7 +624,8 @@
   window.CockpitSurgeryQueue = {
     prefillFromRF(card) {
       if (!surgeryReady || !card || !card.id || !Number.isInteger(card.revision) ||
-          !["approved", "scheduled"].includes(card.stage)) return;
+          !["approved", "scheduled"].includes(card.stage) || card.surgery_id ||
+          !card.surgery_prefill) return false;
       resetSurgeryForm();
       $("surgeryRfApplicationId").value = card.id;
       $("surgeryRfRevision").value = String(card.revision);
@@ -632,11 +633,27 @@
       $("surgeryIdentityNumber").value = card.identity_number || "";
       $("surgeryLaterality").value = ["left", "right"].includes(card.laterality) ? card.laterality : "unspecified";
       $("surgeryDate").value = card.stage === "scheduled" ? card.scheduled_date || "" : "";
-      $("surgeryRfSourceNote").textContent = "Από RF: έλεγξε τα στοιχεία και συμπλήρωσε ημερομηνία γέννησης, τηλέφωνο και επέμβαση πριν την προσθήκη.";
+      const prefill = card.surgery_prefill;
+      $("surgeryDateOfBirth").value = validSurgeryDate(prefill.date_of_birth) ? prefill.date_of_birth : "";
+      $("surgeryPhone").value = typeof prefill.phone === "string" && prefill.phone.length <= 40
+        ? prefill.phone : "";
+      $("surgeryProcedureType").value = typeof prefill.procedure_type === "string" &&
+        prefill.procedure_type.length <= 240 ? prefill.procedure_type : "";
+      const missing = [
+        !$("surgeryDateOfBirth").value && "ημερομηνία γέννησης",
+        !$("surgeryPhone").value && "τηλέφωνο",
+        !$("surgeryProcedureType").value && "τύπο επέμβασης"
+      ].filter(Boolean);
+      $("surgeryRfSourceNote").textContent = missing.length
+        ? "Από τη συγκεκριμένη RF. Συμπλήρωσε " + missing.join(", ") + " και έλεγξε όλα τα στοιχεία πριν την προσθήκη."
+        : "Προσυμπλήρωση από τη συγκεκριμένη RF. Έλεγξε όλα τα στοιχεία πριν την προσθήκη.";
       $("surgeryRfSourceNote").hidden = false;
       window.CockpitOfficeCases?.selectTab?.("surgery");
       $("surgeryEditorDetails").open = true;
-      $("surgeryDateOfBirth").focus();
+      (missing.length ? (!$("surgeryDateOfBirth").value ? $("surgeryDateOfBirth")
+        : !$("surgeryPhone").value ? $("surgeryPhone") : $("surgeryProcedureType"))
+        : $("surgerySubmit")).focus();
+      return true;
     }
   };
   loadCockpitContext();

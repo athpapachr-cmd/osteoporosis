@@ -459,7 +459,7 @@ ENCOUNTER DETAIL
       </article>
       <article class="panel office-panel" data-office-tab-panel="rf" hidden>
         <div class="panel-head"><div><span class="icon-badge">RF</span><h3>RF Tracking</h3></div><span id="officeRfState" class="status-chip">Φόρτωση…</span></div>
-        <p class="panel-note">Προβολή από το υπάρχον RF Tracking. Η προσθήκη στη λίστα χειρουργείων δεν αλλάζει την κατάσταση RF.</p>
+        <p class="panel-note">Κάθε ασύνδετη εγκεκριμένη ή προγραμματισμένη RF έχει δική της προσθήκη στη λίστα χειρουργείων. Η προσθήκη δεν αλλάζει την κατάσταση RF.</p>
         <form id="officeRfSearch" class="office-search">
           <input id="officeRfQuery" type="search" placeholder="Αναζήτηση RF" autocomplete="off" />
           <select id="officeRfStage" aria-label="Κατάσταση RF"><option value="">Όλες</option><option value="approved">Εγκρίθηκε</option><option value="scheduled">Προγραμματίστηκε</option><option value="performed">Πραγματοποιήθηκε</option><option value="submitted">Υποβλήθηκε</option><option value="issued">Εκδόθηκε</option><option value="rejected">Απορρίφθηκε</option></select>
@@ -554,8 +554,8 @@ ENCOUNTER DETAIL
 
   <script src="/static/cockpit/clinical-workspace.js?v=chart-continuity-20261018" defer></script>
   <script src="/static/cockpit/visit-brief.js?v=visit-amendments-20261018" defer></script>
-  <script src="/static/cockpit/app.js?v=office-cases-20261026" defer></script>
-  <script src="/static/cockpit/office-cases.js?v=office-cases-20261026" defer></script>
+  <script src="/static/cockpit/app.js?v=rf-prefill-20261026" defer></script>
+  <script src="/static/cockpit/office-cases.js?v=rf-prefill-20261026" defer></script>
   <script src="/static/cockpit/patient-chart.js?v=pending-metadata-20261022" defer></script>
   <script src="/static/cockpit/patient-entry.js?v=chart-continuity-20261018" defer></script>
   <script src="/static/cockpit/obligations-view.js?v=topbar-peeks-20261024" defer></script>
