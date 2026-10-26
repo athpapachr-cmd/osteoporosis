@@ -1,4 +1,6 @@
-> **2026-10-26 PRIORITY 2 CORRECTION — RENDER LIVE / SMOKE NEXT:** Reviewed commit `5663b9863439bdc79b31291d9c14d9668b652fa8` is live on Render deploy `dep-dbfciamq1p3s73f35vt0` (03:31:56 UTC). Next bounded static and unauthenticated-route smoke; no real task write by this agent or Priority 3.
+> **2026-10-26 PRIORITY 2 CORRECTION — LIVE / READY_FOR_PRODUCT_OWNER_CONFIRMATION:** PR #222 code `5663b9863439bdc79b31291d9c14d9668b652fa8` is live on Render `dep-dbfciamq1p3s73f35vt0`. Synthetic 18 Python + Doctor Shell Node + Chromium 1280/390, independent R2 0:0:0, final-head CI 11/11 and no-write production smoke PASS (exact JS/CSS bytes; anonymous task routes 401; zero error-level app logs). New-task manual/voice buttons are at the top of **Οι εργασίες μου**, with editable speech-filled fields and one confirmation. The clinician's first real confirmation remains unverified; no agent-created task, and Priority 3 awaits explicit acceptance.
+
+> **2026-10-26 PRIORITY 2 CORRECTION — RENDER LIVE / SMOKE NEXT:** Reviewed commit `5663b9863439bdc79b31291d9c14d9668b652fa8` reached live on Render deploy `dep-dbfciamq1p3s73f35vt0` at 03:31:56 UTC. No real task write by this agent or Priority 3.
 
 > **2026-10-26 PRIORITY 2 CORRECTION — MERGED / DEPLOY BUILDING:** PR #222 merged to main `5663b9863439bdc79b31291d9c14d9668b652fa8`; Render auto-deploy `dep-dbfciamq1p3s73f35vt0` was observed building before activation. Independent R2 PASS 0:0:0 and final-head CI 11/11 PASS. No agent-created real task or Priority 3.
 
