@@ -1,0 +1,42 @@
+# Priority 3 — Περιστατικά ιατρείου (R2 design candidate)
+
+## Confirmed product step
+
+The Product Owner accepted Priority 2 in real use and requested the next roadmap priority. This step gives the clinician one Cockpit screen with **Χειρουργεία, Τροχαία, RF** tabs. The Product Owner chose **each individual payment separately** for accidents. Priority 4 visit audio is outside this step. No patient row, booking, RF stage, payment, or Notion task may be created by release smoke.
+
+## Source and ownership map
+
+| Data / action | Existing owner | Priority 3 action |
+| --- | --- | --- |
+| Surgery queue, order, scheduled date, completion | `clinical_surgery_queue.py`, `clinical_surgery_queue` | Extend only with optional Cyprus room-entry wall time and exact RF source link. Existing surgery state remains authoritative. |
+| RF application and lifecycle | Native `clinic_utilities/rf` application/progress tables and Tracking endpoints | Read exact source card; show tracking tab and link to native full tool. Never copy the RF lifecycle or write its status when adding surgery. |
+| Accident report document | `clinic_utilities/clinical_documents/report_api.py` | Link to existing report tool. Generation is ephemeral; it does not assert writing started, report sent, or payment. |
+| Accident cases and payments | No current persistent owner | Add private operational register with case revisions and separate immutable payment events. No inferred patient-record linkage. |
+
+The source-proven RF card contains identity number, name, indication/site/laterality, stage/revision, and scheduled date. It has **no date of birth or patient phone**. Age must never become a guessed date of birth; phone/name matching is not identity proof. The clinician must supply missing surgery fields, verify the exact RF source and confirm the transfer.
+
+## UI contract
+
+Reuse the present `doctorLibraryView` and its surgery panel. Change its first destination to **Περιστατικά ιατρείου**, with tabs `Χειρουργεία`, `Τροχαία`, `RF`; keep documents/modules/learning accessible in the same library. Do not create a second surgery list. On key loss or failed protected read, clear all case/financial/RF patient projections and disable writes. Do not cache clinical/financial rows in browser storage or expose them in the public HTML.
+
+Surgery form and row gain an optional `Ώρα εισόδου στην αίθουσα (Κύπρος)` field. It is a scheduled local **wall-clock time** `HH:MM`, associated with the separately stored surgery date, not proof of room entry or performance. A time requires a valid surgery date; clearing the date clears/requires clearing the time atomically. Show `—` when unknown. Protected editing follows existing surgery access. Preserve pending/completed/deleted semantics; changing a date/time never marks a surgery performed.
+
+Accidents tab lists case name, phone, accident/visit/writing-start/report-sent dates, amount due, sum received, balance and status derived from entered events. The case editor requires name, phone and accident date; other dates and amount due are optional until known. Dates are clinician-entered attestations, never inferred from document creation. The case detail shows each payment with amount, date, payer and recorder timestamp. The clinician can add a payment; an incorrect payment is voided with a mandatory reason and a new event is entered. Preserve original event. Editing case facts/amount uses a revision precondition and append-only change audit. Values use integer cents and EUR; no floating-point accounting. Partial payments are explicit. Never infer a payer or a payment date from the patient record. No automatic report send or charge.
+
+RF tab uses the protected **tracking** search contract with cursor/paging and explicit stage labels; no one-page completeness claim. Each exact application card can open the native RF Tracking tool. `Προσθήκη στη λίστα χειρουργείων` appears for `approved` or `scheduled` applications that are not already linked. It opens the surgery form with source name, ID, laterality and, if genuinely scheduled, date prefilled. Indication/site are shown as context only; the clinician enters and confirms the actual procedure, date of birth and phone. If the RF source changes or is already linked before confirmation, fail with 409 and show fresh source state. `issued`, `submitted`, `rejected`, and `performed` are not eligible for new pending surgery. The same RF application may link only once, including after surgery soft deletion; show the existing surgery record rather than creating a second.
+
+## Private persistence and API contract
+
+Use existing PostgreSQL and Clinical Key protection; no new external service or credential. A one-time admin migration must be installed **before** a code deploy that reads new tables. `cockpit_app` has schema USAGE but lacks CREATE, so application startup `create_all` cannot be relied on to create these tables. Avoid an `ALTER` of the existing surgery table by using `clinical_surgery_details` sidecar keyed by `surgery_id` with nullable unique `rf_application_id` and nullable `room_entry_time` `char(5)`; FK to surgery row if current production DDL permits and tested on a representative PostgreSQL clone. Atomic surgery + detail creation/update. A unique RF ID is the race-safe duplicate guard; conflict rolls back the whole surgery insert.
+
+New `clinical_accident_cases`: opaque ID, patient name/phone, accident/visit/writing-start/report-sent dates, nullable `amount_due_cents`, revision, timestamps and archival state. `clinical_accident_case_audit`: append-only field-change receipts with case ID, revision, before/after, timestamp and action, stored privately. `clinical_accident_payments`: opaque ID, case ID, positive `amount_cents`, paid-on date, payer name, created timestamp, optional void timestamp and reason. Payment rows are inserted once; only void fields may be updated, under transaction lock. Case read derives `sum(nonvoid payments)` and balance. If due is unknown, balance is unknown, not zero. If amount due is known, reject a payment or due edit that makes received exceed due; report a 409. No DELETE/TRUNCATE privileges for application role. Use bounded listing/pagination and server-side data validation.
+
+Routes under `/clinical/office-cases/accidents` (list/create/read/update with expected revision, payment add/void) and `/clinical/surgeries/from-rf/{application_id}` (explicit confirm, expected RF revision, missing fields). Extend `/clinical/surgeries` DTO with the room-entry time, nullable RF link, and keep existing endpoint behavior for callers that omit them. All routes require existing Clinical Key and send no-store. No logging of name/phone/financial payload. All writes use one DB transaction with row lock/revision check. A source mismatch or duplicate is 409; missing/unauthorized remains 404/401/503 as appropriate.
+
+## Release ordering and finite proof
+
+1. Independent pre-code R2 of this exact design, covering data ownership, RF identity/stage/revision, surgery duplicate/room time, accident payment audit, schema privilege/order and auth. No implementation before PASS.
+2. One bounded implementation branch. Synthetic unit/API tests: existing surgery contract remains valid; date/time update; RF incomplete identity, stale revision, ineligible stage, duplicate race, soft-delete/retry; accident partial payment, payer/date, void+replacement, overpayment rejection, revision conflict, anonymous/key loss and no PHI leak. Browser desktop/mobile proof of three tabs and protected failures. Existing affected CI only.
+3. Independent post-code R2 on exact code+SQL head. Reviewed admin SQL installed through a verified single Aiven connection; verify schema, role privileges, indexes and empty new tables without reading real rows. Deploy existing Render service by merged `main` auto-deploy. Check live route/static versions and anonymous 401, then clinician acceptance with real data. No agent-created real surgery, RF link, accident or payment.
+
+The production schema migration is a release dependency. If Aiven admin access is unavailable, stop before code deployment and report the exact pending reviewed SQL; do not let `create_all` silently fill the gap.
