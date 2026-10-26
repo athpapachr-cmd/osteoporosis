@@ -1,5 +1,7 @@
 # Priority 2 — Notion tasks and bounded voice proposal
 
+> **2026-10-26 correction:** The selected-task-only creation/voice scope below is the installed first version. The Product Owner's live correction for automatic draft filling and a general new-task entrance is specified in [NOTION_TASKS_PRIORITY2_CREATE_CORRECTION_2026-10-26.md](NOTION_TASKS_PRIORITY2_CREATE_CORRECTION_2026-10-26.md). Its reviewed delta supersedes only the affected behavior below; the original ownership and safety gates remain.
+
 Product Owner accepted the live Priority 1 result and authorized Priority 2 on 2026-10-25. The purpose is one small topbar view of the existing Notion database **Οι εργασίες μου**, plus a dictation path that proposes completing a selected task and adding a follow-up. No ClinicalPending or Notion mirror is created.
 
 ## Actual source and ownership
