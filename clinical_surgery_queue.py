@@ -3,14 +3,16 @@ from __future__ import annotations
 import os
 import secrets
 import uuid
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Literal, Optional
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Response
 from pydantic import BaseModel, Field
 from sqlalchemy import Column, DateTime, Integer, String, select
 from sqlalchemy.engine import Engine
-from sqlalchemy.orm import DeclarativeBase, Session
+from sqlalchemy.orm import DeclarativeBase, Session, object_session
+
+from clinical_office_cases_models import SurgeryDetailORM
 
 
 class SurgeryQueueBase(DeclarativeBase):
@@ -47,6 +49,7 @@ class SurgeryCreate(BaseModel):
     procedure_type: str = Field(min_length=1, max_length=240)
     laterality: Laterality
     surgery_date: Optional[str] = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
+    room_entry_time: Optional[str] = Field(default=None, pattern=r"^(?:[01]\d|2[0-3]):[0-5]\d$")
 
 
 class SurgeryUpdate(BaseModel):
@@ -57,6 +60,7 @@ class SurgeryUpdate(BaseModel):
     procedure_type: Optional[str] = Field(default=None, min_length=1, max_length=240)
     laterality: Optional[Laterality] = None
     surgery_date: Optional[str] = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
+    room_entry_time: Optional[str] = Field(default=None, pattern=r"^(?:[01]\d|2[0-3]):[0-5]\d$")
 
 
 class SurgeryMove(BaseModel):
@@ -72,6 +76,8 @@ class SurgeryRecord(BaseModel):
     procedure_type: str
     laterality: Laterality
     surgery_date: Optional[str]
+    room_entry_time: Optional[str]
+    rf_application_id: Optional[str]
     queue_position: int
     status: str
     created_at: datetime
@@ -84,6 +90,29 @@ def utcnow() -> datetime:
 
 def _clean_text(value: str) -> str:
     return " ".join((value or "").strip().split())
+
+
+def _valid_room_date(surgery_date: str | None, room_entry_time: str | None) -> None:
+    if room_entry_time is None:
+        return
+    if not surgery_date:
+        raise HTTPException(status_code=422, detail="Room-entry time requires a surgery date")
+    try:
+        date.fromisoformat(surgery_date)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail="Invalid surgery date") from exc
+
+
+def normalize_pending_positions(session: Session) -> list[SurgeryQueueORM]:
+    rows = session.execute(
+        select(SurgeryQueueORM)
+        .where(SurgeryQueueORM.status == "pending")
+        .order_by(SurgeryQueueORM.queue_position.asc(), SurgeryQueueORM.created_at.asc())
+    ).scalars().all()
+    for index, row in enumerate(rows, start=1):
+        row.queue_position = index
+        session.add(row)
+    return rows
 
 
 def build_surgery_queue_router(engine: Engine) -> APIRouter:
@@ -99,7 +128,10 @@ def build_surgery_queue_router(engine: Engine) -> APIRouter:
         if not x_clinical_key or not secrets.compare_digest(x_clinical_key, expected):
             raise HTTPException(status_code=401, detail="Invalid clinical data key")
 
-    protected = [Depends(require_clinical_key)]
+    def no_store(response: Response) -> None:
+        response.headers["Cache-Control"] = "no-store"
+
+    protected = [Depends(require_clinical_key), Depends(no_store)]
 
     def get_row(session: Session, surgery_id: str) -> SurgeryQueueORM:
         row = session.get(SurgeryQueueORM, surgery_id)
@@ -107,18 +139,9 @@ def build_surgery_queue_router(engine: Engine) -> APIRouter:
             raise HTTPException(status_code=404, detail="Surgery queue item not found")
         return row
 
-    def normalize_pending_positions(session: Session) -> list[SurgeryQueueORM]:
-        rows = session.execute(
-            select(SurgeryQueueORM)
-            .where(SurgeryQueueORM.status == "pending")
-            .order_by(SurgeryQueueORM.queue_position.asc(), SurgeryQueueORM.created_at.asc())
-        ).scalars().all()
-        for index, row in enumerate(rows, start=1):
-            row.queue_position = index
-            session.add(row)
-        return rows
-
     def record(row: SurgeryQueueORM) -> SurgeryRecord:
+        # The sidecar is read from the same protected session as the queue row.
+        detail = object_session(row).get(SurgeryDetailORM, row.id)
         return SurgeryRecord(
             surgery_id=row.id,
             identity_number=row.identity_number,
@@ -128,6 +151,8 @@ def build_surgery_queue_router(engine: Engine) -> APIRouter:
             procedure_type=row.procedure_type,
             laterality=row.laterality,
             surgery_date=row.surgery_date,
+            room_entry_time=detail.room_entry_time if detail else None,
+            rf_application_id=detail.rf_application_id if detail else None,
             queue_position=int(row.queue_position or 0),
             status=row.status,
             created_at=row.created_at,
@@ -159,6 +184,7 @@ def build_surgery_queue_router(engine: Engine) -> APIRouter:
 
     @router.post("", response_model=SurgeryRecord, dependencies=protected)
     def create_surgery(req: SurgeryCreate) -> SurgeryRecord:
+        _valid_room_date(req.surgery_date, req.room_entry_time)
         now = utcnow()
         with Session(engine) as session:
             pending = normalize_pending_positions(session)
@@ -178,6 +204,12 @@ def build_surgery_queue_router(engine: Engine) -> APIRouter:
                 updated_at=now,
             )
             session.add(row)
+            session.flush()  # The production sidecar has a DB FK in separate ORM metadata.
+            if req.room_entry_time is not None:
+                session.add(SurgeryDetailORM(
+                    surgery_id=row.id, rf_application_id=None,
+                    room_entry_time=req.room_entry_time, created_at=now, updated_at=now,
+                ))
             session.commit()
             session.refresh(row)
             return record(row)
@@ -187,6 +219,12 @@ def build_surgery_queue_router(engine: Engine) -> APIRouter:
         now = utcnow()
         with Session(engine) as session:
             row = get_row(session, surgery_id)
+            detail = session.get(SurgeryDetailORM, row.id)
+            if ("surgery_date" in req.model_fields_set
+                    and req.surgery_date != row.surgery_date
+                    and detail is not None and detail.room_entry_time is not None
+                    and "room_entry_time" not in req.model_fields_set):
+                raise HTTPException(status_code=422, detail="Confirm room-entry time when changing the surgery date")
             if req.identity_number is not None:
                 row.identity_number = _clean_text(req.identity_number)
             if req.full_name is not None:
@@ -201,6 +239,20 @@ def build_surgery_queue_router(engine: Engine) -> APIRouter:
                 row.laterality = req.laterality
             if "surgery_date" in req.model_fields_set:
                 row.surgery_date = req.surgery_date
+            next_time = req.room_entry_time if "room_entry_time" in req.model_fields_set else (
+                detail.room_entry_time if detail else None
+            )
+            _valid_room_date(row.surgery_date, next_time)
+            if "room_entry_time" in req.model_fields_set:
+                if detail is None and next_time is not None:
+                    detail = SurgeryDetailORM(
+                        surgery_id=row.id, rf_application_id=None,
+                        room_entry_time=next_time, created_at=now, updated_at=now,
+                    )
+                    session.add(detail)
+                elif detail is not None:
+                    detail.room_entry_time = next_time
+                    detail.updated_at = now
             row.updated_at = now
             session.add(row)
             session.commit()

@@ -29,10 +29,10 @@ function el(id="",tag="div"){
  };
  return obj;
 }
-const tabs=["surgery","documents","modules","learning"].map(c=>{
+const tabs=["cases","documents","modules","learning"].map(c=>{
  const b=el("tab-"+c,"button");b.dataset.doctorLibraryTab=c;return b;
 });
-const panels=["surgery","documents","modules","learning"].map(c=>{
+const panels=["cases","documents","modules","learning"].map(c=>{
  const div=el("panel-"+c);div.dataset.doctorLibraryPanel=c;return div;
 });
 const doc={
@@ -363,7 +363,7 @@ function findAction(label,node=$('doctorPopoverContent')){
  $("doctorActionsButton").fire("click");
  const libraryAction=$("doctorPopoverContent").children[1]?.children?.at(-1);
  assert.equal(libraryAction?.children?.[0]?.children?.[0]?.textContent,
-   "Εργασίες ιατρείου","surgery/tools launcher remains in Actions");
+   "Περιστατικά ιατρείου","office-cases launcher remains in Actions");
  libraryAction.fire("click");
  assert.equal($("doctorLibraryView").hidden,false);
  assert.equal($("doctorMainView").hidden,true);

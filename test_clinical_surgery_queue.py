@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
 from clinical_surgery_queue import SurgeryQueueORM, build_surgery_queue_router
+from clinical_office_cases_models import OfficeCaseBase
 
 
 CLINICAL_KEY = "synthetic-clinical-key"
@@ -22,6 +23,7 @@ def _client(monkeypatch):
     )
     app = FastAPI()
     app.include_router(build_surgery_queue_router(engine))
+    OfficeCaseBase.metadata.create_all(engine)
     return TestClient(app), engine
 
 
@@ -54,6 +56,31 @@ def test_surgery_queue_requires_clinical_auth(monkeypatch):
         "/clinical/surgeries",
         headers={"X-Clinical-Key": "wrong"},
     ).status_code == 401
+
+
+def test_optional_room_entry_time_requires_date_and_is_editable(monkeypatch):
+    client, _ = _client(monkeypatch)
+    payload = _payload(identity_number="ID-SYN-ROOM", full_name="Synthetic Room Patient",
+                       procedure_type="Synthetic procedure", laterality="left")
+    assert client.post("/clinical/surgeries", headers=HEADERS,
+        json={**payload, "room_entry_time":"09:30"}).status_code == 422
+    created = client.post("/clinical/surgeries", headers=HEADERS,
+        json={**payload, "surgery_date":"2026-11-01", "room_entry_time":"09:30"})
+    assert created.status_code == 200
+    assert created.json()["room_entry_time"] == "09:30"
+    surgery_id = created.json()["surgery_id"]
+    updated = client.put(f"/clinical/surgeries/{surgery_id}", headers=HEADERS,
+                         json={"room_entry_time":"10:15"})
+    assert updated.status_code == 200
+    assert updated.json()["room_entry_time"] == "10:15"
+    assert client.put(f"/clinical/surgeries/{surgery_id}", headers=HEADERS,
+                      json={"surgery_date":"2026-11-02"}).status_code == 422
+    confirmed = client.put(f"/clinical/surgeries/{surgery_id}", headers=HEADERS,
+                           json={"surgery_date":"2026-11-02", "room_entry_time":"10:15"})
+    assert confirmed.status_code == 200
+    assert confirmed.json()["surgery_date"] == "2026-11-02"
+    assert client.put(f"/clinical/surgeries/{surgery_id}", headers=HEADERS,
+                      json={"surgery_date":None}).status_code == 422
 
 
 def test_create_list_preserves_identity_fields_and_pending_order(monkeypatch):

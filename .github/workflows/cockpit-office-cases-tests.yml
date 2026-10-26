@@ -1,0 +1,96 @@
+name: Cockpit Office Cases Priority 3
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "clinical_office_cases*.py"
+      - "clinical_surgery_queue.py"
+      - "main.py"
+      - "static/cockpit/**"
+      - "cockpit/migrations/20261026_office_cases_aiven.sql"
+      - "test_clinical_office_cases.py"
+      - "test_office_cases_migration.py"
+      - "test_cockpit_office_cases_browser.py"
+      - ".github/workflows/cockpit-office-cases-tests.yml"
+  push:
+    paths:
+      - "clinical_office_cases*.py"
+      - "clinical_surgery_queue.py"
+      - "main.py"
+      - "static/cockpit/**"
+      - "cockpit/migrations/20261026_office_cases_aiven.sql"
+      - "test_clinical_office_cases.py"
+      - "test_office_cases_migration.py"
+      - "test_cockpit_office_cases_browser.py"
+      - ".github/workflows/cockpit-office-cases-tests.yml"
+
+jobs:
+  office-cases:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Dependencies
+        run: pip install -r requirements.txt pytest playwright
+      - name: Syntax
+        run: |
+          python -m py_compile clinical_office_cases.py clinical_office_cases_models.py clinical_surgery_queue.py main.py
+          node --check static/cockpit/app.js
+          node --check static/cockpit/doctor-shell.js
+          node --check static/cockpit/office-cases.js
+      - name: Synthetic protected API and inherited surgery tests
+        run: pytest -q test_clinical_office_cases.py test_clinical_surgery_queue.py test_cockpit_surgery_queue_ui.py
+      - name: Browser dependency
+        run: python -m playwright install --with-deps chromium
+      - name: Three-tab desktop and narrow Chromium flow
+        env:
+          OFFICE_CASES_EVIDENCE_DIR: cockpit-v4-browser-evidence
+        run: pytest -q test_cockpit_office_cases_browser.py
+      - name: Synthetic screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: office-cases-synthetic-ui
+          path: cockpit-v4-browser-evidence/office-*.png
+          if-no-files-found: ignore
+      - name: Diff hygiene
+        run: git diff --check HEAD^ HEAD
+
+  office-cases-postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_DB: postgres
+          POSTGRES_PASSWORD: synthetic-ci-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      OFFICE_CASES_PG_TEST: synthetic-only
+      OFFICE_CASES_PG_PASSWORD: synthetic-ci-only
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Dependencies
+        run: pip install "psycopg[binary]>=3.1" pytest
+      - name: Disposable PostgreSQL migration and constraints
+        run: pytest -q test_office_cases_migration.py
+      - name: Diff hygiene
+        run: git diff --check HEAD^ HEAD

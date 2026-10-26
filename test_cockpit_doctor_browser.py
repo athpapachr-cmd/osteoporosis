@@ -20,6 +20,7 @@ JS = [(ROOT / part).read_text(encoding="utf-8") for part in (
     "static/cockpit/clinical-workspace.js",
     "static/cockpit/visit-brief.js",
     "static/cockpit/app.js",
+    "static/cockpit/office-cases.js",
     "static/cockpit/obligations-view.js",
     "static/cockpit/doctor-shell.js",
     "static/cockpit/shared-nav.js",
@@ -448,6 +449,14 @@ def browser_suite(width, screenshot_name):
                               CALL_PEEK["calls"][1]]}
                 return route.fulfill(status=code,
                     json=source if code == 200 else {"detail": "Unavailable"})
+            if "/clinical/office-cases/rf?" in url:
+                return route.fulfill(status=200 if auth["authenticated"] else 401,
+                    json={"applications": [{"id":"synthetic-rf-office-01", "revision":2,
+                        "stage":"scheduled", "patient_name":"RF Συνθετικός",
+                        "identity_number":"SYN-001", "laterality":"left",
+                        "indication_code":"SYN", "scheduled_date":"2026-11-01",
+                        "surgery_id":None}], "next_cursor":None, "has_more":False}
+                    if auth["authenticated"] else {"detail":"Unauthorized"})
             if url.endswith("/clinical/reception-calls/handled"):
                 assert route.request.method == "POST"
                 assert route.request.post_data_json == {"todo_id": "td_RM-SYN-1", "handled": True}
@@ -734,9 +743,19 @@ def browser_suite(width, screenshot_name):
         page.locator("#doctorActionsButton").click()
 
         page.locator("#doctorActionsButton").click()
-        page.locator("#doctorPopoverContent").get_by_role("button", name="Εργασίες ιατρείου").click()
+        page.locator("#doctorPopoverContent").get_by_role("button", name="Περιστατικά ιατρείου").click()
         expect(page.locator("#doctorMainView")).to_be_hidden()
         expect(page.locator("#surgerySection")).to_be_visible()
+        page.locator('[data-office-tab="rf"]').click()
+        expect(page.locator("#officeRfList")).to_contain_text("RF Συνθετικός")
+        page.get_by_role("button", name="Προσθήκη στη λίστα χειρουργείων").click()
+        expect(page.locator('[data-office-tab-panel="surgery"]')).to_be_visible()
+        expect(page.locator("#surgeryFullName")).to_have_value("RF Συνθετικός")
+        expect(page.locator("#surgeryIdentityNumber")).to_have_value("SYN-001")
+        expect(page.locator("#surgeryDate")).to_have_value("2026-11-01")
+        expect(page.locator("#surgeryDateOfBirth")).to_have_value("")
+        expect(page.locator("#surgeryPhone")).to_have_value("")
+        expect(page.locator("#surgeryProcedureType")).to_have_value("")
         page.locator("#doctorBackHome").click()
 
         if width <= 990:
