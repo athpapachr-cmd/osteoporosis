@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — Priority 4 local visit audio
 
-> **STATUS (2026-10-26):** Product Owner accepted Priority 3 and authorized the next roadmap priority. Direction is local recording, local Whisper transcription and local structuring on the 16 GB M4 Mac. No visit audio or raw transcript may be sent to Render/OpenAI/another cloud AI service. Initial independent pre-code R2 returned `BLOCK / COMPLETE_FOR_DECLARED_SCOPE / 0:5:0`; the five bounded design corrections are prepared for independent closure. Runtime implementation remains unauthorized.
+> **STATUS (2026-10-26):** Final independent pre-code R2 is `PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2=0:0:0` on corrected design `9027d07` / blob `644c36a`; P1-01–P1-05 are CLOSED. Bounded implementation and synthetic/adversarial tests are authorized. No real patient audio/data, merge or release before independent exact-code post-code R2.
 > **Previous active plan:** Priority 3 Office Cases is archived at `archive/SLICE_PLAN_PRIORITY3_OFFICE_CASES_2026-10-26.md`; its reviewed production state is unchanged.
 
 ## 1. Objective and acceptance
@@ -46,4 +46,4 @@ The initial independent exact-head R2 found five P1 design gaps: encryption over
 
 Any requirement for cloud processing, transcript persistence, free-form generated record text, direct production-to-loopback networking, automatic identity acceptance, automatic pending/write behavior, a different model/digest or inability to prove complete source accounting reopens design R2.
 
-Next action: commit the atomic context-renewal/CAS correction and dispatch one focused independent P1-02 pre-code R2 closure. STOP before runtime code unless the closure passes.
+Next action: implement exactly the frozen companion, UI/schema/GeSY and context-renew CAS boundaries; run synthetic/adversarial evidence; then STOP for independent exact-code post-code R2 before merge/release.
