@@ -5,7 +5,7 @@ const fs = require("node:fs");
 const vm = require("node:vm");
 const app = fs.readFileSync("static/cockpit/app.js", "utf8");
 const shell = fs.readFileSync("static/cockpit/doctor-shell.js", "utf8");
-assert.equal((app.match(/apiJson\("\/clinical\/surgeries"\)/g) || []).length, 1,
+assert.equal((app.match(/const rows = await apiJson\("\/clinical\/surgeries"/g) || []).length, 1,
   "Home must not add a second surgery reader");
 for (const text of [app, shell]) assert.doesNotMatch(text, /localStorage|sessionStorage/);
 assert.doesNotMatch(shell, /\/api\/outcomes\/[^"]+\/events/);
@@ -15,7 +15,7 @@ function node(id = "", tag = "div") {
   const handlers = new Map(), classes = new Set();
   const el = {
     id, tagName: tag, textContent: "", value: "", hidden: false, open: false,
-    dataset: {}, attributes: {}, children: [], firstChild: {textContent: "Πρόγραμμα σήμερα "},
+    dataset: {}, attributes: {}, children: [], elements: [], firstChild: {textContent: "Πρόγραμμα σήμερα "},
     classList: {
       contains(k) { return classes.has(k); },
       add(k) { classes.add(k); },
@@ -35,10 +35,10 @@ function node(id = "", tag = "div") {
   };
   return el;
 }
-const tabs = ["surgery","documents","modules","learning"].map(x => {
+const tabs = ["cases","documents","modules","learning"].map(x => {
   const b = node("tab-" + x, "button"); b.dataset.doctorLibraryTab = x; return b;
 });
-const panels = ["surgery","documents","modules","learning"].map(x => {
+const panels = ["cases","documents","modules","learning"].map(x => {
   const b = node("panel-" + x); b.dataset.doctorLibraryPanel = x; return b;
 });
 const documentStub = {

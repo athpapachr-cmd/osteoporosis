@@ -20,6 +20,7 @@ JS = [(ROOT / part).read_text(encoding="utf-8") for part in (
     "static/cockpit/clinical-workspace.js",
     "static/cockpit/visit-brief.js",
     "static/cockpit/app.js",
+    "static/cockpit/office-cases.js",
     "static/cockpit/obligations-view.js",
     "static/cockpit/doctor-shell.js",
     "static/cockpit/shared-nav.js",
@@ -155,6 +156,46 @@ def assert_delayed_recent_purged_after_logout(page):
         return !document.getElementById("visitRecentRows").textContent.includes("SYN-STALE-PHI");
     }"""), "old clinician result repopulated protected patient names"
     assert page.locator("#visitRecentRows .clinical-patient-row").count() == 0
+
+
+def assert_stale_surgery_write_keeps_new_draft(page, status):
+    # A response to a prior Clinical Key session must not reset a newer draft.
+    page.evaluate("""() => {
+        const originalFetch = window.fetch.bind(window);
+        window.__oldSurgeryFetch = originalFetch;
+        window.__oldSurgeryHeld = false;
+        window.fetch = (url, options = {}) => {
+            if (!window.__oldSurgeryHeld && String(url).endsWith('/clinical/surgeries')
+                    && options.method === 'POST') {
+                window.__oldSurgeryHeld = true;
+                return new Promise(resolve => {
+                    window.__releaseOldSurgery = status => resolve(new Response(
+                        status === 200 ? '{}' : '{"detail":"Expired"}',
+                        {status, headers: {'Content-Type': 'application/json'}}));
+                });
+            }
+            return originalFetch(url, options);
+        };
+        document.getElementById('surgeryEditorDetails').open = true;
+        document.getElementById('surgeryFullName').value = 'OLD-SURGERY-DRAFT';
+        document.getElementById('surgeryForm').dispatchEvent(
+            new Event('submit', {bubbles: true, cancelable: true}));
+    }""")
+    page.wait_for_function("typeof window.__releaseOldSurgery === 'function'")
+    page.evaluate("window.dispatchEvent(new Event('clinical:unauthenticated'))")
+    page.evaluate("window.dispatchEvent(new Event('clinical:authenticated'))")
+    expect(page.locator("#surgeryForm button[type=submit]")).to_be_enabled()
+    page.evaluate("document.getElementById('surgeryEditorDetails').open = true")
+    page.evaluate("document.getElementById('surgeryFullName').value = 'NEW-SURGERY-DRAFT'")
+    page.evaluate("(status) => window.__releaseOldSurgery(status)", status)
+    page.wait_for_timeout(50)
+    expect(page.locator("#surgeryFullName")).to_have_value("NEW-SURGERY-DRAFT")
+    expect(page.locator("#surgeryEditorDetails")).to_have_attribute("open", "")
+    page.evaluate("""() => {
+        window.fetch = window.__oldSurgeryFetch;
+        delete window.__oldSurgeryFetch;
+        delete window.__releaseOldSurgery;
+    }""")
 
 
 def exercise_day_navigation(page,width):
@@ -429,6 +470,7 @@ def browser_suite(width, screenshot_name):
     auth = {"authenticated": False, "linked": False, "confirmations": 0}
     call_source = {"status": 200, "handled": False, "write_status": 200}
     notion_source = {"writes": 0}
+    rf_bridge = {"linked": False, "exact_reads": 0}
     with sync_playwright() as pw:
         executable = shutil.which("google-chrome") or shutil.which("chromium")
         browser = pw.chromium.launch(headless=True, executable_path=executable or None, args=["--no-sandbox"])
@@ -448,6 +490,43 @@ def browser_suite(width, screenshot_name):
                               CALL_PEEK["calls"][1]]}
                 return route.fulfill(status=code,
                     json=source if code == 200 else {"detail": "Unavailable"})
+            if "/clinical/office-cases/rf?" in url:
+                return route.fulfill(status=200 if auth["authenticated"] else 401,
+                    json={"applications": [{"id":"synthetic-rf-office-01", "revision":2,
+                        "stage":"scheduled", "patient_name":"RF Συνθετικός",
+                        "identity_number":"SYN-001", "laterality":"left",
+                        "indication_code":"SYN", "scheduled_date":"2026-11-01",
+                        "surgery_id":"synthetic-linked-surgery" if rf_bridge["linked"] else None,
+                        "linked_surgery":{"surgery_id":"synthetic-linked-surgery",
+                            "full_name":"RF Συνθετικός", "procedure_type":"Συνθετική επέμβαση",
+                            "surgery_date":"2026-11-01", "room_entry_time":"09:30",
+                            "status":"deleted"} if rf_bridge["linked"] else None}],
+                        "next_cursor":None, "has_more":False}
+                    if auth["authenticated"] else {"detail":"Unauthorized"})
+            if url.endswith("/clinical/office-cases/rf/synthetic-rf-office-01"):
+                rf_bridge["exact_reads"] += 1
+                return route.fulfill(status=200, json={"id":"synthetic-rf-office-01",
+                    "revision":3, "stage":"performed", "patient_name":"RF Συνθετικός",
+                    "identity_number":"SYN-001", "laterality":"left",
+                    "indication_code":"SYN", "scheduled_date":"2026-11-01",
+                    "surgery_id":"synthetic-linked-surgery",
+                    "linked_surgery":{"surgery_id":"synthetic-linked-surgery",
+                        "full_name":"RF Συνθετικός", "procedure_type":"Συνθετική επέμβαση",
+                        "surgery_date":"2026-11-01", "room_entry_time":"09:30",
+                        "status":"deleted"}})
+            if "/clinical/office-cases/surgeries/from-rf/" in url:
+                rf_bridge["linked"] = True
+                return route.fulfill(status=409, json={"detail":"RF already linked to surgery"})
+            if "/clinical/office-cases/accidents?" in url:
+                return route.fulfill(status=200 if auth["authenticated"] else 401,
+                    json={"cases":[{"case_id":"synthetic-accident-office-01",
+                        "patient_name":"Συνθετικό τροχαίο", "phone":"000000",
+                        "accident_date":"2026-10-01", "visit_date":None,
+                        "writing_started_date":None, "report_sent_date":None,
+                        "amount_due_cents":10000, "received_cents":2500,
+                        "balance_cents":7500, "revision":2}],
+                        "has_more":False,"next_offset":None}
+                    if auth["authenticated"] else {"detail":"Unauthorized"})
             if url.endswith("/clinical/reception-calls/handled"):
                 assert route.request.method == "POST"
                 assert route.request.post_data_json == {"todo_id": "td_RM-SYN-1", "handled": True}
@@ -558,6 +637,9 @@ def browser_suite(width, screenshot_name):
             if url.endswith("/clinical/surgeries"):
                 return route.fulfill(status=200 if auth["authenticated"] else 401,
                                      json=SURGERIES if auth["authenticated"] else {"detail": "Unauthorized"})
+            if "/clinical/surgeries/" in url:
+                return route.fulfill(status=401 if not auth["authenticated"] else 200,
+                    json={"detail":"Unauthorized"} if not auth["authenticated"] else SURGERIES)
             if url.endswith("/clinical/clinic-utilities/rf/api/outcomes/search"):
                 assert route.request.method == "POST"
                 assert route.request.post_data_json == {"query": "", "scope": "all", "page": 1}
@@ -734,10 +816,29 @@ def browser_suite(width, screenshot_name):
         page.locator("#doctorActionsButton").click()
 
         page.locator("#doctorActionsButton").click()
-        page.locator("#doctorPopoverContent").get_by_role("button", name="Εργασίες ιατρείου").click()
+        page.locator("#doctorPopoverContent").get_by_role("button", name="Περιστατικά ιατρείου").click()
         expect(page.locator("#doctorMainView")).to_be_hidden()
         expect(page.locator("#surgerySection")).to_be_visible()
-        page.locator("#doctorBackHome").click()
+        page.locator('[data-office-tab="rf"]').click()
+        expect(page.locator("#officeRfList")).to_contain_text("RF Συνθετικός")
+        page.get_by_role("button", name="Προσθήκη στη λίστα χειρουργείων").click()
+        expect(page.locator('[data-office-tab-panel="surgery"]')).to_be_visible()
+        expect(page.locator("#surgeryFullName")).to_have_value("RF Συνθετικός")
+        expect(page.locator("#surgeryIdentityNumber")).to_have_value("SYN-001")
+        expect(page.locator("#surgeryDate")).to_have_value("2026-11-01")
+        expect(page.locator("#surgeryDateOfBirth")).to_have_value("")
+        expect(page.locator("#surgeryPhone")).to_have_value("")
+        expect(page.locator("#surgeryProcedureType")).to_have_value("")
+        page.evaluate("window.dispatchEvent(new Event('clinical:unauthenticated'))")
+        expect(page.locator("#surgeryFullName")).to_have_value("")
+        expect(page.locator("#surgeryIdentityNumber")).to_have_value("")
+        expect(page.locator("#surgeryForm button[type=submit]")).to_be_disabled()
+        expect(page.locator("#surgeryTableBody")).not_to_contain_text("Συνθετικός Ασθενής")
+        page.evaluate("window.dispatchEvent(new Event('clinical:authenticated'))")
+        expect(page.locator("#surgeryForm button[type=submit]")).to_be_enabled()
+        if page.locator("#doctorBackHome").is_visible():
+            page.locator("#doctorBackHome").click()
+        expect(page.locator("#doctorMainView")).to_be_visible()
 
         if width <= 990:
             expect(page.locator("#visitSidebar")).to_be_hidden()
@@ -754,6 +855,36 @@ def browser_suite(width, screenshot_name):
         assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1"), "horizontal overflow"
         exercise_reception_call_peek(page, width, call_source)
         assert_delayed_recent_purged_after_logout(page)
+        page.evaluate("window.dispatchEvent(new Event('clinical:authenticated'))")
+        expect(page.locator("#surgeryTableBody")).to_contain_text("Συνθετικός Ασθενής")
+        assert_stale_surgery_write_keeps_new_draft(page, 200)
+        assert_stale_surgery_write_keeps_new_draft(page, 401)
+        page.locator("#doctorActionsButton").click()
+        page.locator("#doctorPopoverContent").get_by_role("button", name="Περιστατικά ιατρείου").click()
+        page.locator('[data-office-tab="rf"]').click()
+        expect(page.locator("#officeRfList")).to_contain_text("RF Συνθετικός")
+        page.get_by_role("button", name="Προσθήκη στη λίστα χειρουργείων").click()
+        page.locator("#surgeryDateOfBirth").fill("1966-01-01")
+        page.locator("#surgeryPhone").fill("000000")
+        page.locator("#surgeryProcedureType").fill("Συνθετική επέμβαση")
+        page.locator("#surgeryForm button[type=submit]").click()
+        expect(page.locator('[data-office-tab-panel="rf"]')).to_be_visible()
+        expect(page.locator("#officeRfNote")).to_contain_text("Η RF άλλαξε ή συνδέθηκε")
+        expect(page.locator("#officeRfList")).to_contain_text("Συνδεδεμένο χειρουργείο: synthetic-linked-surgery")
+        expect(page.locator("#officeRfList")).to_contain_text("Αφαιρέθηκε από τα pending")
+        expect(page.locator("#officeRfList")).to_contain_text("Πραγματοποιήθηκε")
+        assert rf_bridge["exact_reads"] == 1
+        assert page.get_by_role("button", name="Προσθήκη στη λίστα χειρουργείων").count() == 0
+        page.locator('[data-office-tab="accidents"]').click()
+        expect(page.locator("#accidentList")).to_contain_text("Συνθετικό τροχαίο")
+        page.locator('[data-office-tab="rf"]').click()
+        expect(page.locator("#officeRfList")).to_contain_text("RF Συνθετικός")
+        page.locator('[data-office-tab="surgery"]').click()
+        auth["authenticated"] = False
+        page.locator('#surgeryTableBody button[data-action="up"]').first.click()
+        expect(page.locator("#accidentList")).to_be_empty()
+        expect(page.locator("#officeRfList")).to_be_empty()
+        expect(page.locator("#accidentForm button[type=submit]")).to_be_disabled()
         page.evaluate("""() => {
             document.getElementById('visitDiaPreviewText').textContent='SYN-PHI';
             document.getElementById('visitSelectedName').textContent='SYN-PHI';

@@ -666,8 +666,8 @@
         list.append(newLink(item.name,item.href,item.hint));
       }
       if(!list.children.length)list.append(text("Δεν βρέθηκε ενέργεια."));
-      list.append(action("Εργασίες ιατρείου", "Χειρουργεία, έγγραφα, modules και εκπαίδευση",
-        ()=>showLibrary("surgery")));
+      list.append(action("Περιστατικά ιατρείου", "Χειρουργεία, τροχαία και RF",
+        ()=>showLibrary("cases")));
     };
     input.addEventListener("input",draw);draw();input.focus();
   }
@@ -710,7 +710,7 @@
     },pendingId);
     $("doctorObligationsSearch").focus();
   }
-  function showLibrary(category="surgery") {
+  function showLibrary(category="cases") {
     close();
     window.CockpitClinicalInbox?.close();
     $("doctorClinicalInboxView").hidden=true;
@@ -724,6 +724,7 @@
       const selected=b.dataset.doctorLibraryTab===category;
       b.classList.toggle("selected",selected);b.setAttribute("aria-pressed",String(selected));
     });
+    if(category === "cases") window.CockpitOfficeCases?.open?.();
     $("doctorBackHome").focus();
   }
   function showHome() {
@@ -802,7 +803,7 @@
     target.append(action(
       s ? "Χειρουργεία · " + s.total + " εκκρεμή" : "Χειρουργεία · Μη διαθέσιμα",
       s ? surgeryAttentionLines(s) : "Άνοιγμα προστατευμένης λίστας",
-      () => showLibrary("surgery")));
+      () => showLibrary("cases")));
     const rfTitle = rf?.partial ? "RF · Μερική κάλυψη"
       : rf ? "RF · Εκδοθείσες αιτήσεις " + rf.denominator
         + " · Αναμένουν απόφαση " + rf.pending : "RF · Μη διαθέσιμα";

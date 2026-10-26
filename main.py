@@ -18,6 +18,7 @@ from clinical_synthetic_161 import build_synthetic_161_router
 from clinical_data_ext import build_clinical_ext_router
 from clinical_status import build_clinical_status_router
 from clinical_surgery_queue import build_surgery_queue_router
+from clinical_office_cases import build_office_cases_router
 from clinical_learning import build_learning_router
 from clinic_utilities.clinical_documents import build_clinical_documents_router, build_medical_report_router
 from clinic_utilities.physio_referral_api import build_cu1_physio_referral_router
@@ -71,6 +72,7 @@ app.include_router(build_clinical_ext_router(engine))
 app.include_router(build_clinical_calendar_router(engine))
 app.include_router(build_synthetic_161_router(engine))
 app.include_router(build_surgery_queue_router(engine))
+app.include_router(build_office_cases_router(engine))
 app.include_router(build_learning_router(engine))
 app.include_router(build_cu1_physio_referral_router())
 app.include_router(build_knee_oa_product_router())

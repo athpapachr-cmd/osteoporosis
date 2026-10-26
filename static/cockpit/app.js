@@ -38,6 +38,7 @@
   // The existing protected surgery loader owns the ONLY source of Home detail.
   let surgeryGeneration = 0;
   let surgeryReady = false;
+  let surgeryAuthEpoch = 0;
   const surgeryDateParts = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Asia/Nicosia", year: "numeric", month: "2-digit", day: "2-digit"
   });
@@ -206,7 +207,8 @@
     }
   }
 
-  async function apiJson(url, options = {}) {
+  async function apiJson(url, options = {}, current = () => true) {
+    const authAtStart = surgeryAuthEpoch;
     const response = await fetch(clinicalURL(url), {
       credentials: "same-origin",
       headers: {
@@ -217,6 +219,12 @@
     });
 
     if (!response.ok) {
+      // A current protected failure revokes every Cockpit patient/financial
+      // projection. A late response from an earlier auth epoch cannot do so.
+      if ((response.status === 401 || response.status === 403)
+          && authAtStart === surgeryAuthEpoch && current()) {
+        window.dispatchEvent(new window.CustomEvent("clinical:unauthenticated"));
+      }
       const error = new Error(`HTTP ${response.status}`);
       error.status = response.status;
       try {
@@ -288,7 +296,7 @@
     if (!rows.length) {
       const tr = document.createElement("tr");
       const td = document.createElement("td");
-      td.colSpan = 9;
+      td.colSpan = 10;
       td.className = "surgery-empty";
       td.textContent = "Δεν υπάρχουν pending χειρουργεία.";
       tr.appendChild(td);
@@ -314,9 +322,14 @@
       dateInput.className = "surgery-date-input";
       dateInput.dataset.surgeryId = row.surgery_id;
       dateInput.value = row.surgery_date || "";
-      dateInput.setAttribute("aria-label", `Ημερομηνία χειρουργείου για ${row.full_name}`);
+      dateInput.disabled = Boolean(row.room_entry_time);
+      dateInput.setAttribute("aria-label", row.room_entry_time
+        ? `Άλλαξε ημερομηνία και ώρα από την επεξεργασία για ${row.full_name}`
+        : `Ημερομηνία χειρουργείου για ${row.full_name}`);
+      if (row.room_entry_time) dateInput.title = "Άλλαξε ημερομηνία και ώρα από την επεξεργασία ✎";
       dateCell.appendChild(dateInput);
       tr.appendChild(dateCell);
+      tr.appendChild(cell(row.room_entry_time || "—"));
 
       const actions = document.createElement("td");
       actions.className = "surgery-row-actions";
@@ -339,11 +352,15 @@
     tbody.replaceChildren();
     const tr = document.createElement("tr");
     const td = document.createElement("td");
-    td.colSpan = 9;
+    td.colSpan = 10;
     td.className = "surgery-empty";
     td.textContent = message;
     tr.appendChild(td);
     tbody.appendChild(tr);
+  }
+
+  function setSurgeryWritesEnabled(enabled) {
+    for (const control of $("surgeryForm").elements) control.disabled = !enabled;
   }
 
   function clearSurgeryProjection(message, needsKey = false) {
@@ -356,6 +373,7 @@
       }));
     }
     setSurgeryUnavailable(message);
+    setSurgeryWritesEnabled(false);
     $("surgeryQueueNote").textContent = needsKey
       ? "Πάτησε «Πρόσβαση» πάνω δεξιά για σύνδεση με το Clinical Key."
       : "Η προστατευμένη λίστα χειρουργείων δεν είναι διαθέσιμη αυτή τη στιγμή.";
@@ -369,11 +387,12 @@
     // reloads. An older success or failure can never restore/clear a newer view.
     clearSurgeryProjection("Φόρτωση…");
     try {
-      const rows = await apiJson("/clinical/surgeries");
+      const rows = await apiJson("/clinical/surgeries", {}, () => generation === surgeryGeneration);
       if (generation !== surgeryGeneration) return;
       if (!validSurgeryRows(rows)) throw new Error("Invalid protected surgery source");
       surgeryRows = rows;
       surgeryReady = true;
+      setSurgeryWritesEnabled(true);
       $("surgeryQueueState").textContent = String(rows.length) + " pending";
       $("surgeryQueueState").classList.add("ready");
       $("surgeryQueueNote").textContent = rows.length
@@ -390,12 +409,16 @@
     function resetSurgeryForm() {
     $("surgeryForm").reset();
     $("surgeryId").value = "";
+    $("surgeryRfApplicationId").value = "";
+    $("surgeryRfRevision").value = "";
+    $("surgeryRfSourceNote").hidden = true;
     $("surgeryLaterality").value = "unspecified";
     $("surgerySubmit").textContent = "Προσθήκη";
     $("surgeryCancelEdit").hidden = true;
   }
 
   function startSurgeryEdit(row) {
+    resetSurgeryForm();
     $("surgeryId").value = row.surgery_id;
     $("surgeryFullName").value = row.full_name || "";
     $("surgeryIdentityNumber").value = row.identity_number || "";
@@ -404,6 +427,11 @@
     $("surgeryProcedureType").value = row.procedure_type || "";
     $("surgeryLaterality").value = row.laterality || "unspecified";
     $("surgeryDate").value = row.surgery_date || "";
+    $("surgeryRoomEntryTime").value = row.room_entry_time || "";
+    if (row.rf_application_id) {
+      $("surgeryRfSourceNote").textContent = "Συνδεδεμένη με RF: " + row.rf_application_id;
+      $("surgeryRfSourceNote").hidden = false;
+    }
     $("surgerySubmit").textContent = "Αποθήκευση";
     $("surgeryCancelEdit").hidden = false;
     $("surgeryEditorDetails").open = true;
@@ -412,7 +440,9 @@
 
   async function submitSurgeryForm(event) {
     event.preventDefault();
+    const writeEpoch = surgeryAuthEpoch;
     const surgeryId = $("surgeryId").value;
+    const rfSourceId = $("surgeryRfApplicationId").value;
     const payload = {
       full_name: $("surgeryFullName").value.trim(),
       identity_number: $("surgeryIdentityNumber").value.trim(),
@@ -420,7 +450,8 @@
       phone: $("surgeryPhone").value.trim(),
       procedure_type: $("surgeryProcedureType").value.trim(),
       laterality: $("surgeryLaterality").value,
-      surgery_date: $("surgeryDate").value || null
+      surgery_date: $("surgeryDate").value || null,
+      room_entry_time: $("surgeryRoomEntryTime").value || null
     };
 
     try {
@@ -429,18 +460,39 @@
           method: "PUT",
           body: JSON.stringify(payload)
         });
+      } else if (rfSourceId) {
+        await apiJson("/clinical/office-cases/surgeries/from-rf/" +
+          encodeURIComponent(rfSourceId), {
+          method: "POST",
+          body: JSON.stringify({
+            expected_rf_revision: Number($("surgeryRfRevision").value),
+            date_of_birth: payload.date_of_birth,
+            phone: payload.phone,
+            procedure_type: payload.procedure_type,
+            surgery_date: payload.surgery_date,
+            room_entry_time: payload.room_entry_time
+          })
+        });
       } else {
         await apiJson("/clinical/surgeries", {
           method: "POST",
           body: JSON.stringify(payload)
         });
       }
+      if (writeEpoch !== surgeryAuthEpoch) return;
       resetSurgeryForm();
       $("surgeryEditorDetails").open = false;
       surgerySortKey = "queue_position";
       surgerySortDirection = "asc";
       await loadSurgeryQueue();
+      window.CockpitOfficeCases?.refreshRF?.();
     } catch (error) {
+      if (writeEpoch !== surgeryAuthEpoch) return;
+      if (rfSourceId && error.status === 409) {
+        resetSurgeryForm();
+        window.CockpitOfficeCases?.showRFConflict?.(rfSourceId);
+        return;
+      }
       $("surgeryQueueNote").textContent = error.detail || "Δεν ήταν δυνατή η αποθήκευση της εγγραφής.";
       if ([401, 403, 503].includes(error.status)) await loadSurgeryQueue();
     }
@@ -460,13 +512,16 @@
 
     if (action === "complete") {
       if (!window.confirm(`Να σημειωθεί ως ολοκληρωμένο το χειρουργείο για ${row.full_name};`)) return;
+      const writeEpoch = surgeryAuthEpoch;
       try {
         await apiJson(`/clinical/surgeries/${encodeURIComponent(row.surgery_id)}/complete`, {
           method: "POST",
           body: "{}"
         });
+        if (writeEpoch !== surgeryAuthEpoch) return;
         await loadSurgeryQueue();
       } catch (error) {
+        if (writeEpoch !== surgeryAuthEpoch) return;
         $("surgeryQueueNote").textContent = error.detail || "Δεν ολοκληρώθηκε η ενημέρωση.";
         if ([401, 403, 503].includes(error.status)) await loadSurgeryQueue();
       }
@@ -475,12 +530,15 @@
 
     if (action === "delete") {
       if (!window.confirm(`Να διαγραφεί από τα pending το χειρουργείο για ${row.full_name};`)) return;
+      const writeEpoch = surgeryAuthEpoch;
       try {
         await apiJson(`/clinical/surgeries/${encodeURIComponent(row.surgery_id)}`, {
           method: "DELETE"
         });
+        if (writeEpoch !== surgeryAuthEpoch) return;
         await loadSurgeryQueue();
       } catch (error) {
+        if (writeEpoch !== surgeryAuthEpoch) return;
         $("surgeryQueueNote").textContent = error.detail || "Δεν ήταν δυνατή η διαγραφή.";
         if ([401, 403, 503].includes(error.status)) await loadSurgeryQueue();
       }
@@ -488,15 +546,18 @@
     }
 
     if (action === "up" || action === "down") {
+      const writeEpoch = surgeryAuthEpoch;
       try {
         await apiJson("/clinical/surgeries/" + encodeURIComponent(row.surgery_id) + "/move", {
           method: "POST",
           body: JSON.stringify({ direction: action })
         });
+        if (writeEpoch !== surgeryAuthEpoch) return;
         surgerySortKey = "queue_position";
         surgerySortDirection = "asc";
         await loadSurgeryQueue(); // Never publish unguarded mutation responses.
       } catch (error) {
+        if (writeEpoch !== surgeryAuthEpoch) return;
         $("surgeryQueueNote").textContent = error.detail || "Δεν άλλαξε η σειρά.";
         if ([401, 403, 503].includes(error.status)) await loadSurgeryQueue();
       }
@@ -506,13 +567,16 @@
     async function handleSurgeryDateChange(event) {
     const input = event.target.closest("input.surgery-date-input");
     if (!input) return;
+    const writeEpoch = surgeryAuthEpoch;
     try {
       await apiJson("/clinical/surgeries/" + encodeURIComponent(input.dataset.surgeryId), {
         method: "PUT",
         body: JSON.stringify({ surgery_date: input.value || null })
       });
+      if (writeEpoch !== surgeryAuthEpoch) return;
       await loadSurgeryQueue(); // Protected read is always generation-guarded.
     } catch (error) {
+      if (writeEpoch !== surgeryAuthEpoch) return;
       $("surgeryQueueNote").textContent = error.detail || "Δεν αποθηκεύτηκε η ημερομηνία.";
       await loadSurgeryQueue();
     }
@@ -547,10 +611,34 @@
   const calendarRetry = $("cockpitCalendarRetry");
   if (calendarRetry) calendarRetry.addEventListener("click", loadCockpitContext);
   if (typeof window !== "undefined" && typeof window.addEventListener === "function") window.addEventListener("clinical:authenticated", () => {
+    ++surgeryAuthEpoch;
     loadCockpitContext();
     loadSurgeryQueue();
   });
+  if (typeof window !== "undefined" && typeof window.addEventListener === "function") window.addEventListener("clinical:unauthenticated", () => {
+    ++surgeryAuthEpoch;
+    ++surgeryGeneration; // Fence any protected read already in flight.
+    clearSurgeryProjection("Σύνδεση απαιτείται", true);
+  });
   resetSurgeryForm();
+  window.CockpitSurgeryQueue = {
+    prefillFromRF(card) {
+      if (!surgeryReady || !card || !card.id || !Number.isInteger(card.revision) ||
+          !["approved", "scheduled"].includes(card.stage)) return;
+      resetSurgeryForm();
+      $("surgeryRfApplicationId").value = card.id;
+      $("surgeryRfRevision").value = String(card.revision);
+      $("surgeryFullName").value = card.patient_name || "";
+      $("surgeryIdentityNumber").value = card.identity_number || "";
+      $("surgeryLaterality").value = ["left", "right"].includes(card.laterality) ? card.laterality : "unspecified";
+      $("surgeryDate").value = card.stage === "scheduled" ? card.scheduled_date || "" : "";
+      $("surgeryRfSourceNote").textContent = "Από RF: έλεγξε τα στοιχεία και συμπλήρωσε ημερομηνία γέννησης, τηλέφωνο και επέμβαση πριν την προσθήκη.";
+      $("surgeryRfSourceNote").hidden = false;
+      window.CockpitOfficeCases?.selectTab?.("surgery");
+      $("surgeryEditorDetails").open = true;
+      $("surgeryDateOfBirth").focus();
+    }
+  };
   loadCockpitContext();
   window.setInterval(loadCockpitContext, 60000);
   loadSurgeryQueue();

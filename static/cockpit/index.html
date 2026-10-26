@@ -301,11 +301,11 @@ ENCOUNTER DETAIL
     </section>
     <section id="doctorLibraryView" class="doctor-library" hidden aria-label="Εργασίες ιατρείου και εργαλεία">
       <header class="doctor-library-header">
-        <div><p class="eyebrow">Εργασίες και εργαλεία</p><h2>Ό,τι χρειάζεσαι, στη θέση του.</h2></div>
+        <div><p class="eyebrow">Εργασίες και εργαλεία</p><h2>Περιστατικά ιατρείου</h2></div>
         <button id="doctorBackHome" class="doctor-command-button" type="button">← Αρχική</button>
       </header>
       <nav id="doctorLibraryNav" class="doctor-library-nav" aria-label="Κατηγορίες εργασιών">
-        <button type="button" data-doctor-library-tab="surgery">Χειρουργεία</button>
+        <button type="button" data-doctor-library-tab="cases">Περιστατικά ιατρείου</button>
         <button type="button" data-doctor-library-tab="documents">Έγγραφα</button>
         <button type="button" data-doctor-library-tab="modules">Κλινικά modules</button>
         <button type="button" data-doctor-library-tab="learning">Εκπαίδευση</button>
@@ -325,16 +325,21 @@ ENCOUNTER DETAIL
       </article>
     </section>
 
-    <section class="section surgery-section" id="surgerySection" data-doctor-library-panel="surgery">
+    <section class="section surgery-section" id="surgerySection" data-doctor-library-panel="cases">
       <div class="section-heading">
         <div>
-          <p class="section-kicker">Χειρουργεία</p>
-          <h2>Pending χειρουργεία</h2>
+          <p class="section-kicker">Χειρουργεία · Τροχαία · RF</p>
+          <h2>Παρακολούθηση περιστατικών</h2>
         </div>
-        <p>Προστατευμένη λίστα προγραμματισμού με manual σειρά προτεραιότητας και ημερομηνία χειρουργείου.</p>
+        <p>Προστατευμένη παρακολούθηση περιστατικών. Κάθε αλλαγή αποθηκεύεται μετά από δική σου ενέργεια.</p>
       </div>
+      <nav class="office-tabs" aria-label="Κατηγορίες περιστατικών">
+        <button type="button" data-office-tab="surgery" aria-pressed="true">Χειρουργεία</button>
+        <button type="button" data-office-tab="accidents" aria-pressed="false">Τροχαία</button>
+        <button type="button" data-office-tab="rf" aria-pressed="false">RF</button>
+      </nav>
 
-      <article class="panel surgery-panel">
+      <article class="panel surgery-panel" data-office-tab-panel="surgery">
         <div class="panel-head surgery-panel-head">
           <div>
             <span class="icon-badge">✚</span>
@@ -347,6 +352,9 @@ ENCOUNTER DETAIL
           <summary class="button secondary">Νέο pending χειρουργείο</summary>
           <form id="surgeryForm" class="surgery-form">
             <input id="surgeryId" type="hidden" />
+            <input id="surgeryRfApplicationId" type="hidden" />
+            <input id="surgeryRfRevision" type="hidden" />
+            <p id="surgeryRfSourceNote" class="surgery-form-wide" hidden></p>
             <label>
               <span>Ονοματεπώνυμο</span>
               <input id="surgeryFullName" name="full_name" required maxlength="200" autocomplete="off" />
@@ -381,6 +389,10 @@ ENCOUNTER DETAIL
               <span>Ημερομηνία χειρουργείου</span>
               <input id="surgeryDate" name="surgery_date" type="date" />
             </label>
+            <label>
+              <span>Ώρα εισόδου στην αίθουσα (Κύπρος, προαιρετική)</span>
+              <input id="surgeryRoomEntryTime" name="room_entry_time" type="time" />
+            </label>
             <div class="surgery-form-actions surgery-form-wide">
               <button id="surgerySubmit" class="button primary" type="submit">Προσθήκη</button>
               <button id="surgeryCancelEdit" class="button secondary" type="button" hidden>Ακύρωση επεξεργασίας</button>
@@ -402,14 +414,61 @@ ENCOUNTER DETAIL
                 <th><button type="button" class="surgery-sort" data-sort="laterality">Πλευρά</button></th>
                 <th><button type="button" class="surgery-sort" data-sort="phone">Τηλέφωνο</button></th>
                 <th><button type="button" class="surgery-sort" data-sort="surgery_date">Ημ. χειρουργείου</button></th>
+                <th>Ώρα αίθουσας</th>
                 <th>Ενέργειες</th>
               </tr>
             </thead>
             <tbody id="surgeryTableBody">
-              <tr><td colspan="9" class="surgery-empty">Φόρτωση…</td></tr>
+              <tr><td colspan="10" class="surgery-empty">Φόρτωση…</td></tr>
             </tbody>
           </table>
         </div>
+      </article>
+      <article class="panel office-panel" data-office-tab-panel="accidents" hidden>
+        <div class="panel-head"><div><span class="icon-badge">✎</span><h3>Τροχαία</h3></div><span id="accidentState" class="status-chip">Φόρτωση…</span></div>
+        <p class="panel-note">Οι ημερομηνίες και οι πληρωμές καταχωρίζονται μόνο όταν τις επιβεβαιώσεις. Η δημιουργία έκθεσης δεν σημαίνει ότι στάλθηκε.</p>
+        <details id="accidentEditorDetails" class="surgery-editor">
+          <summary class="button secondary">Νέο τροχαίο / επεξεργασία</summary>
+          <form id="accidentForm" class="surgery-form">
+            <input id="accidentCaseId" type="hidden" /><input id="accidentRevision" type="hidden" />
+            <label><span>Ασθενής</span><input id="accidentPatientName" required maxlength="200" autocomplete="off" /></label>
+            <label><span>Τηλέφωνο</span><input id="accidentPhone" required maxlength="40" autocomplete="off" /></label>
+            <label><span>Ημερομηνία ατυχήματος</span><input id="accidentDate" type="date" required /></label>
+            <label><span>Ημερομηνία επίσκεψης</span><input id="accidentVisitDate" type="date" /></label>
+            <label><span>Έναρξη συγγραφής</span><input id="accidentWritingDate" type="date" /></label>
+            <label><span>Αποστολή έκθεσης</span><input id="accidentSentDate" type="date" /></label>
+            <label><span>Απαιτούμενο ποσό (€)</span><input id="accidentAmountDue" type="number" min="0" step="0.01" inputmode="decimal" /></label>
+            <div class="surgery-form-actions surgery-form-wide"><button class="button primary" type="submit">Αποθήκευση</button><button id="accidentCancel" class="button secondary" type="button">Καθαρισμός</button></div>
+          </form>
+        </details>
+        <p id="accidentNote" class="panel-note" role="status"></p>
+        <div id="accidentList" class="office-list"></div>
+        <button id="accidentNext" class="button secondary" type="button" hidden>Επόμενα τροχαία</button>
+        <section id="accidentDetail" class="office-detail" hidden aria-label="Στοιχεία και πληρωμές τροχαίου">
+          <h4 id="accidentDetailTitle"></h4><p id="accidentDetailSummary"></p>
+          <div id="accidentPaymentList" class="office-list"></div>
+          <button id="paymentReviewConfirm" class="button secondary" type="button" hidden>Έλεγξα το ιστορικό πληρωμών — νέα καταχώριση</button>
+          <form id="accidentPaymentForm" class="surgery-form">
+            <label><span>Νέα πληρωμή (€)</span><input id="paymentAmount" type="number" min="0.01" step="0.01" inputmode="decimal" required /></label>
+            <label><span>Ημερομηνία πληρωμής</span><input id="paymentDate" type="date" required /></label>
+            <label><span>Πληρωτής</span><input id="paymentPayer" maxlength="200" required autocomplete="off" /></label>
+            <div class="surgery-form-actions"><button class="button primary" type="submit">Καταχώριση πληρωμής</button></div>
+          </form>
+          <a href="/clinical/clinic-utilities/medical-report" class="office-report-link">Άνοιγμα εργαλείου ιατρικής έκθεσης</a>
+        </section>
+      </article>
+      <article class="panel office-panel" data-office-tab-panel="rf" hidden>
+        <div class="panel-head"><div><span class="icon-badge">RF</span><h3>RF Tracking</h3></div><span id="officeRfState" class="status-chip">Φόρτωση…</span></div>
+        <p class="panel-note">Προβολή από το υπάρχον RF Tracking. Η προσθήκη στη λίστα χειρουργείων δεν αλλάζει την κατάσταση RF.</p>
+        <form id="officeRfSearch" class="office-search">
+          <input id="officeRfQuery" type="search" placeholder="Αναζήτηση RF" autocomplete="off" />
+          <select id="officeRfStage" aria-label="Κατάσταση RF"><option value="">Όλες</option><option value="approved">Εγκρίθηκε</option><option value="scheduled">Προγραμματίστηκε</option><option value="performed">Πραγματοποιήθηκε</option><option value="submitted">Υποβλήθηκε</option><option value="issued">Εκδόθηκε</option><option value="rejected">Απορρίφθηκε</option></select>
+          <button class="button secondary" type="submit">Αναζήτηση</button>
+        </form>
+        <p id="officeRfNote" class="panel-note" role="status"></p>
+        <div id="officeRfList" class="office-list"></div>
+        <button id="officeRfNext" class="button secondary" type="button" hidden>Επόμενες RF</button>
+        <a href="/clinical/clinic-utilities/rf/tracking" class="office-report-link">Άνοιγμα πλήρους RF Tracking</a>
       </article>
     </section>
 
@@ -495,12 +554,13 @@ ENCOUNTER DETAIL
 
   <script src="/static/cockpit/clinical-workspace.js?v=chart-continuity-20261018" defer></script>
   <script src="/static/cockpit/visit-brief.js?v=visit-amendments-20261018" defer></script>
-  <script src="/static/cockpit/app.js?v=chart-continuity-20261018" defer></script>
+  <script src="/static/cockpit/app.js?v=office-cases-20261026" defer></script>
+  <script src="/static/cockpit/office-cases.js?v=office-cases-20261026" defer></script>
   <script src="/static/cockpit/patient-chart.js?v=pending-metadata-20261022" defer></script>
   <script src="/static/cockpit/patient-entry.js?v=chart-continuity-20261018" defer></script>
   <script src="/static/cockpit/obligations-view.js?v=topbar-peeks-20261024" defer></script>
   <script src="/static/cockpit/clinical-inbox.js?v=one-tap-source-review-20261024" defer></script>
-  <script src="/static/cockpit/doctor-shell.js?v=notion-tasks-20261025" defer></script>
+  <script src="/static/cockpit/doctor-shell.js?v=office-cases-20261026" defer></script>
   <script src="/static/cockpit/shared-nav.js" defer></script>
 </body>
 </html>
