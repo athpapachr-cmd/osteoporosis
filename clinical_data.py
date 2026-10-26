@@ -185,13 +185,29 @@ class LabSnapshotRecord(BaseModel):
     updated_at: datetime
 
 
-SourceRole = Literal["heidi_today", "gesy_today", "gesy_previous", "clinician_edit", "dia_summary"]
+SourceRole = Literal[
+    "heidi_today",
+    "gesy_today",
+    "gesy_previous",
+    "clinician_edit",
+    "dia_summary",
+    "local_visit_audio",
+]
 VerificationState = Literal["source_stated", "clinician_confirmed"]
 CertaintyState = Literal["certain", "uncertain", "conflicting"]
 SourceIdentityState = Literal["consistent", "uncertain", "conflict"]
 ChangeDirection = Literal["improved", "worsened", "new", "resolved", "unchanged"]
 ComparisonType = Literal["previous_structured_encounter", "previous_gesy_visit", "unavailable"]
-DecisionType = Literal["therapy", "referral", "medication", "advice", "sick_leave", "admin"]
+DecisionType = Literal[
+    "therapy",
+    "referral",
+    "medication",
+    "investigation",
+    "advice",
+    "sick_leave",
+    "admin",
+]
+PatientPreferenceStatus = Literal["accepted", "declined", "undecided"]
 MedicationAction = Literal["prescribed", "continued", "stopped"]
 PendingStatus = Literal[
     "not_yet_indicated",
@@ -248,6 +264,14 @@ class VisitCaptureCoding(BaseModel):
 class VisitCaptureDecision(VisitCaptureFact):
     type: DecisionType
     responsible_role: Optional[str] = Field(default=None, max_length=120)
+
+
+class VisitCaptureRecommendation(VisitCaptureFact):
+    type: DecisionType
+
+
+class VisitCapturePreference(VisitCaptureFact):
+    status: PatientPreferenceStatus
 
 
 class VisitCaptureDuration(BaseModel):
@@ -326,6 +350,13 @@ class VisitCaptureCandidateV1(BaseModel):
     what_changed: List[VisitCaptureChange] = Field(default_factory=list, max_length=40)
     findings: List[VisitCaptureFinding] = Field(default_factory=list, max_length=80)
     clinical_impression: List[VisitCaptureFact] = Field(default_factory=list, max_length=40)
+    history: List[VisitCaptureFact] = Field(default_factory=list, max_length=60)
+    options_discussed: List[VisitCaptureFact] = Field(default_factory=list, max_length=60)
+    recommendations: List[VisitCaptureRecommendation] = Field(default_factory=list, max_length=60)
+    completed_actions: List[VisitCaptureFact] = Field(default_factory=list, max_length=60)
+    patient_preferences: List[VisitCapturePreference] = Field(default_factory=list, max_length=60)
+    follow_up: List[VisitCaptureFact] = Field(default_factory=list, max_length=60)
+    administrative_notes: List[VisitCaptureFact] = Field(default_factory=list, max_length=60)
     coding: VisitCaptureCoding = Field(default_factory=VisitCaptureCoding)
     decisions: List[VisitCaptureDecision] = Field(default_factory=list, max_length=60)
     medications: List[VisitCaptureMedication] = Field(default_factory=list, max_length=60)
@@ -338,6 +369,14 @@ class VisitCaptureCandidateV1(BaseModel):
 class VisitCaptureContextCreate(BaseModel):
     model_config = {"extra": "forbid"}
 
+    patient_id: str = Field(min_length=1, max_length=120)
+    client_session_id: str = Field(min_length=16, max_length=120)
+
+
+class VisitCaptureContextRenew(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    prior_context_id: str = Field(min_length=1, max_length=120)
     patient_id: str = Field(min_length=1, max_length=120)
     client_session_id: str = Field(min_length=16, max_length=120)
 
@@ -364,6 +403,7 @@ class VisitCapturePreview(BaseModel):
     snapshot: str
     brief: str
     detail: str
+    gesy_copy: str
 
 
 class ClinicalPendingRecord(BaseModel):
@@ -389,6 +429,7 @@ class VisitCaptureSaveRecord(BaseModel):
     snapshot: str
     brief: str
     detail: str
+    gesy_copy: str
 
 
 class ClinicalStatus(BaseModel):
@@ -472,13 +513,20 @@ def _visit_capture_next_text(item: Optional[VisitCaptureNextContact]) -> str:
 
 def _render_visit_capture(candidate: VisitCaptureCandidateV1) -> tuple[str, str, str]:
     changed = _visit_capture_fact_text(candidate.what_changed)
+    history = _visit_capture_fact_text(candidate.history)
     decisions = _visit_capture_fact_text(candidate.decisions)
+    options = _visit_capture_fact_text(candidate.options_discussed)
+    recommendations = _visit_capture_fact_text(candidate.recommendations)
+    completed = _visit_capture_fact_text(candidate.completed_actions)
+    preferences = _visit_capture_fact_text(candidate.patient_preferences)
     medications = _visit_capture_medication_text(candidate.medications)
     pending = _visit_capture_pending_text(candidate.pending)
     next_text = _visit_capture_next_text(candidate.next_contact)
+    follow_up = _visit_capture_fact_text(candidate.follow_up)
     findings = _visit_capture_fact_text(candidate.findings)
     impressions = _visit_capture_fact_text(candidate.clinical_impression)
     safety = _visit_capture_fact_text(candidate.safety_net)
+    administrative = _visit_capture_fact_text(candidate.administrative_notes)
     uncertainties = _visit_capture_fact_text(candidate.uncertainties)
 
     snapshot_lines = [f"ΣΗΜΕΡΑ: {candidate.reason_for_visit.text}"]
@@ -494,6 +542,8 @@ def _render_visit_capture(candidate: VisitCaptureCandidateV1) -> tuple[str, str,
     snapshot = "\n".join(snapshot_lines)
 
     today_parts = [candidate.reason_for_visit.text]
+    if history:
+        today_parts.append(f"Ιστορικό: {history}")
     if changed:
         today_parts.append(changed)
     if findings:
@@ -519,14 +569,21 @@ def _render_visit_capture(candidate: VisitCaptureCandidateV1) -> tuple[str, str,
         f"ΒΑΣΗ ΣΥΓΚΡΙΣΗΣ: {candidate.comparison_basis.type}",
     ]
     for label, text in [
+        ("ΙΣΤΟΡΙΚΟ", history),
         ("ΤΙ ΑΛΛΑΞΕ", changed),
         ("ΕΥΡΗΜΑΤΑ", findings),
         ("ΚΛΙΝΙΚΗ ΕΚΤΙΜΗΣΗ", impressions),
+        ("ΕΠΙΛΟΓΕΣ ΠΟΥ ΣΥΖΗΤΗΘΗΚΑΝ", options),
+        ("ΚΛΙΝΙΚΕΣ ΣΥΣΤΑΣΕΙΣ", recommendations),
+        ("ΟΛΟΚΛΗΡΩΜΕΝΕΣ ΠΡΑΞΕΙΣ", completed),
         ("ΑΠΟΦΑΣΕΙΣ", decisions),
+        ("ΠΡΟΤΙΜΗΣΗ ΑΣΘΕΝΟΥΣ", preferences),
         ("ΦΑΡΜΑΚΑ", medications),
         ("ΕΚΚΡΕΜΟΤΗΤΕΣ", pending),
+        ("ΠΑΡΑΚΟΛΟΥΘΗΣΗ", follow_up),
         ("ΕΠΟΜΕΝΗ ΕΠΑΦΗ", next_text),
         ("SAFETY-NET", safety),
+        ("ΔΙΟΙΚΗΤΙΚΑ", administrative),
         ("ΑΒΕΒΑΙΟΤΗΤΕΣ", uncertainties),
     ]:
         if text:
@@ -541,6 +598,29 @@ def _render_visit_capture(candidate: VisitCaptureCandidateV1) -> tuple[str, str,
     return snapshot, brief, "\n".join(detail_lines)
 
 
+def _render_gesy_copy(candidate: VisitCaptureCandidateV1) -> str:
+    """Render exact reviewed candidate text without model rewriting."""
+
+    sections = [
+        ("Λόγος επίσκεψης", candidate.reason_for_visit.text),
+        ("Ιστορικό", _visit_capture_fact_text(candidate.history)),
+        ("Αντικειμενικά ευρήματα", _visit_capture_fact_text(candidate.findings)),
+        ("Κλινική εκτίμηση", _visit_capture_fact_text(candidate.clinical_impression)),
+        ("Επιλογές που συζητήθηκαν", _visit_capture_fact_text(candidate.options_discussed)),
+        ("Κλινικές συστάσεις", _visit_capture_fact_text(candidate.recommendations)),
+        ("Ολοκληρωμένες πράξεις", _visit_capture_fact_text(candidate.completed_actions)),
+        ("Τελικές αποφάσεις", _visit_capture_fact_text(candidate.decisions)),
+        ("Προτίμηση ασθενούς", _visit_capture_fact_text(candidate.patient_preferences)),
+        ("Εκκρεμότητες", _visit_capture_pending_text(candidate.pending)),
+        ("Παρακολούθηση", _visit_capture_fact_text(candidate.follow_up)),
+        ("Επόμενη επαφή", _visit_capture_next_text(candidate.next_contact)),
+        ("Safety-net", _visit_capture_fact_text(candidate.safety_net)),
+        ("Διοικητικά", _visit_capture_fact_text(candidate.administrative_notes)),
+        ("Αβεβαιότητες", _visit_capture_fact_text(candidate.uncertainties)),
+    ]
+    return "\n\n".join(f"{title}:\n{text}" for title, text in sections if text)
+
+
 def _validate_visit_capture_candidate(candidate: VisitCaptureCandidateV1) -> None:
     source_refs = {item.source_ref for item in candidate.source_bindings}
     if candidate.comparison_basis.type == "unavailable" and candidate.what_changed:
@@ -553,13 +633,20 @@ def _validate_visit_capture_candidate(candidate: VisitCaptureCandidateV1) -> Non
 
     fact_groups: List[List[Any]] = [
         [candidate.reason_for_visit],
+        candidate.history,
         candidate.what_changed,
         candidate.findings,
         candidate.clinical_impression,
+        candidate.options_discussed,
+        candidate.recommendations,
+        candidate.completed_actions,
+        candidate.patient_preferences,
         candidate.decisions,
         candidate.medications,
         candidate.pending,
+        candidate.follow_up,
         candidate.safety_net,
+        candidate.administrative_notes,
         candidate.uncertainties,
     ]
     if candidate.next_contact is not None:
@@ -869,6 +956,62 @@ def build_clinical_router(engine: Engine) -> APIRouter:
             )
 
     @router.post(
+        "/visit-capture/context/renew",
+        response_model=VisitCaptureContextRecord,
+        dependencies=protected,
+    )
+    def renew_visit_capture_context(req: VisitCaptureContextRenew) -> VisitCaptureContextRecord:
+        """Compare-and-swap one exact context without adopting a changed patient."""
+
+        now = utcnow()
+        with Session(engine) as session:
+            prior = session.execute(
+                select(VisitCaptureContextORM)
+                .where(VisitCaptureContextORM.id == req.prior_context_id)
+                .with_for_update()
+            ).scalar_one_or_none()
+            if prior is None:
+                raise HTTPException(status_code=409, detail="Visit Capture context is stale or invalid")
+            if (
+                prior.client_session_id != req.client_session_id
+                or prior.patient_id != req.patient_id.strip()
+            ):
+                raise HTTPException(status_code=409, detail="Visit Capture context identity mismatch")
+
+            patient = session.execute(
+                select(PatientORM)
+                .where(PatientORM.patient_id == prior.patient_id)
+                .with_for_update()
+            ).scalar_one_or_none()
+            if patient is None or patient.updated_at != prior.patient_updated_at:
+                raise HTTPException(
+                    status_code=409,
+                    detail="Patient context changed; confirm patient again",
+                )
+
+            session.execute(
+                delete(VisitCaptureContextORM).where(
+                    VisitCaptureContextORM.client_session_id == prior.client_session_id
+                )
+            )
+            context = VisitCaptureContextORM(
+                id=str(uuid4()),
+                client_session_id=prior.client_session_id,
+                patient_id=prior.patient_id,
+                patient_updated_at=patient.updated_at,
+                issued_at=now,
+                expires_at=now + timedelta(minutes=30),
+            )
+            session.add(context)
+            session.commit()
+            session.refresh(context)
+            return VisitCaptureContextRecord(
+                context_id=context.id,
+                patient_id=context.patient_id,
+                expires_at=context.expires_at,
+            )
+
+    @router.post(
         "/visit-capture/preview",
         response_model=VisitCapturePreview,
         dependencies=protected,
@@ -878,6 +1021,7 @@ def build_clinical_router(engine: Engine) -> APIRouter:
         with Session(engine) as session:
             context = visit_capture_context(session, req.context_id)
             snapshot, brief, detail = _render_visit_capture(req.candidate)
+            gesy_copy = _render_gesy_copy(req.candidate)
             blocked = req.candidate.source_identity_state != "consistent"
             return VisitCapturePreview(
                 patient_id=context.patient_id,
@@ -890,6 +1034,7 @@ def build_clinical_router(engine: Engine) -> APIRouter:
                 snapshot=snapshot,
                 brief=brief,
                 detail=detail,
+                gesy_copy=gesy_copy,
             )
 
     @router.post(
@@ -966,6 +1111,7 @@ def build_clinical_router(engine: Engine) -> APIRouter:
                 session.refresh(pending_row)
 
             snapshot, brief, detail = _render_visit_capture(req.candidate)
+            gesy_copy = _render_gesy_copy(req.candidate)
             encounter = EncounterRecord(
                 encounter_id=row.id,
                 patient_id=row.patient_id,
@@ -981,6 +1127,7 @@ def build_clinical_router(engine: Engine) -> APIRouter:
                 snapshot=snapshot,
                 brief=brief,
                 detail=detail,
+                gesy_copy=gesy_copy,
             )
 
     @router.get(

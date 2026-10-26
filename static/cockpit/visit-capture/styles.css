@@ -97,7 +97,26 @@ button:disabled{cursor:not-allowed}
 .structured-preview .detail-section:not([open]){background:#fff}
 .structured-preview .detail-section:hover{border-color:#bcd5e5}
 .preview-text{overflow-wrap:anywhere}
+.consent-check,.identity-check{display:flex;grid-template-columns:none;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid var(--line);border-radius:13px;color:var(--ink);font-size:14px}
+.consent-check input,.identity-check input{width:18px;height:18px;margin:1px 0 0;flex:none}
+.audio-controls{display:flex;align-items:center;gap:10px;margin-top:12px}
+.button.stop{background:var(--red);color:#fff}
+.recording-clock{font-variant-numeric:tabular-nums;color:var(--muted)}
+.local-audio-card.recording{border-color:#dc9191;box-shadow:0 0 0 3px rgba(165,49,49,.08),var(--shadow)}
+.local-audio-card.recording .recording-clock{color:var(--red)}
+.local-review-items{display:grid;gap:10px;margin:12px 0}
+.local-review-item{display:grid;grid-template-columns:minmax(0,1fr) minmax(180px,240px);gap:10px;padding:12px;border:1px solid var(--line);border-radius:13px;background:#fbfdff}
+.local-review-item.risk{border-color:#e8d7b4;background:#fffbf4}
+.local-review-item textarea{min-height:76px;font-family:inherit;font-size:14px}
+.local-review-controls{display:grid;gap:8px;align-content:start}
+.local-review-controls label{display:flex;align-items:center;gap:7px}
+.local-review-controls input[type="checkbox"]{width:16px;height:16px}
+.local-badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.local-badge{font-size:10px;border-radius:99px;padding:3px 7px;background:#fff0c9;color:#765a22}
+.gesy-copy-row{display:flex;align-items:center;gap:12px;margin-top:12px;padding:12px;border:1px dashed #b9c9d6;border-radius:13px}
 @media(max-width:700px){
  .structured-preview .brief-section,.structured-preview .detail-section{padding:11px}
  .review-attention-hint{flex-basis:100%;padding-left:31px}
+ .local-review-item{grid-template-columns:1fr}
+ .audio-controls,.gesy-copy-row{align-items:stretch;flex-direction:column}
 }

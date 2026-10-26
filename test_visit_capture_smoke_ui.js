@@ -28,6 +28,8 @@ function harness(authenticated, query = "") {
       id, hidden: false, disabled: false, value: "", textContent: "", className: "",
       dataset: {}, children: [], attributes: {},
       classList: {
+        add(name) { classNames.add(name); },
+        remove(name) { classNames.delete(name); },
         toggle(name, force) {
           if (force) classNames.add(name);
           else classNames.delete(name);
@@ -109,6 +111,7 @@ function harness(authenticated, query = "") {
     URLSearchParams,
     setTimeout(fn) {fn(); return 1;},
     clearTimeout() {},
+    clearInterval() {},
     console,
   };
   vm.runInNewContext(app, scope, {filename: "app.js"});

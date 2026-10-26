@@ -19,7 +19,7 @@ def test_visit_capture_surface_has_one_final_save_and_three_projections():
     assert 'data-level="brief"' in html
     assert 'data-level="detail"' in html
     assert 'id="candidateInput"' in html
-    assert "ούτε αποθήκευση αρχικών εγγράφων" in html
+    assert "δεν αποστέλλονται στο Render ή σε cloud AI" in html
 
 
 def test_visit_capture_client_uses_only_protected_local_endpoints_and_transient_candidate():
@@ -33,10 +33,12 @@ def test_visit_capture_client_uses_only_protected_local_endpoints_and_transient_
     assert "patient_id: patientId" in js
     assert "candidate: state.candidate" in js
     assert "heidi" not in js.lower()
-    assert "gesy" not in js.lower()
     assert "gmail" not in js.lower()
     assert "zadarma" not in js.lower()
-    assert "http://" not in js and "https://" not in js
+    assert 'const LOCAL_ORIGIN = "http://127.0.0.1:8765"' in js
+    assert "https://" not in js
+    assert '"/clinical/visit-capture/context/renew"' in js
+    assert "gesy_copy" in js
 
 
 def test_visit_capture_preview_is_automatic_and_save_remains_explicit():
@@ -93,7 +95,7 @@ def test_dia_copy_prompt_produces_three_explicit_nonidentifying_sections():
     assert 'id="exampleBtn"' in html
     for section in ("SNAPSHOT", "VISIT BRIEF", "ENCOUNTER DETAIL"):
         assert section in html
-    assert "μόνο συνθετικό" in html.lower()
+    assert "μονο το συνθετικό" in html.lower()
     assert 'navigator.clipboard.writeText(prompt)' in js
     assert 'parseDiaSummary(input)' in js
     assert 'previewText").textContent' in js
@@ -146,3 +148,55 @@ def test_dia_readability_is_demo_only_and_preserves_original_protected_save():
     assert "localStorage" not in js
     assert ".detail-section" in css
     assert "[hidden]{display:none!important}" in css
+
+
+def test_local_audio_ui_is_consent_gated_source_faithful_and_explicit():
+    html = _read("static/cockpit/visit-capture/index.html")
+    js = _read("static/cockpit/visit-capture/app.js")
+    for id_ in (
+        "localAudioPanel", "patientInformed", "startRecordingBtn", "stopRecordingBtn",
+        "recordingClock", "localReviewPanel", "localReviewItems",
+        "localIdentityConfirmed", "prepareLocalCandidateBtn", "copyGesyBtn",
+    ):
+        assert f'id="{id_}"' in html
+    assert '$("startRecordingBtn").disabled = !available || !$("patientInformed").checked' in js
+    assert "navigator.mediaDevices.getUserMedia({audio: true})" in js
+    assert 'new MediaRecorder(stream, {mimeType: LOCAL_MIME})' in js
+    assert 'state.localPort.postMessage(localEnvelope("job_start"' in js
+    assert "}), [audio]);" in js
+    assert "window.opener = null" in js
+    assert 'event.origin !== LOCAL_ORIGIN || event.source !== opener' in js
+    assert 'result.schema_version !== "local_visit_audio_result_v1"' in js
+    assert 'textNode.dataset.originalText' in js
+    assert 'role: "local_visit_audio"' in js
+    assert 'source_identity_state: "consistent"' in js
+    assert '$("localIdentityConfirmed").checked' in js
+    assert 'pending.type = "checkbox"' in js
+    assert 'badge.textContent = "πρόταση: πιθανή εκκρεμότητα"' in js
+    assert 'LOCAL_DISPOSITIONS.filter((value) => value !== "pending_obligation")' in js
+    assert 'Array.from($("localReviewItems").children).forEach' in js
+    assert 'responsible_role: "unspecified"' in js
+
+
+def test_local_audio_context_renewal_precedes_preview_and_save_and_gesy_is_copy_only():
+    html = _read("static/cockpit/visit-capture/index.html")
+    js = _read("static/cockpit/visit-capture/app.js")
+    assert 'async function renewLocalContext()' in js
+    assert 'prior_context_id: identity.contextId' in js
+    assert 'await renewLocalContext();\n      state.localCandidateActive = true' in js
+    assert 'if (state.localCandidateActive) await renewLocalContext();' in js
+    assert 'navigator.clipboard.writeText(state.preview.gesy_copy)' in js
+    assert "δεν ενημερώνει το ΓεΣΥ" in html
+    assert "gesy_copy" in js
+
+
+def test_local_launcher_has_one_exact_cloud_destination_and_loopback_upload():
+    launcher = _read("local_visit_audio/launcher.js")
+    assert 'const PRODUCTION_ORIGIN = "https://ortho-reception-backend.onrender.com"' in launcher
+    assert 'fetch("/api/process"' in launcher
+    assert 'fetch("/api/cancel"' in launcher
+    assert 'keepalive: true' in launcher
+    assert launcher.count("https://") == 1
+    assert 'event.origin !== PRODUCTION_ORIGIN || event.source !== child' in launcher
+    assert 'crypto.getRandomValues(data)' in launcher
+    assert 'port.postMessage(envelope("job_result"' in launcher

@@ -1,0 +1,30 @@
+{
+  "bottle_sha256": "d521452157b1117f909f441ce90165c360a7dcd9785c87d14cabc28934572a90",
+  "ffmpeg_sha256": "7f6028378534aa10a2dfa07d807ddcc0d18c869bf5c2f64c89efcc18ee88c4ee",
+  "formula": "ffmpeg",
+  "formula_version": "9.0.2_1",
+  "install_receipt_sha256": "1b15324d0fe8268cd5eaf618c45abc6e2839aa5b57282a7b3cf59dca8a4092f2",
+  "libraries": {
+    "/opt/homebrew/Cellar/dav1d/1.5.4/lib/libdav1d.7.dylib": "c7939084000fb430b9d846a56d7a153879f6f2b8549e335cc14a8da2b107dc0d",
+    "/opt/homebrew/Cellar/ffmpeg/9.0.2_1/lib/libavcodec.63.1.102.dylib": "887a9775777c2fdb45228fb7776c3f040e4cf56a0cce2b773ae1b978e26dce5a",
+    "/opt/homebrew/Cellar/ffmpeg/9.0.2_1/lib/libavdevice.63.1.102.dylib": "99a6af906ee84af0dd5f59cab9e121c7a61a25c2b60bf5c3d1c86de5b11eef7b",
+    "/opt/homebrew/Cellar/ffmpeg/9.0.2_1/lib/libavfilter.12.1.102.dylib": "abe7d1e33964d21e427907accd0671cf79b30725bb73e418c304efacc42cae0a",
+    "/opt/homebrew/Cellar/ffmpeg/9.0.2_1/lib/libavformat.63.1.102.dylib": "29cf1a49a39f4e8e99c7bfa6f7aef3df2e7d91c8282cd7e1ef1fb206aec75779",
+    "/opt/homebrew/Cellar/ffmpeg/9.0.2_1/lib/libavutil.61.1.102.dylib": "0377aea088208e69d29c03caeb960ca395fdbcd646335dc0a87748bfe81f8525",
+    "/opt/homebrew/Cellar/ffmpeg/9.0.2_1/lib/libswresample.7.1.102.dylib": "8d35eb7639343a837ac4e97cfe1742a293b9bc514a790e5db822927628122d2f",
+    "/opt/homebrew/Cellar/ffmpeg/9.0.2_1/lib/libswscale.10.1.102.dylib": "518909dce64a42971a838278cf43ba2bd77bd172ba0eccb3c6ba273e25be7cda",
+    "/opt/homebrew/Cellar/lame/4.0/lib/libmp3lame.0.dylib": "60d64aa53ac90a2fb0af33feada0a2149efbfebd1add281d4d978bf1339e72ec",
+    "/opt/homebrew/Cellar/libvmaf/3.2.1/lib/libvmaf.3.dylib": "a825cdd3ff46fa6282aa1cb9328c701e9950e944f2c8821d88481779b3472d46",
+    "/opt/homebrew/Cellar/libvpx/1.17.0/lib/libvpx.12.dylib": "7cbbd0ab0d9f53a699761a3caccf0ea18bf779d46f7225693cb2c1ac4e7bca3b",
+    "/opt/homebrew/Cellar/mpg123/1.33.7/lib/libmpg123.0.dylib": "c1a5e757f35ca4e15d7888c07c02605a2e583387899ee440176d4e63670f75c8",
+    "/opt/homebrew/Cellar/openssl@4/4.0.3/lib/libcrypto.4.dylib": "eb4e14b7f6ef10df40a60f7a078920c44e6b24be23f76eb1f657142becfeb4e7",
+    "/opt/homebrew/Cellar/openssl@4/4.0.3/lib/libssl.4.dylib": "d223211e5bc6bfa664a8e066024d026f95f5b571c7b17376312344710d142aa7",
+    "/opt/homebrew/Cellar/opus/1.6.1/lib/libopus.0.dylib": "98dcd3cc62c6cf913b789051536ab246c56cc163c74bd8b4968ac467ec74b68b",
+    "/opt/homebrew/Cellar/svt-av1/4.2.0/lib/libSvtAv1Enc.4.2.0.dylib": "84cbb6f982111cf963663834bdeee22a694fcd578202e5719f1e4a8a463f270c",
+    "/opt/homebrew/Cellar/x264/r3222/lib/libx264.165.dylib": "dd765b37f50d44d3ce9593c2c1c2424b48bedac01c7999e93cef87e018bc65b4",
+    "/opt/homebrew/Cellar/x265/4.3/lib/libx265.217.dylib": "77c26ea29afca3c99cdc45354539eca99c1bbd902d6c1e08f7f5ab0156c11cb0",
+    "/opt/homebrew/Cellar/xz/5.8.4/lib/liblzma.5.dylib": "1b2e12cc1b920264f3dd15eeba22e85b8afd589595d8945d1d12a52afa694b09"
+  },
+  "sbom_sha256": "8d425eab5e267b54a5febeaae0aa38678c9d1bbc0d42ee2cacfdbbe1e41dcfc4",
+  "schema_version": "decoder_manifest_v1"
+}
