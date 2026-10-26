@@ -1,3 +1,5 @@
+> **2026-10-26 PRIORITY 2 CORRECTION — PRE-CODE R2 PASS:** Design `58e3b45` independently PASS/COMPLETE_FOR_DECLARED_SCOPE/0:0:0 across the five affected contracts. Implementation branch may proceed after fresh Ops gate; current live feature stays unchanged until post-code R2, CI and release.
+
 > **2026-10-26 PRIORITY 2 CORRECTION — PRE-CODE DESIGN REVIEW:** `58e3b45` defines automatic selected-task note prefill plus general manual/voice new-task creation under the existing Notion owner and one-shot guard. Independent affected R2 pending. No correction code/live write yet.
 
 > **2026-10-26 PRIORITY 2 CORRECTION — DESIGN HOLD:** Product Owner requests top-of-popover new-task create/dictate and automatic editable form filling from speech. Existing completion-only prompt leaves future-tense update suggestions empty; live screenshot shows transcript but blank fields. `codex/notion-task-create-voice` holds bounded Cockpit writer for design and review first. Current production stays enabled; no new task/write attempted by agent.
