@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — Priority 4 local visit audio
 
-> **STATUS (2026-10-26):** Pre-code R2 remains PASS on design `9027d07`. Independent post-code R2 on target `dc5894e` is `BLOCK / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2=0:1:0`: active launcher closure did not call the existing loopback cancellation path before clearing state, so temporary PHI could remain until completion/timeout. Only this bounded lifecycle correction and one delta+cumulative closure review are authorized. No real patient audio/data, model install, merge or release.
+> **STATUS (2026-10-26):** Pre-code R2 remains PASS on design `9027d07`. Original post-code R2 on `dc5894e` blocked only P1-01. Exact bounded correction `b6fd2e3` now initiates authenticated loopback cancel before active launcher state is cleared and adds executable lifecycle coverage; focused evidence remains 47 affected Python PASS, three Node smoke PASS and 37 shared CP regressions PASS. One independent delta+cumulative closure review is next. No real patient audio/data, model install, merge or release.
 > **Previous active plan:** Priority 3 Office Cases is archived at `archive/SLICE_PLAN_PRIORITY3_OFFICE_CASES_2026-10-26.md`; its reviewed production state is unchanged.
 
 ## 1. Objective and acceptance
@@ -46,4 +46,4 @@ The initial independent exact-head R2 found five P1 design gaps: encryption over
 
 Any requirement for cloud processing, transcript persistence, free-form generated record text, direct production-to-loopback networking, automatic identity acceptance, automatic pending/write behavior, a different model/digest or inability to prove complete source accounting reopens design R2.
 
-Next action: correct P1-01 only by sending same-session/request `/api/cancel` before active launcher pagehide/message-error/protocol-failure state is cleared, without cancelling ordinary terminal acknowledgement; add its focused launcher lifecycle regression, reuse affected evidence, then obtain one independent delta+cumulative closure review.
+Next action: one independent read-only P1-01 delta+cumulative closure on exact correction `b6fd2e3`. If PASS, checkpoint the final post-code R2 result and prepare the guarded PR/release gate; no additional review chain.
