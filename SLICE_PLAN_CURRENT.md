@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — Priority 4 local visit audio
 
-> **STATUS (2026-10-26):** Final independent pre-code R2 is `PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2=0:0:0` on corrected design `9027d07` / blob `644c36a`; P1-01–P1-05 are CLOSED. Exact implementation candidate `a66f3b4534c17f253038f1438d0bb7693fd27f40` is in post-code R2 HOLD after 36 focused Python PASS and two Node smoke PASS. No real patient audio/data, merge or release before independent exact-code post-code R2.
+> **STATUS (2026-10-26):** Final independent pre-code R2 is `PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2=0:0:0` on corrected design `9027d07` / blob `644c36a`; P1-01–P1-05 are CLOSED. Exact implementation candidate `a66f3b442b68fd98c42e8d796bbcbcc467ea55b6` is in post-code R2 HOLD after 36 focused Python PASS and two Node smoke PASS. No real patient audio/data, merge or release before independent exact-code post-code R2.
 > **Previous active plan:** Priority 3 Office Cases is archived at `archive/SLICE_PLAN_PRIORITY3_OFFICE_CASES_2026-10-26.md`; its reviewed production state is unchanged.
 
 ## 1. Objective and acceptance
