@@ -1,3 +1,5 @@
+> **2026-10-26 PRIORITY 2 CORRECTION — POST-CODE REVIEW HOLD:** Candidate `03bd28d0afb4b77b12d5639e4aedd0d2d1baf4eb` implements the general new-task create/dictate controls and editable voice prefill for both new and selected tasks. Synthetic 14 Python plus Doctor Shell Node PASS; no live task mutation. Independent R2 review and exact-head CI precede release. Existing production remains on prior Priority 2; no Priority 3.
+
 > **2026-10-26 PRIORITY 2 CORRECTION — PRE-CODE R2 PASS:** Design `58e3b45` independently PASS/COMPLETE_FOR_DECLARED_SCOPE/0:0:0 across the five affected contracts. Implementation branch may proceed after fresh Ops gate; current live feature stays unchanged until post-code R2, CI and release.
 
 > **2026-10-26 PRIORITY 2 CORRECTION — PRE-CODE DESIGN REVIEW:** `58e3b45` defines automatic selected-task note prefill plus general manual/voice new-task creation under the existing Notion owner and one-shot guard. Independent affected R2 pending. No correction code/live write yet.
