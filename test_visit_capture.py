@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from datetime import timedelta
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.pool import StaticPool
+from sqlalchemy.orm import Session
 
-from clinical_data import build_clinical_router
+from clinical_data import VisitCaptureContextORM, build_clinical_router, utcnow
 
 
 CLINICAL_KEY = "synthetic-clinical-key"
@@ -24,6 +26,18 @@ def _client(monkeypatch):
     app = FastAPI()
     app.include_router(build_clinical_router(engine))
     return TestClient(app)
+
+
+def _client_with_engine(monkeypatch):
+    monkeypatch.setenv("CLINICAL_DATA_KEY", CLINICAL_KEY)
+    engine = create_engine(
+        "sqlite+pysqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    app = FastAPI()
+    app.include_router(build_clinical_router(engine))
+    return TestClient(app), engine
 
 
 def _patient(client: TestClient, patient_id: str):
@@ -256,6 +270,92 @@ def test_case_4_stale_a_to_b_context_fails_closed(monkeypatch):
     saved_b = _save(client, context_b["context_id"], _candidate())
     assert saved_b.status_code == 200
     assert saved_b.json()["encounter"]["patient_id"] == "SYN-B"
+
+
+def test_local_audio_context_renew_cas_accepts_exact_expired_prior(monkeypatch):
+    client, engine = _client_with_engine(monkeypatch)
+    _patient(client, "SYN-LOCAL-CAS")
+    prior = _context(client, "SYN-LOCAL-CAS", "synthetic-local-session-0001")
+    with Session(engine) as session:
+        row = session.get(VisitCaptureContextORM, prior["context_id"])
+        row.expires_at = utcnow() - timedelta(minutes=1)
+        session.commit()
+
+    renewed = client.post(
+        "/clinical/visit-capture/context/renew",
+        headers=HEADERS,
+        json={
+            "prior_context_id": prior["context_id"],
+            "patient_id": "SYN-LOCAL-CAS",
+            "client_session_id": "synthetic-local-session-0001",
+        },
+    )
+    assert renewed.status_code == 200
+    assert renewed.json()["context_id"] != prior["context_id"]
+    assert _preview(client, renewed.json()["context_id"], _candidate()).status_code == 200
+    with Session(engine) as session:
+        assert session.get(VisitCaptureContextORM, prior["context_id"]) is None
+
+
+def test_local_audio_context_renew_cas_rejects_mismatch_and_patient_change(monkeypatch):
+    client, engine = _client_with_engine(monkeypatch)
+    _patient(client, "SYN-LOCAL-MUTATION")
+    prior = _context(client, "SYN-LOCAL-MUTATION", "synthetic-local-session-0002")
+
+    for body in (
+        {"prior_context_id": "missing", "patient_id": "SYN-LOCAL-MUTATION", "client_session_id": "synthetic-local-session-0002"},
+        {"prior_context_id": prior["context_id"], "patient_id": "WRONG", "client_session_id": "synthetic-local-session-0002"},
+        {"prior_context_id": prior["context_id"], "patient_id": "SYN-LOCAL-MUTATION", "client_session_id": "wrong-local-session-0002"},
+    ):
+        assert client.post("/clinical/visit-capture/context/renew", headers=HEADERS, json=body).status_code == 409
+        with Session(engine) as session:
+            assert session.get(VisitCaptureContextORM, prior["context_id"]) is not None
+
+    changed = client.post(
+        "/clinical/patients",
+        headers=HEADERS,
+        json={"patient_id": "SYN-LOCAL-MUTATION", "demographics": {"changed": True}},
+    )
+    assert changed.status_code == 200
+    rejected = client.post(
+        "/clinical/visit-capture/context/renew",
+        headers=HEADERS,
+        json={
+            "prior_context_id": prior["context_id"],
+            "patient_id": "SYN-LOCAL-MUTATION",
+            "client_session_id": "synthetic-local-session-0002",
+        },
+    )
+    assert rejected.status_code == 409
+    assert "changed" in rejected.json()["detail"]
+    with Session(engine) as session:
+        assert session.get(VisitCaptureContextORM, prior["context_id"]) is not None
+
+
+def test_local_audio_candidate_preserves_semantic_sections_and_deterministic_gesy(monkeypatch):
+    client = _client(monkeypatch)
+    _patient(client, "SYN-LOCAL-SEMANTICS")
+    context = _context(client, "SYN-LOCAL-SEMANTICS", "synthetic-local-session-0003")
+    candidate = _candidate()
+    candidate["source_bindings"].append({"source_ref": "local-audio:ABCDEFGHIJKLMNOPQRSTUV", "role": "local_visit_audio"})
+    provenance = ["local-audio:ABCDEFGHIJKLMNOPQRSTUV"]
+    base = {"provenance": provenance, "verification": "source_stated", "certainty": "certain"}
+    candidate.update({
+        "history": [{"text": "Δεν αναφέρει πρόσφατο τραυματισμό", **base}],
+        "options_discussed": [{"text": "Συζητήθηκε η πιθανότητα έγχυσης", **base}],
+        "recommendations": [{"text": "Προτάθηκε φυσιοθεραπεία", "type": "therapy", **base}],
+        "completed_actions": [{"text": "Έγινε έγχυση σήμερα", **base}],
+        "patient_preferences": [{"text": "Η ασθενής δεν αποφάσισε για χειρουργείο", "status": "undecided", **base}],
+        "follow_up": [{"text": "Επανεκτίμηση σε τρεις μήνες", **base}],
+        "administrative_notes": [{"text": "Χρειάζεται έντυπο παραπομπής", **base}],
+    })
+    preview = _preview(client, context["context_id"], candidate)
+    assert preview.status_code == 200
+    body = preview.json()
+    assert "ΠΡΟΤΙΜΗΣΗ ΑΣΘΕΝΟΥΣ: Η ασθενής δεν αποφάσισε" in body["detail"]
+    assert "Επιλογές που συζητήθηκαν:\nΣυζητήθηκε η πιθανότητα έγχυσης" in body["gesy_copy"]
+    assert "Κλινικές συστάσεις:\nΠροτάθηκε φυσιοθεραπεία" in body["gesy_copy"]
+    assert "Τελικές αποφάσεις:" in body["gesy_copy"]
 
 
 def test_case_5_partial_medication_stays_partial(monkeypatch):

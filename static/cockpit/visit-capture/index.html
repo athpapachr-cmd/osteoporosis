@@ -83,6 +83,52 @@
       </div>
     </section>
 
+    <section class="card local-audio-card" id="localAudioPanel" hidden>
+      <div class="card-head">
+        <div>
+          <span class="step-dot" aria-hidden="true">●</span>
+          <div>
+            <h2>Τοπική υπαγόρευση επίσκεψης</h2>
+            <p>Ηχογράφηση, Whisper και ταξινόμηση μόνο σε αυτόν τον Mac. Τίποτα δεν αποστέλλεται σε cloud AI.</p>
+          </div>
+        </div>
+        <span id="localAudioState" class="state-chip err" role="status">Δεν συνδέθηκε</span>
+      </div>
+      <label class="consent-check">
+        <input id="patientInformed" type="checkbox" />
+        <span>Ο ασθενής ενημερώθηκε ότι γίνεται καταγραφή.</span>
+      </label>
+      <div class="audio-controls">
+        <button id="startRecordingBtn" class="button primary" type="button" disabled>Έναρξη</button>
+        <button id="stopRecordingBtn" class="button stop" type="button" disabled>Διακοπή</button>
+        <strong id="recordingClock" class="recording-clock">00:00</strong>
+      </div>
+      <p id="localAudioMessage" class="helper" role="status">Άνοιξε το Visit Capture από τον τοπικό launcher.</p>
+    </section>
+
+    <section class="card local-review-card" id="localReviewPanel" hidden>
+      <div class="card-head">
+        <div>
+          <span class="step-dot" aria-hidden="true">✓</span>
+          <div>
+            <h2>Έλεγχος τοπικού προσχεδίου</h2>
+            <p>Το κείμενο αντιγράφεται αυτούσιο. Διόρθωσε μόνο ό,τι χρειάζεται και επιβεβαίωσε την ταυτότητα πριν από preview.</p>
+          </div>
+        </div>
+      </div>
+      <div id="localRiskPanel" class="review-attention" hidden>
+        <strong>Έλεγξε αυτά</strong>
+        <p id="localRiskMessage"></p>
+        <label class="identity-check"><input id="localRisksConfirmed" type="checkbox" /><span>Έλεγξα τα επισημασμένα στοιχεία.</span></label>
+      </div>
+      <div id="localReviewItems" class="local-review-items"></div>
+      <label class="identity-check">
+        <input id="localIdentityConfirmed" type="checkbox" />
+        <span>Επιβεβαιώνω ότι η καταγραφή ανήκει στον επιλεγμένο ασθενή.</span>
+      </label>
+      <button id="prepareLocalCandidateBtn" class="button secondary" type="button" disabled>Προετοιμασία ασφαλούς preview</button>
+    </section>
+
     <section class="card capture-card">
       <div class="card-head">
         <div>
@@ -136,6 +182,11 @@
 
       <div id="blockingNotice" class="blocking-notice" hidden></div>
 
+      <div id="gesyCopyRow" class="gesy-copy-row" hidden>
+        <button id="copyGesyBtn" class="button secondary" type="button">Αντιγραφή για ΓεΣΥ</button>
+        <span id="gesyCopyStatus" class="helper" role="status">Αντιγραφή μόνο — δεν ενημερώνει το ΓεΣΥ.</span>
+      </div>
+
       <div class="save-row" id="saveRow" hidden>
         <div>
           <strong>Τελική κλινική πράξη</strong>
@@ -147,8 +198,8 @@
     </section>
 
     <section class="privacy-note">
-      <strong>Όριο πρώτης υλοποίησης</strong>
-      <p>Η δοκιμή δέχεται μόνο συνθετικό ή πλήρως αποταυτοποιημένο κείμενο και δεν γράφει στη βάση. Δεν γίνεται live ανάγνωση Dia, Heidi ή ΓεΣΥ ούτε αποθήκευση αρχικών εγγράφων. Η καταγραφή σε ασθενή χρησιμοποιεί την υπάρχουσα προστατευμένη ροή και απαιτεί έγκυρο δομημένο JSON. Η επεξεργασία αναγνωρίσιμων δεδομένων Dia/Heidi/ΓεΣΥ δεν έχει ακόμη ολοκληρώσει τη χωριστή τεχνική και λειτουργική πιστοποίηση.</p>
+      <strong>Όριο τοπικής καταγραφής</strong>
+      <p>Η δοκιμή κειμένου παραμένει χωρίς ασθενή και χωρίς εγγραφή. Η τοπική καταγραφή ενεργοποιείται μόνο από τον launcher του Mac, μετά από ενημέρωση του ασθενούς και επιβεβαιωμένη ταυτότητα. Ήχος, Whisper JSON, prompt και απάντηση μοντέλου δεν αποστέλλονται στο Render ή σε cloud AI. Στον προστατευμένο server φτάνει μόνο το ελεγμένο candidate για preview και το ρητό Save. Η «Αντιγραφή για ΓεΣΥ» ενημερώνει μόνο το clipboard.</p>
     </section>
   </main>
 
