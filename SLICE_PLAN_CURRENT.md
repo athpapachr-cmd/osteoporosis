@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — Priority 3 Office Cases
 
-> **STATUS (2026-10-26):** Product Owner confirmed Priority 2 works, asked to continue to the next roadmap priority, and chose separate records for each accident payment. Priority 3 design `3405af09006d1616a1a264e5e0d8bb801745a753` passed independent pre-code R2 closure, COMPLETE_FOR_DECLARED_SCOPE, P0:P1:P2=0:0:0. Implementation belongs only to isolated branch `codex/office-cases-priority3`; no migration, merge or deploy yet.
+> **STATUS (2026-10-26):** Product Owner confirmed Priority 2 works, asked to continue to the next roadmap priority, and chose separate records for each accident payment. Priority 3 design `3405af09006d1616a1a264e5e0d8bb801745a753` passed independent pre-code R2 closure. Implementation on `codex/office-cases-priority3` at code/SQL/test `54d72e9d815fc0e2d25bd5038f4666e045443575` passed independent post-code R2 0:0:0 and exact code-head CI 14/14. Reviewed admin migration is installed and metadata-verified in Aiven `osteoporosis`; temporary access IP was removed. PR #223 merge, Render deploy, no-write smoke and real clinician acceptance remain pending. No Priority 4.
 > **Previous active plan:** archived unchanged at `archive/SLICE_PLAN_PR1_HEIDI_TRANSCRIPT_2026-10-26.md`. PR-1's identifiable-transcript privacy/release HOLD remains unchanged.
 
 ## 1. Objective and acceptance
