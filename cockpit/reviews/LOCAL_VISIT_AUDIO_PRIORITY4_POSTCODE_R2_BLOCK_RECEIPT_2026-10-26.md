@@ -1,10 +1,10 @@
 # Priority 4 local visit audio — independent POST-CODE R2 BLOCK receipt
 
-**Date:** 2026-10-26 Asia/Nicosia.  
-**Reviewer mode:** independent read-only exact-code R2.  
-**Exact reviewed implementation target:** `dc5894ec80d29d4a3a6c2f06dba598be931af032`.  
-**Runtime/test commit:** `a66f3b442b68fd98c42e8d796bbcbcc467ea55b6`.  
-**Request/head:** `7045e757e16b0d0d8e9d1733f1a695a7034c846e`; drift after `dc5894e` was proven documentation-only.  
+**Date:** 2026-10-26 Asia/Nicosia.
+**Reviewer mode:** independent read-only exact-code R2.
+**Exact reviewed implementation target:** `dc5894ec80d29d4a3a6c2f06dba598be931af032`.
+**Runtime/test commit:** `a66f3b442b68fd98c42e8d796bbcbcc467ea55b6`.
+**Request/head:** `7045e757e16b0d0d8e9d1733f1a695a7034c846e`; drift after `dc5894e` was proven documentation-only.
 **Fresh remote main:** `889cc14b0efb607b553db4f2735a3c3bac9dae34`.
 
 ## Verdict

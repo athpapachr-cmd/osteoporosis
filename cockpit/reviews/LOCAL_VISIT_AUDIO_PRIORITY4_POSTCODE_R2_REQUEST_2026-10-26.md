@@ -1,6 +1,6 @@
 # Priority 4 local visit audio — independent exact-code POST-CODE R2 request
 
-**Date:** 2026-10-26 Asia/Nicosia.  
+**Date:** 2026-10-26 Asia/Nicosia.
 **Mode:** one fresh independent **READ-ONLY** implementation-fidelity, privacy and clinical-write review; stop after the finite verdict. No edits, dependency/model installation, real patient audio/data, database access, merge, deployment or external write.
 
 ## Exact target and authority

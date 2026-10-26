@@ -1,6 +1,6 @@
 # Priority 4 local visit audio — independent POST-CODE R2 final PASS receipt
 
-**Date:** 2026-10-26 Asia/Nicosia.  
+**Date:** 2026-10-26 Asia/Nicosia.
 **Review:** one independent read-only post-code R2 plus one bounded P1-01 delta+cumulative closure, now stopped under `PROCEDURES.md` P5.
 
 ## Exact identity

@@ -1,6 +1,6 @@
 # Priority 4 local visit audio — focused POST-CODE R2 P1-01 closure request
 
-**Date:** 2026-10-26 Asia/Nicosia.  
+**Date:** 2026-10-26 Asia/Nicosia.
 **Mode:** one independent read-only **delta + affected-cumulative** closure review under `PROCEDURES.md` P5; stop after disposition. No edits, installs, patient/data access, PR, merge, deploy or external write.
 
 ## Exact targets
