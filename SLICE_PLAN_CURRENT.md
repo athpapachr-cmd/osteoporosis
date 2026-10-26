@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — Priority 4 local visit audio
 
-> **STATUS (2026-10-26):** Final independent pre-code R2 is `PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2=0:0:0` on corrected design `9027d07` / blob `644c36a`; P1-01–P1-05 are CLOSED. Exact implementation+evidence target `dc5894e` (runtime/test `a66f3b4`) is frozen in post-code R2 HOLD after 47 affected Python PASS, two Node smoke PASS and 37 shared Visit Capture/CP regressions PASS. No real patient audio/data, model install, merge or release before independent exact-code post-code R2.
+> **STATUS (2026-10-26):** Pre-code R2 remains PASS on design `9027d07`. Independent post-code R2 on target `dc5894e` is `BLOCK / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2=0:1:0`: active launcher closure did not call the existing loopback cancellation path before clearing state, so temporary PHI could remain until completion/timeout. Only this bounded lifecycle correction and one delta+cumulative closure review are authorized. No real patient audio/data, model install, merge or release.
 > **Previous active plan:** Priority 3 Office Cases is archived at `archive/SLICE_PLAN_PRIORITY3_OFFICE_CASES_2026-10-26.md`; its reviewed production state is unchanged.
 
 ## 1. Objective and acceptance
@@ -46,4 +46,4 @@ The initial independent exact-head R2 found five P1 design gaps: encryption over
 
 Any requirement for cloud processing, transcript persistence, free-form generated record text, direct production-to-loopback networking, automatic identity acceptance, automatic pending/write behavior, a different model/digest or inability to prove complete source accounting reopens design R2.
 
-Next action: one independent read-only exact-code post-code R2 on target `dc5894e` using the prepared finite request. If PASS, checkpoint once and prepare the guarded PR/release decision; if BLOCK, apply only the smallest bounded correction and obtain one delta+cumulative closure review.
+Next action: correct P1-01 only by sending same-session/request `/api/cancel` before active launcher pagehide/message-error/protocol-failure state is cleared, without cancelling ordinary terminal acknowledgement; add its focused launcher lifecycle regression, reuse affected evidence, then obtain one independent delta+cumulative closure review.
