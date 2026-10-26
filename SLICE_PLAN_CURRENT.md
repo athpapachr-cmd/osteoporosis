@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — Priority 4 local visit audio
 
-> **STATUS (2026-10-26):** PR #227 merged as `1c46da5`; Render `dep-dbfscc142hec739rnrs0` is LIVE and production no-write smoke passed. Stable local installation completed on FileVault with pinned Whisper/Krikri/FFmpeg/Ollama, then a real synthetic E2E exposed and corrected only two Mac portability failures: exact Ollama digest prefix normalization and unsupported macOS `RLIMIT_AS`. The correction has 55 affected Python plus three Node smokes PASS and a full 4:48 synthetic mixed-language pipeline PASS with 55 exact-source units and explicit unclassified accounting. A minimal correction PR/CI/release remains before final readiness. No real patient audio/data or clinical write occurred.
+> **STATUS (2026-10-26): READY_FOR_PRODUCT_OWNER_SMOKE.** PR #227 feature merge `1c46da5` and PR #228 target-Mac correction `a467ae5` are LIVE on Render `dep-dbfsm3e0tbcc73du91qg`; production no-write smoke passed. FileVault and the exact pinned FFmpeg/Whisper/Krikri/Ollama local runtime are installed. Final merged-tree real loopback HTTP synthetic 4:48 execution returned 200 with strict schema, 55 exact-source units, risk flags and 11 explicit unclassified units; temporary content was cleaned. Technical writer is released. No real patient audio/data or clinical write occurred; first informed-patient use and clinician accuracy/timing acceptance remain.
 > **Previous active plan:** Priority 3 Office Cases is archived at `archive/SLICE_PLAN_PRIORITY3_OFFICE_CASES_2026-10-26.md`; its reviewed production state is unchanged.
 
 ## 1. Objective and acceptance
@@ -46,4 +46,4 @@ The initial independent exact-head R2 found five P1 design gaps: encryption over
 
 Any requirement for cloud processing, transcript persistence, free-form generated record text, direct production-to-loopback networking, automatic identity acceptance, automatic pending/write behavior, a different model/digest or inability to prove complete source accounting reopens design R2.
 
-Next action: publish the bounded Mac portability correction, run exact-head CI and a fresh Ops RELEASE gate, then squash merge, observe the native Render deploy and repeat bounded anonymous no-write smoke. Re-run the installed synthetic E2E from merged source before clinician first use. No additional architecture review.
+Next action: clinician starts the installed loopback companion, performs the first informed-patient Start/Stop from local Visit Capture, reviews every risk/unclassified item, confirms source identity, previews and explicitly saves only if correct. Record actual elapsed time and any terminology/omission correction. No additional technical writer is active.
