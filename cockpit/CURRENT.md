@@ -1,3 +1,5 @@
+> **2026-10-26 PRIORITY 2 CORRECTION — PR #222 RELEASE HOLD:** Candidate code `03bd28d0afb4b77b12d5639e4aedd0d2d1baf4eb` is proposed in draft PR #222. General new-task create/dictate and editable voice prefill are synthetic-test PASS; independent post-code R2 and exact-head CI remain required. Current production stays on the earlier Priority 2 code. No agent-created real task or Priority 3.
+
 > **2026-10-26 PRIORITY 2 CORRECTION — POST-CODE REVIEW HOLD:** Candidate `03bd28d0afb4b77b12d5639e4aedd0d2d1baf4eb` implements the general new-task create/dictate controls and editable voice prefill for both new and selected tasks. Synthetic 14 Python plus Doctor Shell Node PASS; no live task mutation. Independent R2 review and exact-head CI precede release. Existing production remains on prior Priority 2; no Priority 3.
 
 > **2026-10-26 PRIORITY 2 CORRECTION — PRE-CODE R2 PASS:** Design `58e3b45` independently PASS/COMPLETE_FOR_DECLARED_SCOPE/0:0:0 across the five affected contracts. Implementation branch may proceed after fresh Ops gate; current live feature stays unchanged until post-code R2, CI and release.
