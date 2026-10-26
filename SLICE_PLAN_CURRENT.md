@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — Priority 4 local visit audio
 
-> **STATUS (2026-10-26):** Pre-code and final corrected post-code R2 are PASS 0:0:0. [Draft PR #227](https://github.com/athpapachr-cmd/osteoporosis/pull/227) exact head `818d77b` is MERGEABLE with 15/15 GitHub checks PASS, and a fresh Ops RELEASE gate passed against Ops `d6bb19a` with `natural_language_semantic_change=false`. Evidence: 47 affected Python PASS, three Node smoke PASS and 37 shared CP regressions PASS. This docs-only checkpoint must receive its own exact-head guard before ready/squash merge, native Render observation and anonymous no-write smoke. No real patient audio/data, model install, clinical write, merge or release yet.
+> **STATUS (2026-10-26):** PR #227 merged as `1c46da5`; Render `dep-dbfscc142hec739rnrs0` is LIVE and production no-write smoke passed. Stable local installation completed on FileVault with pinned Whisper/Krikri/FFmpeg/Ollama, then a real synthetic E2E exposed and corrected only two Mac portability failures: exact Ollama digest prefix normalization and unsupported macOS `RLIMIT_AS`. The correction has 55 affected Python plus three Node smokes PASS and a full 4:48 synthetic mixed-language pipeline PASS with 55 exact-source units and explicit unclassified accounting. A minimal correction PR/CI/release remains before final readiness. No real patient audio/data or clinical write occurred.
 > **Previous active plan:** Priority 3 Office Cases is archived at `archive/SLICE_PLAN_PRIORITY3_OFFICE_CASES_2026-10-26.md`; its reviewed production state is unchanged.
 
 ## 1. Objective and acceptance
@@ -46,4 +46,4 @@ The initial independent exact-head R2 found five P1 design gaps: encryption over
 
 Any requirement for cloud processing, transcript persistence, free-form generated record text, direct production-to-loopback networking, automatic identity acceptance, automatic pending/write behavior, a different model/digest or inability to prove complete source accounting reopens design R2.
 
-Next action: publish this docs-only material checkpoint, wait for its exact-head CI/canonical-impact guard, refresh the PR head/mergeability and RELEASE gate, then ready/squash merge. Observe the native Render deployment and perform bounded anonymous no-write smoke. No additional architecture review.
+Next action: publish the bounded Mac portability correction, run exact-head CI and a fresh Ops RELEASE gate, then squash merge, observe the native Render deploy and repeat bounded anonymous no-write smoke. Re-run the installed synthetic E2E from merged source before clinician first use. No additional architecture review.

@@ -16,6 +16,7 @@ from .pipeline import (
     WHISPER_COMMIT,
     WHISPER_MODEL_SHA256,
     PipelineConfig,
+    normalize_ollama_digest,
     verify_decoder,
     verify_filevault,
 )
@@ -130,9 +131,12 @@ def create_ollama_model(config: PipelineConfig, gguf: Path) -> None:
             (item for item in tags.get("models", []) if item.get("name") == MODEL_NAME),
             None,
         )
-        if not installed or not isinstance(installed.get("digest"), str):
+        if not installed:
             raise RuntimeError("Pinned Ollama model alias was not installed")
-        manifest_digest = installed["digest"]
+        try:
+            manifest_digest = normalize_ollama_digest(installed.get("digest"))
+        except ValueError as exc:
+            raise RuntimeError("Pinned Ollama model alias returned an invalid digest") from exc
     finally:
         process.terminate()
         try:
