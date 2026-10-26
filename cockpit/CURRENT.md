@@ -1,3 +1,5 @@
+> **2026-10-26 RF PREFILL — PRE-CODE R2 PASS / CODE NEXT:** Corrected design `fac0127` passed independent affected closure 0:0:0. Implement optional RF patient DOB/phone and exact surgery-form prefill, then synthetic checks and independent exact-code R2 before release. Existing LIVE revision stays unchanged.
+
 > **2026-10-26 RF PREFILL — DESIGN P1 CORRECTION / CLOSURE HOLD:** Independent R2 found one date-boundary P1 on DOB versus PDF age. Addendum now binds both to one Cyprus issue date for DOB-present RF and preserves the blank-DOB path. One focused independent closure is next; no code or production change.
 
 > **2026-10-26 RF PREFILL CORRECTION — DESIGN R2 HOLD:** Product Owner chose future RF Tracking DOB/phone entry; exact issued RF supplies an editable surgery prefill, while old RF missing data remains manual. [Affected addendum](OFFICE_CASES_RF_PREFILL_CORRECTION_2026-10-26.md) is the sole design candidate. One independent pre-code R2 before code; current release stays LIVE and unchanged.
