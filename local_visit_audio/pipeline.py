@@ -11,6 +11,7 @@ import os
 import re
 import resource
 import subprocess
+import sys
 import tempfile
 import time
 import wave
@@ -95,6 +96,17 @@ def _digest(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def normalize_ollama_digest(value: object) -> str:
+    """Return one canonical digest for both Ollama API wire representations."""
+
+    if not isinstance(value, str):
+        raise ValueError("invalid Ollama digest")
+    raw = value.removeprefix("sha256:")
+    if not re.fullmatch(r"[0-9a-f]{64}", raw):
+        raise ValueError("invalid Ollama digest")
+    return "sha256:" + raw
 
 
 def verify_filevault() -> None:
@@ -207,7 +219,10 @@ def verify_environment(config: PipelineConfig) -> None:
 def _limit_decoder() -> None:
     resource.setrlimit(resource.RLIMIT_CPU, (120, 120))
     resource.setrlimit(resource.RLIMIT_FSIZE, (MAX_AUDIO_BYTES, MAX_AUDIO_BYTES))
-    if hasattr(resource, "RLIMIT_AS"):
+    # macOS exposes RLIMIT_AS but rejects setting it with EINVAL/ValueError.
+    # Keep the portable CPU/file limits there; apply the address-space cap on
+    # platforms where the kernel implements it.
+    if hasattr(resource, "RLIMIT_AS") and sys.platform != "darwin":
         two_gib = 2 * 1024 * 1024 * 1024
         resource.setrlimit(resource.RLIMIT_AS, (two_gib, two_gib))
 

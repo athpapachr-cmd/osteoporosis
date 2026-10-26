@@ -25,6 +25,7 @@ from .pipeline import (
     MODEL_SHA256,
     PipelineConfig,
     _digest,
+    normalize_ollama_digest,
     private_request_dir,
     verify_environment,
 )
@@ -59,7 +60,9 @@ class DedicatedOllama:
             raise LocalAudioError("classification_failed")
         if proof["model"] != MODEL_NAME or proof["source_gguf_sha256"] != MODEL_SHA256:
             raise LocalAudioError("classification_failed")
-        if not re.fullmatch(r"sha256:[0-9a-f]{64}", str(proof["ollama_manifest_digest"])):
+        try:
+            proof_digest = normalize_ollama_digest(proof["ollama_manifest_digest"])
+        except ValueError:
             raise LocalAudioError("classification_failed")
         source_gguf = self.config.support_dir / "models" / "llama-krikri-8b-instruct-q4_k_m.gguf"
         if not source_gguf.is_file() or _digest(source_gguf) != MODEL_SHA256:
@@ -107,7 +110,13 @@ class DedicatedOllama:
                         (item for item in tags.get("models", []) if item.get("name") == MODEL_NAME),
                         None,
                     )
-                    if installed is None or installed.get("digest") != proof["ollama_manifest_digest"]:
+                    try:
+                        installed_digest = normalize_ollama_digest(
+                            installed.get("digest") if installed is not None else None
+                        )
+                    except ValueError:
+                        raise LocalAudioError("classification_failed")
+                    if installed_digest != proof_digest:
                         raise LocalAudioError("classification_failed")
                     return
                 except LocalAudioError:

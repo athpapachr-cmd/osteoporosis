@@ -14,8 +14,10 @@ from local_visit_audio.pipeline import (
     MODEL_KEYS,
     LocalAudioPipeline,
     PipelineConfig,
+    _limit_decoder,
     _batches,
     classify,
+    normalize_ollama_digest,
     risk_flags,
     segment_source_units,
 )
@@ -35,6 +37,34 @@ def _config(tmp_path: Path) -> PipelineConfig:
 
 def _empty_model_result() -> dict[str, list[int]]:
     return {key: [] for key in MODEL_KEYS}
+
+
+@pytest.mark.parametrize(
+    ("wire_value", "canonical"),
+    [
+        ("a" * 64, "sha256:" + "a" * 64),
+        ("sha256:" + "b" * 64, "sha256:" + "b" * 64),
+    ],
+)
+def test_ollama_digest_normalizes_both_documented_wire_shapes(wire_value, canonical):
+    assert normalize_ollama_digest(wire_value) == canonical
+
+
+@pytest.mark.parametrize("wire_value", [None, "", "sha256:", "A" * 64, "sha512:" + "a" * 64])
+def test_ollama_digest_rejects_non_exact_values(wire_value):
+    with pytest.raises(ValueError):
+        normalize_ollama_digest(wire_value)
+
+
+def test_decoder_child_limits_skip_unimplemented_macos_address_space(monkeypatch):
+    applied = []
+    monkeypatch.setattr(pipeline_module.sys, "platform", "darwin")
+    monkeypatch.setattr(pipeline_module.resource, "setrlimit", lambda key, value: applied.append((key, value)))
+    _limit_decoder()
+    assert [key for key, _value in applied] == [
+        pipeline_module.resource.RLIMIT_CPU,
+        pipeline_module.resource.RLIMIT_FSIZE,
+    ]
 
 
 def test_classifier_accounts_for_every_id_and_never_generates_text(monkeypatch, tmp_path):
