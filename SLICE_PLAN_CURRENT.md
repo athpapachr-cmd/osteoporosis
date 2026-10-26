@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — Priority 4 local visit audio
 
-> **STATUS (2026-10-26):** Pre-code and final corrected post-code R2 are PASS 0:0:0. [Draft PR #227](https://github.com/athpapachr-cmd/osteoporosis/pull/227) is OPEN/DRAFT/MERGEABLE from reviewed code/test/CI `b6fd2e3` plus docs-only checkpoints; exact-head CI is running. Evidence: 47 affected Python PASS, three Node smoke PASS and 37 shared CP regressions PASS. No real patient audio/data, model install, merge or release yet.
+> **STATUS (2026-10-26):** Pre-code and final corrected post-code R2 are PASS 0:0:0. [Draft PR #227](https://github.com/athpapachr-cmd/osteoporosis/pull/227) exact head `818d77b` is MERGEABLE with 15/15 GitHub checks PASS, and a fresh Ops RELEASE gate passed against Ops `d6bb19a` with `natural_language_semantic_change=false`. Evidence: 47 affected Python PASS, three Node smoke PASS and 37 shared CP regressions PASS. This docs-only checkpoint must receive its own exact-head guard before ready/squash merge, native Render observation and anonymous no-write smoke. No real patient audio/data, model install, clinical write, merge or release yet.
 > **Previous active plan:** Priority 3 Office Cases is archived at `archive/SLICE_PLAN_PRIORITY3_OFFICE_CASES_2026-10-26.md`; its reviewed production state is unchanged.
 
 ## 1. Objective and acceptance
@@ -46,4 +46,4 @@ The initial independent exact-head R2 found five P1 design gaps: encryption over
 
 Any requirement for cloud processing, transcript persistence, free-form generated record text, direct production-to-loopback networking, automatic identity acceptance, automatic pending/write behavior, a different model/digest or inability to prove complete source accounting reopens design R2.
 
-Next action: observe applicable exact-head PR #227 CI and canonical-impact guard, qualify only source-proven non-applicable scope guards if any, then obtain the fresh Ops RELEASE gate before ready/merge. No additional architecture review.
+Next action: publish this docs-only material checkpoint, wait for its exact-head CI/canonical-impact guard, refresh the PR head/mergeability and RELEASE gate, then ready/squash merge. Observe the native Render deployment and perform bounded anonymous no-write smoke. No additional architecture review.
