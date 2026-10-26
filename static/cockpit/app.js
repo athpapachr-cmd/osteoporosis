@@ -38,6 +38,7 @@
   // The existing protected surgery loader owns the ONLY source of Home detail.
   let surgeryGeneration = 0;
   let surgeryReady = false;
+  let surgeryAuthEpoch = 0;
   const surgeryDateParts = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Asia/Nicosia", year: "numeric", month: "2-digit", day: "2-digit"
   });
@@ -206,7 +207,8 @@
     }
   }
 
-  async function apiJson(url, options = {}) {
+  async function apiJson(url, options = {}, current = () => true) {
+    const authAtStart = surgeryAuthEpoch;
     const response = await fetch(clinicalURL(url), {
       credentials: "same-origin",
       headers: {
@@ -217,6 +219,12 @@
     });
 
     if (!response.ok) {
+      // A current protected failure revokes every Cockpit patient/financial
+      // projection. A late response from an earlier auth epoch cannot do so.
+      if ((response.status === 401 || response.status === 403)
+          && authAtStart === surgeryAuthEpoch && current()) {
+        window.dispatchEvent(new window.CustomEvent("clinical:unauthenticated"));
+      }
       const error = new Error(`HTTP ${response.status}`);
       error.status = response.status;
       try {
@@ -379,7 +387,7 @@
     // reloads. An older success or failure can never restore/clear a newer view.
     clearSurgeryProjection("Φόρτωση…");
     try {
-      const rows = await apiJson("/clinical/surgeries");
+      const rows = await apiJson("/clinical/surgeries", {}, () => generation === surgeryGeneration);
       if (generation !== surgeryGeneration) return;
       if (!validSurgeryRows(rows)) throw new Error("Invalid protected surgery source");
       surgeryRows = rows;
@@ -582,10 +590,12 @@
   const calendarRetry = $("cockpitCalendarRetry");
   if (calendarRetry) calendarRetry.addEventListener("click", loadCockpitContext);
   if (typeof window !== "undefined" && typeof window.addEventListener === "function") window.addEventListener("clinical:authenticated", () => {
+    ++surgeryAuthEpoch;
     loadCockpitContext();
     loadSurgeryQueue();
   });
   if (typeof window !== "undefined" && typeof window.addEventListener === "function") window.addEventListener("clinical:unauthenticated", () => {
+    ++surgeryAuthEpoch;
     ++surgeryGeneration; // Fence any protected read already in flight.
     clearSurgeryProjection("Σύνδεση απαιτείται", true);
   });

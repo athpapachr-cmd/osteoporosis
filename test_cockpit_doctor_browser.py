@@ -457,6 +457,16 @@ def browser_suite(width, screenshot_name):
                         "indication_code":"SYN", "scheduled_date":"2026-11-01",
                         "surgery_id":None}], "next_cursor":None, "has_more":False}
                     if auth["authenticated"] else {"detail":"Unauthorized"})
+            if "/clinical/office-cases/accidents?" in url:
+                return route.fulfill(status=200 if auth["authenticated"] else 401,
+                    json={"cases":[{"case_id":"synthetic-accident-office-01",
+                        "patient_name":"Συνθετικό τροχαίο", "phone":"000000",
+                        "accident_date":"2026-10-01", "visit_date":None,
+                        "writing_started_date":None, "report_sent_date":None,
+                        "amount_due_cents":10000, "received_cents":2500,
+                        "balance_cents":7500, "revision":2}],
+                        "has_more":False,"next_offset":None}
+                    if auth["authenticated"] else {"detail":"Unauthorized"})
             if url.endswith("/clinical/reception-calls/handled"):
                 assert route.request.method == "POST"
                 assert route.request.post_data_json == {"todo_id": "td_RM-SYN-1", "handled": True}
@@ -567,6 +577,9 @@ def browser_suite(width, screenshot_name):
             if url.endswith("/clinical/surgeries"):
                 return route.fulfill(status=200 if auth["authenticated"] else 401,
                                      json=SURGERIES if auth["authenticated"] else {"detail": "Unauthorized"})
+            if "/clinical/surgeries/" in url:
+                return route.fulfill(status=401 if not auth["authenticated"] else 200,
+                    json={"detail":"Unauthorized"} if not auth["authenticated"] else SURGERIES)
             if url.endswith("/clinical/clinic-utilities/rf/api/outcomes/search"):
                 assert route.request.method == "POST"
                 assert route.request.post_data_json == {"query": "", "scope": "all", "page": 1}
@@ -782,6 +795,20 @@ def browser_suite(width, screenshot_name):
         assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1"), "horizontal overflow"
         exercise_reception_call_peek(page, width, call_source)
         assert_delayed_recent_purged_after_logout(page)
+        page.evaluate("window.dispatchEvent(new Event('clinical:authenticated'))")
+        expect(page.locator("#surgeryTableBody")).to_contain_text("Συνθετικός Ασθενής")
+        page.locator("#doctorActionsButton").click()
+        page.locator("#doctorPopoverContent").get_by_role("button", name="Περιστατικά ιατρείου").click()
+        page.locator('[data-office-tab="accidents"]').click()
+        expect(page.locator("#accidentList")).to_contain_text("Συνθετικό τροχαίο")
+        page.locator('[data-office-tab="rf"]').click()
+        expect(page.locator("#officeRfList")).to_contain_text("RF Συνθετικός")
+        page.locator('[data-office-tab="surgery"]').click()
+        auth["authenticated"] = False
+        page.locator('#surgeryTableBody button[data-action="up"]').first.click()
+        expect(page.locator("#accidentList")).to_be_empty()
+        expect(page.locator("#officeRfList")).to_be_empty()
+        expect(page.locator("#accidentForm button[type=submit]")).to_be_disabled()
         page.evaluate("""() => {
             document.getElementById('visitDiaPreviewText').textContent='SYN-PHI';
             document.getElementById('visitSelectedName').textContent='SYN-PHI';

@@ -5,7 +5,7 @@ const fs = require("node:fs");
 const vm = require("node:vm");
 const app = fs.readFileSync("static/cockpit/app.js", "utf8");
 const shell = fs.readFileSync("static/cockpit/doctor-shell.js", "utf8");
-assert.equal((app.match(/apiJson\("\/clinical\/surgeries"\)/g) || []).length, 1,
+assert.equal((app.match(/const rows = await apiJson\("\/clinical\/surgeries"/g) || []).length, 1,
   "Home must not add a second surgery reader");
 for (const text of [app, shell]) assert.doesNotMatch(text, /localStorage|sessionStorage/);
 assert.doesNotMatch(shell, /\/api\/outcomes\/[^"]+\/events/);
