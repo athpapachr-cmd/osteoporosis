@@ -1819,3 +1819,10 @@ The PO authorized installation. Squash merge `56d37eeef5d331b53bb13afbd014160cc6
 
 Merged code `4b61af01e4b65c2020cc8df8ed9bb231fe29a027` is LIVE at Render deploy `dep-dbf6mum7bikc73btbid0`. No-PHI smoke: Cockpit assets 200, deployed JS source hash matches, storage PostgreSQL online, unauthenticated task routes 401, zero error-level app logs. The Notion integration token is absent and task voice provider approval is not configured, so state is **DEPLOYED_FEATURE_OFF**. No real Notion task or provider call occurred. Activation needs a dedicated internal connection shared only with the existing database and task-specific voice approval; first actual task action belongs to the clinician after one compact review. Priority 3 remains on hold.
 
+---
+
+## 2026-10-26 — Cockpit Priority 2 source and voice activated for clinician smoke
+
+The Product Owner installed the dedicated Notion token in Render and approved OpenAI processing of short task audio/transcripts. The bounded task and voice flags were enabled. An authenticated production peek first exposed a `42501` guard-table privilege blocker, so the application failed closed before any Notion call. [PR #220](https://github.com/athpapachr-cmd/osteoporosis/pull/220) added safe SQLSTATE-only diagnostics; [PR #221](https://github.com/athpapachr-cmd/osteoporosis/pull/221) supplied an independently reviewed least-privilege Aiven migration, exact-head CI 2/2 PASS. The existing administrator installed the empty unique guard table through one verify-full TLS `psql` transaction; metadata and app privileges verified 8/8, no patient rows accessed or network rule changed.
+
+Live authenticated peek then returned four active Notion rows with direct links/revisions and `voice_available=true`. The Cockpit dropdown displayed all four with manual **Ενημέρωση** and **Υπαγόρευση** actions. State is **READY_FOR_PRODUCT_OWNER_SMOKE**. The agent did not send patient audio/content to OpenAI or confirm any Notion write; those first real outcomes await a clinician-selected task and explicit review. Priority 3 remains on hold.
