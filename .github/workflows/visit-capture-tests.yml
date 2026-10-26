@@ -22,6 +22,7 @@ on:
       - "test_visit_capture_ui.py"
       - "test_visit_capture_smoke_ui.js"
       - "test_visit_capture_local_audio_ui.js"
+      - "test_local_audio_launcher_lifecycle.js"
       - "test_local_visit_audio.py"
       - "test_cockpit_home.py"
       - ".github/workflows/visit-capture-tests.yml"
@@ -46,6 +47,7 @@ on:
       - "test_visit_capture_ui.py"
       - "test_visit_capture_smoke_ui.js"
       - "test_visit_capture_local_audio_ui.js"
+      - "test_local_audio_launcher_lifecycle.js"
       - "test_local_visit_audio.py"
       - "test_cockpit_home.py"
       - ".github/workflows/visit-capture-tests.yml"
@@ -70,12 +72,14 @@ jobs:
           node --check static/cockpit/visit-capture/app.js
           node --check local_visit_audio/launcher.js
           node --check test_visit_capture_local_audio_ui.js
+          node --check test_local_audio_launcher_lifecycle.js
           node --check static/cockpit/patient-entry.js
           node --check static/cockpit/visit-capture/entry.js
       - name: Visit Capture no-patient browser simulation
         run: |
           node test_visit_capture_smoke_ui.js
           node test_visit_capture_local_audio_ui.js
+          node test_local_audio_launcher_lifecycle.js
       - name: Visit Capture focused tests
         run: pytest -q test_visit_capture.py test_visit_capture_ui.py test_local_visit_audio.py test_cockpit_home.py
       - name: CP1 browser dependency

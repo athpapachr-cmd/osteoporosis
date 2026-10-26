@@ -51,9 +51,10 @@
     return message;
   }
 
-  function closeChannel(message) {
+  function closeChannel(message, cancelActive = true) {
     clearTimeout(terminalTimer);
     clearTimeout(processingTimer);
+    if (cancelActive && activeRequest) cancelLocalProcessing();
     if (controller) controller.abort();
     controller = null;
     activeRequest = "";
@@ -80,7 +81,7 @@
     if (!port) return;
     if (!ERROR_CODES.has(code)) code = "internal_failure";
     port.postMessage(envelope("job_error", requestId, {code, request_id: requestId}));
-    terminalTimer = setTimeout(() => closeChannel("Η τοπική εργασία έκλεισε χωρίς επιβεβαίωση."), 5000);
+    terminalTimer = setTimeout(() => closeChannel("Η τοπική εργασία έκλεισε χωρίς επιβεβαίωση.", false), 5000);
   }
 
   function uniqueAllowed(values, allowed) {
@@ -124,6 +125,7 @@
     activeRequest = requestId;
     controller = new AbortController();
     let timedOut = false;
+    let serverTerminal = false;
     processingTimer = setTimeout(() => {
       timedOut = true;
       cancelLocalProcessing();
@@ -145,6 +147,7 @@
         body: payload.audio,
         signal: controller.signal,
       });
+      serverTerminal = true;
       const encoded = await response.arrayBuffer();
       if (encoded.byteLength > 1048576) throw new Error("validation_failed");
       let result;
@@ -158,8 +161,9 @@
       if (!validResult(result, requestId)) throw new Error("validation_failed");
       port.postMessage(envelope("job_result", requestId, {result}));
       status.textContent = "Η τοπική επεξεργασία ολοκληρώθηκε. Αναμένεται η επιβεβαίωση στο Cockpit.";
-      terminalTimer = setTimeout(() => closeChannel("Η επιβεβαίωση άργησε· ξεκινήστε νέα τοπική συνεδρία."), 5000);
+      terminalTimer = setTimeout(() => closeChannel("Η επιβεβαίωση άργησε· ξεκινήστε νέα τοπική συνεδρία.", false), 5000);
     } catch (error) {
+      if (!serverTerminal && !timedOut && error.name !== "AbortError") cancelLocalProcessing();
       const code = timedOut ? "timeout" : (error.name === "AbortError" ? "cancelled" : error.message);
       sendError(requestId, ERROR_CODES.has(code) ? code : "internal_failure");
     } finally {
@@ -179,11 +183,9 @@
       return;
     }
     if (message.type === "job_cancel" && exactKeys(message.payload, [])) {
-      cancelLocalProcessing();
-      if (controller) controller.abort();
       closeChannel("Η εργασία ακυρώθηκε και τα προσωρινά δεδομένα διαγράφηκαν.");
     } else if (message.type === "job_ack" && exactKeys(message.payload, [])) {
-      closeChannel("Ολοκληρώθηκε. Για νέα επίσκεψη ανοίξτε νέα τοπική συνεδρία.");
+      closeChannel("Ολοκληρώθηκε. Για νέα επίσκεψη ανοίξτε νέα τοπική συνεδρία.", false);
     } else {
       closeChannel("Απορρίφθηκε μήνυμα εκτός σειράς.");
     }
