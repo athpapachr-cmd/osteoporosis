@@ -1,4 +1,6 @@
-> **2026-10-26 PRIORITY 2 CORRECTION — MERGED / DEPLOY BUILDING:** PR #222 merged to main `5663b9863439bdc79b31291d9c14d9668b652fa8`; Render auto-deploy `dep-dbfciamq1p3s73f35vt0` is building. Independent R2 PASS 0:0:0 and final-head CI 11/11 PASS. Next LIVE verification and no-write smoke; no agent-created real task or Priority 3.
+> **2026-10-26 PRIORITY 2 CORRECTION — RENDER LIVE / SMOKE NEXT:** Reviewed commit `5663b9863439bdc79b31291d9c14d9668b652fa8` is live on Render deploy `dep-dbfciamq1p3s73f35vt0` (03:31:56 UTC). Next bounded static and unauthenticated-route smoke; no real task write by this agent or Priority 3.
+
+> **2026-10-26 PRIORITY 2 CORRECTION — MERGED / DEPLOY BUILDING:** PR #222 merged to main `5663b9863439bdc79b31291d9c14d9668b652fa8`; Render auto-deploy `dep-dbfciamq1p3s73f35vt0` was observed building before activation. Independent R2 PASS 0:0:0 and final-head CI 11/11 PASS. No agent-created real task or Priority 3.
 
 > **2026-10-26 PRIORITY 2 CORRECTION — PR #222 R2 + CODE CI PASS:** Candidate `b080c6da7cf8b3795c99a67f0c8f08ebbcfd4219` has independent affected R2 closure PASS 0:0:0 and five code-head GitHub checks SUCCESS. The microphone failure path now stops acquired tracks; 18 Python, Doctor Shell Node and Chromium 1280/390 synthetic checks PASS. Next fresh release gate and merge, followed by Render auto-deploy and no-write smoke. Current production stays on the earlier Priority 2 code. No agent-created real task or Priority 3.
 
