@@ -1,7 +1,7 @@
 # Priority 4 — local visit audio capture and source-faithful Visit Capture
 
 > **DATE:** 2026-10-26 Asia/Nicosia.
-> **STATUS:** INITIAL PRE-CODE R2 BLOCKED `0:5:0`; bounded P1-01–P1-05 design corrections applied for independent delta + affected-cumulative closure. No runtime authority before closure PASS.
+> **STATUS:** FIRST PRE-CODE R2 `0:5:0`; first closure closed P1-01/P1-03/P1-04/P1-05 and left only P1-02 context renewal open (`0:1:0`). Atomic exact-prior-context renewal/CAS correction applied for focused independent closure. No runtime authority before closure PASS.
 > **PRODUCT-OWNER DIRECTION:** recording, transcription and first-pass structuring stay on the clinician's Mac; no visit audio or raw transcript is sent to Render, OpenAI or another cloud AI service. The clinician must not have to read a twenty-minute transcript line by line.
 > **OWNER:** the existing protected Visit Capture flow in `clinical_data.py` and `static/cockpit/visit-capture/`, extended by a loopback-only macOS companion.
 
@@ -183,7 +183,11 @@ The companion process has no database credential, Clinical Key, Notion token or 
 - Priority 4 v1 fails closed unless setup, every service start and every new recording job positively verify FileVault/storage-at-rest protection. Recording controls remain disabled on an unknown, encrypting/decrypting, disabled or unverifiable state. There is no clinician override in v1; any override requires a separate explicit Product Owner/privacy design decision and new review.
 - Normal logs contain timing, model identifier/digest, byte counts and sanitized outcome codes only.
 
-The 30-minute recording ceiling can outlive the current server context, which expires 30 minutes after patient confirmation. The original context is therefore never reused for final preview. Immediately before the first protected preview—and again after any later context expiry—the production page calls the existing protected context-create endpoint with the unchanged in-memory `client_session_id` and selected `patient_id`. This server transaction deletes every older context for that client session before issuing one fresh 30-minute context and revalidates the patient's current `updated_at`. Renewal proceeds only while the authenticated session, selected patient, local session ID, local request ID and clinician's explicit source-identity confirmation are unchanged. Auth loss, patient/context mutation, local-session/request change or renewal failure destroys the candidate and requires a new patient confirmation; the browser never changes the candidate's destination in response to renewal. Preview/Save use only the newest returned context ID, so a stale old context cannot authorize a write.
+The 30-minute recording ceiling can outlive the current server context, which expires 30 minutes after patient confirmation. The original context is therefore never reused for final preview. Immediately before the first protected preview—and again after any later context expiry—the production page calls a new protected `POST /clinical/visit-capture/context/renew` CAS endpoint with the exact closed body `{"prior_context_id":"...","patient_id":"...","client_session_id":"..."}`. All three strings retain the existing context field limits; unknown fields are forbidden.
+
+In one database transaction, renewal locks and loads the exact prior context row by ID even if its lease has expired, verifies its stored client session and patient equal the request, locks the current patient row, and compares the prior context's stored `patient_updated_at` to the current patient `updated_at`. Only after every check passes does it delete all older contexts for that client session and issue one fresh 30-minute context with the same patient and current matching version. Missing prior row, session/patient mismatch or patient-version mismatch returns 409 without deleting a context or issuing a replacement. The existing ordinary context-create endpoint is not a renewal path. No database schema change is required.
+
+The browser requests renewal only while the authenticated session, selected patient, original context ID, local session ID, local request ID and clinician's explicit source-identity confirmation are unchanged. It replaces the original context ID only with the successful CAS response. Auth loss, 401/409, patient/version mutation, local-session/request change or renewal failure destroys the candidate and requires a new patient confirmation; it never changes the candidate's destination in response to renewal. Preview/Save use only the newest returned context ID, so a stale old context cannot authorize a write.
 
 ## 7. Source-faithful extraction contract
 
@@ -374,7 +378,7 @@ The selected model satisfies the v1 gate only together with deterministic comple
 
 ## 12. Test and review gates
 
-The first independent pre-code R2 returned `BLOCK / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2=0:5:0`. This corrected revision closes only the requested design seams: v1 FileVault fail-closed with no override; fresh protected-context issuance before preview; an exact one-shot message protocol and closed result schema; a canonical semantic-disposition mapping that cannot promote recommendations/options/history into decisions; and one pinned, bounded FFmpeg decoder contract. These corrections require one independent delta + affected-cumulative closure review before code.
+The first independent pre-code R2 returned `BLOCK / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2=0:5:0`. The first independent correction closure closed FileVault, protocol/result, semantic mapping and decoder P1s, but correctly kept context renewal open (`0:1:0`) because ordinary context creation could adopt a patient version changed during recording. This revision changes only that seam to the atomic exact-prior-context/patient-version CAS in section 6. It requires one focused P1-02 delta + affected closure before code.
 
 Before implementation:
 
@@ -394,7 +398,7 @@ Implementation evidence must include:
 - decoder tests for exact identity/receipt/manifest, fixed arguments, malformed/bomb-like/over-duration input, CPU/memory/file/timeout bounds, no network and content-free logs;
 - timeout/cancellation/deletion tests proving content cleanup and no candidate after any cleanup-verification failure;
 - browser tests for informed-patient gate, Start/Stop, visible recording state, popup handshake, patient switch/auth loss invalidation, compact review, GeSY copy and explicit Save;
-- maximum-duration synthetic recording plus processing/review followed by fresh protected-context renewal, and negative stale/auth/patient/local-session/request-change cases;
+- maximum-duration synthetic recording plus processing/review followed by successful exact-prior-context CAS renewal; expired-but-retained prior context success; and negative missing prior row, wrong client session/patient, changed `patient_updated_at`, concurrent mutation, 401, local-session/request/identity-change cases proving no replacement context/candidate/preview/Save;
 - a synthetic local end-to-end audio test with network observation proving no audio/transcript request reaches Render or another remote host;
 - existing Visit Capture focused tests and applicable full regression suites;
 - independent exact-head post-code R2 before merge/release.
