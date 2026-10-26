@@ -470,6 +470,7 @@ def browser_suite(width, screenshot_name):
     auth = {"authenticated": False, "linked": False, "confirmations": 0}
     call_source = {"status": 200, "handled": False, "write_status": 200}
     notion_source = {"writes": 0}
+    rf_bridge = {"linked": False, "exact_reads": 0}
     with sync_playwright() as pw:
         executable = shutil.which("google-chrome") or shutil.which("chromium")
         browser = pw.chromium.launch(headless=True, executable_path=executable or None, args=["--no-sandbox"])
@@ -495,8 +496,27 @@ def browser_suite(width, screenshot_name):
                         "stage":"scheduled", "patient_name":"RF Συνθετικός",
                         "identity_number":"SYN-001", "laterality":"left",
                         "indication_code":"SYN", "scheduled_date":"2026-11-01",
-                        "surgery_id":None}], "next_cursor":None, "has_more":False}
+                        "surgery_id":"synthetic-linked-surgery" if rf_bridge["linked"] else None,
+                        "linked_surgery":{"surgery_id":"synthetic-linked-surgery",
+                            "full_name":"RF Συνθετικός", "procedure_type":"Συνθετική επέμβαση",
+                            "surgery_date":"2026-11-01", "room_entry_time":"09:30",
+                            "status":"deleted"} if rf_bridge["linked"] else None}],
+                        "next_cursor":None, "has_more":False}
                     if auth["authenticated"] else {"detail":"Unauthorized"})
+            if url.endswith("/clinical/office-cases/rf/synthetic-rf-office-01"):
+                rf_bridge["exact_reads"] += 1
+                return route.fulfill(status=200, json={"id":"synthetic-rf-office-01",
+                    "revision":3, "stage":"performed", "patient_name":"RF Συνθετικός",
+                    "identity_number":"SYN-001", "laterality":"left",
+                    "indication_code":"SYN", "scheduled_date":"2026-11-01",
+                    "surgery_id":"synthetic-linked-surgery",
+                    "linked_surgery":{"surgery_id":"synthetic-linked-surgery",
+                        "full_name":"RF Συνθετικός", "procedure_type":"Συνθετική επέμβαση",
+                        "surgery_date":"2026-11-01", "room_entry_time":"09:30",
+                        "status":"deleted"}})
+            if "/clinical/office-cases/surgeries/from-rf/" in url:
+                rf_bridge["linked"] = True
+                return route.fulfill(status=409, json={"detail":"RF already linked to surgery"})
             if "/clinical/office-cases/accidents?" in url:
                 return route.fulfill(status=200 if auth["authenticated"] else 401,
                     json={"cases":[{"case_id":"synthetic-accident-office-01",
@@ -841,6 +861,20 @@ def browser_suite(width, screenshot_name):
         assert_stale_surgery_write_keeps_new_draft(page, 401)
         page.locator("#doctorActionsButton").click()
         page.locator("#doctorPopoverContent").get_by_role("button", name="Περιστατικά ιατρείου").click()
+        page.locator('[data-office-tab="rf"]').click()
+        expect(page.locator("#officeRfList")).to_contain_text("RF Συνθετικός")
+        page.get_by_role("button", name="Προσθήκη στη λίστα χειρουργείων").click()
+        page.locator("#surgeryDateOfBirth").fill("1966-01-01")
+        page.locator("#surgeryPhone").fill("000000")
+        page.locator("#surgeryProcedureType").fill("Συνθετική επέμβαση")
+        page.locator("#surgeryForm button[type=submit]").click()
+        expect(page.locator('[data-office-tab-panel="rf"]')).to_be_visible()
+        expect(page.locator("#officeRfNote")).to_contain_text("Η RF άλλαξε ή συνδέθηκε")
+        expect(page.locator("#officeRfList")).to_contain_text("Συνδεδεμένο χειρουργείο: synthetic-linked-surgery")
+        expect(page.locator("#officeRfList")).to_contain_text("Αφαιρέθηκε από τα pending")
+        expect(page.locator("#officeRfList")).to_contain_text("Πραγματοποιήθηκε")
+        assert rf_bridge["exact_reads"] == 1
+        assert page.get_by_role("button", name="Προσθήκη στη λίστα χειρουργείων").count() == 0
         page.locator('[data-office-tab="accidents"]').click()
         expect(page.locator("#accidentList")).to_contain_text("Συνθετικό τροχαίο")
         page.locator('[data-office-tab="rf"]').click()

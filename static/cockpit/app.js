@@ -442,6 +442,7 @@
     event.preventDefault();
     const writeEpoch = surgeryAuthEpoch;
     const surgeryId = $("surgeryId").value;
+    const rfSourceId = $("surgeryRfApplicationId").value;
     const payload = {
       full_name: $("surgeryFullName").value.trim(),
       identity_number: $("surgeryIdentityNumber").value.trim(),
@@ -459,9 +460,9 @@
           method: "PUT",
           body: JSON.stringify(payload)
         });
-      } else if ($("surgeryRfApplicationId").value) {
+      } else if (rfSourceId) {
         await apiJson("/clinical/office-cases/surgeries/from-rf/" +
-          encodeURIComponent($("surgeryRfApplicationId").value), {
+          encodeURIComponent(rfSourceId), {
           method: "POST",
           body: JSON.stringify({
             expected_rf_revision: Number($("surgeryRfRevision").value),
@@ -487,6 +488,11 @@
       window.CockpitOfficeCases?.refreshRF?.();
     } catch (error) {
       if (writeEpoch !== surgeryAuthEpoch) return;
+      if (rfSourceId && error.status === 409) {
+        resetSurgeryForm();
+        window.CockpitOfficeCases?.showRFConflict?.(rfSourceId);
+        return;
+      }
       $("surgeryQueueNote").textContent = error.detail || "Δεν ήταν δυνατή η αποθήκευση της εγγραφής.";
       if ([401, 403, 503].includes(error.status)) await loadSurgeryQueue();
     }

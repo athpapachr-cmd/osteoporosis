@@ -156,6 +156,15 @@ def test_exact_rf_bridge_and_surgery_time(monkeypatch):
     assert changed.json()["room_entry_time"] is None
     linked = client.get("/clinical/office-cases/rf?stage=scheduled", headers=HEADERS).json()
     assert linked["applications"][0]["surgery_id"] == rows[0]["surgery_id"]
+    assert linked["applications"][0]["linked_surgery"]["procedure_type"] == "Synthetic RF surgery"
+    assert client.delete("/clinical/surgeries/" + rows[0]["surgery_id"], headers=HEADERS).status_code == 200
+    assert client.get("/clinical/surgeries", headers=HEADERS).json() == []
+    deleted_link = client.get("/clinical/office-cases/rf?stage=scheduled", headers=HEADERS).json()
+    assert deleted_link["applications"][0]["linked_surgery"]["status"] == "deleted"
+    assert deleted_link["applications"][0]["linked_surgery"]["surgery_id"] == rows[0]["surgery_id"]
+    exact = client.get("/clinical/office-cases/rf/" + rf_id, headers=HEADERS)
+    assert exact.status_code == 200
+    assert exact.json()["linked_surgery"]["status"] == "deleted"
     with Session(engine) as session:
         assert len(session.scalars(select(SurgeryQueueORM)).all()) == 1
         assert len(session.scalars(select(SurgeryDetailORM)).all()) == 1

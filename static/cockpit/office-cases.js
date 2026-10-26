@@ -2,6 +2,8 @@
   "use strict";
   const $ = id => document.getElementById(id);
   const money = new Intl.NumberFormat("el-CY", {style:"currency", currency:"EUR"});
+  const recordedTime = new Intl.DateTimeFormat("el-CY", {timeZone:"Asia/Nicosia",
+    year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit", hourCycle:"h23"});
   const stageNames = {issued:"Εκδόθηκε", submitted:"Υποβλήθηκε", approved:"Εγκρίθηκε",
     rejected:"Απορρίφθηκε", scheduled:"Προγραμματίστηκε", performed:"Πραγματοποιήθηκε"};
   let activeTab = "surgery", generation = 0, detailGeneration = 0,
@@ -11,6 +13,13 @@
 
   const show = (id, value) => { $(id).textContent = value; };
   function euro(cents) { return cents === null || cents === undefined ? "Άγνωστο" : money.format(cents / 100); }
+  function cyprusTimestamp(value) {
+    if (!value || typeof value !== "string") return "Άγνωστη ώρα";
+    // API timestamps are naive UTC, because PostgreSQL columns are timestamp without time zone.
+    const normalized = /(?:Z|[+-]\d{2}:\d{2})$/i.test(value) ? value : value + "Z";
+    const parsed = new Date(normalized);
+    return Number.isNaN(parsed.getTime()) ? "Άγνωστη ώρα" : recordedTime.format(parsed);
+  }
   function cents(value) {
     const match = String(value || "").trim().replace(",", ".").match(/^(\d+)(?:\.(\d{1,2}))?$/);
     if (!match) throw new Error("Συμπλήρωσε ποσό με έως δύο δεκαδικά.");
@@ -77,7 +86,7 @@
       ? "Η προηγούμενη πληρωμή ίσως καταχωρίστηκε. Μετά τη σύνδεση, άνοιξε το περιστατικό και έλεγξε το ιστορικό πριν από νέα καταχώριση."
       : "");
   }
-  function selectTab(tab) {
+  function selectTab(tab, conflict=false) {
     if (!["surgery","accidents","rf"].includes(tab)) return;
     if (tab !== activeTab) { ++generation; ++detailGeneration; }
     activeTab = tab;
@@ -89,8 +98,8 @@
     document.querySelectorAll("[data-office-tab-panel]").forEach(item => {
       item.hidden = item.dataset.officeTabPanel !== tab;
     });
-    if (tab === "accidents") loadAccidents();
-    if (tab === "rf") loadRF(true);
+    if (tab === "accidents") return loadAccidents();
+    if (tab === "rf") return loadRF(true, conflict);
   }
   function open() { selectTab(activeTab); }
 
@@ -175,7 +184,9 @@
         const card = document.createElement("div"); card.className = "office-item";
         card.append(node("strong", euro(payment.amount_cents)),
           node("span", payment.paid_on + " · " + payment.payer +
-            (payment.voided_at ? " · Ακυρώθηκε: " + payment.void_reason : "")));
+            (payment.voided_at ? " · Ακυρώθηκε: " + payment.void_reason : "")),
+          node("span", "Καταχώριση (Κύπρος): " + cyprusTimestamp(payment.created_at) +
+            (payment.voided_at ? " · Ακύρωση (Κύπρος): " + cyprusTimestamp(payment.voided_at) : "")));
         if (!payment.voided_at) card.append(button("Ακύρωση λανθασμένης πληρωμής", () => voidPayment(payment)));
         list.append(card);
       }
@@ -257,13 +268,23 @@
         node("span", "Ένδειξη: " + card.indication_code + " · Πλευρά: " + card.laterality +
           (card.scheduled_date ? " · Ημ. προγραμματισμού: " + card.scheduled_date : "")));
       const actions = document.createElement("div"); actions.className = "office-item-actions";
-      if (card.surgery_id) actions.append(node("span", "Συνδεδεμένο με λίστα χειρουργείων"));
+      if (card.surgery_id) {
+        const surgery = card.linked_surgery;
+        actions.append(node("span", surgery
+          ? "Συνδεδεμένο χειρουργείο: " + surgery.surgery_id + " · " +
+            surgery.full_name + " · " + surgery.procedure_type + " · " +
+            (surgery.surgery_date || "Άγνωστη ημερομηνία") + " · " +
+            ({pending:"Σε αναμονή", completed:"Ολοκληρώθηκε", deleted:"Αφαιρέθηκε από τα pending"}[surgery.status]
+              || surgery.status) +
+            (surgery.room_entry_time ? " · Ώρα αίθουσας: " + surgery.room_entry_time : "")
+          : "Συνδεδεμένο χειρουργείο: " + card.surgery_id));
+      }
       else if (["approved","scheduled"].includes(card.stage))
         actions.append(button("Προσθήκη στη λίστα χειρουργείων", () => window.CockpitSurgeryQueue?.prefillFromRF?.(card)));
       item.append(actions); list.append(item);
     }
   }
-  async function loadRF(reset) {
+  async function loadRF(reset, conflict=false) {
     const token = ++generation;
     if (reset) { rfRows = []; rfCursor = ""; $("officeRfList").replaceChildren(); }
     show("officeRfState", "Φόρτωση…");
@@ -277,7 +298,8 @@
       rfCursor = result.next_cursor || "";
       $("officeRfNext").hidden = !rfCursor;
       show("officeRfState", String(rfRows.length) + (result.has_more ? "+" : "") + " RF");
-      show("officeRfNote", result.has_more ? "Υπάρχουν περισσότερες RF. Η τρέχουσα σελίδα δεν είναι πλήρες μητρώο." : "");
+      show("officeRfNote", (conflict ? "Η RF άλλαξε ή συνδέθηκε. Έλεγξε την τρέχουσα κατάστασή της. " : "") +
+        (result.has_more ? "Υπάρχουν περισσότερες RF. Η τρέχουσα σελίδα δεν είναι πλήρες μητρώο." : ""));
       drawRF();
     } catch (error) {
       if (token !== generation) return;
@@ -304,6 +326,22 @@
     clear(); if (activeTab === "accidents") loadAccidents(); if (activeTab === "rf") loadRF(true);
   });
   window.addEventListener("clinical:unauthenticated", clear);
-  window.CockpitOfficeCases = {open, selectTab, refreshRF() { if (activeTab === "rf") loadRF(true); }};
+  window.CockpitOfficeCases = {open, selectTab,
+    refreshRF() { if (activeTab === "rf") loadRF(true); },
+    async showRFConflict(applicationId) {
+      const refresh = selectTab("rf", true);
+      const token = generation;
+      if (refresh) await refresh;
+      if (token !== generation || activeTab !== "rf") return;
+      try {
+        const card = await api("/clinical/office-cases/rf/" + encodeURIComponent(applicationId));
+        if (token !== generation || activeTab !== "rf") return;
+        rfRows = [card, ...rfRows.filter(row => row.id !== card.id)];
+        drawRF();
+        show("officeRfNote", "Η RF άλλαξε ή συνδέθηκε. Εμφανίζεται η τρέχουσα εγγραφή.");
+      } catch (error) {
+        if (token === generation && activeTab === "rf") show("officeRfNote", errorText(error));
+      }
+    }};
   setAccidentWritesEnabled(false);
 })();

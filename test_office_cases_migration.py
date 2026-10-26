@@ -33,7 +33,8 @@ def test_office_cases_admin_migration_privileges_and_constraints():
         db.execute("INSERT INTO public.clinical_surgery_queue VALUES ('synthetic-surgery')")
         db.execute("INSERT INTO public.clinic_rf_applications VALUES ('synthetic-rf')")
         db.execute("INSERT INTO public.clinical_surgery_details VALUES ('synthetic-surgery','synthetic-rf','09:30',now(),now())")
-        with pytest.raises(errors.RestrictViolation):
+        # PostgreSQL 17 reports 23503; PostgreSQL 18 uses 23001 for RESTRICT.
+        with pytest.raises((errors.ForeignKeyViolation, errors.RestrictViolation)):
             db.execute("DELETE FROM public.clinic_rf_applications WHERE id='synthetic-rf'")
         db.execute("INSERT INTO public.clinical_surgery_queue VALUES ('another-surgery')")
         with pytest.raises(errors.UniqueViolation):

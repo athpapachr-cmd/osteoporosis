@@ -298,10 +298,46 @@ def build_office_cases_router(engine: Engine) -> APIRouter:
             details = session.scalars(select(SurgeryDetailORM).where(
                 SurgeryDetailORM.rf_application_id.in_(ids),
             )).all() if ids else []
-            linked = {detail.rf_application_id: detail.surgery_id for detail in details}
+            surgeries = session.scalars(select(SurgeryQueueORM).where(
+                SurgeryQueueORM.id.in_([detail.surgery_id for detail in details]),
+            )).all() if details else []
+            by_surgery_id = {row.id: row for row in surgeries}
+            linked = {}
+            for detail in details:
+                surgery = by_surgery_id.get(detail.surgery_id)
+                if surgery is not None:
+                    linked[detail.rf_application_id] = surgery_card(surgery, detail)
         for card in result["applications"]:
-            card["surgery_id"] = linked.get(card["id"])
+            card["linked_surgery"] = linked.get(card["id"])
+            card["surgery_id"] = card["linked_surgery"]["surgery_id"] if card["linked_surgery"] else None
         return result
+
+    def surgery_card(surgery: SurgeryQueueORM, detail: SurgeryDetailORM) -> dict:
+        return {
+            "surgery_id": surgery.id, "full_name": surgery.full_name,
+            "procedure_type": surgery.procedure_type,
+            "surgery_date": surgery.surgery_date,
+            "room_entry_time": detail.room_entry_time,
+            "status": surgery.status,
+        }
+
+    @router.get("/rf/{application_id}")
+    def rf_case(application_id: str) -> dict:
+        with Session(engine) as session:
+            app = session.get(RFApplicationORM, application_id)
+            if app is None:
+                raise HTTPException(status_code=404, detail="RF application not found")
+            progress = session.scalar(select(RFApplicationProgressORM).where(
+                RFApplicationProgressORM.application_id == application_id,
+            ))
+            card = _rf_progress_card(app, progress)
+            detail = session.scalar(select(SurgeryDetailORM).where(
+                SurgeryDetailORM.rf_application_id == application_id,
+            ))
+            surgery = session.get(SurgeryQueueORM, detail.surgery_id) if detail else None
+            card["linked_surgery"] = surgery_card(surgery, detail) if surgery and detail else None
+            card["surgery_id"] = surgery.id if surgery else None
+            return card
 
     @router.post("/surgeries/from-rf/{application_id}")
     def add_rf_to_surgery(application_id: str, req: RFToSurgery) -> dict:

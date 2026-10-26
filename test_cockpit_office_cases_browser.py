@@ -69,6 +69,8 @@ def _exercise(width: int):
         assert page.locator('#accidentList img').count() == 0
         page.get_by_role('button', name='Άνοιγμα', exact=True).click()
         expect(page.locator('#accidentPaymentList')).to_contain_text('Συνθετικός πληρωτής')
+        expect(page.locator('#accidentPaymentList')).to_contain_text('Καταχώριση (Κύπρος):')
+        expect(page.locator('#accidentPaymentList')).to_contain_text('13:00')
         expect(page.locator('#accidentDetailSummary')).to_contain_text('70,00')
         OUT.mkdir(exist_ok=True)
         page.screenshot(path=str(OUT / f'office-accidents-{width}.png'))
