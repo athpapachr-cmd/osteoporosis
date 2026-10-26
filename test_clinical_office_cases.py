@@ -41,14 +41,20 @@ def _case_payload(due=10000):
             "amount_due_cents":due}
 
 
-def _rf_source(engine, *, stage="approved", revision=2, application_id="synthetic-rf-office-01"):
+def _rf_source(engine, *, stage="approved", revision=2, application_id="synthetic-rf-office-01",
+               date_of_birth=None, patient_phone=None):
+    payload = {"identity_number":"SYN-001"}
+    if date_of_birth:
+        payload["date_of_birth"] = date_of_birth
+    if patient_phone:
+        payload["patient_phone"] = patient_phone
     with Session(engine) as session:
         session.add(RFApplicationORM(
             id=application_id, patient_identity_key="SYN001",
             patient_name="Synthetic RF Patient", gesy_number="SYN-GESY",
             patient_age=60, pathway="A1", indication_code="synthetic-indication",
             site_key="knee", laterality="left", exact_location="synthetic site",
-            product_key="synthetic-product", payload_json={"identity_number":"SYN-001"},
+            product_key="synthetic-product", payload_json=payload,
             created_at=datetime(2026, 10, 1),
         ))
         session.add(RFApplicationProgressORM(
@@ -59,6 +65,31 @@ def _rf_source(engine, *, stage="approved", revision=2, application_id="syntheti
         ))
         session.commit()
     return application_id
+
+
+def test_exact_rf_detail_prefills_only_saved_contact_and_eligible_source(monkeypatch):
+    client, engine = _client(monkeypatch)
+    current_id = _rf_source(engine, application_id="synthetic-rf-prefill-1",
+                            date_of_birth="1966-01-01", patient_phone="+35799000002")
+    old_id = _rf_source(engine, application_id="synthetic-rf-prefill-2")
+    ineligible_id = _rf_source(engine, application_id="synthetic-rf-prefill-3",
+                               stage="performed", date_of_birth="1966-01-01")
+    assert client.get(f"/clinical/office-cases/rf/{current_id}").status_code == 401
+    listed = client.get("/clinical/office-cases/rf", headers=HEADERS).json()["applications"]
+    assert all("surgery_prefill" not in row for row in listed)
+    current = client.get(f"/clinical/office-cases/rf/{current_id}", headers=HEADERS)
+    assert current.status_code == 200
+    assert current.headers["cache-control"] == "no-store"
+    assert current.json()["surgery_prefill"] == {
+        "date_of_birth":"1966-01-01", "phone":"+35799000002",
+        "procedure_type":"Ραδιοσυχνότητες — synthetic site",
+    }
+    old = client.get(f"/clinical/office-cases/rf/{old_id}", headers=HEADERS).json()
+    assert old["surgery_prefill"]["date_of_birth"] is None
+    assert old["surgery_prefill"]["phone"] is None
+    assert old["surgery_prefill"]["procedure_type"]
+    ineligible = client.get(f"/clinical/office-cases/rf/{ineligible_id}", headers=HEADERS).json()
+    assert ineligible["surgery_prefill"] is None
 
 
 def test_auth_and_accident_case_payment_history(monkeypatch):

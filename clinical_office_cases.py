@@ -44,6 +44,26 @@ def _text(value: str, label: str) -> str:
     return cleaned
 
 
+def _rf_surgery_prefill(app: RFApplicationORM) -> dict[str, str | None]:
+    payload = app.payload_json if isinstance(app.payload_json, dict) else {}
+    birth = payload.get("date_of_birth")
+    if not isinstance(birth, str):
+        birth = None
+    else:
+        try:
+            birth = _date(birth)
+        except ValueError:
+            birth = None
+    phone = payload.get("patient_phone")
+    if not isinstance(phone, str) or not phone.strip() or len(phone) > 40 or not phone.isprintable():
+        phone = None
+    location = _clean_text(app.exact_location)
+    procedure = f"Ραδιοσυχνότητες — {location}" if location else ""
+    if len(procedure) > 240 or any(ord(char) < 32 for char in procedure):
+        procedure = ""
+    return {"date_of_birth": birth, "phone": phone, "procedure_type": procedure}
+
+
 class AccidentCreate(BaseModel):
     patient_name: str = Field(min_length=1, max_length=200)
     phone: str = Field(min_length=1, max_length=40)
@@ -337,6 +357,11 @@ def build_office_cases_router(engine: Engine) -> APIRouter:
             surgery = session.get(SurgeryQueueORM, detail.surgery_id) if detail else None
             card["linked_surgery"] = surgery_card(surgery, detail) if surgery and detail else None
             card["surgery_id"] = surgery.id if surgery else None
+            card["surgery_prefill"] = (
+                _rf_surgery_prefill(app)
+                if card["stage"] in {"approved", "scheduled"} and surgery is None
+                else None
+            )
             return card
 
     @router.post("/surgeries/from-rf/{application_id}")

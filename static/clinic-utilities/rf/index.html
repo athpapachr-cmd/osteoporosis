@@ -114,7 +114,7 @@
     <p class="muted">Η έγκριση δεν σημαίνει προγραμματισμένη ή πραγματοποιημένη θεραπεία. Η προσωπική παρακολούθηση είναι ανεξάρτητη από την έκβαση.</p>
   </div>
 </article>
-<article class="card"><div class="card-title"><span class="step" id="rfPatientStep">2</span><div><h2>Ασθενής & προϊόν</h2><p>Τα στοιχεία ιατρού και προϊόντος συμπληρώνονται server-side.</p></div></div><div class="grid two"><label>Ονοματεπώνυμο<input id="patientName" autocomplete="name"></label><label>Ηλικία<input id="age" type="number" min="1" max="130"></label><label>Αρ. ταυτότητας<input id="identityNumber"></label><label>Αρ. μητρώου ΓεΣΥ<input id="gesyNumber"></label><label class="full">Ιατρός αίτησης<select id="doctorSelect"><option value="papachristou">Φόρτωση ιατρών…</option></select></label>
+<article class="card"><div class="card-title"><span class="step" id="rfPatientStep">2</span><div><h2>Ασθενής & προϊόν</h2><p>Τα στοιχεία ιατρού και προϊόντος συμπληρώνονται server-side.</p></div></div><div class="grid two"><label>Ονοματεπώνυμο<input id="patientName" autocomplete="name"></label><label>Ηλικία<input id="age" type="number" min="1" max="130"></label><label>Ημ. γέννησης · προαιρετικά<input id="patientDob" type="date" autocomplete="off"></label><label>Τηλέφωνο ασθενούς · προαιρετικά<input id="patientPhone" type="tel" maxlength="40" autocomplete="off"></label><p class="muted full">Για προσυμπλήρωση στη λίστα χειρουργείων. Έλεγξε τα στοιχεία πριν από την προσθήκη.</p><label>Αρ. ταυτότητας<input id="identityNumber"></label><label>Αρ. μητρώου ΓεΣΥ<input id="gesyNumber"></label><label class="full">Ιατρός αίτησης<select id="doctorSelect"><option value="papachristou">Φόρτωση ιατρών…</option></select></label>
 <details class="doctor-management full" id="doctorManagement">
 <summary><strong>Διαχείριση ιατρών</strong> <span class="muted">Προσθήκη · επεξεργασία · αφαίρεση</span></summary>
 <p class="muted">Τα στοιχεία των ιατρών διατηρούνται στο προστατευμένο RF. Οι παλαιές αιτήσεις δεν αλλάζουν.</p>
@@ -158,5 +158,5 @@
 </div>
 <p class="muted rf-preview-caveat">Έλεγχος πληρότητας, όχι ιατρική έγκριση ή PDF. Οι κλινικοί έλεγχοι γίνονται κατά την έκδοση.</p>
 </section><div class="action-row"><button type="button" class="btn primary" id="createPdfBtn">Δημιουργία επίσημου PDF</button><button type="button" class="btn ghost" id="clearBtn">Καθαρισμός</button></div><small class="muted">Το PDF δεν αποθηκεύεται ως osteoporosis encounter.</small></div></aside></main>
-</div><script src="/static/clinic-utilities/rf/app.js" defer></script>  <script src="/static/cockpit/shared-nav.js" defer></script>
+</div><script src="/static/clinic-utilities/rf/app.js?v=rf-surgery-prefill-20261026" defer></script>  <script src="/static/cockpit/shared-nav.js" defer></script>
 </body></html>

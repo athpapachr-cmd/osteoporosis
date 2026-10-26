@@ -644,6 +644,8 @@
       identity_number: $('identityNumber').value.trim(),
       gesy_number: $('gesyNumber').value.trim(),
       age: numberOrNull('age'),
+      date_of_birth: $('patientDob').value || null,
+      patient_phone: $('patientPhone').value.trim() || null,
       product_key: $('productSelect').value,
       indication_code: code,
       laterality: $('lateralitySelect').value,
@@ -801,7 +803,8 @@
   // browser storage, and never treat a previous application as a performed RF.
   const rfFields = {
     patient_name: 'patientName', identity_number: 'identityNumber',
-    gesy_number: 'gesyNumber', age: 'age', product_key: 'productSelect',
+    gesy_number: 'gesyNumber', age: 'age', date_of_birth: 'patientDob',
+    patient_phone: 'patientPhone', product_key: 'productSelect',
     indication_code: 'indicationSelect', laterality: 'lateralitySelect',
     exact_location: 'exactLocation', other_area: 'otherArea',
     other_diagnosis: 'otherDiagnosis', additional_notes: 'additionalNotes',
@@ -2141,6 +2144,16 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     tracking.weekStart = mondayFor(nicosiaDay());
+    $('patientDob').addEventListener('change', () => {
+      const born = $('patientDob').value;
+      const today = nicosiaDay();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(born) || born > today) return;
+      const [year, month, day] = born.split('-').map(Number);
+      const [currentYear, currentMonth, currentDay] = today.split('-').map(Number);
+      const completed = currentYear - year -
+        (currentMonth < month || (currentMonth === month && currentDay < day) ? 1 : 0);
+      if (completed >= 1 && completed <= 130) $('age').value = String(completed);
+    });
     $('rfBuilderView').addEventListener('input', () => ++tracking.dirtyGeneration, true);
     $('rfBuilderView').addEventListener('change', () => ++tracking.dirtyGeneration, true);
     window.addEventListener('clinical:authenticated', () => {

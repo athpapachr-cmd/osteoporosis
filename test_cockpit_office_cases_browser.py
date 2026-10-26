@@ -51,17 +51,37 @@ def _exercise(width: int):
                 amount_cents:3000,paid_on:'2026-10-03',payer:'Συνθετικός πληρωτής',
                 created_at:'2026-10-03T10:00:00',voided_at:null,void_reason:null}]};
             else if(path.includes('/office-cases/rf?')) data={applications:[{
-              id:'synthetic-rf-1',revision:2,stage:'scheduled',patient_name:'RF Συνθετικός',
+              id:'synthetic-rf-1',revision:2,stage:'scheduled',patient_name:'RF Συνθετικός 1',
               identity_number:'SYN-001',laterality:'left',indication_code:'SYN',
               scheduled_date:'2026-11-01',surgery_id:null
+            },{
+              id:'synthetic-rf-2',revision:4,stage:'approved',patient_name:'RF Συνθετικός 2',
+              identity_number:'SYN-002',laterality:'right',indication_code:'SYN',
+              scheduled_date:null,surgery_id:null
+            },{
+              id:'synthetic-rf-3',revision:5,stage:'performed',patient_name:'RF Συνθετικός 3',
+              identity_number:'SYN-003',laterality:'right',indication_code:'SYN',
+              scheduled_date:null,surgery_id:'synthetic-surgery-3'
             }],next_cursor:null,has_more:false};
+            else if(path.endsWith('/office-cases/rf/synthetic-rf-1')) data={
+              id:'synthetic-rf-1',revision:2,stage:'scheduled',patient_name:'RF Συνθετικός 1',
+              identity_number:'SYN-001',laterality:'left',indication_code:'SYN',
+              scheduled_date:'2026-11-01',surgery_id:null,
+              surgery_prefill:{date_of_birth:'1966-01-01',phone:'000000',
+                procedure_type:'Ραδιοσυχνότητες — Αριστερό γόνατο'}};
+            else if(path.endsWith('/office-cases/rf/synthetic-rf-2')) data={
+              id:'synthetic-rf-2',revision:4,stage:'approved',patient_name:'RF Συνθετικός 2',
+              identity_number:'SYN-002',laterality:'right',indication_code:'SYN',
+              scheduled_date:null,surgery_id:null,
+              surgery_prefill:{date_of_birth:null,phone:null,
+                procedure_type:'Ραδιοσυχνότητες — Δεξί γόνατο'}};
             else if(path.includes('/accidents/synthetic-accident-1/payments'))
               return new Promise(resolve => { window.resolvePendingPayment = resolve; });
             else return {ok:false,status:401,json:async()=>({detail:'Unauthorized'})};
             return {ok:true,status:200,json:async()=>data};
           };
           window.CockpitSurgeryQueue={prefillFromRF(card){window.lastRF=card;
-            window.CockpitOfficeCases.selectTab('surgery');}};
+            window.CockpitOfficeCases.selectTab('surgery');return true;}};
         }""")
         page.add_script_tag(content=JS)
         page.locator('[data-office-tab="accidents"]').click()
@@ -100,9 +120,28 @@ def _exercise(width: int):
         page.locator('[data-office-tab="rf"]').click()
         expect(page.locator('#officeRfList')).to_contain_text('RF Συνθετικός')
         page.screenshot(path=str(OUT / f'office-rf-{width}.png'))
-        page.get_by_role('button', name='Προσθήκη στη λίστα χειρουργείων').click()
+        assert page.get_by_role('button', name='Προσθήκη στη λίστα χειρουργείων').count() == 2
+        page.locator('#officeRfList').get_by_text('RF Συνθετικός 2').locator('..').get_by_role(
+            'button', name='Προσθήκη στη λίστα χειρουργείων').click()
         expect(page.locator('[data-office-tab-panel="surgery"]')).to_be_visible()
-        assert page.evaluate('window.lastRF.id') == 'synthetic-rf-1'
+        assert page.evaluate('window.lastRF.id') == 'synthetic-rf-2'
+        assert page.evaluate('window.lastRF.surgery_prefill.date_of_birth') is None
+        page.locator('[data-office-tab="rf"]').click()
+        expect(page.locator('#officeRfList')).to_contain_text('RF Συνθετικός 1')
+        page.evaluate("""() => {
+          const original=window.fetch;
+          window.fetch=(url, options) => String(url).endsWith('/office-cases/rf/synthetic-rf-1')
+            ? new Promise(resolve => { window.resolvePendingRF=resolve; })
+            : original(url, options);
+        }""")
+        page.locator('#officeRfList').get_by_text('RF Συνθετικός 1').locator('..').get_by_role(
+            'button', name='Προσθήκη στη λίστα χειρουργείων').click()
+        page.wait_for_function('window.resolvePendingRF !== undefined')
+        page.evaluate("window.dispatchEvent(new Event('clinical:unauthenticated'))")
+        page.evaluate("window.resolvePendingRF({ok:true,status:200,json:async()=>({id:'synthetic-rf-1',revision:2,stage:'scheduled',surgery_id:null,surgery_prefill:{date_of_birth:'1966-01-01',phone:'000000',procedure_type:'RF'}})})")
+        page.wait_for_timeout(50)
+        assert page.evaluate('window.lastRF.id') == 'synthetic-rf-2'
+        expect(page.locator('#officeRfList')).to_be_empty()
         assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth + 2')
         assert not errors, errors
         browser.close()

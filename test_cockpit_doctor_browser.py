@@ -505,15 +505,21 @@ def browser_suite(width, screenshot_name):
                     if auth["authenticated"] else {"detail":"Unauthorized"})
             if url.endswith("/clinical/office-cases/rf/synthetic-rf-office-01"):
                 rf_bridge["exact_reads"] += 1
-                return route.fulfill(status=200, json={"id":"synthetic-rf-office-01",
-                    "revision":3, "stage":"performed", "patient_name":"RF Συνθετικός",
+                current = {"id":"synthetic-rf-office-01", "patient_name":"RF Συνθετικός",
                     "identity_number":"SYN-001", "laterality":"left",
-                    "indication_code":"SYN", "scheduled_date":"2026-11-01",
-                    "surgery_id":"synthetic-linked-surgery",
-                    "linked_surgery":{"surgery_id":"synthetic-linked-surgery",
-                        "full_name":"RF Συνθετικός", "procedure_type":"Συνθετική επέμβαση",
-                        "surgery_date":"2026-11-01", "room_entry_time":"09:30",
-                        "status":"deleted"}})
+                    "indication_code":"SYN", "scheduled_date":"2026-11-01"}
+                if not rf_bridge["linked"]:
+                    current.update({"revision":2, "stage":"scheduled", "surgery_id":None,
+                        "surgery_prefill":{"date_of_birth":"1966-01-01", "phone":"000000",
+                            "procedure_type":"Ραδιοσυχνότητες — Αριστερό γόνατο"}})
+                else:
+                    current.update({"revision":3, "stage":"performed",
+                        "surgery_id":"synthetic-linked-surgery", "surgery_prefill":None,
+                        "linked_surgery":{"surgery_id":"synthetic-linked-surgery",
+                            "full_name":"RF Συνθετικός", "procedure_type":"Συνθετική επέμβαση",
+                            "surgery_date":"2026-11-01", "room_entry_time":"09:30",
+                            "status":"deleted"}})
+                return route.fulfill(status=200, json=current)
             if "/clinical/office-cases/surgeries/from-rf/" in url:
                 rf_bridge["linked"] = True
                 return route.fulfill(status=409, json={"detail":"RF already linked to surgery"})
@@ -826,9 +832,9 @@ def browser_suite(width, screenshot_name):
         expect(page.locator("#surgeryFullName")).to_have_value("RF Συνθετικός")
         expect(page.locator("#surgeryIdentityNumber")).to_have_value("SYN-001")
         expect(page.locator("#surgeryDate")).to_have_value("2026-11-01")
-        expect(page.locator("#surgeryDateOfBirth")).to_have_value("")
-        expect(page.locator("#surgeryPhone")).to_have_value("")
-        expect(page.locator("#surgeryProcedureType")).to_have_value("")
+        expect(page.locator("#surgeryDateOfBirth")).to_have_value("1966-01-01")
+        expect(page.locator("#surgeryPhone")).to_have_value("000000")
+        expect(page.locator("#surgeryProcedureType")).to_have_value("Ραδιοσυχνότητες — Αριστερό γόνατο")
         page.evaluate("window.dispatchEvent(new Event('clinical:unauthenticated'))")
         expect(page.locator("#surgeryFullName")).to_have_value("")
         expect(page.locator("#surgeryIdentityNumber")).to_have_value("")
@@ -873,7 +879,7 @@ def browser_suite(width, screenshot_name):
         expect(page.locator("#officeRfList")).to_contain_text("Συνδεδεμένο χειρουργείο: synthetic-linked-surgery")
         expect(page.locator("#officeRfList")).to_contain_text("Αφαιρέθηκε από τα pending")
         expect(page.locator("#officeRfList")).to_contain_text("Πραγματοποιήθηκε")
-        assert rf_bridge["exact_reads"] == 1
+        assert rf_bridge["exact_reads"] == 3
         assert page.get_by_role("button", name="Προσθήκη στη λίστα χειρουργείων").count() == 0
         page.locator('[data-office-tab="accidents"]').click()
         expect(page.locator("#accidentList")).to_contain_text("Συνθετικό τροχαίο")

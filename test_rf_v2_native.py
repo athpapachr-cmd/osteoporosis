@@ -5,8 +5,10 @@ import json
 import os
 import tempfile
 import unittest
+from datetime import date, datetime
 from pathlib import Path
 from unittest.mock import patch
+from zoneinfo import ZoneInfo
 
 import fitz
 from fastapi import FastAPI, HTTPException
@@ -16,7 +18,10 @@ from pypdf import PdfReader
 from sqlalchemy import create_engine
 from sqlalchemy.pool import StaticPool
 
-from clinic_utilities.rf.api import RFApplicationDraft, _assess_imaging_pdf, _validate_a1, build_rf_router
+from clinic_utilities.rf.api import (
+    RFApplicationDraft, _assess_imaging_pdf, _rf_application_date, _validate_a1,
+    build_rf_router,
+)
 from clinic_utilities.rf.catalog import INDICATIONS, DoctorProfile, ProductProfile
 from clinic_utilities.rf.parsers import parse_medications, parse_physio_dates
 from clinic_utilities.rf.pdf import build_official_rf_pdf
@@ -142,6 +147,25 @@ class RFPhysioParserTests(unittest.TestCase):
 
 
 class RFValidationTests(unittest.TestCase):
+    def test_birth_date_age_uses_one_issue_day_and_rejects_future_or_mismatch(self):
+        before = make_a1_draft(age=65, date_of_birth="1960-10-26")
+        self.assertEqual(_rf_application_date(before, cyprus_today=date(2026, 10, 25)),
+                         date(2026, 10, 25))
+        on_birthday = make_a1_draft(age=66, date_of_birth="1960-10-26")
+        self.assertEqual(_rf_application_date(on_birthday, cyprus_today=date(2026, 10, 26)),
+                         date(2026, 10, 26))
+        with self.assertRaises(HTTPException) as mismatch:
+            _rf_application_date(before, cyprus_today=date(2026, 10, 26))
+        self.assertEqual(mismatch.exception.status_code, 422)
+        with self.assertRaises(HTTPException) as future:
+            _rf_application_date(make_a1_draft(age=1, date_of_birth="2026-10-27"),
+                                 cyprus_today=date(2026, 10, 26))
+        self.assertEqual(future.exception.status_code, 422)
+        with self.assertRaises(ValidationError):
+            make_a1_draft(date_of_birth="2026-02-30")
+        with self.assertRaises(ValidationError):
+            make_a1_draft(patient_phone="123\n456")
+
     def test_zero_age_is_rejected(self):
         with self.assertRaises(ValidationError):
             make_a1_draft(age=0)
@@ -806,6 +830,7 @@ class RFReuseSavedDraftTests(unittest.TestCase):
         first = self.client.post(self.base + "/drafts", headers=self.headers, json={
             "fields":{"pathway":"A1","patient_name":"Μαρία Παπαδοπούλου",
                       "identity_number":"","nsaid_trials":[],
+                      "date_of_birth":"1960-01-01","patient_phone":"000000",
                       "additional_notes":"Ελλιπές πρόχειρο"}
         })
         self.assertEqual(first.status_code, 201, first.text)
@@ -820,6 +845,8 @@ class RFReuseSavedDraftTests(unittest.TestCase):
         reopened = self.client.get(self.base + "/drafts/" + obj["id"], headers=self.headers)
         self.assertEqual(reopened.status_code, 200)
         self.assertEqual(reopened.json()["fields"]["additional_notes"], "Ελλιπές πρόχειρο")
+        self.assertEqual(reopened.json()["fields"]["date_of_birth"], "1960-01-01")
+        self.assertEqual(reopened.json()["fields"]["patient_phone"], "000000")
         self.assertFalse(reopened.json()["attachments_saved"])
         newer = {"pathway":"A2", "identity_number":"",
                  "legacy_history":{"actual_procedure_date":"","vas_before":None,
@@ -1145,6 +1172,31 @@ class RFOutcomeFollowupTests(unittest.TestCase):
         return self.client.post(self.base + "/outcomes/search",
                                 headers=self.headers,
                                 json={"scope": "all", **kwargs})
+
+    def test_issue_persists_contact_for_exact_rf_and_issued_copy(self):
+        from clinic_utilities.rf.persistence import RFApplicationORM
+        from sqlalchemy.orm import Session
+        cyprus_today = datetime.now(ZoneInfo("Asia/Nicosia")).date()
+        born = date(cyprus_today.year - 67, 1, 1)
+        issued = self.issue(identity_number="SYN-PREFILL-1", age=67,
+                            date_of_birth=born.isoformat(), patient_phone="+357 99000001")
+        self.assertEqual(issued.status_code, 200, issued.text)
+        app_id = issued.headers["x-rf-application-id"]
+        with Session(self.engine) as session:
+            payload = session.get(RFApplicationORM, app_id).payload_json
+        self.assertEqual(payload["date_of_birth"], born.isoformat())
+        self.assertEqual(payload["patient_phone"], "+357 99000001")
+        self.assertEqual(payload["application_date"], cyprus_today.isoformat())
+        copied = self.client.post(self.base + "/reuse/issued-copy", headers=self.headers,
+                                  json={"application_id": app_id, "expected_revision": 0})
+        self.assertEqual(copied.status_code, 200, copied.text)
+        self.assertEqual(copied.json()["fields"]["date_of_birth"], born.isoformat())
+        self.assertEqual(copied.json()["fields"]["patient_phone"], "+357 99000001")
+        invalid = self.issue(identity_number="SYN-PREFILL-2", age=66,
+                             date_of_birth=born.isoformat())
+        self.assertEqual(invalid.status_code, 422, invalid.text)
+        with Session(self.engine) as session:
+            self.assertEqual(session.query(RFApplicationORM).count(), 1)
 
     def test_issue_is_not_submitted_and_self_verified_submitted_is_mine(self):
         from clinic_utilities.rf.persistence import (

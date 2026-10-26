@@ -3,10 +3,11 @@ from __future__ import annotations
 import json
 
 from calendar import monthrange
-from datetime import date
+from datetime import date, datetime
 import re
 from typing import Any, Literal
 import unicodedata
+from zoneinfo import ZoneInfo
 
 import fitz
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, Query
@@ -137,6 +138,8 @@ class RFApplicationDraft(BaseModel):
     # Age zero was previously possible when an empty browser field was coerced
     # with Number(''). Reject it server-side as well as fixing the browser draft.
     age: int = Field(ge=1, le=130)
+    date_of_birth: str | None = None
+    patient_phone: str | None = Field(default=None, max_length=40)
     product_key: str
     indication_code: str
     laterality: Literal["left", "right"]
@@ -170,6 +173,32 @@ class RFApplicationDraft(BaseModel):
     draft_revision: int | None = Field(default=None, ge=1)
     correction_of_application_id: str = Field(default="", max_length=80)
     correction_source_expected_revision: int | None = Field(default=None, ge=1)
+
+    @field_validator("date_of_birth")
+    @classmethod
+    def valid_birth_date(cls, value: str | None) -> str | None:
+        if value in (None, ""):
+            return None
+        try:
+            if date.fromisoformat(value).isoformat() != value:
+                raise ValueError
+        except ValueError as exc:
+            raise ValueError("Μη έγκυρη ημερομηνία γέννησης") from exc
+        return value
+
+    @field_validator("patient_phone")
+    @classmethod
+    def valid_patient_phone(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        if any(ord(char) < 32 for char in value):
+            raise ValueError("Μη έγκυρο τηλέφωνο ασθενούς")
+        cleaned = " ".join(value.split())
+        if not cleaned:
+            return None
+        if not cleaned.isprintable():
+            raise ValueError("Μη έγκυρο τηλέφωνο ασθενούς")
+        return cleaned
 
 
 class RFIssuedCopyRead(BaseModel):
@@ -246,6 +275,21 @@ def _parse_iso_date(value: str, label: str) -> date:
         return date.fromisoformat(str(value or "").strip())
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=f"Μη έγκυρη ημερομηνία: {label}") from exc
+
+
+def _rf_application_date(draft: RFApplicationDraft, *, cyprus_today: date | None = None) -> date:
+    if not draft.date_of_birth:
+        return date.today()  # Preserve the existing path for older/blank-DOB RF.
+    issue_date = cyprus_today or datetime.now(ZoneInfo("Asia/Nicosia")).date()
+    born = date.fromisoformat(draft.date_of_birth)
+    if born > issue_date:
+        raise HTTPException(status_code=422, detail="Η ημερομηνία γέννησης είναι στο μέλλον")
+    completed_years = issue_date.year - born.year - (
+        (issue_date.month, issue_date.day) < (born.month, born.day)
+    )
+    if draft.age != completed_years:
+        raise HTTPException(status_code=422, detail="Η ηλικία δεν συμφωνεί με την ημερομηνία γέννησης")
+    return issue_date
 
 
 def _rf_issuer_self_attestation(*, key: str, selection_origin: str,
@@ -853,6 +897,7 @@ def build_rf_router(engine: Engine) -> APIRouter:
             if imaging_assessment["status"] == "imaging_supported"
             else "clinician_confirmed"
         )
+        issue_date = _rf_application_date(draft)
         payload = {
             **draft.model_dump(exclude={"legacy_history", "imaging_review_confirmed", "draft_id", "draft_revision"}),
             "site_key": indication["site_key"],
@@ -860,8 +905,12 @@ def build_rf_router(engine: Engine) -> APIRouter:
             "other_area": other_area,
             "other_diagnosis": other_diagnosis,
             "exact_location": exact_location,
-            "application_date": date.today().isoformat(),
+            "application_date": issue_date.isoformat(),
         }
+        if not draft.date_of_birth:
+            payload.pop("date_of_birth", None)
+        if not draft.patient_phone:
+            payload.pop("patient_phone", None)
 
         # A selected application is a source of reusable fields, NEVER proof of
         # treatment. Explicitly reject forged cross-patient/source links.

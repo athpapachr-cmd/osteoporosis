@@ -7,7 +7,7 @@ import os
 import json
 import re
 import unicodedata
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Any
 from uuid import uuid4
 
@@ -495,6 +495,7 @@ def _rf_application_reuse_fields(row: RFApplicationORM) -> dict[str, Any]:
     data = row.payload_json if isinstance(row.payload_json, dict) else {}
     allowed = {
         "patient_name", "identity_number", "gesy_number", "age",
+        "date_of_birth", "patient_phone",
         "product_key", "indication_code", "laterality", "exact_location",
         "other_area", "other_diagnosis", "additional_notes",
         "rf_reason_codes", "rf_reason_other", "pain_onset_date",
@@ -658,7 +659,8 @@ def get_rf_source(engine: Engine, kind: str, source_id: str) -> dict[str, Any] |
 
 _RF_DRAFT_FIELDS = frozenset({
     "pathway", "doctor_key", "patient_name", "identity_number", "gesy_number",
-    "age", "product_key", "indication_code", "laterality", "exact_location",
+    "age", "date_of_birth", "patient_phone", "product_key", "indication_code",
+    "laterality", "exact_location",
     "other_area", "other_diagnosis", "additional_notes",
     "rf_reason_codes", "rf_reason_other", "pain_onset_date", "pain_onset_vas",
     "last_assessment_date", "last_assessment_vas", "full_medication_text",
@@ -709,6 +711,15 @@ def validate_rf_draft_fields(state: dict[str, Any]) -> dict[str, Any]:
                 raise ValueError("Μη έγκυρα στοιχεία προηγούμενης θεραπείας")
         elif not isinstance(value, (str, int, float, bool, type(None))):
             raise ValueError("Μη έγκυρη μορφή πρόχειρης αίτησης")
+        if key == "date_of_birth" and value not in (None, ""):
+            try:
+                if not isinstance(value, str) or date.fromisoformat(value).isoformat() != value:
+                    raise ValueError
+            except ValueError as exc:
+                raise ValueError("Μη έγκυρη ημερομηνία γέννησης") from exc
+        if key == "patient_phone" and value not in (None, ""):
+            if not isinstance(value, str) or len(value) > 40 or not value.strip() or not value.isprintable():
+                raise ValueError("Μη έγκυρο τηλέφωνο ασθενούς")
         if isinstance(value, str) and len(value) > (30000 if key == "full_medication_text" else 12000 if key == "physio_dates_text" else 4000):
             raise ValueError("Υπερβολικά μεγάλο πεδίο πρόχειρης αίτησης")
     encoded = json.dumps(state, ensure_ascii=False, allow_nan=False)
