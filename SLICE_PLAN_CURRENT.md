@@ -31,4 +31,4 @@ If SQL cannot be safely installed or its schema preconditions fail, stop before 
 
 ## 5. Replan triggers and next action
 
-A real RF source/schema mismatch, missing migration privilege, inability to guarantee atomic link/payment replay, or a material change in requested financial/clinical semantics reopens affected design R2. Next: implement the reviewed bounded contract on `codex/office-cases-priority3`, starting with synthetic persistence/API and SQL tests, followed by the Cockpit tabs. No Priority 4 work.
+A real RF source/schema mismatch, missing migration privilege, inability to guarantee atomic link/payment replay, or a material change in requested financial/clinical semantics reopens affected design R2. The reviewed implementation and migration are complete. Next: fresh release gate and final PR checks, then merge, native Render auto-deploy and no-write smoke with a checkpoint after each material transition. No Priority 4 work.
