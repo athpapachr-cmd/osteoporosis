@@ -1834,3 +1834,12 @@ Live authenticated peek then returned four active Notion rows with direct links/
 The clinician's first selected-task dictation exposed an empty editable proposal for future-tense speech and prompted a general new-task create/dictate action. [PR #222](https://github.com/athpapachr-cmd/osteoporosis/pull/222) adds both actions above the Notion preview, auto-fills editable new-task title/notes/due/category/priority from short dictation, and fills an existing task note for planned work without marking Done. All writes still require one clinician confirmation; new task creation reuses the durable one-shot guard and freezes unknown outcomes. The independent post-code R2 review found and closed a microphone cleanup issue; final verdict PASS / P0:P1:P2=0:0:0. Synthetic 18 Python, Doctor Shell Node and Chromium 1280/390 PASS; final PR head CI 11/11 PASS.
 
 Squash merge `5663b9863439bdc79b31291d9c14d9668b652fa8` is LIVE on Render deploy `dep-dbfciamq1p3s73f35vt0`. Bounded no-write smoke matched deployed JS/CSS hashes to reviewed files, rejected anonymous task reads/proposals/invalid create with 401 and found zero error-level app logs. No real task was created by the agent; the clinician's first confirmed creation and its Notion result remain to be verified. Priority 3 remains on hold.
+
+
+---
+
+## 2026-10-26 — Cockpit Priority 3 Office Cases released for clinician acceptance
+
+The Product Owner accepted Priority 2, requested the next roadmap priority and specified separate entries for each accident payment. [PR #223](https://github.com/athpapachr-cmd/osteoporosis/pull/223) adds one Office Cases screen with surgery room-entry time, accident register and individual audited payments, and exact eligible RF-to-surgery transfer. Independent post-code R2 passed 0:0:0 and final PR CI 19/19. The reviewed Aiven additive schema was installed and verified before code activation; temporary allowlist access was removed.
+
+Squash merge `bd6133fef96a4e0f4a88e96907ec03ef5a16a263` is LIVE on native Render `dep-dbfecim7bikc73c4dbj0`. No-write smoke matched deployed Cockpit HTML/JS/CSS bytes, found 401 on protected anonymous read/write probes and zero error-level app logs. No real clinical or payment row was used by the agent. State is **READY_FOR_PRODUCT_OWNER_SMOKE**; first real clinician use and acceptance remain pending. Priority 4 is on hold. [Release receipt](cockpit/releases/COCKPIT_OFFICE_CASES_PRIORITY3_PRODUCTION_RELEASE_2026-10-26.md).
