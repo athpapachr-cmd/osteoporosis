@@ -15,7 +15,7 @@ function node(id = "", tag = "div") {
   const handlers = new Map(), classes = new Set();
   const el = {
     id, tagName: tag, textContent: "", value: "", hidden: false, open: false,
-    dataset: {}, attributes: {}, children: [], firstChild: {textContent: "Πρόγραμμα σήμερα "},
+    dataset: {}, attributes: {}, children: [], elements: [], firstChild: {textContent: "Πρόγραμμα σήμερα "},
     classList: {
       contains(k) { return classes.has(k); },
       add(k) { classes.add(k); },
@@ -35,10 +35,10 @@ function node(id = "", tag = "div") {
   };
   return el;
 }
-const tabs = ["surgery","documents","modules","learning"].map(x => {
+const tabs = ["cases","documents","modules","learning"].map(x => {
   const b = node("tab-" + x, "button"); b.dataset.doctorLibraryTab = x; return b;
 });
-const panels = ["surgery","documents","modules","learning"].map(x => {
+const panels = ["cases","documents","modules","learning"].map(x => {
   const b = node("panel-" + x); b.dataset.doctorLibraryPanel = x; return b;
 });
 const documentStub = {

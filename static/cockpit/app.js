@@ -351,6 +351,10 @@
     tbody.appendChild(tr);
   }
 
+  function setSurgeryWritesEnabled(enabled) {
+    for (const control of $("surgeryForm").elements) control.disabled = !enabled;
+  }
+
   function clearSurgeryProjection(message, needsKey = false) {
     surgeryReady = false;
     surgeryRows = [];
@@ -361,6 +365,7 @@
       }));
     }
     setSurgeryUnavailable(message);
+    setSurgeryWritesEnabled(false);
     $("surgeryQueueNote").textContent = needsKey
       ? "Πάτησε «Πρόσβαση» πάνω δεξιά για σύνδεση με το Clinical Key."
       : "Η προστατευμένη λίστα χειρουργείων δεν είναι διαθέσιμη αυτή τη στιγμή.";
@@ -379,6 +384,7 @@
       if (!validSurgeryRows(rows)) throw new Error("Invalid protected surgery source");
       surgeryRows = rows;
       surgeryReady = true;
+      setSurgeryWritesEnabled(true);
       $("surgeryQueueState").textContent = String(rows.length) + " pending";
       $("surgeryQueueState").classList.add("ready");
       $("surgeryQueueNote").textContent = rows.length
@@ -579,10 +585,14 @@
     loadCockpitContext();
     loadSurgeryQueue();
   });
+  if (typeof window !== "undefined" && typeof window.addEventListener === "function") window.addEventListener("clinical:unauthenticated", () => {
+    ++surgeryGeneration; // Fence any protected read already in flight.
+    clearSurgeryProjection("Σύνδεση απαιτείται", true);
+  });
   resetSurgeryForm();
   window.CockpitSurgeryQueue = {
     prefillFromRF(card) {
-      if (!card || !card.id || !Number.isInteger(card.revision) ||
+      if (!surgeryReady || !card || !card.id || !Number.isInteger(card.revision) ||
           !["approved", "scheduled"].includes(card.stage)) return;
       resetSurgeryForm();
       $("surgeryRfApplicationId").value = card.id;

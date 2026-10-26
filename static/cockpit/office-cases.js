@@ -7,6 +7,7 @@
   let activeTab = "surgery", generation = 0, detailGeneration = 0,
     caseRows = [], caseOffset = 0, selectedCase = null;
   let rfRows = [], rfCursor = "", pendingPaymentId = "", pendingPaymentCaseId = "";
+  let needsPaymentReconciliation = false;
 
   const show = (id, value) => { $(id).textContent = value; };
   function euro(cents) { return cents === null || cents === undefined ? "Άγνωστο" : money.format(cents / 100); }
@@ -53,14 +54,28 @@
     return error.status === 409 ? (error.detail || "Τα στοιχεία άλλαξαν. Ανανέωσε και δοκίμασε ξανά.")
       : error.message && !error.status ? error.message : "Η προστατευμένη καταχώριση δεν ολοκληρώθηκε.";
   }
+  function setAccidentWritesEnabled(caseEnabled, paymentEnabled=false) {
+    for (const control of $("accidentForm").elements) control.disabled = !caseEnabled;
+    for (const control of $("accidentPaymentForm").elements) control.disabled = !paymentEnabled;
+  }
   function clear() {
+    if (pendingPaymentId) needsPaymentReconciliation = true;
     ++generation;
     ++detailGeneration;
     caseRows = []; caseOffset = 0; selectedCase = null; rfRows = []; rfCursor = "";
     pendingPaymentId = ""; pendingPaymentCaseId = "";
+    resetAccidentForm();
+    $("accidentPaymentForm").reset();
+    $("officeRfSearch").reset();
+    $("paymentReviewConfirm").hidden = true;
+    setAccidentWritesEnabled(false);
     $("accidentList").replaceChildren(); $("accidentDetail").hidden = true;
     $("accidentNext").hidden = true; $("officeRfList").replaceChildren(); $("officeRfNext").hidden = true;
     show("accidentState", "Σύνδεση απαιτείται"); show("officeRfState", "Σύνδεση απαιτείται");
+    show("officeRfNote", "");
+    show("accidentNote", needsPaymentReconciliation
+      ? "Η προηγούμενη πληρωμή ίσως καταχωρίστηκε. Μετά τη σύνδεση, άνοιξε το περιστατικό και έλεγξε το ιστορικό πριν από νέα καταχώριση."
+      : "");
   }
   function selectTab(tab) {
     if (!["surgery","accidents","rf"].includes(tab)) return;
@@ -113,6 +128,7 @@
   }
   async function loadAccidents(reset=true) {
     const token = ++generation;
+    setAccidentWritesEnabled(false);
     if (reset) { caseRows = []; caseOffset = 0; $("accidentList").replaceChildren(); }
     show("accidentState", "Φόρτωση…");
     try {
@@ -122,8 +138,11 @@
       caseRows.push(...result.cases);
       caseOffset = result.next_offset || 0;
       $("accidentNext").hidden = !result.has_more;
+      setAccidentWritesEnabled(true);
       show("accidentState", String(caseRows.length) + (result.has_more ? "+" : "") + " περιστατικά");
-      show("accidentNote", result.has_more ? "Εμφανίζονται τα 50 πιο πρόσφατα. Τα υπόλοιπα απαιτούν επόμενη σελίδα." : "");
+      show("accidentNote", needsPaymentReconciliation
+        ? "Έλεγξε το ιστορικό πληρωμών στο περιστατικό πριν από νέα καταχώριση."
+        : result.has_more ? "Εμφανίζονται τα 50 πιο πρόσφατα. Τα υπόλοιπα απαιτούν επόμενη σελίδα." : "");
       drawCases();
       if (selectedCase) await selectAccident(selectedCase.case_id);
     } catch (error) {
@@ -144,6 +163,8 @@
       }
       selectedCase = row;
       $("accidentDetail").hidden = false;
+      $("paymentReviewConfirm").hidden = !needsPaymentReconciliation;
+      setAccidentWritesEnabled(true, !needsPaymentReconciliation);
       show("accidentDetailTitle", row.patient_name);
       show("accidentDetailSummary", "Ατύχημα " + row.accident_date +
         " · Επίσκεψη " + (row.visit_date || "—") + " · Έναρξη συγγραφής " +
@@ -159,6 +180,8 @@
         list.append(card);
       }
       if (!row.payments.length) list.append(node("p", "Δεν καταχωρίστηκε πληρωμή."));
+      if (needsPaymentReconciliation) show("accidentNote",
+        "Έλεγξε τις καταχωρισμένες πληρωμές και επιβεβαίωσε παρακάτω πριν ξεκινήσεις νέα προσπάθεια.");
     } catch (error) {
       if (token === generation && detailToken === detailGeneration) show("accidentNote", errorText(error));
     }
@@ -266,6 +289,13 @@
   document.querySelectorAll("[data-office-tab]").forEach(item => item.addEventListener("click", () => selectTab(item.dataset.officeTab)));
   $("accidentForm").addEventListener("submit", saveAccident);
   $("accidentCancel").addEventListener("click", resetAccidentForm);
+  $("paymentReviewConfirm").addEventListener("click", () => {
+    if (!selectedCase) return;
+    needsPaymentReconciliation = false;
+    $("paymentReviewConfirm").hidden = true;
+    setAccidentWritesEnabled(true, true);
+    show("accidentNote", "Το ιστορικό ελέγχθηκε. Μπορείς να καταχωρίσεις νέα πληρωμή.");
+  });
   $("accidentNext").addEventListener("click", () => loadAccidents(false));
   $("accidentPaymentForm").addEventListener("submit", savePayment);
   $("officeRfSearch").addEventListener("submit", event => { event.preventDefault(); loadRF(true); });
@@ -275,4 +305,5 @@
   });
   window.addEventListener("clinical:unauthenticated", clear);
   window.CockpitOfficeCases = {open, selectTab, refreshRF() { if (activeTab === "rf") loadRF(true); }};
+  setAccidentWritesEnabled(false);
 })();

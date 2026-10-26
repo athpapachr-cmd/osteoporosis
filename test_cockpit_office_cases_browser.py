@@ -31,6 +31,9 @@ def _exercise(width: int):
           document.querySelectorAll('[data-doctor-library-panel]').forEach(panel => {
             panel.hidden = panel.dataset.doctorLibraryPanel !== 'cases';
           });
+          // about:blank is not a secure origin; production HTTPS supplies this API.
+          Object.defineProperty(window.crypto,'randomUUID',
+            {value:()=> '11111111-1111-4111-8111-111111111111'});
           window.fetch=async (url) => {
             const path=String(url);
             let data;
@@ -52,6 +55,8 @@ def _exercise(width: int):
               identity_number:'SYN-001',laterality:'left',indication_code:'SYN',
               scheduled_date:'2026-11-01',surgery_id:null
             }],next_cursor:null,has_more:false};
+            else if(path.includes('/accidents/synthetic-accident-1/payments'))
+              return new Promise(resolve => { window.resolvePendingPayment = resolve; });
             else return {ok:false,status:401,json:async()=>({detail:'Unauthorized'})};
             return {ok:true,status:200,json:async()=>data};
           };
@@ -67,6 +72,29 @@ def _exercise(width: int):
         expect(page.locator('#accidentDetailSummary')).to_contain_text('70,00')
         OUT.mkdir(exist_ok=True)
         page.screenshot(path=str(OUT / f'office-accidents-{width}.png'))
+        page.locator('#accidentList').get_by_role('button', name='Επεξεργασία').click()
+        expect(page.locator('#accidentPatientName')).to_have_value('<img src=x onerror=alert(1)> Συνθετικός')
+        page.locator('#paymentAmount').fill('30.00')
+        page.locator('#paymentDate').fill('2026-10-04')
+        page.locator('#paymentPayer').fill('Συνθετικός δεύτερος πληρωτής')
+        page.locator('#accidentPaymentForm button[type=submit]').click()
+        page.wait_for_function('window.resolvePendingPayment !== undefined')
+        page.evaluate("window.dispatchEvent(new Event('clinical:unauthenticated'))")
+        expect(page.locator('#accidentList')).to_be_empty()
+        expect(page.locator('#accidentDetail')).to_be_hidden()
+        expect(page.locator('#accidentPatientName')).to_have_value('')
+        expect(page.locator('#paymentPayer')).to_have_value('')
+        expect(page.locator('#accidentForm button[type=submit]')).to_be_disabled()
+        expect(page.locator('#accidentPaymentForm button[type=submit]')).to_be_disabled()
+        page.evaluate("window.dispatchEvent(new Event('clinical:authenticated'))")
+        expect(page.locator('#accidentList')).to_contain_text('Συνθετικός')
+        page.get_by_role('button', name='Άνοιγμα', exact=True).click()
+        expect(page.locator('#paymentReviewConfirm')).to_be_visible()
+        expect(page.locator('#accidentPaymentForm button[type=submit]')).to_be_disabled()
+        page.evaluate("window.resolvePendingPayment({ok:true,status:200,json:async()=>({})})")
+        expect(page.locator('#accidentPaymentForm button[type=submit]')).to_be_disabled()
+        page.locator('#paymentReviewConfirm').click()
+        expect(page.locator('#accidentPaymentForm button[type=submit]')).to_be_enabled()
         page.locator('[data-office-tab="rf"]').click()
         expect(page.locator('#officeRfList')).to_contain_text('RF Συνθετικός')
         page.screenshot(path=str(OUT / f'office-rf-{width}.png'))

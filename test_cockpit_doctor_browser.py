@@ -756,7 +756,16 @@ def browser_suite(width, screenshot_name):
         expect(page.locator("#surgeryDateOfBirth")).to_have_value("")
         expect(page.locator("#surgeryPhone")).to_have_value("")
         expect(page.locator("#surgeryProcedureType")).to_have_value("")
-        page.locator("#doctorBackHome").click()
+        page.evaluate("window.dispatchEvent(new Event('clinical:unauthenticated'))")
+        expect(page.locator("#surgeryFullName")).to_have_value("")
+        expect(page.locator("#surgeryIdentityNumber")).to_have_value("")
+        expect(page.locator("#surgeryForm button[type=submit]")).to_be_disabled()
+        expect(page.locator("#surgeryTableBody")).not_to_contain_text("Συνθετικός Ασθενής")
+        page.evaluate("window.dispatchEvent(new Event('clinical:authenticated'))")
+        expect(page.locator("#surgeryForm button[type=submit]")).to_be_enabled()
+        if page.locator("#doctorBackHome").is_visible():
+            page.locator("#doctorBackHome").click()
+        expect(page.locator("#doctorMainView")).to_be_visible()
 
         if width <= 990:
             expect(page.locator("#visitSidebar")).to_be_hidden()
