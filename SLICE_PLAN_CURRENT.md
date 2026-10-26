@@ -1,40 +1,47 @@
-# SLICE_PLAN_CURRENT.md — Priority 3 Office Cases
+# SLICE_PLAN_CURRENT.md — Priority 4 local visit audio
 
-> **2026-10-26 RF PREFILL CORRECTION — LIVE / READY_FOR_PRODUCT_OWNER_SMOKE:** Reviewed PR #225 merge `043bb8ecd0d0916488cd5681d5b1278c8ba15558` is LIVE on Render `dep-dbff88i9lscs739u3l60`; bounded no-write static/auth/log smoke PASS. Future RF can save optional patient DOB/phone, and each eligible unlinked RF proposes editable surgery values from its exact record. Historical RF missing DOB/phone require manual entry. Technical release complete; real clinician visual/first-use acceptance remains pending. No Priority 4.
-
-> **2026-10-26 RF PREFILL CORRECTION — TESTED / RELEASE HOLD:** [Affected design addendum](cockpit/OFFICE_CASES_RF_PREFILL_CORRECTION_2026-10-26.md) passed corrected pre-code R2 at `fac0127`. Implementation `ce27781` passed independent exact-code post-code R2 0:0:0; 74 Python tests and 25 subtests, RF UI Node, Office Cases Chromium and full Cockpit Chromium passed on synthetic data. [Draft PR #225](https://github.com/athpapachr-cmd/osteoporosis/pull/225) awaits final CI, Ops RELEASE gate, merge, Render and no-write smoke. Future RF stores optional DOB/phone; historical RF requires manual completion. Existing Priority 3 remains LIVE; no Priority 4.
-
-> **2026-10-26 RF PREFILL CORRECTION:** The clinician reports that future RF should carry editable birth date and patient phone in RF Tracking for automatic per-patient surgery prefill; operation type is proposed from that exact issued RF. [Affected design addendum](cockpit/OFFICE_CASES_RF_PREFILL_CORRECTION_2026-10-26.md) passed independent corrected pre-code R2 closure at `fac0127`, 0:0:0. Bounded implementation, post-code R2, CI and release are next; existing LIVE Priority 3 stays unchanged until then. Historical RF without these fields requires manual completion; no age-to-DOB inference, chart name matching or Priority 4.
-
-> **STATUS (2026-10-26):** Product Owner confirmed Priority 2 works, asked to continue to the next roadmap priority, and chose separate records for each accident payment. Priority 3 design `3405af09006d1616a1a264e5e0d8bb801745a753` passed independent pre-code R2 closure. Implementation at code/SQL/test `54d72e9d815fc0e2d25bd5038f4666e045443575` passed independent post-code R2 0:0:0; final PR #223 CI 19/19 SUCCESS. Reviewed admin migration is installed and metadata-verified in Aiven `osteoporosis`; temporary access IP was removed. PR #223 merged as `bd6133fef96a4e0f4a88e96907ec03ef5a16a263`; native Render `dep-dbfecim7bikc73c4dbj0` was observed building. Render `dep-dbfecim7bikc73c4dbj0` reached LIVE on exact merged source at 05:36:06 UTC. No-write production smoke passed: served HTML/JS/CSS bytes match, protected anonymous reads and invalid accident POST return 401, zero error-level app logs. State is READY_FOR_PRODUCT_OWNER_SMOKE; real clinician acceptance remains pending. No Priority 4.
-> **Previous active plan:** archived unchanged at `archive/SLICE_PLAN_PR1_HEIDI_TRANSCRIPT_2026-10-26.md`. PR-1's identifiable-transcript privacy/release HOLD remains unchanged.
+> **STATUS (2026-10-26):** Product Owner accepted Priority 3 and authorized the next roadmap priority. Direction is local recording, local Whisper transcription and local structuring on the 16 GB M4 Mac. No visit audio or raw transcript may be sent to Render/OpenAI/another cloud AI service. Exact design is frozen for independent pre-code R2; runtime implementation is not yet authorized.
+> **Previous active plan:** Priority 3 Office Cases is archived at `archive/SLICE_PLAN_PRIORITY3_OFFICE_CASES_2026-10-26.md`; its reviewed production state is unchanged.
 
 ## 1. Objective and acceptance
 
-One Cockpit screen, **Περιστατικά ιατρείου**, offers Χειρουργεία, Τροχαία and RF tabs. Reuse the current surgery queue and native RF Tracking. Add an optional, protected Cyprus operating-room entry wall time to surgery rows; an operational accident register with independent payment events; and an explicit exact-RF-to-surgery action without duplicate entry or automatic RF stage change. Scheduled and performed remain distinct.
+Extend the existing protected Visit Capture flow with clinician-started local recording. After the patient is informed and the clinician presses Start/Stop, `whisper.cpp` transcribes on the Mac and a pinned local model classifies numbered source units. Deterministic code copies exact source text into a reviewable candidate. The clinician confirms patient identity, edits/removes items, separately opts into any durable pending obligation, previews on the protected server and explicitly saves.
 
-The clinician must be able to edit every provisional field and confirm each clinical/financial write. Real patient rows are excluded from tests, logs, source and agent release smoke. Priority 4 visit audio is deferred.
+The screen also offers deterministic **Copy for GeSY** text from the reviewed candidate. Copy is not a write to GeSY.
+
+Acceptance requires a compact review rather than line-by-line transcript reading, no free-form model prose in record truth, no background recording, no automatic Save and no cloud fallback.
 
 ## 2. Owning design and seams
 
-`cockpit/OFFICE_CASES_PRIORITY3_DESIGN_2026-10-26.md` at reviewed design commit `3405af0` is the detailed data, API, UI and release contract. The bounded implementation seams are `clinical_surgery_queue.py`, a new private accident API, `main.py` router registration, existing Cockpit library/surgery JS and HTML/CSS, one admin SQL migration, and synthetic focused tests. The RF source/tracking implementation stays its owner; change it only if a concrete integration defect requires a reviewed delta.
+`cockpit/LOCAL_VISIT_AUDIO_PRIORITY4_2026-10-26.md` is the exact design. The existing owners remain:
 
-The accident report PDF generator is ephemeral and does not declare writing started or report sent. RF source contains no date of birth or phone. Clinician supplies both before a surgery record from RF can be confirmed. No inferred patient linkage from name or phone.
+- confirmed Cockpit patient context for destination identity;
+- `VisitCaptureCandidateV1`, protected preview and explicit Save for clinical writes;
+- one encounter as the source of Snapshot / Visit Brief / Encounter Detail;
+- pending items as separate durable records only after explicit clinician selection.
+
+The new bounded seams are a loopback-only `local_visit_audio/` macOS companion, a strict launcher/popup `postMessage` channel, local `whisper.cpp` + Ollama orchestration, deterministic exact-source candidate construction, and a narrow extension of the Visit Capture UI/schema for local source role and GeSY copy.
 
 ## 3. Safety contracts
 
-- Existing Clinical Key protects all data and writes. Clear in-memory projections on auth loss; no browser storage, public PHI, raw payload logs or live row evidence.
-- `clinical_surgery_details` stores local `HH:MM` only alongside a valid surgery date, exact nullable unique RF application ID, and a foreign key that restricts deleting a linked RF. Existing pending/completed/deleted surgery semantics stay unchanged.
-- RF transfer re-reads exact application/revision and eligible stage (`approved` or `scheduled`) inside one transaction; one RF application can create at most one surgery, even after soft deletion. RF status is never auto-updated.
-- Accident case facts/amount due use revision preconditions and append-only audit. Each separate positive payment has date/payer and a durable request UUID; identical replay returns the same event, conflicting replay is 409. Corrections void with reason and retain the original. Derived balance is unknown when amount due is unknown. No overpayment against a known due amount.
-- Admin migration creates the new private tables/FKs/indexes and least-privilege grants **before** runtime deployment. The app role has no public schema CREATE. Startup `create_all` is not an upgrade strategy.
+- The production page never uploads visit audio or raw transcript to Render. The local service has no database, Clinical Key, Notion or Render credential.
+- Recording requires confirmed patient context, an informed-patient checkbox and direct clinician Start/Stop actions. Patient/context/auth/navigation changes stop and invalidate the flow.
+- The loopback service binds only to `127.0.0.1`, enforces Host/Origin/CSRF/content/size/concurrency guards, uses private temporary files and deletes audio/WAV/transcript/prompt/model output on every outcome.
+- The local model returns identifiers/categories only. It cannot supply clinical wording. Missing IDs become explicit `unclassified` review items; they are never dropped.
+- Model categories do not create pending records automatically. Each proposed obligation has a separate clinician control.
+- Source identity stays uncertain until the clinician explicitly confirms that the recording belongs to the selected patient.
+- Model/digest mismatch, context overflow, malformed output, deletion failure or missing handshake fails closed. No cloud fallback.
 
-## 4. Finite evidence and release
+## 4. Evidence and review gates
 
-Independent pre-code R2: initial P1 RF-delete and payment-replay findings, both closed at `3405af0`; final PASS 0:0:0. Implementation requires synthetic API and browser checks for surgery date/time, RF stage/revision/identity/unique/delete, accident revisions/partial payments/replay/void/overpayment, auth revocation and three-tab UI. Then one independent exact-code R2, applicable CI, reviewed admin SQL install/privilege checks, guarded PR merge, native Render auto-deploy and no-write smoke. Mark real clinical acceptance separately from technical release.
+Observed on the target M4/16 GB Mac: `whisper.cpp` large-v3-turbo processed a 287.76-second synthetic mixed Greek/English recording in 19.16 seconds warm, projecting about 80 seconds for 20 minutes. A free-form local summary changed a synthetic T-score, proving that generated prose cannot be record truth. Direct HTTPS production-page fetch to loopback was browser-blocked; an actual Dia/Chromium popup probe preserved `window.opener` and the nonce-bearing URL fragment, supporting the local-launcher channel.
 
-If SQL cannot be safely installed or its schema preconditions fail, stop before merging runtime that requires the new tables. Do not self-create clinical tables on startup or simulate production success from local tests.
+The official Krikri Q4_K_M and official Gemma 4 12B were compared on the same synthetic identifier-only task. Krikri produced schema-valid IDs in 15.37 seconds but required the frozen omitted-ID/category/pending guardrails. The current official Gemma default selected its MLX runner and failed schema-constrained inference with HTTP 501 because structured-output support was unavailable in that runner. Priority 4 v1 therefore pins the official Krikri Q4_K_M blob and forbids substitution.
+
+Then one independent exact-head R2 reviews privacy/retention, source fidelity, destination identity, loopback security, patient consent UX, model supply chain and clinical write semantics. No runtime implementation before PASS or corrected closure. Implementation then requires synthetic/adversarial unit, API, browser and local end-to-end evidence, followed by independent exact-code post-code R2, applicable CI and guarded release.
 
 ## 5. Replan triggers and next action
 
-A real RF source/schema mismatch, missing migration privilege, inability to guarantee atomic link/payment replay, or a material change in requested financial/clinical semantics reopens affected design R2. The reviewed implementation and migration are complete and PR #223 is merged. Technical release and no-write smoke are complete. Next: clinician first real case/payment/RF use and explicit acceptance or correction. Do not start Priority 4 until that decision.
+Any requirement for cloud processing, transcript persistence, free-form generated record text, direct production-to-loopback networking, automatic identity acceptance, automatic pending/write behavior, a different model/digest or inability to prove complete source accounting reopens design R2.
+
+Next action: commit the exact frozen design and dispatch independent pre-code R2. STOP before runtime code unless the review passes.
