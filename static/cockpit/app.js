@@ -440,6 +440,7 @@
 
   async function submitSurgeryForm(event) {
     event.preventDefault();
+    const writeEpoch = surgeryAuthEpoch;
     const surgeryId = $("surgeryId").value;
     const payload = {
       full_name: $("surgeryFullName").value.trim(),
@@ -477,6 +478,7 @@
           body: JSON.stringify(payload)
         });
       }
+      if (writeEpoch !== surgeryAuthEpoch) return;
       resetSurgeryForm();
       $("surgeryEditorDetails").open = false;
       surgerySortKey = "queue_position";
@@ -484,6 +486,7 @@
       await loadSurgeryQueue();
       window.CockpitOfficeCases?.refreshRF?.();
     } catch (error) {
+      if (writeEpoch !== surgeryAuthEpoch) return;
       $("surgeryQueueNote").textContent = error.detail || "Δεν ήταν δυνατή η αποθήκευση της εγγραφής.";
       if ([401, 403, 503].includes(error.status)) await loadSurgeryQueue();
     }
@@ -503,13 +506,16 @@
 
     if (action === "complete") {
       if (!window.confirm(`Να σημειωθεί ως ολοκληρωμένο το χειρουργείο για ${row.full_name};`)) return;
+      const writeEpoch = surgeryAuthEpoch;
       try {
         await apiJson(`/clinical/surgeries/${encodeURIComponent(row.surgery_id)}/complete`, {
           method: "POST",
           body: "{}"
         });
+        if (writeEpoch !== surgeryAuthEpoch) return;
         await loadSurgeryQueue();
       } catch (error) {
+        if (writeEpoch !== surgeryAuthEpoch) return;
         $("surgeryQueueNote").textContent = error.detail || "Δεν ολοκληρώθηκε η ενημέρωση.";
         if ([401, 403, 503].includes(error.status)) await loadSurgeryQueue();
       }
@@ -518,12 +524,15 @@
 
     if (action === "delete") {
       if (!window.confirm(`Να διαγραφεί από τα pending το χειρουργείο για ${row.full_name};`)) return;
+      const writeEpoch = surgeryAuthEpoch;
       try {
         await apiJson(`/clinical/surgeries/${encodeURIComponent(row.surgery_id)}`, {
           method: "DELETE"
         });
+        if (writeEpoch !== surgeryAuthEpoch) return;
         await loadSurgeryQueue();
       } catch (error) {
+        if (writeEpoch !== surgeryAuthEpoch) return;
         $("surgeryQueueNote").textContent = error.detail || "Δεν ήταν δυνατή η διαγραφή.";
         if ([401, 403, 503].includes(error.status)) await loadSurgeryQueue();
       }
@@ -531,15 +540,18 @@
     }
 
     if (action === "up" || action === "down") {
+      const writeEpoch = surgeryAuthEpoch;
       try {
         await apiJson("/clinical/surgeries/" + encodeURIComponent(row.surgery_id) + "/move", {
           method: "POST",
           body: JSON.stringify({ direction: action })
         });
+        if (writeEpoch !== surgeryAuthEpoch) return;
         surgerySortKey = "queue_position";
         surgerySortDirection = "asc";
         await loadSurgeryQueue(); // Never publish unguarded mutation responses.
       } catch (error) {
+        if (writeEpoch !== surgeryAuthEpoch) return;
         $("surgeryQueueNote").textContent = error.detail || "Δεν άλλαξε η σειρά.";
         if ([401, 403, 503].includes(error.status)) await loadSurgeryQueue();
       }
@@ -549,13 +561,16 @@
     async function handleSurgeryDateChange(event) {
     const input = event.target.closest("input.surgery-date-input");
     if (!input) return;
+    const writeEpoch = surgeryAuthEpoch;
     try {
       await apiJson("/clinical/surgeries/" + encodeURIComponent(input.dataset.surgeryId), {
         method: "PUT",
         body: JSON.stringify({ surgery_date: input.value || null })
       });
+      if (writeEpoch !== surgeryAuthEpoch) return;
       await loadSurgeryQueue(); // Protected read is always generation-guarded.
     } catch (error) {
+      if (writeEpoch !== surgeryAuthEpoch) return;
       $("surgeryQueueNote").textContent = error.detail || "Δεν αποθηκεύτηκε η ημερομηνία.";
       await loadSurgeryQueue();
     }

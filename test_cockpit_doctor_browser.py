@@ -158,6 +158,46 @@ def assert_delayed_recent_purged_after_logout(page):
     assert page.locator("#visitRecentRows .clinical-patient-row").count() == 0
 
 
+def assert_stale_surgery_write_keeps_new_draft(page, status):
+    # A response to a prior Clinical Key session must not reset a newer draft.
+    page.evaluate("""() => {
+        const originalFetch = window.fetch.bind(window);
+        window.__oldSurgeryFetch = originalFetch;
+        window.__oldSurgeryHeld = false;
+        window.fetch = (url, options = {}) => {
+            if (!window.__oldSurgeryHeld && String(url).endsWith('/clinical/surgeries')
+                    && options.method === 'POST') {
+                window.__oldSurgeryHeld = true;
+                return new Promise(resolve => {
+                    window.__releaseOldSurgery = status => resolve(new Response(
+                        status === 200 ? '{}' : '{"detail":"Expired"}',
+                        {status, headers: {'Content-Type': 'application/json'}}));
+                });
+            }
+            return originalFetch(url, options);
+        };
+        document.getElementById('surgeryEditorDetails').open = true;
+        document.getElementById('surgeryFullName').value = 'OLD-SURGERY-DRAFT';
+        document.getElementById('surgeryForm').dispatchEvent(
+            new Event('submit', {bubbles: true, cancelable: true}));
+    }""")
+    page.wait_for_function("typeof window.__releaseOldSurgery === 'function'")
+    page.evaluate("window.dispatchEvent(new Event('clinical:unauthenticated'))")
+    page.evaluate("window.dispatchEvent(new Event('clinical:authenticated'))")
+    expect(page.locator("#surgeryForm button[type=submit]")).to_be_enabled()
+    page.evaluate("document.getElementById('surgeryEditorDetails').open = true")
+    page.evaluate("document.getElementById('surgeryFullName').value = 'NEW-SURGERY-DRAFT'")
+    page.evaluate("(status) => window.__releaseOldSurgery(status)", status)
+    page.wait_for_timeout(50)
+    expect(page.locator("#surgeryFullName")).to_have_value("NEW-SURGERY-DRAFT")
+    expect(page.locator("#surgeryEditorDetails")).to_have_attribute("open", "")
+    page.evaluate("""() => {
+        window.fetch = window.__oldSurgeryFetch;
+        delete window.__oldSurgeryFetch;
+        delete window.__releaseOldSurgery;
+    }""")
+
+
 def exercise_day_navigation(page,width):
     page.locator('#doctorDateButton').click()
     expect(page.locator('#doctorPopoverContent')).to_contain_text('Ασθενής Δοκιμής Α')
@@ -797,6 +837,8 @@ def browser_suite(width, screenshot_name):
         assert_delayed_recent_purged_after_logout(page)
         page.evaluate("window.dispatchEvent(new Event('clinical:authenticated'))")
         expect(page.locator("#surgeryTableBody")).to_contain_text("Συνθετικός Ασθενής")
+        assert_stale_surgery_write_keeps_new_draft(page, 200)
+        assert_stale_surgery_write_keeps_new_draft(page, 401)
         page.locator("#doctorActionsButton").click()
         page.locator("#doctorPopoverContent").get_by_role("button", name="Περιστατικά ιατρείου").click()
         page.locator('[data-office-tab="accidents"]').click()
