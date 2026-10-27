@@ -29,10 +29,11 @@
   const visitDate=el(dateLabel,'input');visitDate.type='date';visitDate.id='captureDate';
   const audioPanel=el(composer,'section','','capture-web-audio');audioPanel.id='captureWebAudio';
   el(audioPanel,'h4','Καταγραφή επίσκεψης με μικρόφωνο');
-  const audioInfo=el(audioPanel,'p','Η επεξεργασία γίνεται μετά τη Λήξη. Έλεγξε το κλινικό κείμενο πριν την Αποθήκευση.','clinical-muted');
+  el(audioPanel,'p','Μετά τη Λήξη, ο ήχος αποστέλλεται στην OpenAI για μεταγραφή. Η μεταγραφή και, όταν υπάρχουν, το όνομα και η ημερομηνία γέννησης της επιλεγμένης καρτέλας αποστέλλονται στην OpenAI για το προσχέδιο.','clinical-muted');
+  el(audioPanel,'p','Η OpenAI μπορεί να διατηρεί τη μεταγραφή και τα στοιχεία της καρτέλας σε αρχεία ελέγχου έως 30 ημέρες ή περισσότερο στις εξαιρέσεις της πολιτικής της. Έλεγξε το κλινικό κείμενο πριν την Αποθήκευση.','clinical-muted');
   const informedLabel=el(audioPanel,'label','');
   const informed=el(informedLabel,'input');informed.type='checkbox';informed.id='capturePatientInformed';
-  informedLabel.append(document.createTextNode(' Ο ασθενής ενημερώθηκε για την ηχογράφηση'));
+  informedLabel.append(document.createTextNode(' Ο ασθενής ενημερώθηκε για την ηχογράφηση, την επεξεργασία από OpenAI και τη διατήρηση που περιγράφεται παραπάνω, και συμφώνησε'));
   const audioStart=button(audioPanel,'Έναρξη',startAudio);audioStart.id='captureAudioStart';audioStart.disabled=true;
   const audioStop=button(audioPanel,'Λήξη',stopAudio);audioStop.id='captureAudioStop';audioStop.disabled=true;
   const audioStatus=el(audioPanel,'p','Έλεγχος διαθεσιμότητας…');audioStatus.id='captureAudioStatus';audioStatus.setAttribute('role','status');
@@ -315,6 +316,7 @@
   function stopAudio(){if(!audioRecorder||audioRecorder.state==='inactive')return;audioStop.disabled=true;audioStatus.textContent='Λήξη και επεξεργασία…';audioRecorder.stop();}
   async function finishAudio(blob,token,id,ticket,draftTicket){
     if(token!==audioToken)return;
+    if(!informed.checked){audioStatus.textContent='Η επιβεβαίωση ενημέρωσης αποσύρθηκε. Ο ήχος απορρίφθηκε.';input.disabled=false;extractButton.disabled=false;visitDate.disabled=false;return;}
     if(!blob.size||blob.size>MAX_AUDIO_BYTES){audioStatus.textContent='Η ηχογράφηση υπερβαίνει το όριο μεγέθους. Ο ήχος απορρίφθηκε.';input.disabled=false;extractButton.disabled=false;visitDate.disabled=false;return;}
     busy=true;audioAbort=new AbortController();
     try{
@@ -322,8 +324,9 @@
       if(token!==audioToken||ticket!==generation||draftTicket!==draftGeneration||id!==patientId||renewed.patient_id!==id)throw Error('Η καρτέλα άλλαξε.');
       contextId=renewed.context_id;audioContextExpiresAt=renewed.expires_at||'';
       const usedContext=contextId,usedDate=visitDate.value;
+      if(!informed.checked)throw Error('Η επιβεβαίωση ενημέρωσης αποσύρθηκε. Ο ήχος απορρίφθηκε.');
       const r=await fetch('/clinical/visit-capture/audio/draft',{method:'POST',credentials:'same-origin',cache:'no-store',
-        headers:{'Content-Type':blob.type,'X-Visit-Context':usedContext,'X-Encounter-Date':usedDate},body:blob,signal:audioAbort.signal});
+        headers:{'Content-Type':blob.type,'X-Visit-Context':usedContext,'X-Encounter-Date':usedDate,'X-Visit-Retention-Acknowledged':'standard'},body:blob,signal:audioAbort.signal});
       if(!r.ok){if(r.status===401)window.dispatchEvent(new Event('clinical:request-login'));throw Error(r.status===409?'Ο φάκελος άλλαξε. Άνοιξέ τον ξανά.':'Η ηχογράφηση δεν επεξεργάστηκε. Δοκίμασε ξανά.');}
       const result=await r.json();
       if(token!==audioToken||ticket!==generation||draftTicket!==draftGeneration||id!==patientId||contextId!==usedContext||visitDate.value!==usedDate)return;
@@ -332,12 +335,12 @@
       candidate=result.candidate;audioDraft=true;audioReviewUnits=result.review_units;audioPreviewed=null;
       bindClinician();audioPatient.textContent=$('visitSelectedName').textContent;
       audioReview.hidden=false;audioConfirm.checked=false;drawReview();renderAudioFocused();
-      saveButton.hidden=false;saveButton.disabled=true;audioStatus.textContent='Το κλινικό κείμενο είναι έτοιμο για έλεγχο. Ο ήχος διαγράφηκε.';
+      saveButton.hidden=false;saveButton.disabled=true;audioStatus.textContent='Το κλινικό κείμενο είναι έτοιμο για έλεγχο. Το προσωρινό αντίγραφο ήχου στον server αφαιρέθηκε.';
       feedback.textContent='Έλεγξε και διόρθωσε τις ενότητες. Οι κρίσιμες σημασίες παραμένουν προσωρινές μέχρι να τις επιβεβαιώσεις.';
     }catch(e){if(token===audioToken&&ticket===generation&&draftTicket===draftGeneration){audioStatus.textContent=e.name==='AbortError'?'Η επεξεργασία ακυρώθηκε.':e.message;}}
     finally{if(token===audioToken){busy=false;audioAbort=null;input.disabled=false;extractButton.disabled=false;visitDate.disabled=false;audioStart.disabled=!audioReady||!informed.checked||Boolean(candidate);}}
   }
-  informed.onchange=()=>{audioStart.disabled=!audioReady||!informed.checked||Boolean(audioRecorder)||busy;};
+  informed.onchange=()=>{if(!informed.checked&&audioRecorder){discardAudio();audioStop.disabled=true;input.disabled=false;extractButton.disabled=false;visitDate.disabled=false;audioStatus.textContent='Η επιβεβαίωση ενημέρωσης αποσύρθηκε. Ο ήχος απορρίφθηκε.';}audioStart.disabled=!audioReady||!informed.checked||Boolean(audioRecorder)||busy;};
   audioConfirm.onchange=()=>{audioPreviewed=null;saveButton.disabled=true;previews.replaceChildren();if(audioConfirm.checked)preview();};
   async function open(id){
     window.dispatchEvent(new Event('cockpit:patient-opening'));
