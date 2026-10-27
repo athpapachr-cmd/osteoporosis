@@ -5,6 +5,7 @@ const fs = require("node:fs");
 const vm = require("node:vm");
 
 const app = fs.readFileSync("static/cockpit/visit-capture/app.js", "utf8");
+const entry = fs.readFileSync("static/cockpit/visit-capture/entry.js", "utf8");
 const html = fs.readFileSync("static/cockpit/visit-capture/index.html", "utf8");
 const promptMatch = html.match(/<template id="diaPromptTemplate">([\s\S]*?)<\/template>/);
 assert.ok(promptMatch);
@@ -77,6 +78,30 @@ document.getElementById("diaPromptTemplate").content = {textContent: promptMatch
 const nonce = "N".repeat(43);
 const localSessionId = "L".repeat(22);
 const requestId = "R".repeat(22);
+
+function runEntry(hash, search = "") {
+  let replaced = "";
+  const entryLocation = {
+    href: "https://ortho-reception-backend.onrender.com/static/cockpit/visit-capture/index.html" + search + hash,
+    origin: "https://ortho-reception-backend.onrender.com",
+    hash,
+    replace(target) { replaced = target; },
+  };
+  vm.runInNewContext(entry, {location: entryLocation, URL}, {filename: "entry.js"});
+  return replaced;
+}
+
+assert.equal(runEntry("#local_visit_audio_v1=" + nonce), "", "valid local entry must retain its fragment and page");
+assert.equal(
+  runEntry("#local_visit_audio_v1=" + "N".repeat(42)),
+  "https://ortho-reception-backend.onrender.com/static/cockpit/index.html?capture=1",
+  "malformed local entry must not bypass the normal shell redirect",
+);
+assert.equal(
+  runEntry("", "?patient_id=SYN-000"),
+  "https://ortho-reception-backend.onrender.com/static/cockpit/index.html?capture=1&entry_patient=SYN-000",
+  "ordinary Visit Capture entry must keep the integrated-shell patient handoff",
+);
 const windowEvents = new Map();
 const calls = [];
 const portMessages = [];
