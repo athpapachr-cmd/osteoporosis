@@ -19,3 +19,7 @@
 ## Remaining gate
 
 The clinician is obtaining proof that the OpenAI project backing the Render key has ZDR. After that proof and project ID are verified, configure the distinct purpose gate, observe any configuration deploy, verify authenticated capability with a controlled no-PHI check, then hand over the first informed-patient recording, review and explicit Save to the clinician. No real-use or clinical-quality claim is made by this release receipt.
+
+## Documentation closure
+
+[PR #233](https://github.com/athpapachr-cmd/osteoporosis/pull/233) published this receipt and canonical release state as docs-only merge `25e289ad2160f8c035d8e3085edf14b4d3594bd5` after 9/9 checks. Render recorded `commit_ignored` at 2026-10-27T07:04:08.634Z for the `[skip render]` message; the application deploy remained `dep-dbg4m68473hc73fcj4k0` LIVE. The technical writer is released while the exact-project ZDR proof is pending.
