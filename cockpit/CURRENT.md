@@ -1,3 +1,5 @@
+> **2026-10-27 WEB VISIT AUDIO — NATIVE DEPLOY BUILDING:** Render deploy `dep-dbg4m68473hc73fcj4k0` targets exact merge `667d76f` and is `update_in_progress`; prior local release remains LIVE. Release writer next observes terminal status, then no-write smoke. No manual deploy, real audio/data or clinical write; ZDR gate OFF.
+
 > **2026-10-27 WEB VISIT AUDIO — MERGED / DEPLOY OBSERVATION NEXT:** PR #232 final head `1d8a8b0` passed 17/17 and merged as `667d76f`. Release branch `codex/web-visit-capture-release` checkpoints the native Render deploy and no-write smoke. Independent R2 PASS 0:0:0; previous local-audio deploy remains last verified LIVE until observation. Real-use ZDR gate OFF; no patient audio/data or clinical write.
 
 > **2026-10-27 WEB VISIT AUDIO — PR #232 18/18 CI PASS / MERGE GATE:** Exact code/CI head `7dddec0` passed all 18 checks, including new synthetic browser coverage and canonical impact. Independent R2 remains PASS 0:0:0 on unchanged runtime/test. This docs-only checkpoint must itself pass exact-head CI before guarded merge/native Render/no-write smoke. ZDR gate OFF pending exact project proof; no real audio/data/deploy.
