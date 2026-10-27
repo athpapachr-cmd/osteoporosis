@@ -90,10 +90,9 @@ class OpenAITranscriber:
     async def transcribe(self, audio: Any, mime: str) -> str:
         settings = self.settings
         audio.seek(0)
-        fields = [("model", settings.transcribe_model), ("response_format", "json"),
-                  ("prompt", "Κλινική επίσκεψη στα ελληνικά με πιθανές αγγλικές ιατρικές λέξεις.")]
-        fields += [("languages[]", language) for language in ("el", "en")]
-        fields += [("keywords[]", word) for word in settings.keywords]
+        fields = {"model": settings.transcribe_model, "response_format": "json",
+                  "prompt": "Κλινική επίσκεψη στα ελληνικά με πιθανές αγγλικές ιατρικές λέξεις.",
+                  "languages[]": ["el", "en"], "keywords[]": list(settings.keywords)}
         filename = "visit.webm" if mime == "audio/webm" else "visit.mp4"
         async with httpx.AsyncClient(timeout=settings.transcribe_timeout, follow_redirects=False) as client:
             response = await client.post("https://api.openai.com/v1/audio/transcriptions",
@@ -227,6 +226,9 @@ def build_candidate(units: list[str], labels: dict[int, str], encounter_date: st
     reason_ids = [identifier for identifier in range(len(units)) if labels[identifier] == "reason"]
     if not reason_ids:
         raise ValueError("reason_missing")
+    if not any(category not in ("reason", "uncertain", "unclassified")
+               for category in labels.values()):
+        raise ValueError("clinical_content_missing")
     review_units = []
     for identifier, text in enumerate(units):
         category = labels[identifier]
