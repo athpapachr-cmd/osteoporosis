@@ -7,6 +7,8 @@ on:
       - "test_cockpit_visit_amendments.py"
       - "clinical_data.py"
       - "clinical_capture_cp1.py"
+      - "clinical_visit_audio.py"
+      - "test_clinical_visit_audio.py"
       - "clinical_pending_one_tap.py"
       - "test_cockpit_cp2.py"
       - "test_cockpit_appointment_chart.py"
@@ -32,6 +34,8 @@ on:
       - "test_cockpit_visit_amendments.py"
       - "clinical_data.py"
       - "clinical_capture_cp1.py"
+      - "clinical_visit_audio.py"
+      - "test_clinical_visit_audio.py"
       - "clinical_pending_one_tap.py"
       - "test_cockpit_cp2.py"
       - "test_cockpit_appointment_chart.py"
@@ -66,7 +70,7 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt pytest
       - name: Python syntax
-        run: python -m py_compile clinical_data.py clinical_pending_one_tap.py local_visit_audio/*.py test_cockpit_cp2.py test_visit_capture.py test_visit_capture_ui.py test_local_visit_audio.py test_cockpit_home.py
+        run: python -m py_compile clinical_data.py clinical_pending_one_tap.py clinical_visit_audio.py local_visit_audio/*.py test_cockpit_cp2.py test_visit_capture.py test_visit_capture_ui.py test_clinical_visit_audio.py test_local_visit_audio.py test_cockpit_home.py
       - name: Visit Capture JavaScript syntax
         run: |
           node --check static/cockpit/visit-capture/app.js
@@ -74,6 +78,7 @@ jobs:
           node --check test_visit_capture_local_audio_ui.js
           node --check test_local_audio_launcher_lifecycle.js
           node --check static/cockpit/patient-entry.js
+          node --check static/cockpit/patient-chart.js
           node --check static/cockpit/visit-capture/entry.js
       - name: Visit Capture no-patient browser simulation
         run: |
@@ -89,6 +94,6 @@ jobs:
             python -m playwright install --with-deps chromium
           fi
       - name: CP1 natural summary and persistent chart
-        run: pytest -q test_cockpit_cp1.py test_cockpit_cp2.py test_cockpit_patient_entry.py test_cockpit_appointment_chart.py test_cockpit_visit_amendments.py
+        run: pytest -q test_cockpit_cp1.py test_cockpit_cp2.py test_cockpit_patient_entry.py test_cockpit_appointment_chart.py test_cockpit_visit_amendments.py test_clinical_visit_audio.py
       - name: Diff hygiene
         run: git diff --check HEAD^ HEAD
