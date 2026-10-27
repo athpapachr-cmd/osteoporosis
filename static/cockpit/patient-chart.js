@@ -290,12 +290,14 @@
       const mime=['audio/webm;codecs=opus','audio/mp4','audio/webm'].find(type=>MediaRecorder.isTypeSupported(type));
       if(!mime)throw Error('Δεν υποστηρίζεται ασφαλής μορφή ήχου.');
       stream=await navigator.mediaDevices.getUserMedia({audio:true});
+      if(!informed.checked)throw Error('Η επιβεβαίωση ενημέρωσης αποσύρθηκε. Ο ήχος απορρίφθηκε.');
       if(ticket!==generation||draftTicket!==draftGeneration||id!==patientId||composer.hidden||token!==audioToken)throw Error('Η καρτέλα άλλαξε.');
       const context=await request('/visit-capture/context',{patient_id:id,client_session_id:session});
+      if(!informed.checked)throw Error('Η επιβεβαίωση ενημέρωσης αποσύρθηκε. Ο ήχος απορρίφθηκε.');
       if(ticket!==generation||draftTicket!==draftGeneration||id!==patientId||composer.hidden||token!==audioToken||context.patient_id!==id)throw Error('Η καρτέλα άλλαξε.');
       contextId=context.context_id;audioContextExpiresAt=context.expires_at||'';
-      audioStream=stream;audioChunks=[];
-      const recorder=new MediaRecorder(stream,{mimeType:mime,audioBitsPerSecond:64000});audioRecorder=recorder;
+      audioChunks=[];
+      const recorder=new MediaRecorder(stream,{mimeType:mime,audioBitsPerSecond:64000});
       recorder.ondataavailable=event=>{if(token===audioToken&&event.data?.size)audioChunks.push(event.data);};
       recorder.onerror=()=>{if(token===audioToken){discardAudio();audioStatus.textContent='Η ηχογράφηση διακόπηκε. Δεν κρατήθηκε ήχος.';input.disabled=false;extractButton.disabled=false;visitDate.disabled=false;audioStop.disabled=true;audioStart.disabled=!audioReady||!informed.checked;}};
       recorder.onstop=()=>{
@@ -304,14 +306,15 @@
         const blob=new Blob(audioChunks,{type:mime.split(';')[0]});audioChunks=[];audioRecorder=null;audioStream=null;
         finishAudio(blob,token,id,ticket,draftTicket);
       };
-      recorder.start(1000);audioStarted=Date.now();audioStop.disabled=false;
+      if(!informed.checked)throw Error('Η επιβεβαίωση ενημέρωσης αποσύρθηκε. Ο ήχος απορρίφθηκε.');
+      audioStream=stream;audioRecorder=recorder;recorder.start(1000);audioStarted=Date.now();audioStop.disabled=false;
       input.disabled=true;extractButton.disabled=true;visitDate.disabled=true;
       audioStatus.textContent='● Ηχογράφηση · 0:00';
       audioTimer=setInterval(()=>{if(token!==audioToken)return;const seconds=Math.floor((Date.now()-audioStarted)/1000);
         audioStatus.textContent='● Ηχογράφηση · '+Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');
         if(seconds>=1800){discardAudio();audioStatus.textContent='Το όριο ηχογράφησης έληξε. Ο ήχος απορρίφθηκε.';audioStop.disabled=true;input.disabled=false;extractButton.disabled=false;visitDate.disabled=false;}
       },1000);
-    }catch(e){stream?.getTracks().forEach(track=>track.stop());if(token===audioToken){audioStatus.textContent=e.message||'Δεν ξεκίνησε η ηχογράφηση.';audioStart.disabled=!audioReady||!informed.checked;}}
+    }catch(e){stream?.getTracks().forEach(track=>track.stop());if(token===audioToken){audioStream=null;audioRecorder=null;audioStatus.textContent=e.message||'Δεν ξεκίνησε η ηχογράφηση.';audioStart.disabled=!audioReady||!informed.checked;}}
   }
   function stopAudio(){if(!audioRecorder||audioRecorder.state==='inactive')return;audioStop.disabled=true;audioStatus.textContent='Λήξη και επεξεργασία…';audioRecorder.stop();}
   async function finishAudio(blob,token,id,ticket,draftTicket){

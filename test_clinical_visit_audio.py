@@ -293,13 +293,15 @@ def test_browser_web_audio_review_and_confirmed_save(setup, monkeypatch):
             errors = []
             page.on("pageerror", lambda error: errors.append(str(error)))
             page.add_init_script("""
+                window._holdMic=false;window._releaseMic=null;window._audioStarts=0;window._trackStops=0;
                 Object.defineProperty(navigator, 'mediaDevices', {configurable:true, value:{
-                  getUserMedia: async()=>({getTracks:()=>[{stop(){}}]})
+                  getUserMedia: async()=>{if(window._holdMic)await new Promise(resolve=>{window._releaseMic=resolve;});
+                    return {getTracks:()=>[{stop(){window._trackStops++;}}]};}
                 }});
                 window.MediaRecorder=class {
                   static isTypeSupported(type){return type==='audio/webm;codecs=opus'}
                   constructor(stream,opts){this.state='inactive';this.mimeType=opts.mimeType}
-                  start(){this.state='recording'}
+                  start(){this.state='recording';window._audioStarts++;}
                   stop(){this.state='inactive';
                     const bytes=new Uint8Array(132);bytes.set([0x1a,0x45,0xdf,0xa3]);
                     this.ondataavailable({data:new Blob([bytes],{type:'audio/webm'})});this.onstop();}
@@ -318,6 +320,15 @@ def test_browser_web_audio_review_and_confirmed_save(setup, monkeypatch):
             expect(page.locator("#captureAudioStart")).to_be_disabled()
             expect(page.locator("#captureWebAudio")).to_contain_text("ημερομηνία γέννησης")
             expect(page.locator("#captureWebAudio")).to_contain_text("30 ημέρες")
+            page.locator("#capturePatientInformed").check()
+            page.evaluate("window._holdMic=true")
+            page.locator("#captureAudioStart").click()
+            expect(page.locator("#captureAudioStatus")).to_contain_text("Άνοιγμα μικροφώνου")
+            page.locator("#capturePatientInformed").uncheck()
+            page.evaluate("window._holdMic=false;window._releaseMic()")
+            expect(page.locator("#captureAudioStatus")).to_contain_text("αποσύρθηκε")
+            assert page.evaluate("window._audioStarts") == 0
+            assert page.evaluate("window._trackStops") >= 1
             page.locator("#capturePatientInformed").check()
             page.locator("#captureAudioStart").click()
             expect(page.locator("#captureAudioStatus")).to_contain_text("Ηχογράφηση")
