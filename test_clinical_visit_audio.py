@@ -241,6 +241,7 @@ def test_identity_refusal_and_missing_clinical_content_are_rejected(monkeypatch)
 
 def test_browser_web_audio_review_and_confirmed_save(setup, monkeypatch):
     import socket
+    import shutil
     import threading
     import uvicorn
     from playwright.sync_api import expect, sync_playwright
@@ -267,7 +268,7 @@ def test_browser_web_audio_review_and_confirmed_save(setup, monkeypatch):
     thread.start()
     try:
         with sync_playwright() as playwright:
-            browser = playwright.chromium.launch()
+            browser = playwright.chromium.launch(executable_path=shutil.which("google-chrome") or shutil.which("chromium"))
             page = browser.new_page(viewport={"width": 1280, "height": 950}, timezone_id="Asia/Nicosia")
             errors = []
             page.on("pageerror", lambda error: errors.append(str(error)))
