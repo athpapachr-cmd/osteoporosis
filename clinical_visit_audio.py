@@ -37,6 +37,7 @@ class AudioSettings:
     summarize_timeout: int
     pipeline_timeout: int
     max_output_tokens: int
+    reasoning_effort: str
     keywords: tuple[str, ...]
 
     @classmethod
@@ -60,6 +61,9 @@ class AudioSettings:
             summarize_timeout=bounded("VISIT_AUDIO_SUMMARIZE_TIMEOUT", 90, 20, 300),
             pipeline_timeout=bounded("VISIT_AUDIO_PIPELINE_TIMEOUT", 600, 60, 1200),
             max_output_tokens=bounded("VISIT_AUDIO_MAX_OUTPUT_TOKENS", 3000, 256, 8000),
+            reasoning_effort=(os.getenv("VISIT_AUDIO_REASONING_EFFORT", "low")
+                              if os.getenv("VISIT_AUDIO_REASONING_EFFORT", "low") in
+                              ("none", "low", "medium", "high") else "low"),
             keywords=words,
         )
 
@@ -136,6 +140,7 @@ class OpenAISummarizer:
                          "OpenAI-Project": settings.project_id},
                 json={"model": settings.summarize_model, "store": False,
                       "max_output_tokens": settings.max_output_tokens,
+                      "reasoning": {"effort": settings.reasoning_effort},
                       "input": [{"role": "developer", "content": system},
                                 {"role": "user", "content": source}],
                       "text": {"format": {"type": "json_schema", "name": "visit_audio_units_v1",
@@ -225,6 +230,8 @@ def build_candidate(units: list[str], labels: dict[int, str], encounter_date: st
     review_units = []
     for identifier, text in enumerate(units):
         category = labels[identifier]
+        if category in PROVISIONAL or RISK_PATTERN.search(text):
+            review_units.append({"id": identifier, "text": text, "hint": category})
         if category == "reason" and identifier == reason_ids[0]:
             continue
         target = mapping.get(category, "uncertainties")
@@ -232,8 +239,6 @@ def build_candidate(units: list[str], labels: dict[int, str], encounter_date: st
         if target == "findings":
             item["region"] = None
         groups[target].append(item)
-        if category in PROVISIONAL or RISK_PATTERN.search(text):
-            review_units.append({"id": identifier, "text": text, "hint": category})
     if len(review_units) > 60:
         raise ValueError("review_too_large")
     raw = {"schema_version": "visit_capture_candidate_v1", "source_identity_state": "consistent",
@@ -243,20 +248,6 @@ def build_candidate(units: list[str], labels: dict[int, str], encounter_date: st
     candidate = VisitCaptureCandidateV1.model_validate(raw)
     _validate_visit_capture_candidate(candidate)
     return candidate, review_units
-
-
-async def process_audio(audio: Any, mime: str, encounter_date: str,
-                        identity: dict[str, str], settings: AudioSettings):
-    transcriber, summarizer = make_providers(settings)
-    transcript = await transcriber.transcribe(audio, mime)
-    units = source_units(transcript)
-    labels: dict[int, str] = {}
-    for batch in batches(units):
-        state, batch_labels = checked_labels(await summarizer.classify(batch, identity), batch)
-        if state != "consistent":
-            raise ValueError("source_identity_unresolved")
-        labels.update(batch_labels)
-    return build_candidate(units, labels, encounter_date)
 
 
 def attach_visit_audio(router, engine, protected, context_for, ensure_patient):
