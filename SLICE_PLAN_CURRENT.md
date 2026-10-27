@@ -20,4 +20,4 @@ The browser sends a bounded recording to the protected Render service. Server-on
 
 ## Gates and next action
 
-First independent pre-code R2 BLOCK 0:3:1; the design was corrected for exact source-unit copying, post-result source-patient confirmation, bounded cleanup and capability gating. One affected closure review is required. After PASS, implement only this bounded seam, run focused synthetic tests, obtain one post-code exact-head R2, then PR/CI/Render checks and no-write production smoke. Real patient first use requires verified ZDR and clinician acceptance.
+First pre-code R2 BLOCK 0:3:1; first closure BLOCK 0:1:0 on typed semantic promotion. Corrected design holds these units provisional until explicit clinician type/status/completion selection. One focused closure review is required. After PASS, implement only this bounded seam, run focused synthetic tests, obtain one post-code exact-head R2, then PR/CI/Render checks and no-write production smoke. Real patient first use requires verified ZDR and clinician acceptance.
