@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — web visit audio inside the selected patient chart
 
-> **STATUS (2026-10-27): DESIGN CORRECTION / R2 CLOSURE HOLD.** The Product Owner explicitly replaced the local-only direction with server-side OpenAI processing and chose verified OpenAI Zero Data Retention as the condition for real patient audio. The existing local Priority 4 release remains LIVE and available for rollback. Its approved historical slice is archived at `cockpit/archive/SLICE_PLAN_PRIORITY4_LOCAL_VISIT_AUDIO_2026-10-27.md`.
+> **STATUS (2026-10-27): PRE-CODE R2 PASS / IMPLEMENTATION WRITER.** The Product Owner explicitly replaced the local-only direction with server-side OpenAI processing and chose verified OpenAI Zero Data Retention as the condition for real patient audio. The existing local Priority 4 release remains LIVE and available for rollback. Its approved historical slice is archived at `cockpit/archive/SLICE_PLAN_PRIORITY4_LOCAL_VISIT_AUDIO_2026-10-27.md`.
 
 ## Objective
 
@@ -20,4 +20,4 @@ The browser sends a bounded recording to the protected Render service. Server-on
 
 ## Gates and next action
 
-First pre-code R2 BLOCK 0:3:1; first closure BLOCK 0:1:0 on typed semantic promotion. Corrected design holds these units provisional until explicit clinician type/status/completion selection. One focused closure review is required. After PASS, implement only this bounded seam, run focused synthetic tests, obtain one post-code exact-head R2, then PR/CI/Render checks and no-write production smoke. Real patient first use requires verified ZDR and clinician acceptance.
+Final pre-code R2 closure PASS 0:0:0 on `69427a3`; prior findings closed. Now implement only this bounded seam, run focused synthetic tests, obtain one post-code exact-head R2, then PR/CI/Render checks and no-write production smoke. Real patient first use requires verified ZDR and clinician acceptance.
