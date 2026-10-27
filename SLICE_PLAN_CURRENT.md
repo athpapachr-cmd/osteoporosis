@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — web visit audio inside the selected patient chart
 
-> **STATUS (2026-10-27): IMPLEMENTED AND SYNTHETIC TESTED / POST-CODE R2 HOLD.** The Product Owner explicitly replaced the local-only direction with server-side OpenAI processing and chose verified OpenAI Zero Data Retention as the condition for real patient audio. The existing local Priority 4 release remains LIVE and available for rollback. Its approved historical slice is archived at `cockpit/archive/SLICE_PLAN_PRIORITY4_LOCAL_VISIT_AUDIO_2026-10-27.md`.
+> **STATUS (2026-10-27): POST-CODE R2 PASS / PR AND CI NEXT.** The Product Owner explicitly replaced the local-only direction with server-side OpenAI processing and chose verified OpenAI Zero Data Retention as the condition for real patient audio. The existing local Priority 4 release remains LIVE and available for rollback. Its approved historical slice is archived at `cockpit/archive/SLICE_PLAN_PRIORITY4_LOCAL_VISIT_AUDIO_2026-10-27.md`.
 
 ## Objective
 
@@ -20,4 +20,4 @@ The browser sends a bounded recording to the protected Render service. Server-on
 
 ## Gates and next action
 
-Final pre-code R2 closure PASS 0:0:0 on `69427a3`; prior findings closed. Runtime and synthetic test head `04b0172` passed 26 affected Python/browser tests, `node --check` and `git diff --check`. Post-code independent exact-code R2 is next; then PR/CI/Render checks and no-write production smoke. Real patient first use requires verified ZDR and clinician acceptance.
+Final pre-code R2 closure PASS 0:0:0 on `69427a3`; prior findings closed. Runtime and synthetic test head `04b0172` passed 26 affected Python/browser tests, `node --check` and `git diff --check`. Independent post-code R2 on `eefc6c0` returned PASS / complete for affected scope / 0:0:0; the inherited expired-prior CAS behavior was confirmed and the active upload distinction clarified in the design. Next PR/exact-head CI, guarded merge, native Render observation and no-write production smoke. Real patient first use requires verified ZDR and clinician acceptance.
