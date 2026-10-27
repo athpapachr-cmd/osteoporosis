@@ -31,6 +31,7 @@ RISK_PATTERN = re.compile(r"\d|%|\b(?:mg|ml|δεξι\w*|αριστερ\w*|right|
 class AudioSettings:
     api_key: str
     project_id: str
+    organization_id: str
     transcribe_model: str
     summarize_model: str
     transcribe_timeout: int
@@ -54,7 +55,8 @@ class AudioSettings:
         words = tuple(x for x in words[:16] if len(x) <= 80 and not any(c in x for c in "<>\r\n"))
         return cls(
             api_key=os.getenv("OPENAI_API_KEY", ""),
-            project_id=os.getenv("VISIT_AUDIO_ZDR_PROJECT_ID", ""),
+            project_id=os.getenv("VISIT_AUDIO_OPENAI_PROJECT_ID", "").strip(),
+            organization_id=os.getenv("VISIT_AUDIO_OPENAI_ORG_ID", "").strip(),
             transcribe_model=os.getenv("VISIT_AUDIO_TRANSCRIBE_MODEL", "gpt-transcribe"),
             summarize_model=os.getenv("VISIT_AUDIO_SUMMARIZER_MODEL", "gpt-6-luna"),
             transcribe_timeout=bounded("VISIT_AUDIO_TRANSCRIBE_TIMEOUT", 180, 30, 600),
@@ -69,10 +71,21 @@ class AudioSettings:
 
 
 def enabled() -> bool:
+    project_id = os.getenv("VISIT_AUDIO_OPENAI_PROJECT_ID", "").strip()
+    organization_id = os.getenv("VISIT_AUDIO_OPENAI_ORG_ID", "").strip()
     return (os.getenv("VISIT_AUDIO_OPENAI_PHI_APPROVED") == "1"
-            and os.getenv("VISIT_AUDIO_ZDR_VERIFIED") == "1"
-            and bool(os.getenv("VISIT_AUDIO_ZDR_PROJECT_ID"))
+            and os.getenv("VISIT_AUDIO_RETENTION_MODE") == "standard"
+            and bool(re.fullmatch(r"proj_[A-Za-z0-9_-]{1,120}", project_id))
+            and (not organization_id or bool(re.fullmatch(r"org-[A-Za-z0-9_-]{1,120}", organization_id)))
             and bool(os.getenv("OPENAI_API_KEY")))
+
+
+def provider_headers(settings: AudioSettings) -> dict[str, str]:
+    headers = {"Authorization": "Bearer " + settings.api_key,
+               "OpenAI-Project": settings.project_id}
+    if settings.organization_id:
+        headers["OpenAI-Organization"] = settings.organization_id
+    return headers
 
 
 class TranscriberProvider(Protocol):
@@ -96,8 +109,7 @@ class OpenAITranscriber:
         filename = "visit.webm" if mime == "audio/webm" else "visit.mp4"
         async with httpx.AsyncClient(timeout=settings.transcribe_timeout, follow_redirects=False) as client:
             response = await client.post("https://api.openai.com/v1/audio/transcriptions",
-                headers={"Authorization": "Bearer " + settings.api_key,
-                         "OpenAI-Project": settings.project_id},
+                headers=provider_headers(settings),
                 data=fields, files={"file": (filename, audio, mime)})
         if response.status_code != 200 or len(response.content) > 600_000:
             raise ValueError("transcription_unavailable")
@@ -135,8 +147,7 @@ class OpenAISummarizer:
         )
         async with httpx.AsyncClient(timeout=settings.summarize_timeout, follow_redirects=False) as client:
             response = await client.post("https://api.openai.com/v1/responses",
-                headers={"Authorization": "Bearer " + settings.api_key,
-                         "OpenAI-Project": settings.project_id},
+                headers=provider_headers(settings),
                 json={"model": settings.summarize_model, "store": False,
                       "max_output_tokens": settings.max_output_tokens,
                       "reasoning": {"effort": settings.reasoning_effort},
@@ -263,6 +274,8 @@ def attach_visit_audio(router, engine, protected, context_for, ensure_patient):
         response.headers["Cache-Control"] = "no-store"
         if not enabled():
             raise HTTPException(503, "Visit audio processing is not enabled")
+        if request.headers.get("x-visit-retention-acknowledged") != "standard":
+            raise HTTPException(422, "Recording privacy acknowledgement required")
         context_id = request.headers.get("x-visit-context", "")
         encounter_date = request.headers.get("x-encounter-date", "")
         mime = request.headers.get("content-type", "").split(";", 1)[0].strip().lower()

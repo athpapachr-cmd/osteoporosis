@@ -1,5 +1,7 @@
 # Web visit audio in the patient chart — design candidate
 
+> **HISTORICAL ZDR CONDITION SUPERSEDED:** The Product Owner subsequently selected standard API retention. `WEB_VISIT_AUDIO_STANDARD_RETENTION_2026-10-27.md` owns the changed privacy/gate/notice behavior; all unaffected technical contracts here remain active.
+
 > 2026-10-27, Asia/Nicosia. Product Owner explicitly superseded the prior local-only direction for this new web path. Real patient audio remains blocked until the OpenAI project is verified as Zero Data Retention (ZDR) and a purpose-specific Render gate is enabled. The prior local implementation remains available for rollback during the transition.
 
 ## One clinician path

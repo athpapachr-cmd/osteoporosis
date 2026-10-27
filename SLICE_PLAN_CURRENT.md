@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — web visit audio inside the selected patient chart
 
-> **STATUS (2026-10-27): CODE LIVE / NO-WRITE SMOKE PASS / REAL-USE ZDR GATE PENDING.** The Product Owner explicitly replaced the local-only direction with server-side OpenAI processing and chose verified OpenAI Zero Data Retention as the condition for real patient audio. The existing local Priority 4 path remains available. Its approved historical slice is archived at `cockpit/archive/SLICE_PLAN_PRIORITY4_LOCAL_VISIT_AUDIO_2026-10-27.md`.
+> **STATUS (2026-10-27): CODE LIVE / STANDARD RETENTION REPLAN / REAL-USE GATE OFF.** The Product Owner replaced the prior project-ZDR condition with standard OpenAI API retention. The bounded privacy/gate/notice change is designed in `cockpit/WEB_VISIT_AUDIO_STANDARD_RETENTION_2026-10-27.md` and awaits independent pre-code R2. Existing web code remains LIVE but disabled; the local Priority 4 path remains available. Its historical slice is archived at `cockpit/archive/SLICE_PLAN_PRIORITY4_LOCAL_VISIT_AUDIO_2026-10-27.md`.
 
 ## Objective
 
@@ -8,7 +8,7 @@ Add direct clinician Start/Stop and automatic transcript-to-editable-draft proce
 
 ## New boundary
 
-The browser sends a bounded recording to the protected Render service. Server-only providers call OpenAI `gpt-transcribe` and Responses `gpt-6-luna` Structured Outputs. Audio/transcript are temporary and absent from records/logs. `OPENAI_API_KEY` stays in Render only. A purpose-specific provider gate remains disabled for real audio until the exact OpenAI project/key is verified as ZDR.
+The browser sends a bounded recording to the protected Render service. Server-only providers call OpenAI `gpt-transcribe` and Responses `gpt-6-luna` Structured Outputs. Audio/transcript are temporary and absent from records/logs. `OPENAI_API_KEY` stays in Render only. A purpose-specific provider gate remains disabled until the standard-retention notice/acknowledgement change is reviewed, implemented, released and configured. The existing `store:false` stays in place; it does not remove possible Responses abuse-monitoring retention.
 
 ## Safety invariants
 
@@ -20,4 +20,4 @@ The browser sends a bounded recording to the protected Render service. Server-on
 
 ## Gates and next action
 
-Final pre-code R2 closure PASS 0:0:0 on `69427a3`; prior findings closed. Runtime and synthetic test head `04b0172` passed 26 affected Python/browser tests, `node --check` and `git diff --check`. Independent post-code R2 on `eefc6c0` returned PASS / complete for affected scope / 0:0:0; the inherited expired-prior CAS behavior was confirmed and the active upload distinction clarified in the design. PR #232 exact final head `1d8a8b0` passed 17/17, merged as `667d76f3d1c3b636d65a869df85d02dff10fe800` and reached LIVE through native Render `dep-dbg4m68473hc73fcj4k0`. No-write asset/auth/log smoke passed; release receipt is in `cockpit/releases/COCKPIT_WEB_VISIT_AUDIO_PRODUCTION_RELEASE_2026-10-27.md`. Next verify exact OpenAI project ZDR proof, then enable the purpose gate and perform clinician first-use acceptance. No real patient processing is authorized until then.
+Final pre-code R2 closure PASS 0:0:0 on `69427a3`; prior findings closed. Runtime and synthetic test head `04b0172` passed 26 affected Python/browser tests, `node --check` and `git diff --check`. Independent post-code R2 on `eefc6c0` returned PASS / complete for affected scope / 0:0:0; the inherited expired-prior CAS behavior was confirmed and the active upload distinction clarified in the design. PR #232 exact final head `1d8a8b0` passed 17/17, merged as `667d76f3d1c3b636d65a869df85d02dff10fe800` and reached LIVE through native Render `dep-dbg4m68473hc73fcj4k0`. No-write asset/auth/log smoke passed; release receipt is in `cockpit/releases/COCKPIT_WEB_VISIT_AUDIO_PRODUCTION_RELEASE_2026-10-27.md`. The Product Owner subsequently selected standard OpenAI retention instead of waiting for ZDR approval. Next: independent affected pre-code R2 on the retention addendum, bounded implementation/tests, post-code R2, release and configuration smoke, then clinician first-use acceptance. No real patient processing is authorized before the new gate is live.
