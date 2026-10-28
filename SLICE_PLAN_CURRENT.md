@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — contextual AI clinical considerations from visit audio
 
-> **STATUS (2026-10-28): PR #247 CODE+CHECKPOINT HEAD CI 15/15 PASS / FINAL DOCS HEAD NEXT.** Exact PR head `fd72a089` is MERGEABLE and all 15 reported checks passed, including Canonical Impact, Visit Capture Chromium, Visit Brief, Cockpit Home, Office Cases/PostgreSQL, Surgery Queue, Learning and Physio integration gates. Independent R2 remains PASS 0:0:0. This durable CI receipt is docs-only; require its new exact head to pass before guarded squash merge. No provider request, real audio or clinical write.
+> **STATUS (2026-10-28): PRODUCTION CLASSIFICATION FAILURE / PRE-CODE R2 HOLD.** Two fictional Product Owner recordings reached transcription but failed strict classification with `invalid_output`; shorter speech failed identically. PR #247 contextual reasoning is therefore not being released even though its prior head passed 15/15 CI. The bounded correction preserves the validator and adds at most one same-batch retry only for allowlisted structural codes plus content-free `validation_code` diagnostics; identity uncertainty/conflict never retries. Design: `cockpit/WEB_VISIT_AUDIO_CLASSIFICATION_RETRY_2026-10-28.md`. Independent pre-code R2 is required before runtime mutation.
 
 ## Objective
 
