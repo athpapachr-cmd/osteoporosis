@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — no-loss web Visit Audio recovery
 
-> **STATUS (2026-10-28): COLLAPSED REVIEW R1 PASS / PR CI NEXT.** Runtime correction `f677130c` passed independent exact-head R1 with `PASS / COMPLETE_FOR_DECLARED_SCOPE=YES / P0:P1:P2=0:0:0`. Neither review body opens automatically; each opens only on explicit selection and closes on repeated selection. The affected suite passes `47 passed`, including Chromium through Dia; JavaScript/Python syntax and diff hygiene pass. No backend, model, patient-binding, candidate or Preview/Save delta. Fresh PR exact-head CI is next; merge/deploy remain separate.
+> **STATUS (2026-10-28): RELEASE AUTHORIZED / FINAL HEAD CI THEN MERGE.** Runtime correction `f677130c` passed independent exact-head R1 with `PASS / COMPLETE_FOR_DECLARED_SCOPE=YES / P0:P1:P2=0:0:0`. PR #247 head `764f3a55` is mergeable and passed all 21 exact-head checks. The Product Owner has now explicitly authorized merge and deploy. This release checkpoint is documentation-only; after its own exact-head CI passes, squash-merge, observe the single native Render auto-deploy on service `srv-d5qfk31r0fns73di596g`, then perform bounded no-PHI static/auth/log smoke. No manual duplicate deploy, recording, provider request or clinical write.
 
 ## Objective
 
