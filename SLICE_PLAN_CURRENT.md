@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — web audio semantic completeness and next-visit suggestions
 
-> **STATUS (2026-10-28): POST-CODE R2 P1 CORRECTION / CLOSURE HOLD.** Exact review of `99e5712f` found that free provider suggestion prose could evade a lexical denylist. The bounded correction replaces all provider-authored suggestion prose with nine typed intents, compatible extracted-fact validation and fixed server-owned non-prescriptive wording. Focused/inherited non-browser evidence passes; the updated Chromium oracle awaits exact-head CI because the local browser binary is absent. The prior native recording/ASR qualification remains deferred at `cockpit/archive/SLICE_PLAN_NATIVE_AUDIO_ASR_QUALIFICATION_DEFERRED_2026-10-28.md`.
+> **STATUS (2026-10-28): POST-CODE R2 PASS / PR GATE.** Corrected runtime/test/design `3e5ca4d0` passed independent closure 0:0:0. Exact-source structured symptoms/treatment/plan/obligations and typed server-rendered next-visit suggestions are ready for canonical-impact PR and exact-head CI. The updated Chromium oracle remains mandatory in CI because the local browser binary is absent. The prior native recording/ASR qualification remains deferred at `cockpit/archive/SLICE_PLAN_NATIVE_AUDIO_ASR_QUALIFICATION_DEFERRED_2026-10-28.md`.
 
 ## Objective
 
