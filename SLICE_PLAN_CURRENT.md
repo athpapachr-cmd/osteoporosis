@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — no-loss web Visit Audio recovery
 
-> **STATUS (2026-10-28): MERGED / NATIVE RENDER DEPLOY BUILDING.** PR #247 squash merge `ef4d633ab9796b5efe29932491133d02eab2361b` automatically created Render deploy `dep-dbh09nuq1p3s73bg835g` on service `srv-d5qfk31r0fns73di596g`; status is `update_in_progress`. No manual duplicate deploy. Prior deploy `dep-dbgvu2ui0phs73acact0` remains LIVE until the new instance is ready. Release branch `codex/web-visit-audio-release` owns only terminal deploy, no-PHI smoke and final receipt state. Next wait for the exact deploy to become LIVE, then bounded asset/auth/log smoke without recording, provider request or clinical write.
+> **STATUS (2026-10-28): MERGED / NATIVE RENDER DEPLOY FAILED / DIAGNOSIS NEXT.** PR #247 squash merge `ef4d633ab9796b5efe29932491133d02eab2361b` automatically created Render deploy `dep-dbh09nuq1p3s73bg835g`, which reached terminal `update_failed` at 2026-10-28T14:23:25Z. Prior deploy `dep-dbgvu2ui0phs73acact0` remains LIVE, so production traffic was preserved. No manual duplicate deploy. Release branch `codex/web-visit-audio-release` next inspects the failed build/deploy event and content-free logs, corrects only a source-proven cause, and requires fresh CI before any retry. No recording, provider request or clinical write.
 
 ## Objective
 
