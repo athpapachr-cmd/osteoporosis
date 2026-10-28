@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — no-loss web Visit Audio recovery
 
-> **STATUS (2026-10-28): R2 CORRECTION LOCALLY VERIFIED / RE-REVIEW NEXT.** Exact corrected design `c4d925e1` passed focused pre-code review. Post-code R2 found that stateless retry could slide origin/expiry and later bypass a nonretryable identity result. Recovery now requires the exact original context and one-time server capability state containing no audio, transcript, patient, context, date, digest or clinical content. Each request atomically consumes its capability; only a retryable processing failure receives one successor with the original origin/expiry. Browser renewal before retry is removed. The affected suite passes `47 passed`; syntax and diff checks pass. Exact-code R2 closure, PR exact-head CI and release remain separate gates.
+> **STATUS (2026-10-28): POST-CODE R2 PASS / PR CI NEXT.** Runtime commit `b7141461` passed independent exact-code closure with `PASS / COMPLETE_FOR_DECLARED_SCOPE=YES / P0:P1:P2=0:0:0`. Recovery requires the exact original context and one-time server capability state containing no audio, transcript, patient, context, date, digest or clinical content. Each request atomically consumes its capability; only a retryable processing failure receives one successor with unchanged original origin/expiry. The affected suite passes `47 passed`; Python/JavaScript syntax and diff checks pass. PR exact-head CI and a separate release decision remain.
 
 ## Objective
 
@@ -38,4 +38,4 @@ Prevent loss of a recorded visit when transcription succeeds but structured proc
 
 ## Review and release
 
-Pre-code R2 is complete. Runtime implementation and affected local tests are complete. Exact-code R2, exact-head CI and a separate release decision remain. This critical safety/data-integrity slice supersedes release of the already-reviewed retry-only head until closed.
+Pre-code and exact-code R2 are complete. Runtime implementation and affected local tests are complete. PR exact-head CI and a separate release decision remain. This critical safety/data-integrity slice supersedes release of the earlier retry-only head.
