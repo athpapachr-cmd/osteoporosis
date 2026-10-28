@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — no-loss web Visit Audio recovery
 
-> **STATUS (2026-10-28): POST-CODE R2 PASS / PR CI NEXT.** Runtime commit `b7141461` passed independent exact-code closure with `PASS / COMPLETE_FOR_DECLARED_SCOPE=YES / P0:P1:P2=0:0:0`. Recovery requires the exact original context and one-time server capability state containing no audio, transcript, patient, context, date, digest or clinical content. Each request atomically consumes its capability; only a retryable processing failure receives one successor with unchanged original origin/expiry. The affected suite passes `47 passed`; Python/JavaScript syntax and diff checks pass. PR exact-head CI and a separate release decision remain.
+> **STATUS (2026-10-28): PRODUCT OWNER UX CORRECTION CONFIRMED / R1 IMPLEMENTATION NEXT.** Runtime recovery commit `b7141461` passed independent exact-code R2 closure and PR head `111ecc97` passed the applicable exact-head checks. Product Owner then corrected the review presentation: neither the unverified transcript nor the processed clinical text may expand automatically. The active PR branch remains the sole writer, bounded to compact JS/CSS presentation, one browser regression and root/Cockpit checkpoints. No backend, model, patient-binding, candidate, Preview/Save, merge or deploy delta is authorized. One exact-head R1 review follows the tested UI correction.
 
 ## Objective
 
@@ -21,7 +21,7 @@ Prevent loss of a recorded visit when transcription succeeds but structured proc
 3. Transcript-only failures carry fixed safe stage/code metadata and produce content-free server diagnostics.
 4. A protected reprocess route submits the retained transcript to the same classification/candidate pipeline without retranscribing.
 5. Browser keeps the original Blob only in memory until successful structuring or explicit discard; failure exposes retry and local audio download.
-6. UI has two explicit views: unverified transcript and processed clinical text. Transcript-only state cannot Preview or Save.
+6. UI has two compact explicit controls: unverified transcript and processed clinical text. Both content views are collapsed by default and appear only after the clinician selects one; selecting the open control again collapses it. Transcript-only state cannot Preview or Save.
 7. Every reprocess requires a dedicated-secret signed binding for the exact original context/patient version/date/transcript digest and an active one-time server capability. Client values alone grant no authority; retry never renews or extends the original origin/expiry.
 8. Identity conflict/uncertain remains transcript-recoverable but cannot be reprocessed.
 9. A server-side chart/context binding failure never returns transcript/token, even after successful transcription; browser Blob recovery remains available.
@@ -31,6 +31,7 @@ Prevent loss of a recorded visit when transcription succeeds but structured proc
 - Does every post-transcription failure preserve the exact transcript without leaking content to logs or creating clinical authority?
 - Can the exact protected context/date/transcript be reprocessed without transcription and transition to a valid candidate?
 - Are Blob/transcript lifecycles transient, chart-bound and cleared on discard/success as designed?
+- Are both review bodies collapsed after every complete or transcript-only response, opening only on explicit selection and closing on a repeated selection?
 - Are transcript and contextual inference absent from Preview/Save, with the existing single final confirmation preserved?
 - Do fixed logs distinguish the future validator/provider/timeout class without arbitrary exception text?
 - Does every context/date/transcript/token substitution fail before a provider call, including a fresh or renewed same-patient context?
@@ -38,4 +39,4 @@ Prevent loss of a recorded visit when transcription succeeds but structured proc
 
 ## Review and release
 
-Pre-code and exact-code R2 are complete. Runtime implementation and affected local tests are complete. PR exact-head CI and a separate release decision remain. This critical safety/data-integrity slice supersedes release of the earlier retry-only head.
+The no-loss backend pre-code and exact-code R2 gates are complete. This bounded presentation correction is R1 because it changes only visibility over unchanged transient data and unchanged clinical authority. Implement/test it, obtain one exact-head R1 review, then require fresh PR exact-head CI. Merge and release remain separate decisions.
