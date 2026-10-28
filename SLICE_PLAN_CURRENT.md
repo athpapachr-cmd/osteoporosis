@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — web audio semantic completeness and next-visit suggestions
 
-> **STATUS (2026-10-28): PRODUCT OWNER REPLAN / PRE-CODE R2 CORRECTION HOLD.** A successful fictional web recording produced a compact but clinically incomplete draft. The Product Owner's Dia comparison shows missing symptoms, treatment, plan and obligations and requests source-informed next-visit suggestions. First independent R2 found that identical/overlapping excerpts could receive conflicting action states; the design now rejects every duplicate or overlapping source span and awaits one focused closure review. The prior native recording/ASR qualification is preserved as deferred at `cockpit/archive/SLICE_PLAN_NATIVE_AUDIO_ASR_QUALIFICATION_DEFERRED_2026-10-28.md`. New design owner: `cockpit/WEB_VISIT_AUDIO_SEMANTIC_COMPLETENESS_2026-10-28.md`.
+> **STATUS (2026-10-28): IMPLEMENTED / POST-CODE R2 HOLD.** Exact runtime/test `99e5712f` implements the corrected source-span contract, structured symptoms/treatment/plan/obligations and separate bulk-adopted next-visit suggestions. Focused/inherited non-browser evidence passes; the updated Chromium oracle awaits exact-head CI because the local browser binary is absent. The prior native recording/ASR qualification remains deferred at `cockpit/archive/SLICE_PLAN_NATIVE_AUDIO_ASR_QUALIFICATION_DEFERRED_2026-10-28.md`.
 
 ## Objective
 
@@ -15,4 +15,4 @@ Preserve exact-source clinical truth while allowing multiple exact excerpts from
 
 ## Gates and next action
 
-R2 because classification semantics, pending obligations and generated suggestions change. Writer `codex/web-visit-semantic-completeness` owns only the design, bounded provider contract/builder/UI/tests and related checkpoints. The first pre-code review BLOCKED one P1 conflicting-span path; the bounded correction makes every source span single-owner and non-overlapping. One independent delta plus affected-cumulative closure PASS is required before runtime mutation; then focused implementation/tests, one exact-code R2, exact-head CI and guarded release. Native real-chart work remains deferred and no real patient audio/provider request/clinical write is authorized.
+R2 because classification semantics, pending obligations and generated suggestions change. Pre-code correction closure passed 0:0:0. Writer `codex/web-visit-semantic-completeness` owns only the bounded provider contract/builder/UI/tests and linked checkpoints. One independent post-code exact-head R2 is now required; then canonical-impact PR, exact-head CI with Chromium and guarded release only if all remain PASS. Native real-chart work remains deferred and no real patient audio/provider request/clinical write is authorized.
