@@ -1184,6 +1184,15 @@ def test_browser_web_audio_review_and_confirmed_save(setup, monkeypatch):
             page.locator("#captureText").fill("Δική μου σύνοψη για επεξεργασία")
             expect(page.get_by_role("button", name="Προετοιμασία καταγραφής", exact=True)).to_be_enabled()
             page.locator("#captureText").fill("")
+            # A failed manual extraction cannot consume/delete the retained
+            # audio's original context or make its retry binding unusable.
+            page.route("**/clinical/visit-capture/extract", lambda route: route.fulfill(
+                status=502, json={"detail": "synthetic manual failure"}))
+            page.locator("#captureText").fill("Δική μου σύνοψη που αποτυγχάνει προσωρινά.")
+            page.get_by_role("button", name="Προετοιμασία καταγραφής", exact=True).click()
+            expect(page.locator("#captureStatus")).to_contain_text("Το κείμενο διατηρήθηκε")
+            expect(page.locator("#captureAudioRetryProcess")).to_be_visible()
+            page.unroute("**/clinical/visit-capture/extract")
             expect(page.locator("#captureAudioRetryProcess")).to_be_visible()
             expect(page.locator("#captureAudioDownload")).to_be_visible()
             page.locator("#captureAudioTranscriptTab").click()

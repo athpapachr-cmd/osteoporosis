@@ -391,7 +391,7 @@
     if(token!==audioToken)return;
     if(!informed.checked){discardAudio();audioStatus.textContent='Η επιβεβαίωση ενημέρωσης αποσύρθηκε. Ο ήχος απορρίφθηκε.';input.disabled=false;extractButton.disabled=false;visitDate.disabled=false;return;}
     if(!blob.size||blob.size>MAX_AUDIO_BYTES){discardAudio();audioStatus.textContent='Η ηχογράφηση υπερβαίνει το όριο μεγέθους. Ο ήχος απορρίφθηκε.';input.disabled=false;extractButton.disabled=false;visitDate.disabled=false;return;}
-    busy=true;audioAbort=new AbortController();
+    busy=true;input.disabled=true;extractButton.disabled=true;audioAbort=new AbortController();
     try{
       const renewed=await request('/visit-capture/context/renew',{prior_context_id:contextId,patient_id:id,client_session_id:session});
       if(token!==audioToken||ticket!==generation||draftTicket!==draftGeneration||id!==patientId||renewed.patient_id!==id)throw Error('Η καρτέλα άλλαξε.');
@@ -410,7 +410,7 @@
   function retryAudioUpload(){if(!audioBlob||busy||audioProcessingFailure?.code==='context_changed')return;finishAudio(audioBlob,audioToken,patientId,generation,draftGeneration);}
   async function retryAudioProcessing(){
     if(!audioTranscript||!audioRecoveryBinding||audioProcessingFailure?.retryable!==true||busy||!patientId)return;
-    const token=audioToken,ticket=generation,draftTicket=draftGeneration,id=patientId,usedDate=visitDate.value;busy=true;audioAbort=new AbortController();updateAudioRescue();audioStatus.textContent='Επανάληψη επεξεργασίας της διατηρημένης μεταγραφής…';
+    const token=audioToken,ticket=generation,draftTicket=draftGeneration,id=patientId,usedDate=visitDate.value;busy=true;input.disabled=true;extractButton.disabled=true;audioAbort=new AbortController();updateAudioRescue();audioStatus.textContent='Επανάληψη επεξεργασίας της διατηρημένης μεταγραφής…';
     try{
       const r=await fetch('/clinical/visit-capture/audio/reprocess',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json','X-Visit-Retention-Acknowledged':'standard'},body:JSON.stringify({context_id:contextId,encounter_date:usedDate,transcript:audioTranscript,recovery_binding:audioRecoveryBinding}),signal:audioAbort.signal});
       if(!r.ok){if(r.status===401)window.dispatchEvent(new Event('clinical:request-login'));const failure=Error(r.status===409?'Η ασφαλής σύνδεση της μεταγραφής με την καρτέλα έληξε. Ο ήχος παραμένει διαθέσιμος για τοπική αποθήκευση.':'Η επεξεργασία απέτυχε ξανά. Η μεταγραφή και ο ήχος παραμένουν σε αυτή τη σελίδα.');failure.status=r.status;throw failure;}
@@ -704,12 +704,13 @@
     if(!amendment){audioToken++;audioAbort?.abort();audioDraft=false;audioReview.hidden=true;audioSummary.hidden=true;review.hidden=false;}
     const ticket=generation,draftTicket=++draftGeneration;busy=true;extractButton.disabled=true;saveButton.hidden=true;review.replaceChildren();previews.replaceChildren();feedback.textContent='Προετοιμασία καταγραφής…';
     source=input.value;input.disabled=true;visitDate.disabled=true;
-    try{const context=await request('/visit-capture/context',{patient_id:patientId,client_session_id:session});if(ticket!==generation||draftTicket!==draftGeneration)return;contextId=context.context_id;
-      const result=await request('/visit-capture/extract',{context_id:contextId,text:source,encounter_date:visitDate.value});if(ticket!==generation||draftTicket!==draftGeneration)return;
-      candidate=result.candidate;if(!amendment)discardAudio();pendingBindings=new Map();bindClinician();
+    try{const recovering=Boolean(audioTranscript||audioBlob);
+      const context=await request('/visit-capture/context',{patient_id:patientId,client_session_id:recovering?session+'-manual-'+crypto.randomUUID():session});if(ticket!==generation||draftTicket!==draftGeneration)return;
+      const result=await request('/visit-capture/extract',{context_id:context.context_id,text:source,encounter_date:visitDate.value});if(ticket!==generation||draftTicket!==draftGeneration)return;
+      contextId=context.context_id;candidate=result.candidate;if(!amendment)discardAudio();pendingBindings=new Map();bindClinician();
       drawReview();feedback.textContent=candidate.source_identity_state==='consistent'?'Διόρθωσε ό,τι χρειάζεται και αφαίρεσε όποια υποχρέωση δεν αποδέχεσαι.':'Η σύνοψη περιέχει ασυμφωνία ή αβεβαιότητα ταυτότητας. Διόρθωσε το αρχικό κείμενο και προετοίμασε ξανά.';
       saveButton.hidden=candidate.source_identity_state!=='consistent';saveButton.disabled=false;await preview();
-    }catch(e){if(ticket===generation&&draftTicket===draftGeneration)feedback.textContent=e.message;}
+    }catch(e){if(ticket===generation&&draftTicket===draftGeneration){feedback.textContent=e.message;if(audioTranscript){audioReview.hidden=false;showAudioView('closed');updateAudioRescue();}}}
     finally{if(ticket===generation&&draftTicket===draftGeneration){busy=false;extractButton.disabled=false;input.disabled=false;visitDate.disabled=false;}}
   }
   async function refreshAudioContextIfNeeded(){
