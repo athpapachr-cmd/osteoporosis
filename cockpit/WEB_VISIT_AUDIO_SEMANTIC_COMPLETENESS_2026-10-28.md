@@ -45,9 +45,10 @@ unclassified_ids[]: supplied IDs with no safe fact
 
 Validation is fail closed:
 
-- IDs must belong to the current batch; unknown or duplicate IDs fail.
-- Each `(source_id, excerpt, kind)` must be unique and the normalized excerpt must be an exact substring of the normalized source unit. The server copies the matched source substring, never provider prose, into the clinical candidate.
-- One source ID may yield several non-duplicate excerpts/kinds. Every supplied ID must appear in at least one fact or exactly once in `unclassified_ids`, never both.
+- IDs must belong to the current batch; unknown IDs and duplicate entries in `source_ids` or `unclassified_ids` fail.
+- Each normalized excerpt must resolve to exactly one character range in its normalized source unit. Zero matches or an ambiguous repeated match fails. The server copies the matched source substring, never provider prose, into the clinical candidate.
+- A matched source range has exactly one `kind`. Fact ranges belonging to the same source unit must not overlap at all, even when their kinds differ. This deliberately rejects lifecycle contradictions such as the same words being treated as both an `option` and a `decision`, `completed` action or `obligation_*`; the provider must instead return distinct, non-overlapping spoken clauses. Any overlap or duplicate range fails the entire provider result.
+- One source ID may yield several facts only when their exact matched ranges are distinct and non-overlapping. Every supplied ID must appear in at least one valid fact or exactly once in `unclassified_ids`, never both.
 - Identity uncertainty/conflict still blocks the draft.
 - Suggestions are limited to checks/questions for a later review. They may not diagnose, assert an unspoken fact, recommend a medication/test/treatment change, or claim an action occurred. Each cites current-batch source IDs. Invalid suggestions fail the provider result rather than entering the UI.
 - Merge suggestions across batches by normalized text, keep at most six, and retain cited IDs/rationale only in transient browser response state.
@@ -74,7 +75,7 @@ Validation is fail closed:
 ## Evidence questions
 
 1. A synthetic compound sentence yields multiple exact excerpts across history/symptom/therapy/obligation/follow-up without invented candidate text.
-2. Invalid/non-substring excerpts, unknown IDs, incomplete accounting, identity conflict and unsupported suggestion sources fail closed.
+2. Invalid/non-substring excerpts, ambiguous repeated matches, overlapping or duplicate spans, conflicting option/decision/completed/obligation classifications, unknown IDs, incomplete accounting, identity conflict and unsupported suggestion sources fail closed.
 3. Explicit source-backed plan produces compact recommendations and pending obligations; unspoken medication structure, dates and roles remain absent.
 4. Suggestions are visible but absent from candidate/Preview/Save until one bulk adoption; adoption creates clinician-edited follow-up, clears confirmation and persists only after the existing explicit Save.
 5. The compact UI retains one final confirmation and does not regress manual Dia/amendment or native/local audio confirmation paths.
