@@ -121,6 +121,10 @@
     }
     facts(parent,'Αγωγή',(v.medications||[]).map(m=>[({prescribed:'Έναρξη',continued:'Συνέχιση',stopped:'Διακοπή'})[m.action],m.name,m.dose,m.frequency,m.route,m.duration?m.duration.value+' '+m.duration.unit:null].filter(Boolean).join(' · ')));
     if(v.next_contact)facts(parent,'Επόμενη επαφή',[[v.next_contact.when,v.next_contact.time,v.next_contact.purpose,...(v.next_contact.assess||[])].filter(Boolean).join(' · ')]);
+    if(v.coding?.gesy_coded?.length||v.coding?.coding_complete){
+      facts(parent,'Κωδικοποίηση',(v.coding.gesy_coded||[]).map(item=>[item.system,item.code,item.title].filter(Boolean).join(' · ')));
+      el(parent,'p',v.coding.coding_complete?'Κωδικοποίηση: πλήρης.':'Κωδικοποίηση: δεν έχει δηλωθεί πλήρης.','clinical-muted');
+    }
   }
   function showDraftSummary(){
     if(!candidate||amendment||candidate.source_identity_state!=='consistent')return;
@@ -130,7 +134,7 @@
     facts(pending,'Από τη σύνοψη',(candidate.pending||[]).map(p=>p.description));
     if(!candidate.pending?.length)el(pending,'p','Δεν καταγράφηκαν νέες υποχρεώσεις.');
     if(!audioSummary.querySelector('.draft-summary-note'))el(audioSummary,'p','Προσχέδιο για τον εμφανιζόμενο ασθενή — αποθηκεύεται μόνο με «Αποθήκευση».','clinical-muted').classList.add('draft-summary-note');
-    audioSummary.hidden=false;audioPanel.hidden=true;inputLabel.hidden=true;extractButton.hidden=true;
+    audioSummary.hidden=false;chart.hidden=true;audioPanel.hidden=true;inputLabel.hidden=true;extractButton.hidden=true;
   }
   function showPending(id,item,editMetadata=false){
     if(!composer.hidden||pendingBusy||patientId!==id)return;
@@ -341,7 +345,7 @@
       audioStart.disabled=!audioReady||!informed.checked;
     }catch(e){if(ticket===generation&&draftTicket===draftGeneration)audioStatus.textContent=e.message;}
   }
-  function beginVisit(){if(!patientId||pendingBusy)return;resetDraft();composer.hidden=false;chart.hidden=true;pendingControls(true);visitDate.value=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Nicosia',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());loadAudioCapability();input.focus();composer.scrollIntoView({behavior:'smooth'});}
+  function beginVisit(){if(!patientId||pendingBusy)return;resetDraft();composer.hidden=false;pendingControls(true);visitDate.value=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Nicosia',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());loadAudioCapability();input.focus();composer.scrollIntoView({behavior:'smooth'});}
   async function startAudio(){
     if(!audioReady||!informed.checked||!patientId||composer.hidden||amendment||audioRecorder||busy||candidate||audioBlob||audioTranscript||!visitDate.value)return;
     draftGeneration++;contextId=null;source='';input.value='';review.replaceChildren();previews.replaceChildren();saveButton.hidden=true;

@@ -177,7 +177,8 @@ def test_browser_capture_edit_reject_save_refresh_and_second_session(setup,monke
     with Session(engine) as db:assert db.scalar(select(func.count()).select_from(EncounterORM))==1
 
 
-def test_complete_user_case_visible_before_save_and_after_reload(setup, monkeypatch, tmp_path):
+@pytest.mark.parametrize("coding_state", [None, False, True])
+def test_complete_user_case_visible_before_save_and_after_reload(setup, monkeypatch, tmp_path, coding_state):
     """The actual final chart card, not just the editable input, must retain each fact."""
     import socket, threading, shutil
     import uvicorn
@@ -199,6 +200,14 @@ def test_complete_user_case_visible_before_save_and_after_reload(setup, monkeypa
                      "source_excerpt": "Ζητήθηκαν ακτινογραφίες.", "provenance": ["dia_summary"],
                      "status": "open", "responsible_role": "unspecified"}]})
     monkeypatch.setattr("clinical_capture_cp1.extract_candidate", lambda *a: case)
+    coding_text = "SYN · CODE-1 · Συνθετικός κωδικός δοκιμής"
+    if coding_state is not None:
+        from clinical_data import VisitCaptureCodingItem
+        case.coding.gesy_coded.append(VisitCaptureCodingItem.model_validate({
+            "system": "SYN", "code": "CODE-1", "title": "Συνθετικός κωδικός δοκιμής",
+            "provenance": ["dia_summary"]}))
+        case.coding.coding_complete = coding_state
+    expected_texts = (fracture, pain, tscore, therapy) + ((coding_text, "Κωδικοποίηση: πλήρης." if coding_state else "Κωδικοποίηση: δεν έχει δηλωθεί πλήρης.") if coding_state is not None else ())
     sock = socket.socket(); sock.bind(("127.0.0.1", 0)); port = sock.getsockname()[1]
     server = uvicorn.Server(uvicorn.Config(app, log_level="error"))
     thread = threading.Thread(target=server.run, kwargs={"sockets": [sock]}, daemon=True); thread.start()
@@ -217,7 +226,7 @@ def test_complete_user_case_visible_before_save_and_after_reload(setup, monkeypa
             summary = page.locator("#captureAudioSummary")
             expect(summary).to_be_visible()
             expect(page.locator("#captureReview")).to_be_hidden()
-            for text in (fracture, pain, tscore, therapy):
+            for text in expected_texts:
                 expect(summary).to_contain_text(text)
             with Session(engine) as db:
                 assert db.scalar(select(func.count()).select_from(EncounterORM)) == 0
@@ -229,7 +238,7 @@ def test_complete_user_case_visible_before_save_and_after_reload(setup, monkeypa
                 page.reload()
                 card = page.locator(".patient-chart-overview .patient-chart-card").first
                 expect(card).to_be_visible()
-                for text in (fracture, pain, tscore, therapy):
+                for text in expected_texts:
                     expect(card).to_contain_text(text)
                 expect(card).not_to_contain_text("Ξεκίνησε alendronate")
                 assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
@@ -242,7 +251,7 @@ def test_complete_user_case_visible_before_save_and_after_reload(setup, monkeypa
             page.evaluate("([id,eid])=>window.CockpitStoredChart.openVisit(id,eid)", [TEST_ID, data["visits"][0]["encounter_id"]])
             reader = page.locator(".patient-visit-reader")
             expect(reader).to_be_visible()
-            for text in (fracture, pain, tscore, therapy):
+            for text in expected_texts:
                 expect(reader).to_contain_text(text)
             browser.close()
     finally:
