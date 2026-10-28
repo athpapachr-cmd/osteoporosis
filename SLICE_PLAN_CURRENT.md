@@ -1,69 +1,36 @@
-# SLICE_PLAN_CURRENT.md — contextual AI clinical considerations from visit audio
+# SLICE_PLAN_CURRENT.md — no-loss web Visit Audio recovery
 
-> **STATUS (2026-10-28): POST-CODE R2 PASS / SAFETY REPLAN NEXT.** Exact corrected runtime `a3471d31` passed focused independent closure with `PASS / COMPLETE / P0:P1:P2=0:0:0`. Conflict and uncertain plus invalid-fact route tests prove one call/502; all 40 affected tests including Chromium plus syntax/diff checks pass. PR #247 remains unmerged. Product Owner evidence from fictional recordings now requires a higher-priority no-loss transcript recovery replan before release.
+> **STATUS (2026-10-28): PRODUCT OWNER CONFIRMED / PRE-CODE R2 HOLD.** Fictional recordings proved that successful transcription can be discarded when classification fails. Production logs place both failures at `classification / invalid_output` without provider HTTP rejection, but the historical validator subtype is unrecoverable. The active critical safety slice preserves the transcript independently, retains the original Blob in browser memory on failure, supports transcript-only reprocessing and emits fixed exact future diagnostics. Design authority: `cockpit/WEB_VISIT_AUDIO_TRANSCRIPT_RECOVERY_2026-10-28.md`. PR #247 remains unmerged; no runtime mutation or release before pre-code R2 PASS.
 
 ## Objective
 
-Extend the released exact-source audio analysis with a visibly separate, source-cited AI reasoning layer that can propose bounded questions or clinical considerations inferred from the combined explicit facts. Keep every consideration transient and outside the clinical candidate, Preview and Save.
+Prevent loss of a recorded visit when transcription succeeds but structured processing fails, while preserving patient binding, ephemeral retention, clinician review and explicit Save authority.
 
 ## Frozen behavior
 
-- Existing `gpt-transcribe`, `gpt-6-luna`, standard-retention disclosure/gate, provider headers, `store:false`, no-tools call, temporary-content lifecycle, exact-source candidate, one final confirmation, Preview and explicit Save remain unchanged.
-- Released typed `suggested_next_checks` remain the only suggestions eligible for the existing one bulk add-to-plan action.
-- New free-text contextual considerations are display-only. They have no adoption button and never enter candidate, Preview, Save, pending obligations or the chart automatically.
-- Manual Dia/amendment and local/native audio paths remain unchanged. Synthetic data only for implementation and release evidence.
+- Existing protected Start/Stop, informed-recording acknowledgement, OpenAI standard-retention disclosure, project/org headers, `store:false`, exact-source candidate, typed suggestions, display-only contextual considerations, one final patient/content confirmation, Preview and explicit Save remain.
+- Audio/transcript remain transient and are never placed in server storage, database, browser persistence or logs.
+- Transcript is non-authoritative and never enters Preview or Save.
+- Unresolved patient identity still fails closed and cannot be corrected by structural retry.
+- No real-patient/provider replay, merge or deploy belongs to implementation evidence.
 
-## Provider and validation contract
+## New contract
 
-Keep the existing strict per-batch `visit_audio_analysis_v2` response unchanged. After all batches pass validation and the exact-source candidate is built, make one additional bounded `gpt-6-luna` Responses call using only the merged validated facts (`source_id`, exact `excerpt`, `kind`) from the whole visit. It uses the same project/org headers, `store:false`, no tools and existing timeout/model settings.
-
-The second pass does not receive a separate `selected_identity` object or the complete `source_units` transcript. It does receive exact verbatim fact excerpts. Those excerpts can contain identifiers spoken in the visit; they are therefore covered by the same approved standard-retention disclosure and gate as the full transcript and selected-chart name/DOB. The model instruction forbids reproducing identity in its consideration prose, but that instruction is not presented as deterministic de-identification.
-
-The whole-visit input is permitted only when its serialized UTF-8 JSON is at most 60,000 bytes. Otherwise do not truncate or sample it: skip the optional consideration call, return `contextual_considerations_status=input_limit`, and show that unavailability visibly.
-
-The route creates one monotonic `pipeline_deadline` and a `core_deadline = pipeline_deadline - 5 seconds`. Transcription, every classification batch and candidate construction must complete before `core_deadline`. The implementation checks the monotonic clock before and after the synchronous candidate builder as well as bounding awaited core stages; crossing this cutoff is a pre-candidate fail-closed 502.
-
-Only after the candidate passes the post-build clock check may the optional layer start. It receives at most `min(summarize_timeout, pipeline_deadline - now - 5 seconds)`. If this budget is below one second, it is not started and status is `unavailable`. Its own timeout, provider/network/invalid-output failure returns `unavailable` without escaping into the outer pipeline timeout. Thus every successfully established candidate retains the full five seconds for final patient-context verification and response construction. Optional failure logs only fixed stage/kind/status metadata and no clinical content. `complete` means the whole validated fact set was considered, including a valid empty list; it is not clinical clearance.
-
-The second strict response contains up to four `contextual_clinical_considerations`. Each item contains only:
-
-```text
-category: history_question | focused_examination | investigation_consideration |
-          referral_consideration | management_review | safety_check
-text: concise Greek question/consideration, 1..240 characters
-rationale: concise Greek explanation, 1..320 characters
-source_ids: 1..3 unique global IDs from the current visit
-confidence: low | moderate | high
-```
-
-Server validation rejects unknown/additional keys, unknown or duplicate global source IDs, IDs without a validated extracted fact, blank/oversize/control-character text and more than four items. Normalized text must also be unique. There is no per-batch merge or partial whole-visit evidence set.
-
-The model instruction requires a question/consideration rather than diagnosis or order; forbids declaring a diagnosis, prescribing/starting/stopping/changing treatment or dose, claiming a test is required, inventing urgency/timing, or treating silence as a negative. These semantic instructions reduce unsafe output but are not treated as deterministic proof. Therefore the display-only authority boundary is mandatory.
-
-## UI contract
-
-- Separate block after the released typed next-visit checks: `Κλινικές σκέψεις AI από τα συμφραζόμενα`.
-- Visible warning: inferred, may be wrong, was not said, is not guideline verification, an empty result is not clinical clearance, and nothing is recorded automatically.
-- Each item shows category, text and confidence. A closed `Γιατί προτείνεται` disclosure shows the model rationale.
-- No add/adopt/confirm action exists inside this block. The clinician may independently write an accepted idea into the editable plan and then use the existing final confirmation/Preview/Save.
+1. Audio route returns `processing_status=complete|transcript_only` after successful transcription.
+2. Both states return the protected, unverified transcript; only `complete` returns a validated candidate.
+3. Transcript-only failures carry fixed safe stage/code metadata and produce content-free server diagnostics.
+4. A protected reprocess route submits the retained transcript to the same classification/candidate pipeline without retranscribing.
+5. Browser keeps the original Blob only in memory until successful structuring or explicit discard; failure exposes retry and local audio download.
+6. UI has two explicit views: unverified transcript and processed clinical text. Transcript-only state cannot Preview or Save.
 
 ## Evidence questions
 
-1. A synthetic compound osteoporosis scenario can produce a new investigation consideration grounded in multiple validated source IDs while the exact-source candidate remains unchanged.
-2. Unknown/unvalidated/duplicate source IDs, additional keys, invalid confidence/category and oversize/control-character prose fail closed.
-3. Contextual consideration text is absent from candidate and from protected Preview/Save payloads.
-4. Browser UI labels the inference clearly, shows rationale/confidence, exposes no adoption button and retains one final patient/content confirmation.
-5. Existing typed next-check adoption, manual Dia/amendment labels, local audio and standard-retention behavior do not regress.
-6. Facts placed on opposite sides of the 8KB classification boundary can support one whole-visit consideration; oversize, deadline-exhausted and failed optional passes visibly return unavailable status without losing the exact-source draft. Core crossing its earlier cutoff returns 502 before candidate authority; a candidate built before cutoff survives optional deadline exhaustion.
+- Does every post-transcription failure preserve the exact transcript without leaking content to logs or creating clinical authority?
+- Can the same protected context/date/transcript be reprocessed without transcription and transition to a valid candidate?
+- Are Blob/transcript lifecycles transient, chart-bound and cleared on discard/success as designed?
+- Are transcript and contextual inference absent from Preview/Save, with the existing single final confirmation preserved?
+- Do fixed logs distinguish the future validator/provider/timeout class without arbitrary exception text?
 
 ## Review and release
 
-R2: free model-authored clinical reasoning is visible to the clinician even though it cannot write. One independent pre-code design review and one independent exact-code fidelity review are required. Exact-head CI and guarded no-PHI release smoke remain separate gates. No agent recording, provider request or clinical write.
-
-## Implementation evidence
-
-- One additional strict `visit_audio_contextual_considerations_v1` request uses only the fully validated fact set and the existing `gpt-6-luna` settings, project headers, `store:false` and no tools.
-- Server validation enforces shape, category/confidence enums, length/control bounds and global validated source IDs. Optional failure returns only `complete | input_limit | unavailable` plus a bounded list and never mutates the exact-source candidate.
-- The compact browser renders a visibly separate block with category, confidence, a closed rationale disclosure and no adoption control. Its warning states that the content is inferred, may be wrong, was not spoken, is not guideline verification and is never saved automatically.
-- Synthetic route tests cover facts across the 8KB batch boundary, invalid citations/shapes, the 60KB no-truncation gate and optional deadline exhaustion. The browser oracle proves one final confirmation remains and the AI prose is absent from the Save request.
-- Local affected result after the deadline correction: `35 passed`; Python compile, JavaScript syntax and `git diff --check` pass. No provider request, real audio or clinical write occurred.
+R2 pre-code review, bounded implementation/tests, exact-code R2, exact-head CI and a separate release decision. This critical safety/data-integrity slice supersedes release of the already-reviewed retry-only head until closed.
