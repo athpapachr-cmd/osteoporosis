@@ -435,7 +435,10 @@ def test_browser_web_audio_review_and_confirmed_save(setup, monkeypatch):
             browser = playwright.chromium.launch(executable_path=shutil.which("google-chrome") or shutil.which("chromium"))
             page = browser.new_page(viewport={"width": 1280, "height": 950}, timezone_id="Asia/Nicosia")
             errors = []
+            save_payloads = []
             page.on("pageerror", lambda error: errors.append(str(error)))
+            page.on("request", lambda request: save_payloads.append(request.post_data_json)
+                    if request.method == "POST" and request.url.endswith("/clinical/visit-capture/save") else None)
             page.add_init_script("""
                 window._holdMic=false;window._releaseMic=null;window._audioStarts=0;window._trackStops=0;
                 Object.defineProperty(navigator, 'mediaDevices', {configurable:true, value:{
@@ -525,7 +528,8 @@ def test_browser_web_audio_review_and_confirmed_save(setup, monkeypatch):
             page.locator("#captureSave").click()
             expect(page.locator("#captureComposer")).to_be_hidden(timeout=15000)
             expect(page.locator("#patientChart")).to_contain_text("DEXA T-score -2.6")
-            expect(page.locator("#patientChart")).to_contain_text("Έλεγχος ανοχής της αναφερόμενης θεραπείας")
+            assert save_payloads[-1]["candidate"]["follow_up"][0]["text"] == "Έλεγχος ανοχής της αναφερόμενης θεραπείας."
+            assert "clinician_edit" in save_payloads[-1]["candidate"]["follow_up"][0]["provenance"]
             assert not errors, errors
             assert len(transcribed) == 1  # withdrawn recording never reaches the provider
             browser.close()
