@@ -82,6 +82,7 @@ The request requires `X-Visit-Retention-Acknowledged: standard`, verifies the re
 
 ```text
 version
+recovery_id
 original_context_id
 client_session_id
 patient_id
@@ -93,7 +94,9 @@ expires_at = min(original context expiry, issued_at + 30 minutes)
 retry_allowed
 ```
 
-The binding is authenticated with HMAC-SHA256 and a dedicated server-only `VISIT_AUDIO_RECOVERY_SECRET` of at least 32 characters. There is no fallback to the browser-visible `CLINICAL_DATA_KEY`, staff-session secret or OpenAI key. Visit Audio capability is disabled unless this recovery secret is valid, so a deployment cannot silently expose an unbound reprocess path. The payload is compact base64url and contains no transcript text; the signature uses constant-time comparison. Neither token nor digest is logged or persisted.
+The binding is authenticated with HMAC-SHA256 and a dedicated server-only `VISIT_AUDIO_RECOVERY_SECRET` of at least 32 characters. There is no fallback to the browser-visible `CLINICAL_DATA_KEY`, staff-session secret or OpenAI key. Visit Audio capability is disabled unless this recovery secret is valid, so a deployment cannot silently expose an unbound reprocess path. The payload is compact base64url and contains no transcript text; the signature uses constant-time comparison. Neither token nor transcript digest is logged or persisted.
+
+The database keeps only one-time capability metadata: a random `recovery_id`, `active|consumed` state and expiry. It contains no audio, transcript, patient/context identifier, date, digest or clinical content. Verification atomically changes `active → consumed` before any provider call. A retryable processing failure receives a new active `recovery_id` signed with the unchanged original context, issued time and expiry. A nonretryable identity result receives no active successor, so replaying either the old or returned binding stops before the provider. Expired rows are deleted opportunistically when a new capability is activated.
 
 Reprocess verifies all of the following before any provider call:
 
@@ -104,7 +107,7 @@ Reprocess verifies all of the following before any provider call:
 - live context is the exact original context;
 - `retry_allowed=true`.
 
-Context renewal or fresh context creation cannot replace the original context for transcript recovery, even for the same patient and browser session. Retry uses the still-live original context and returns the same binding after another processing failure, so neither origin nor expiry can slide. Opening another chart in the same browser session also fails closed. A changed patient version, date, transcript byte, expired token or different context returns 409/422 without returning the transcript in that error and without a provider call.
+Context renewal or fresh context creation cannot replace the original context for transcript recovery, even for the same patient and browser session. Retry uses the still-live original context; a retryable failure may return one successor capability with unchanged origin/expiry. Opening another chart in the same browser session also fails closed. A changed patient version, date, transcript byte, expired/consumed token or different context returns 409/422 without returning the transcript in that error and without a provider call.
 
 The server sets `retry_allowed=false` for `source_identity_unresolved`. This is a provider assessment made while the original live chart binding is still valid: the transcript remains visible and the original audio remains locally recoverable, but the UI exposes no reprocess control. This prevents a new stochastic classification call from turning an earlier conflict/uncertain spoken identity result into a candidate.
 
@@ -153,7 +156,7 @@ This explicit recovery view supersedes the earlier ordinary-UX preference to hid
 2. Classification provider HTTP, timeout, network and malformed JSON paths return transcript recovery and content-free logs.
 3. Transcription failure returns no invented transcript; browser retains the original Blob and can retry/download it.
 4. Reprocess calls classification but never transcription and can transition `transcript_only → complete` only with a valid binding for the exact original context, patient version, date and exact transcript digest.
-5. Cross-chart, fresh-context and renewed-context substitution, encounter-date substitution, one-byte transcript substitution, expired/forged binding and changed patient version fail before a provider call. A repeated processing failure returns the same binding without extending its origin or expiry.
+5. Cross-chart, fresh-context and renewed-context substitution, encounter-date substitution, one-byte transcript substitution, expired/forged/consumed binding and changed patient version fail before a provider call. A retryable repeated failure rotates only the one-time capability ID without extending original origin or expiry.
 6. `conflict|uncertain` identity returns transcript recovery but a non-retryable binding and no UI retry; direct reprocess is rejected.
 7. If patient/context binding changes after transcription or after classification but before response, the audio route returns sanitized 409 without transcript/token and performs no later provider/write action; browser Blob recovery remains.
 8. Browser shows two distinct views, retains Blob on failure, downloads locally, clears all transient state on discard and does not use browser persistence.
@@ -166,4 +169,4 @@ R2 because this changes identifiable-transcript exposure/lifecycle and clinical 
 
 ## Implementation checkpoint
 
-Implemented on 2026-10-28 after the pre-code R2 PASS. The affected synthetic suite now proves `transcript_only → complete`, local audio download, no retranscription during recovery, candidate/Save denial before successful structuring, transcript exclusion from the Save payload, signed-binding substitution rejection and sanitized context-drift failure. Post-code R2 at `9cc5344c` found that same-patient context replacement and repeated failure could slide origin/expiry; the correction requires the exact original context and reuses the original binding on repeated failure. Local evidence after correction: `46 passed`, Python/JavaScript syntax checks and `git diff --check` pass. Exact-code R2 closure and release gates remain open.
+Implemented on 2026-10-28 after the pre-code R2 PASS. The affected synthetic suite proves `transcript_only → complete`, local audio download, no retranscription during recovery, candidate/Save denial before successful structuring, transcript exclusion from the Save payload, signed-binding substitution rejection and sanitized context-drift failure. Post-code R2 found two related stateless-retry weaknesses: same-patient context replacement could slide origin/expiry, and an old retryable token could bypass a later nonretryable identity result. The correction requires the exact original context plus atomic one-time capability consumption; only retryable failure gets a successor with unchanged origin/expiry. Exact-code R2 closure and release gates remain open.

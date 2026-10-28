@@ -14,13 +14,15 @@ import time
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from typing import Any, Protocol
+from uuid import uuid4
 
 import httpx
 from fastapi import HTTPException, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy import Column, DateTime, String, delete, update
 from sqlalchemy.orm import Session
 
-from clinical_data import (VisitCaptureCandidateV1, _validate_visit_capture_candidate,
+from clinical_data import (ClinicalBase, VisitCaptureCandidateV1, _validate_visit_capture_candidate,
                            _render_visit_capture)
 
 MAX_AUDIO_BYTES = 23 * 1024 * 1024  # 24,117,248 bytes, below OpenAI's 25 MB limit.
@@ -94,6 +96,16 @@ RETRYABLE_PROCESSING_CODES = frozenset({
     "provider_http", "timeout", "network", "unexpected",
 })
 logger = logging.getLogger(__name__)
+
+
+class VisitAudioRecoveryORM(ClinicalBase):
+    """Ephemeral capability state only; never audio, transcript or clinical content."""
+
+    __tablename__ = "clinical_visit_audio_recovery"
+
+    id = Column(String, primary_key=True)
+    state = Column(String, nullable=False, index=True)
+    expires_at = Column(DateTime, nullable=False, index=True)
 
 
 class ProviderHTTPFailure(ValueError):
@@ -209,34 +221,44 @@ def _transcript_digest(transcript: str) -> str:
 
 
 def issue_recovery_binding(context: Any, encounter_date: str, transcript: str,
-                           retry_allowed: bool) -> str:
+                           retry_allowed: bool,
+                           prior_claims: dict[str, Any] | None = None) -> tuple[str, dict[str, Any]]:
     now = int(time.time())
-    expires = min(_utc_timestamp(context.expires_at), now + RECOVERY_BINDING_SECONDS)
+    issued = prior_claims["issued_at"] if prior_claims is not None else now
+    expires = (prior_claims["expires_at"] if prior_claims is not None else
+               min(_utc_timestamp(context.expires_at), now + RECOVERY_BINDING_SECONDS))
     if expires <= now:
         raise HTTPException(409, "Visit Capture context expired")
     payload = {
-        "version": 1,
+        "version": 2,
+        "recovery_id": str(uuid4()),
         "original_context_id": context.id,
         "client_session_id": context.client_session_id,
         "patient_id": context.patient_id,
         "patient_updated_at": _patient_version(context.patient_updated_at),
         "encounter_date": encounter_date,
         "transcript_sha256": _transcript_digest(transcript),
-        "issued_at": now,
+        "issued_at": issued,
         "expires_at": expires,
         "retry_allowed": retry_allowed,
     }
+    if prior_claims is not None:
+        inherited = {key: prior_claims[key] for key in (
+            "original_context_id", "client_session_id", "patient_id", "patient_updated_at",
+            "encounter_date", "transcript_sha256", "issued_at", "expires_at")}
+        if any(payload[key] != value for key, value in inherited.items()):
+            raise HTTPException(409, "Visit audio recovery binding mismatch")
     raw = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
     encoded = base64.urlsafe_b64encode(raw).rstrip(b"=").decode("ascii")
     mac = hmac.new(_recovery_secret(), encoded.encode("ascii"), hashlib.sha256).hexdigest()
     token = encoded + "." + mac
     if len(token) > RECOVERY_BINDING_MAX_CHARS:
         raise HTTPException(503, "Visit audio recovery binding unavailable")
-    return token
+    return token, payload
 
 
 def verify_recovery_binding(token: str, context: Any, encounter_date: str,
-                            transcript: str) -> None:
+                            transcript: str) -> dict[str, Any]:
     if not 80 <= len(token) <= RECOVERY_BINDING_MAX_CHARS:
         raise HTTPException(409, "Visit audio recovery binding invalid")
     try:
@@ -253,10 +275,12 @@ def verify_recovery_binding(token: str, context: Any, encounter_date: str,
         payload = json.loads(raw)
     except (ValueError, json.JSONDecodeError):
         raise HTTPException(409, "Visit audio recovery binding invalid") from None
-    required = {"version", "original_context_id", "client_session_id", "patient_id",
+    required = {"version", "recovery_id", "original_context_id", "client_session_id", "patient_id",
                 "patient_updated_at", "encounter_date", "transcript_sha256", "issued_at",
                 "expires_at", "retry_allowed"}
-    if (not isinstance(payload, dict) or set(payload) != required or payload.get("version") != 1
+    if (not isinstance(payload, dict) or set(payload) != required or payload.get("version") != 2
+            or not isinstance(payload.get("recovery_id"), str)
+            or not re.fullmatch(r"[0-9a-f-]{36}", payload["recovery_id"])
             or type(payload.get("issued_at")) is not int or type(payload.get("expires_at")) is not int
             or payload.get("retry_allowed") is not True):
         raise HTTPException(409, "Visit audio recovery binding invalid")
@@ -272,6 +296,7 @@ def verify_recovery_binding(token: str, context: Any, encounter_date: str,
             or payload["patient_id"] != context.patient_id
             or payload["patient_updated_at"] != _patient_version(context.patient_updated_at)):
         raise HTTPException(409, "Visit audio recovery binding mismatch")
+    return payload
 
 
 class TranscriberProvider(Protocol):
@@ -761,6 +786,31 @@ async def process_transcript(transcript: str, encounter_date: str, identity: dic
 
 
 def attach_visit_audio(router, engine, protected, context_for, ensure_patient):
+    VisitAudioRecoveryORM.__table__.create(bind=engine, checkfirst=True)
+
+    def activate_recovery(claims: dict[str, Any]) -> None:
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        expires = datetime.fromtimestamp(claims["expires_at"], timezone.utc).replace(tzinfo=None)
+        with Session(engine) as db:
+            db.execute(delete(VisitAudioRecoveryORM).where(
+                VisitAudioRecoveryORM.expires_at <= now))
+            db.add(VisitAudioRecoveryORM(
+                id=claims["recovery_id"], state="active", expires_at=expires))
+            db.commit()
+
+    def consume_recovery(claims: dict[str, Any]) -> None:
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        with Session(engine) as db:
+            claimed = db.execute(update(VisitAudioRecoveryORM).where(
+                VisitAudioRecoveryORM.id == claims["recovery_id"],
+                VisitAudioRecoveryORM.state == "active",
+                VisitAudioRecoveryORM.expires_at > now,
+            ).values(state="consumed"))
+            if claimed.rowcount != 1:
+                db.rollback()
+                raise HTTPException(409, "Visit audio recovery binding already used")
+            db.commit()
+
     def validate_date(value: str) -> str:
         try:
             if date.fromisoformat(value).isoformat() != value:
@@ -781,11 +831,17 @@ def attach_visit_audio(router, engine, protected, context_for, ensure_patient):
 
     def recovery_response(context_id: str, patient_id: str, encounter_date: str,
                           transcript: str, failure: TranscriptProcessingFailure,
-                          existing_binding: str | None = None) -> dict[str, Any]:
+                          existing_binding: str | None = None,
+                          prior_claims: dict[str, Any] | None = None) -> dict[str, Any]:
         context, _, _ = load_binding(context_id, patient_id)
         metadata, kind, validation_code = processing_failure(failure.stage, failure.error)
-        binding = (existing_binding if existing_binding is not None else
-                   issue_recovery_binding(context, encounter_date, transcript, metadata["retryable"]))
+        if prior_claims is not None and not metadata["retryable"]:
+            binding = existing_binding
+        else:
+            binding, claims = issue_recovery_binding(
+                context, encounter_date, transcript, metadata["retryable"], prior_claims)
+            if metadata["retryable"]:
+                activate_recovery(claims)
         logger.warning(
             "visit_audio_processing_failure stage=%s kind=%s provider_http_status=%s validation_code=%s",
             metadata["stage"], kind, metadata["provider_http_status"], validation_code)
@@ -870,7 +926,7 @@ def attach_visit_audio(router, engine, protected, context_for, ensure_patient):
                         "patient_id": patient_id, "transcript": transcript,
                         "processing_failure": None,
                         "recovery_binding": issue_recovery_binding(
-                            bound_context, encounter_date, transcript, False), **payload}
+                            bound_context, encounter_date, transcript, False)[0], **payload}
 
             job = asyncio.create_task(work())
             return await monitored(job, request, pipeline_deadline)
@@ -899,7 +955,9 @@ def attach_visit_audio(router, engine, protected, context_for, ensure_patient):
             raise HTTPException(422, "Recording privacy acknowledgement required")
         encounter_date = validate_date(req.encounter_date)
         context, _, identity = load_binding(req.context_id)
-        verify_recovery_binding(req.recovery_binding, context, encounter_date, req.transcript)
+        recovery_claims = verify_recovery_binding(
+            req.recovery_binding, context, encounter_date, req.transcript)
+        consume_recovery(recovery_claims)
         patient_id = context.patient_id
         settings = AudioSettings.from_env()
         loop = asyncio.get_running_loop()
@@ -915,13 +973,15 @@ def attach_visit_audio(router, engine, protected, context_for, ensure_patient):
                     lambda: load_binding(req.context_id, patient_id), loop.time)
             except TranscriptProcessingFailure as failure:
                 return recovery_response(req.context_id, patient_id, encounter_date,
-                                         req.transcript, failure, req.recovery_binding)
+                                         req.transcript, failure, req.recovery_binding,
+                                         recovery_claims)
             bound_context, _, _ = load_binding(req.context_id, patient_id)
             return {"processing_status": "complete", "context_id": bound_context.id,
                     "patient_id": patient_id, "transcript": req.transcript,
                     "processing_failure": None,
                     "recovery_binding": issue_recovery_binding(
-                        bound_context, encounter_date, req.transcript, False), **payload}
+                        bound_context, encounter_date, req.transcript, False,
+                        recovery_claims)[0], **payload}
 
         job = asyncio.create_task(work())
         try:

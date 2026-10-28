@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — no-loss web Visit Audio recovery
 
-> **STATUS (2026-10-28): IMPLEMENTED AND LOCALLY VERIFIED / R2 CORRECTION READY FOR RE-REVIEW.** Exact corrected design `c4d925e1` passed focused pre-code review. Post-code R2 at `9cc5344c` found one P1: origin/expiry could slide across a same-patient context replacement. The correction now requires the exact original context, preserves the same token after repeated processing failure, and removes browser renewal before retry. `test_clinical_visit_audio.py + test_visit_capture.py` pass `46 passed`; syntax and diff checks pass. Exact-code R2 closure, PR exact-head CI and release remain separate gates.
+> **STATUS (2026-10-28): R2 CORRECTION LOCALLY VERIFIED / RE-REVIEW NEXT.** Exact corrected design `c4d925e1` passed focused pre-code review. Post-code R2 found that stateless retry could slide origin/expiry and later bypass a nonretryable identity result. Recovery now requires the exact original context and one-time server capability state containing no audio, transcript, patient, context, date, digest or clinical content. Each request atomically consumes its capability; only a retryable processing failure receives one successor with the original origin/expiry. Browser renewal before retry is removed. The affected suite passes `47 passed`; syntax and diff checks pass. Exact-code R2 closure, PR exact-head CI and release remain separate gates.
 
 ## Objective
 
@@ -22,7 +22,7 @@ Prevent loss of a recorded visit when transcription succeeds but structured proc
 4. A protected reprocess route submits the retained transcript to the same classification/candidate pipeline without retranscribing.
 5. Browser keeps the original Blob only in memory until successful structuring or explicit discard; failure exposes retry and local audio download.
 6. UI has two explicit views: unverified transcript and processed clinical text. Transcript-only state cannot Preview or Save.
-7. Every reprocess requires a dedicated-secret signed binding for the exact original context/patient version/date/transcript digest; client values alone grant no authority. Retry never renews or extends that binding.
+7. Every reprocess requires a dedicated-secret signed binding for the exact original context/patient version/date/transcript digest and an active one-time server capability. Client values alone grant no authority; retry never renews or extends the original origin/expiry.
 8. Identity conflict/uncertain remains transcript-recoverable but cannot be reprocessed.
 9. A server-side chart/context binding failure never returns transcript/token, even after successful transcription; browser Blob recovery remains available.
 

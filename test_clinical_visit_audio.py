@@ -88,6 +88,11 @@ def reprocess(client, context_id, transcript, recovery_binding, encounter_date="
              "transcript": transcript, "recovery_binding": recovery_binding})
 
 
+def binding_claims(token):
+    encoded = token.split(".", 1)[0]
+    return audio.json.loads(audio.base64.urlsafe_b64decode(encoded + "=" * (-len(encoded) % 4)))
+
+
 def test_gate_auth_and_request_format(monkeypatch):
     monkeypatch.delenv("VISIT_AUDIO_RETENTION_MODE", raising=False)
     client, _ = _client_with_engine(monkeypatch)
@@ -511,6 +516,7 @@ def test_repeated_processing_failure_preserves_original_binding(monkeypatch):
     client, _ = _client_with_engine(monkeypatch)
     _patient(client, "SYN-WEB")
     context = _context(client, "SYN-WEB")
+    provider_calls = []
 
     class Transcriber:
         async def transcribe(self, file, mime):
@@ -518,9 +524,11 @@ def test_repeated_processing_failure_preserves_original_binding(monkeypatch):
 
     class AlwaysInvalid:
         async def classify(self, batch, identity):
+            provider_calls.append("classify")
             return labels(batch, bad_id=999)
 
         async def classify_retry(self, batch, identity, validation_code):
+            provider_calls.append("retry")
             return labels(batch, bad_id=999)
 
     monkeypatch.setattr(audio, "make_providers", lambda settings: (Transcriber(), AlwaysInvalid()))
@@ -529,7 +537,54 @@ def test_repeated_processing_failure_preserves_original_binding(monkeypatch):
     retried = reprocess(client, context["context_id"], TRANSCRIPT, original_binding)
     assert retried.status_code == 200, retried.text
     assert retried.json()["processing_status"] == "transcript_only"
-    assert retried.json()["recovery_binding"] == original_binding
+    successor_binding = retried.json()["recovery_binding"]
+    assert successor_binding != original_binding
+    original_claims = binding_claims(original_binding)
+    successor_claims = binding_claims(successor_binding)
+    for key in ("original_context_id", "issued_at", "expires_at", "encounter_date",
+                "transcript_sha256", "patient_id", "patient_updated_at"):
+        assert successor_claims[key] == original_claims[key]
+
+    calls_before_replay = len(provider_calls)
+    replayed = reprocess(client, context["context_id"], TRANSCRIPT, original_binding)
+    assert replayed.status_code == 409
+    assert len(provider_calls) == calls_before_replay
+
+
+def test_identity_conflict_during_reprocess_permanently_consumes_retry(monkeypatch):
+    enabled(monkeypatch)
+    client, _ = _client_with_engine(monkeypatch)
+    _patient(client, "SYN-WEB")
+    context = _context(client, "SYN-WEB")
+    calls = []
+
+    class Transcriber:
+        async def transcribe(self, file, mime):
+            return TRANSCRIPT
+
+    class StructuralThenIdentityConflict:
+        async def classify(self, batch, identity):
+            calls.append("classify")
+            if len(calls) <= 2:
+                return labels(batch, bad_id=999)
+            return labels(batch, identity="conflict")
+
+        async def classify_retry(self, batch, identity, validation_code):
+            calls.append("retry")
+            return labels(batch, bad_id=999)
+
+    monkeypatch.setattr(
+        audio, "make_providers", lambda settings: (Transcriber(), StructuralThenIdentityConflict()))
+    partial = draft(client, context["context_id"]).json()
+    original_binding = partial["recovery_binding"]
+    conflicted = reprocess(client, context["context_id"], TRANSCRIPT, original_binding)
+    assert conflicted.status_code == 200, conflicted.text
+    assert conflicted.json()["processing_failure"]["code"] == "source_identity_unresolved"
+    assert conflicted.json()["processing_failure"]["retryable"] is False
+    before_replay = len(calls)
+    replayed = reprocess(client, context["context_id"], TRANSCRIPT, original_binding)
+    assert replayed.status_code == 409
+    assert "transcript" not in replayed.text and len(calls) == before_replay
 
 
 def test_nonretryable_identity_binding_rejects_reprocess(monkeypatch):
