@@ -1,18 +1,42 @@
-# SLICE_PLAN_CURRENT.md — web audio semantic completeness and next-visit suggestions
+# SLICE_PLAN_CURRENT.md — no-loss web Visit Audio recovery
 
-> **STATUS (2026-10-28): LIVE / FICTIONAL PRODUCT-OWNER RECHECK NEXT.** PR #245 passed all 16 final-head checks, including both full Visit Capture Chromium jobs, and squash-merged as `d4e66a0147771834e27b1f6d1639ecaae1909f8e`. Render deploy `dep-dbgt23ijnfac739m9ipg` is LIVE on that exact merge; three served assets, five anonymous 401 probes and release-window ERROR/5xx logs passed without audio, provider or clinical-write activity. The correction is released. Next: one short Product Owner fictional recording without Save, checking clinical completeness and the separate bulk-adopt suggestion block. The prior native recording/ASR qualification remains deferred at `cockpit/archive/SLICE_PLAN_NATIVE_AUDIO_ASR_QUALIFICATION_DEFERRED_2026-10-28.md`.
+> **STATUS (2026-10-28): RELEASE AUTHORIZED / FINAL HEAD CI THEN MERGE.** Runtime correction `f677130c` passed independent exact-head R1 with `PASS / COMPLETE_FOR_DECLARED_SCOPE=YES / P0:P1:P2=0:0:0`. PR #247 head `764f3a55` is mergeable and passed all 21 exact-head checks. The Product Owner has now explicitly authorized merge and deploy. This release checkpoint is documentation-only; after its own exact-head CI passes, squash-merge, observe the single native Render auto-deploy on service `srv-d5qfk31r0fns73di596g`, then perform bounded no-PHI static/auth/log smoke. No manual duplicate deploy, recording, provider request or clinical write.
 
 ## Objective
 
-Preserve exact-source clinical truth while allowing multiple exact excerpts from one compound transcript unit, populate the existing structured treatment/plan/pending/follow-up sections, and add a strictly separate transient AI suggestion layer for next-visit checks.
+Prevent loss of a recorded visit when transcription succeeds but structured processing fails, while preserving patient binding, ephemeral retention, clinician review and explicit Save authority.
 
-## Frozen boundary
+## Frozen behavior
 
-- Existing `gpt-transcribe`, `gpt-6-luna`, standard-retention disclosure/gate, patient context, temporary content lifecycle, one final confirmation, Preview and explicit Save remain.
-- Source-backed candidate text must be an exact validated transcript substring. No generated clinical prose, medication structure, dates, diagnoses or roles enter the record.
-- AI suggestions may infer later questions/checks from cited source units but remain outside the candidate until one bulk clinician adoption into follow-up.
-- Dia output is comparison evidence only, not source truth. Synthetic data only in implementation/release evidence.
+- Existing protected Start/Stop, informed-recording acknowledgement, OpenAI standard-retention disclosure, project/org headers, `store:false`, exact-source candidate, typed suggestions, display-only contextual considerations, one final patient/content confirmation, Preview and explicit Save remain.
+- Audio/transcript remain transient and are never placed in server storage, database, browser persistence or logs.
+- Transcript is non-authoritative and never enters Preview or Save.
+- Unresolved patient identity still fails closed and cannot be corrected by structural retry.
+- No real-patient/provider replay, merge or deploy belongs to implementation evidence.
 
-## Gates and next action
+## New contract
 
-Pre-code and corrected post-code independent R2 closures passed 0:0:0. PR #245 final-head CI passed 16/16, including both full Chromium jobs. The exact merge is LIVE and the no-PHI smoke passed. The implementation writer is released after this documentation-only receipt; native real-chart work remains deferred. Product Owner acceptance uses fictional data first and does not require Save.
+1. Audio route returns `processing_status=complete|transcript_only` after successful transcription.
+2. Both states return the protected, unverified transcript; only `complete` returns a validated candidate.
+3. Transcript-only failures carry fixed safe stage/code metadata and produce content-free server diagnostics.
+4. A protected reprocess route submits the retained transcript to the same classification/candidate pipeline without retranscribing.
+5. Browser keeps the original Blob only in memory until successful structuring or explicit discard; failure exposes retry and local audio download.
+6. UI has two compact explicit controls: unverified transcript and processed clinical text. Both content views are collapsed by default and appear only after the clinician selects one; selecting the open control again collapses it. Transcript-only state cannot Preview or Save.
+7. Every reprocess requires a dedicated-secret signed binding for the exact original context/patient version/date/transcript digest and an active one-time server capability. Client values alone grant no authority; retry never renews or extends the original origin/expiry.
+8. Identity conflict/uncertain remains transcript-recoverable but cannot be reprocessed.
+9. A server-side chart/context binding failure never returns transcript/token, even after successful transcription; browser Blob recovery remains available.
+
+## Evidence questions
+
+- Does every post-transcription failure preserve the exact transcript without leaking content to logs or creating clinical authority?
+- Can the exact protected context/date/transcript be reprocessed without transcription and transition to a valid candidate?
+- Are Blob/transcript lifecycles transient, chart-bound and cleared on discard/success as designed?
+- Are both review bodies collapsed after every complete or transcript-only response, opening only on explicit selection and closing on a repeated selection?
+- Are transcript and contextual inference absent from Preview/Save, with the existing single final confirmation preserved?
+- Do fixed logs distinguish the future validator/provider/timeout class without arbitrary exception text?
+- Does every context/date/transcript/token substitution fail before a provider call, including a fresh or renewed same-patient context?
+- Does context/patient drift after transcription or classification return no transcript/token to the invalid chart while preserving browser-held audio recovery?
+
+## Review and release
+
+The no-loss backend pre-code and exact-code R2 gates are complete. This bounded presentation correction is R1 because it changes only visibility over unchanged transient data and unchanged clinical authority. Implement/test it, obtain one exact-head R1 review, then require fresh PR exact-head CI. Merge and release remain separate decisions.

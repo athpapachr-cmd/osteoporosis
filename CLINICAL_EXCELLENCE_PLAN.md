@@ -582,6 +582,8 @@ AUDIT + PRACTICE REVIEW
 
 The raw transcript is not authoritative patient truth and is not persisted by default.
 
+For direct Visit Audio resilience, successful transcription is an independently recoverable transient outcome. During the active authenticated review only, the clinician may open a clearly labelled unverified transcript view beside the processed clinical text. If structuring fails, the browser retains the transcript and original audio only in memory, permits retry without a new recording and may offer explicit local audio download. The transcript never becomes Preview/Save payload or authoritative chart data, and no browser/server persistence is introduced.
+
 ---
 
 # 15. PR-1 v3 extraction architecture retained

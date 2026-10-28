@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import io
 import logging
+import asyncio
+from dataclasses import replace
 from datetime import datetime, timezone
 
 import httpx
@@ -30,6 +32,7 @@ def enabled(monkeypatch):
     monkeypatch.setenv("VISIT_AUDIO_OPENAI_PHI_APPROVED", "1")
     monkeypatch.setenv("VISIT_AUDIO_RETENTION_MODE", "standard")
     monkeypatch.setenv("VISIT_AUDIO_OPENAI_PROJECT_ID", "proj_synthetic_standard")
+    monkeypatch.setenv("VISIT_AUDIO_RECOVERY_SECRET", "synthetic-recovery-secret-" + "x" * 40)
 
 
 def labels(batch, *, identity="consistent", bad_id=None):
@@ -55,12 +58,39 @@ def labels(batch, *, identity="consistent", bad_id=None):
     return result
 
 
+def considerations(facts, items=None):
+    return {"contextual_clinical_considerations": items or []}
+
+
+def one_consideration(facts):
+    source_ids = [item["source_id"] for item in facts if item["kind"] in ("finding", "therapy")]
+    return considerations(facts, [{
+        "category": "management_review",
+        "text": "Να εξεταστεί αν χρειάζεται συνολική επανεκτίμηση του καταγματικού κινδύνου.",
+        "rationale": "Συνδυάζει το ρητό εύρημα οστικής πυκνότητας με τη ρητά αναφερόμενη θεραπεία.",
+        "source_ids": source_ids[:2],
+        "confidence": "moderate",
+    }])
+
+
 def draft(client, context_id):
     return client.post("/clinical/visit-capture/audio/draft", headers={
         **HEADERS, "X-Visit-Context": context_id,
         "X-Encounter-Date": "2026-10-27", "Content-Type": "audio/webm",
         "X-Visit-Retention-Acknowledged": "standard",
     }, content=WEBM)
+
+
+def reprocess(client, context_id, transcript, recovery_binding, encounter_date="2026-10-27"):
+    return client.post("/clinical/visit-capture/audio/reprocess", headers={
+        **HEADERS, "X-Visit-Retention-Acknowledged": "standard",
+    }, json={"context_id": context_id, "encounter_date": encounter_date,
+             "transcript": transcript, "recovery_binding": recovery_binding})
+
+
+def binding_claims(token):
+    encoded = token.split(".", 1)[0]
+    return audio.json.loads(audio.base64.urlsafe_b64decode(encoded + "=" * (-len(encoded) % 4)))
 
 
 def test_gate_auth_and_request_format(monkeypatch):
@@ -91,6 +121,9 @@ def test_gate_auth_and_request_format(monkeypatch):
     monkeypatch.setenv("VISIT_AUDIO_OPENAI_PROJECT_ID", "proj_synthetic_standard")
     monkeypatch.setenv("VISIT_AUDIO_RETENTION_MODE", "other")
     assert client.get("/clinical/visit-capture/audio/capability", headers=HEADERS).json() == {"enabled": False}
+    monkeypatch.setenv("VISIT_AUDIO_RETENTION_MODE", "standard")
+    monkeypatch.delenv("VISIT_AUDIO_RECOVERY_SECRET")
+    assert client.get("/clinical/visit-capture/audio/capability", headers=HEADERS).json() == {"enabled": False}
 
 
 def test_provider_multipart_and_private_responses_contract(monkeypatch):
@@ -103,8 +136,13 @@ def test_provider_multipart_and_private_responses_contract(monkeypatch):
         requests.append((request, body))
         if request.url.path.endswith("/transcriptions"):
             return httpx.Response(200, json={"text": TRANSCRIPT})
+        request_json = __import__("json").loads(body)
+        if request_json["text"]["format"]["name"] == "visit_audio_contextual_considerations_v1":
+            output = considerations([])
+        else:
+            output = labels([(0, "Επανέλεγχος")])
         return httpx.Response(200, json={"status": "completed", "output": [{
-            "content": [{"type": "output_text", "text": __import__("json").dumps(labels([(0, "Επανέλεγχος")]))}]
+            "content": [{"type": "output_text", "text": __import__("json").dumps(output)}]
         }]})
 
     real = httpx.AsyncClient
@@ -116,6 +154,12 @@ def test_provider_multipart_and_private_responses_contract(monkeypatch):
         assert await audio.OpenAITranscriber(settings).transcribe(io.BytesIO(WEBM), "audio/webm") == TRANSCRIPT
         assert (await audio.OpenAISummarizer(settings).classify(
             [(0, "Επανέλεγχος")], {"full_name": "Synthetic"}))["facts"][0]["kind"] == "reason"
+        assert (await audio.OpenAISummarizer(settings).classify_retry(
+            [(0, "Επανέλεγχος")], {"full_name": "Synthetic"},
+            "classification_overlap"))["facts"][0]["kind"] == "reason"
+        assert await audio.OpenAISummarizer(settings).consider([
+            {"source_id": 0, "excerpt": "Η Synthetic ήρθε για επανέλεγχο", "kind": "reason"}
+        ]) == considerations([])
     asyncio.run(run())
     transcription = requests[0][1]
     assert transcription.count(b'name="languages[]"') == 2
@@ -133,6 +177,26 @@ def test_provider_multipart_and_private_responses_contract(monkeypatch):
     assert set(suggestion_schema["properties"]) == {"intent", "source_id"}
     assert "text" not in suggestion_schema["properties"] and "rationale" not in suggestion_schema["properties"]
     assert "tools" not in response_json
+    retry_json = __import__("json").loads(requests[2][1])
+    assert "classification_overlap" in retry_json["input"][0]["content"]
+    assert retry_json["input"][1]["content"] == response_json["input"][1]["content"]
+    assert retry_json["store"] is False and "tools" not in retry_json
+    consideration_json = __import__("json").loads(requests[3][1])
+    assert consideration_json["model"] == "gpt-6-luna" and consideration_json["store"] is False
+    assert consideration_json["text"]["format"]["name"] == "visit_audio_contextual_considerations_v1"
+    consideration_item = consideration_json["text"]["format"]["schema"]["properties"][
+        "contextual_clinical_considerations"]["items"]
+    assert set(consideration_item["properties"]) == {
+        "category", "text", "rationale", "source_ids", "confidence"}
+    assert "selected_identity" not in consideration_json["input"][1]["content"]
+    assert "source_units" not in consideration_json["input"][1]["content"]
+    consideration_source = __import__("json").loads(consideration_json["input"][1]["content"])
+    assert consideration_source == {"validated_facts": [{
+        "source_id": 0,
+        "excerpt": "Η Synthetic ήρθε για επανέλεγχο",
+        "kind": "reason",
+    }]}
+    assert "tools" not in consideration_json
 
 
 def test_provider_rejection_retains_status_only(monkeypatch):
@@ -230,6 +294,556 @@ def test_ambiguous_excerpt_and_free_text_or_incompatible_suggestion_fail_closed(
             audio.checked_analysis(unsafe, [(0, "Επανέλεγχος")])
 
 
+def test_contextual_considerations_require_validated_sources_and_bounded_shape():
+    facts = [
+        {"source_id": 2, "excerpt": "πόνος στη ράχη", "kind": "symptom"},
+        {"source_id": 8, "excerpt": "απώλεια ύψους", "kind": "finding"},
+    ]
+    valid = {"contextual_clinical_considerations": [{
+        "category": "investigation_consideration",
+        "text": "Να εξεταστεί αν χρειάζεται περαιτέρω διερεύνηση της ράχης.",
+        "rationale": "Ο συνδυασμός πόνου και απώλειας ύψους μπορεί να χρειάζεται κλινική συσχέτιση.",
+        "source_ids": [2, 8],
+        "confidence": "moderate",
+    }]}
+    assert audio.checked_considerations(valid, facts)[0]["source_ids"] == [2, 8]
+
+    invalid_items = [
+        {**valid["contextual_clinical_considerations"][0], "source_ids": [2, 99]},
+        {**valid["contextual_clinical_considerations"][0], "source_ids": [2, 2]},
+        {**valid["contextual_clinical_considerations"][0], "confidence": "certain"},
+        {**valid["contextual_clinical_considerations"][0], "category": "diagnosis"},
+        {**valid["contextual_clinical_considerations"][0], "text": "α\x00β"},
+        {**valid["contextual_clinical_considerations"][0], "extra": "field"},
+    ]
+    for item in invalid_items:
+        with pytest.raises(ValueError):
+            audio.checked_considerations({"contextual_clinical_considerations": [item]}, facts)
+    with pytest.raises(ValueError, match="duplicate"):
+        audio.checked_considerations({
+            "contextual_clinical_considerations": [
+                valid["contextual_clinical_considerations"][0],
+                {**valid["contextual_clinical_considerations"][0],
+                 "text": valid["contextual_clinical_considerations"][0]["text"].upper()},
+            ]}, facts)
+
+
+def test_contextual_deadline_helpers_preserve_finalization_reserve():
+    assert audio.optional_timeout_budget(100.0, 90.0, 90) == 5.0
+    assert audio.optional_timeout_budget(100.0, 94.1, 90) is None
+    audio.ensure_before_deadline(94.9, 95.0)
+    with pytest.raises(TimeoutError):
+        audio.ensure_before_deadline(95.0, 95.0)
+
+
+def test_structural_classification_failure_retries_once_and_recovers(monkeypatch):
+    enabled(monkeypatch)
+    client, _ = _client_with_engine(monkeypatch)
+    _patient(client, "SYN-WEB")
+    context = _context(client, "SYN-WEB")
+    calls = []
+
+    class Transcriber:
+        async def transcribe(self, file, mime):
+            return TRANSCRIPT
+
+    class Summarizer:
+        async def classify(self, batch, identity):
+            calls.append("first")
+            return labels(batch, bad_id=999)
+
+        async def classify_retry(self, batch, identity, validation_code):
+            calls.append(validation_code)
+            return labels(batch)
+
+        async def consider(self, facts):
+            return considerations(facts)
+
+    monkeypatch.setattr(audio, "make_providers", lambda settings: (Transcriber(), Summarizer()))
+    response = draft(client, context["context_id"])
+    assert response.status_code == 200, response.text
+    assert response.json()["candidate"]["reason_for_visit"]["text"] == "Επανέλεγχος οστεοπόρωσης."
+    assert calls == ["first", "classification_values"]
+
+
+def test_repeated_structural_failure_logs_only_fixed_code(monkeypatch, caplog):
+    enabled(monkeypatch)
+    client, _ = _client_with_engine(monkeypatch)
+    _patient(client, "SYN-WEB")
+    context = _context(client, "SYN-WEB")
+    calls = []
+
+    class Transcriber:
+        async def transcribe(self, file, mime):
+            return TRANSCRIPT
+
+    class Summarizer:
+        async def classify(self, batch, identity):
+            calls.append("first")
+            return labels(batch, bad_id=999)
+
+        async def classify_retry(self, batch, identity, validation_code):
+            calls.append(validation_code)
+            return labels(batch, bad_id=999)
+
+    monkeypatch.setattr(audio, "make_providers", lambda settings: (Transcriber(), Summarizer()))
+    with caplog.at_level(logging.WARNING, logger="clinical_visit_audio"):
+        response = draft(client, context["context_id"])
+    assert response.status_code == 200
+    body = response.json()
+    assert body["processing_status"] == "transcript_only"
+    assert body["transcript"] == TRANSCRIPT
+    assert body["processing_failure"] == {
+        "stage": "classification", "code": "classification_values",
+        "provider_http_status": None, "retryable": True,
+    }
+    assert "candidate" not in body and body["recovery_binding"]
+    assert calls == ["first", "classification_values"]
+    assert "validation_code=classification_values" in caplog.text
+    assert TRANSCRIPT not in caplog.text and "SYN-WEB" not in caplog.text
+
+
+def test_bound_transcript_reprocess_skips_transcription_and_recovers(monkeypatch):
+    enabled(monkeypatch)
+    client, _ = _client_with_engine(monkeypatch)
+    _patient(client, "SYN-WEB")
+    context = _context(client, "SYN-WEB")
+    calls = {"transcribe": 0, "classify": 0}
+
+    class Transcriber:
+        async def transcribe(self, file, mime):
+            calls["transcribe"] += 1
+            return TRANSCRIPT
+
+    class Summarizer:
+        async def classify(self, batch, identity):
+            calls["classify"] += 1
+            return labels(batch, bad_id=999) if calls["classify"] <= 2 else labels(batch)
+
+        async def classify_retry(self, batch, identity, validation_code):
+            calls["classify"] += 1
+            return labels(batch, bad_id=999) if calls["classify"] <= 2 else labels(batch)
+
+        async def consider(self, facts):
+            return considerations(facts)
+
+    monkeypatch.setattr(audio, "make_providers", lambda settings: (Transcriber(), Summarizer()))
+    partial = draft(client, context["context_id"])
+    assert partial.status_code == 200
+    partial_body = partial.json()
+    assert partial_body["processing_status"] == "transcript_only"
+
+    recovered = reprocess(client, context["context_id"], partial_body["transcript"],
+                          partial_body["recovery_binding"])
+    assert recovered.status_code == 200, recovered.text
+    assert recovered.json()["processing_status"] == "complete"
+    assert recovered.json()["candidate"]["reason_for_visit"]["text"] == "Επανέλεγχος οστεοπόρωσης."
+    assert calls["transcribe"] == 1
+
+
+def test_reprocess_binding_rejects_substitution_and_new_contexts(monkeypatch):
+    enabled(monkeypatch)
+    client, _ = _client_with_engine(monkeypatch)
+    _patient(client, "SYN-A")
+    _patient(client, "SYN-B")
+    session_id = "synthetic-browser-session-0001"
+    context = _context(client, "SYN-A", session_id)
+    provider_calls = []
+
+    class Transcriber:
+        async def transcribe(self, file, mime):
+            return TRANSCRIPT
+
+    class BrokenThenStable:
+        def __init__(self):
+            self.fail = True
+
+        async def classify(self, batch, identity):
+            provider_calls.append("classify")
+            if self.fail:
+                return labels(batch, bad_id=999)
+            return labels(batch)
+
+        async def classify_retry(self, batch, identity, validation_code):
+            provider_calls.append("retry")
+            return labels(batch, bad_id=999)
+
+        async def consider(self, facts):
+            return considerations(facts)
+
+    summarizer = BrokenThenStable()
+    monkeypatch.setattr(audio, "make_providers", lambda settings: (Transcriber(), summarizer))
+    partial = draft(client, context["context_id"]).json()
+    baseline_calls = len(provider_calls)
+    token = partial["recovery_binding"]
+
+    for changed_transcript, changed_date, changed_token in (
+        (TRANSCRIPT + " x", "2026-10-27", token),
+        (TRANSCRIPT, "2026-10-28", token),
+        (TRANSCRIPT, "2026-10-27", token[:-1] + ("0" if token[-1] != "0" else "1")),
+    ):
+        rejected = reprocess(client, context["context_id"], changed_transcript,
+                             changed_token, changed_date)
+        assert rejected.status_code == 409
+        assert "transcript" not in rejected.text and "recovery_binding" not in rejected.text
+        assert len(provider_calls) == baseline_calls
+
+    renewed = client.post("/clinical/visit-capture/context/renew", headers=HEADERS, json={
+        "prior_context_id": context["context_id"], "patient_id": "SYN-A",
+        "client_session_id": session_id,
+    })
+    assert renewed.status_code == 200
+    before_renewed = len(provider_calls)
+    rejected = reprocess(client, renewed.json()["context_id"], TRANSCRIPT, token)
+    assert rejected.status_code == 409
+    assert "transcript" not in rejected.text and len(provider_calls) == before_renewed
+
+    fresh_same_patient = _context(client, "SYN-A", session_id)
+    before_fresh = len(provider_calls)
+    rejected = reprocess(client, fresh_same_patient["context_id"], TRANSCRIPT, token)
+    assert rejected.status_code == 409
+    assert "transcript" not in rejected.text and len(provider_calls) == before_fresh
+
+    other = _context(client, "SYN-B", session_id)
+    before_other = len(provider_calls)
+    rejected = reprocess(client, other["context_id"], TRANSCRIPT, token)
+    assert rejected.status_code == 409
+    assert "transcript" not in rejected.text and len(provider_calls) == before_other
+
+
+def test_repeated_processing_failure_preserves_original_binding(monkeypatch):
+    enabled(monkeypatch)
+    client, _ = _client_with_engine(monkeypatch)
+    _patient(client, "SYN-WEB")
+    context = _context(client, "SYN-WEB")
+    provider_calls = []
+
+    class Transcriber:
+        async def transcribe(self, file, mime):
+            return TRANSCRIPT
+
+    class AlwaysInvalid:
+        async def classify(self, batch, identity):
+            provider_calls.append("classify")
+            return labels(batch, bad_id=999)
+
+        async def classify_retry(self, batch, identity, validation_code):
+            provider_calls.append("retry")
+            return labels(batch, bad_id=999)
+
+    monkeypatch.setattr(audio, "make_providers", lambda settings: (Transcriber(), AlwaysInvalid()))
+    partial = draft(client, context["context_id"]).json()
+    original_binding = partial["recovery_binding"]
+    retried = reprocess(client, context["context_id"], TRANSCRIPT, original_binding)
+    assert retried.status_code == 200, retried.text
+    assert retried.json()["processing_status"] == "transcript_only"
+    successor_binding = retried.json()["recovery_binding"]
+    assert successor_binding != original_binding
+    original_claims = binding_claims(original_binding)
+    successor_claims = binding_claims(successor_binding)
+    for key in ("original_context_id", "issued_at", "expires_at", "encounter_date",
+                "transcript_sha256", "patient_id", "patient_updated_at"):
+        assert successor_claims[key] == original_claims[key]
+
+    calls_before_replay = len(provider_calls)
+    replayed = reprocess(client, context["context_id"], TRANSCRIPT, original_binding)
+    assert replayed.status_code == 409
+    assert len(provider_calls) == calls_before_replay
+
+
+def test_identity_conflict_during_reprocess_permanently_consumes_retry(monkeypatch):
+    enabled(monkeypatch)
+    client, _ = _client_with_engine(monkeypatch)
+    _patient(client, "SYN-WEB")
+    context = _context(client, "SYN-WEB")
+    calls = []
+
+    class Transcriber:
+        async def transcribe(self, file, mime):
+            return TRANSCRIPT
+
+    class StructuralThenIdentityConflict:
+        async def classify(self, batch, identity):
+            calls.append("classify")
+            if len(calls) <= 2:
+                return labels(batch, bad_id=999)
+            return labels(batch, identity="conflict")
+
+        async def classify_retry(self, batch, identity, validation_code):
+            calls.append("retry")
+            return labels(batch, bad_id=999)
+
+    monkeypatch.setattr(
+        audio, "make_providers", lambda settings: (Transcriber(), StructuralThenIdentityConflict()))
+    partial = draft(client, context["context_id"]).json()
+    original_binding = partial["recovery_binding"]
+    conflicted = reprocess(client, context["context_id"], TRANSCRIPT, original_binding)
+    assert conflicted.status_code == 200, conflicted.text
+    assert conflicted.json()["processing_failure"]["code"] == "source_identity_unresolved"
+    assert conflicted.json()["processing_failure"]["retryable"] is False
+    before_replay = len(calls)
+    replayed = reprocess(client, context["context_id"], TRANSCRIPT, original_binding)
+    assert replayed.status_code == 409
+    assert "transcript" not in replayed.text and len(calls) == before_replay
+
+
+def test_nonretryable_identity_binding_rejects_reprocess(monkeypatch):
+    enabled(monkeypatch)
+    client, _ = _client_with_engine(monkeypatch)
+    _patient(client, "SYN-WEB")
+    context = _context(client, "SYN-WEB")
+    calls = []
+
+    class Transcriber:
+        async def transcribe(self, file, mime):
+            return TRANSCRIPT
+
+    class Summarizer:
+        async def classify(self, batch, identity):
+            calls.append("classify")
+            return labels(batch, identity="uncertain")
+
+    monkeypatch.setattr(audio, "make_providers", lambda settings: (Transcriber(), Summarizer()))
+    partial = draft(client, context["context_id"]).json()
+    assert partial["processing_failure"]["retryable"] is False
+    before = len(calls)
+    rejected = reprocess(client, context["context_id"], TRANSCRIPT,
+                         partial["recovery_binding"])
+    assert rejected.status_code == 409
+    assert "transcript" not in rejected.text and len(calls) == before
+
+
+def test_expired_recovery_binding_fails_before_provider(monkeypatch):
+    enabled(monkeypatch)
+    client, _ = _client_with_engine(monkeypatch)
+    _patient(client, "SYN-WEB")
+    context = _context(client, "SYN-WEB")
+    calls = []
+
+    class Transcriber:
+        async def transcribe(self, file, mime):
+            return TRANSCRIPT
+
+    class Summarizer:
+        async def classify(self, batch, identity):
+            calls.append("classify")
+            return labels(batch, bad_id=999)
+
+        async def classify_retry(self, batch, identity, validation_code):
+            calls.append("retry")
+            return labels(batch, bad_id=999)
+
+    monkeypatch.setattr(audio, "make_providers", lambda settings: (Transcriber(), Summarizer()))
+    partial = draft(client, context["context_id"]).json()
+    before = len(calls)
+    issued_now = audio.time.time()
+    monkeypatch.setattr(audio.time, "time", lambda: issued_now + audio.RECOVERY_BINDING_SECONDS + 1)
+    rejected = reprocess(client, context["context_id"], TRANSCRIPT,
+                         partial["recovery_binding"])
+    assert rejected.status_code == 409
+    assert "transcript" not in rejected.text and len(calls) == before
+
+
+def test_identity_conflict_is_not_retried(monkeypatch):
+    enabled(monkeypatch)
+    client, _ = _client_with_engine(monkeypatch)
+    _patient(client, "SYN-WEB")
+    context = _context(client, "SYN-WEB")
+    retried = []
+
+    class Transcriber:
+        async def transcribe(self, file, mime):
+            return TRANSCRIPT
+
+    class Summarizer:
+        async def classify(self, batch, identity):
+            return labels(batch, identity="conflict")
+
+        async def classify_retry(self, batch, identity, validation_code):
+            retried.append(validation_code)
+            return labels(batch)
+
+    monkeypatch.setattr(audio, "make_providers", lambda settings: (Transcriber(), Summarizer()))
+    body = draft(client, context["context_id"]).json()
+    assert body["processing_status"] == "transcript_only"
+    assert body["processing_failure"]["code"] == "source_identity_unresolved"
+    assert body["processing_failure"]["retryable"] is False
+    assert retried == []
+
+
+@pytest.mark.parametrize("identity_state", ["conflict", "uncertain"])
+def test_unresolved_identity_with_structural_error_is_not_retried(monkeypatch, identity_state):
+    enabled(monkeypatch)
+    client, _ = _client_with_engine(monkeypatch)
+    _patient(client, "SYN-WEB")
+    context = _context(client, "SYN-WEB")
+    retried = []
+
+    class Transcriber:
+        async def transcribe(self, file, mime):
+            return TRANSCRIPT
+
+    class Summarizer:
+        async def classify(self, batch, identity):
+            return labels(batch, identity=identity_state, bad_id=999)
+
+        async def classify_retry(self, batch, identity, validation_code):
+            retried.append(validation_code)
+            return labels(batch)
+
+    monkeypatch.setattr(audio, "make_providers", lambda settings: (Transcriber(), Summarizer()))
+    body = draft(client, context["context_id"]).json()
+    assert body["processing_status"] == "transcript_only"
+    assert body["processing_failure"]["code"] == "source_identity_unresolved"
+    assert body["processing_failure"]["retryable"] is False
+    assert retried == []
+
+
+def test_whole_visit_contextual_pass_combines_different_batches(monkeypatch):
+    enabled(monkeypatch)
+    client, _ = _client_with_engine(monkeypatch)
+    _patient(client, "SYN-WEB")
+    context = _context(client, "SYN-WEB")
+    transcript = (
+        "Επανέλεγχος οστεοπόρωσης " + "α" * 3200 + ". "
+        "Υπάρχει θωρακικός πόνος " + "β" * 3200 + ". "
+        "Αναφέρθηκε απώλεια ύψους " + "γ" * 3200 + "."
+    )
+    assert len(audio.batches(audio.source_units(transcript))) > 1
+
+    class Transcriber:
+        async def transcribe(self, file, mime):
+            return transcript
+
+    class Summarizer:
+        async def classify(self, batch, identity):
+            result = {"identity_state": "consistent", "facts": [],
+                      "suggested_next_checks": [], "unclassified_ids": []}
+            for identifier, text in batch:
+                if identifier == 0:
+                    excerpt, kind = "Επανέλεγχος οστεοπόρωσης", "reason"
+                elif identifier == 1:
+                    excerpt, kind = "Υπάρχει θωρακικός πόνος", "symptom"
+                else:
+                    excerpt, kind = "Αναφέρθηκε απώλεια ύψους", "finding"
+                result["facts"].append({"source_id": identifier, "excerpt": excerpt, "kind": kind})
+            return result
+
+        async def consider(self, facts):
+            assert {item["source_id"] for item in facts} == {0, 1, 2}
+            return considerations(facts, [{
+                "category": "investigation_consideration",
+                "text": "Να εξεταστεί αν ο θωρακικός πόνος και η απώλεια ύψους χρειάζονται συσχέτιση.",
+                "rationale": "Η σκέψη βασίζεται στον συνδυασμό δύο ρητών ευρημάτων από διαφορετικά τμήματα.",
+                "source_ids": [1, 2],
+                "confidence": "moderate",
+            }])
+
+    monkeypatch.setattr(audio, "make_providers", lambda settings: (Transcriber(), Summarizer()))
+    response = draft(client, context["context_id"])
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["contextual_considerations_status"] == "complete"
+    assert body["contextual_clinical_considerations"][0]["source_ids"] == [1, 2]
+    assert body["contextual_clinical_considerations"][0]["text"] not in str(body["candidate"])
+
+
+def test_contextual_input_limit_preserves_exact_source_candidate(monkeypatch):
+    enabled(monkeypatch)
+    client, _ = _client_with_engine(monkeypatch)
+    _patient(client, "SYN-WEB")
+    context = _context(client, "SYN-WEB")
+    called = []
+
+    class Transcriber:
+        async def transcribe(self, file, mime):
+            return TRANSCRIPT
+
+    class Summarizer:
+        async def classify(self, batch, identity):
+            return labels(batch)
+
+        async def consider(self, facts):
+            called.append(True)
+            return one_consideration(facts)
+
+    monkeypatch.setattr(audio, "make_providers", lambda settings: (Transcriber(), Summarizer()))
+    monkeypatch.setattr(audio, "MAX_CONTEXTUAL_FACT_BYTES", 1)
+    response = draft(client, context["context_id"])
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["candidate"]["reason_for_visit"]["text"] == "Επανέλεγχος οστεοπόρωσης."
+    assert body["contextual_considerations_status"] == "input_limit"
+    assert body["contextual_clinical_considerations"] == []
+    assert called == []
+
+
+def test_candidate_near_core_cutoff_survives_when_optional_budget_is_too_small(monkeypatch):
+    enabled(monkeypatch)
+    client, _ = _client_with_engine(monkeypatch)
+    _patient(client, "SYN-WEB")
+    context = _context(client, "SYN-WEB")
+    settings = replace(audio.AudioSettings.from_env(), pipeline_timeout=1.1, summarize_timeout=5)
+    monkeypatch.setattr(audio.AudioSettings, "from_env", classmethod(lambda cls: settings))
+    monkeypatch.setattr(audio, "FINALIZATION_RESERVE_SECONDS", 0.4)
+    considered = []
+
+    class Transcriber:
+        async def transcribe(self, file, mime):
+            await asyncio.sleep(0.5)
+            return TRANSCRIPT
+
+    class Summarizer:
+        async def classify(self, batch, identity):
+            return labels(batch)
+
+        async def consider(self, facts):
+            considered.append(True)
+            return one_consideration(facts)
+
+    monkeypatch.setattr(audio, "make_providers", lambda settings: (Transcriber(), Summarizer()))
+    response = draft(client, context["context_id"])
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["candidate"]["reason_for_visit"]["text"] == "Επανέλεγχος οστεοπόρωσης."
+    assert body["contextual_considerations_status"] == "unavailable"
+    assert body["contextual_clinical_considerations"] == []
+    assert considered == []
+
+
+def test_optional_contextual_timeout_preserves_timely_candidate(monkeypatch):
+    enabled(monkeypatch)
+    client, _ = _client_with_engine(monkeypatch)
+    _patient(client, "SYN-WEB")
+    context = _context(client, "SYN-WEB")
+    settings = replace(audio.AudioSettings.from_env(), pipeline_timeout=2.0, summarize_timeout=5)
+    monkeypatch.setattr(audio.AudioSettings, "from_env", classmethod(lambda cls: settings))
+    monkeypatch.setattr(audio, "FINALIZATION_RESERVE_SECONDS", 0.3)
+    considered = []
+
+    class Transcriber:
+        async def transcribe(self, file, mime):
+            return TRANSCRIPT
+
+    class Summarizer:
+        async def classify(self, batch, identity):
+            return labels(batch)
+
+        async def consider(self, facts):
+            considered.append(True)
+            await asyncio.sleep(3.0)
+            return one_consideration(facts)
+
+    monkeypatch.setattr(audio, "make_providers", lambda settings: (Transcriber(), Summarizer()))
+    response = draft(client, context["context_id"])
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["candidate"]["reason_for_visit"]["text"] == "Επανέλεγχος οστεοπόρωσης."
+    assert body["contextual_considerations_status"] == "unavailable"
+    assert body["contextual_clinical_considerations"] == []
+    assert considered == [True]
+
+
 def test_source_copy_provisional_review_and_confirmed_save(monkeypatch):
     enabled(monkeypatch)
     client, engine = _client_with_engine(monkeypatch)
@@ -245,13 +859,18 @@ def test_source_copy_provisional_review_and_confirmed_save(monkeypatch):
         async def classify(self, batch, identity):
             return labels(batch)
 
+        async def consider(self, facts):
+            return one_consideration(facts)
+
     monkeypatch.setattr(audio, "make_providers", lambda settings: (Transcriber(), Summarizer()))
     result = draft(client, context["context_id"])
     assert result.status_code == 200, result.text
     body = result.json()
     candidate = body["candidate"]
     assert body["patient_id"] == "SYN-WEB"
-    assert "transcript" not in body
+    assert body["processing_status"] == "complete"
+    assert body["transcript"] == TRANSCRIPT
+    assert body["processing_failure"] is None and body["recovery_binding"]
     assert candidate["reason_for_visit"]["text"] == "Επανέλεγχος οστεοπόρωσης."
     assert candidate["findings"][0]["text"] == "DEXA T-score -2.8 στο ισχίο."
     assert candidate["decisions"] == [] and candidate["medications"] == []
@@ -261,6 +880,9 @@ def test_source_copy_provisional_review_and_confirmed_save(monkeypatch):
     assert candidate["uncertainties"] == []
     assert candidate["follow_up"] == []
     assert body["suggested_next_checks"][0]["text"] == "Έλεγχος ανοχής της αναφερόμενης θεραπείας."
+    assert body["contextual_considerations_status"] == "complete"
+    assert body["contextual_clinical_considerations"][0]["source_ids"] == [1, 2]
+    assert body["contextual_clinical_considerations"][0]["text"] not in str(candidate)
     assert {item["hint"] for item in body["review_units"]} >= {"finding", "therapy", "preference_undecided"}
     payload = {"context_id": context["context_id"], "candidate": candidate}
     preview = client.post("/clinical/visit-capture/preview", headers=HEADERS, json=payload)
@@ -293,7 +915,10 @@ def test_patient_change_and_malformed_classification_fail_closed(monkeypatch):
             raise AssertionError("Provider must not receive stale patient context")
 
     monkeypatch.setattr(audio, "make_providers", lambda settings: (Transcriber(), Summarizer()))
-    assert draft(client, context["context_id"]).status_code == 409
+    changed_after_transcription = draft(client, context["context_id"])
+    assert changed_after_transcription.status_code == 409
+    assert TRANSCRIPT not in changed_after_transcription.text
+    assert "recovery_binding" not in changed_after_transcription.text
 
     fresh = _context(client, "SYN-WEB")
     class StableTranscriber:
@@ -304,8 +929,34 @@ def test_patient_change_and_malformed_classification_fail_closed(monkeypatch):
             return labels(batch, bad_id=999)
     monkeypatch.setattr(audio, "make_providers", lambda settings: (StableTranscriber(), BadSummarizer()))
     failed = draft(client, fresh["context_id"])
-    assert failed.status_code == 502
-    assert TRANSCRIPT not in failed.text
+    assert failed.status_code == 200
+    assert failed.json()["processing_status"] == "transcript_only"
+    assert failed.json()["transcript"] == TRANSCRIPT
+    assert "candidate" not in failed.json()
+
+
+def test_patient_change_after_classification_returns_no_transcript_or_token(monkeypatch):
+    enabled(monkeypatch)
+    client, engine = _client_with_engine(monkeypatch)
+    _patient(client, "SYN-WEB")
+    context = _context(client, "SYN-WEB")
+
+    class Transcriber:
+        async def transcribe(self, file, mime):
+            return TRANSCRIPT
+
+    class Summarizer:
+        async def classify(self, batch, identity):
+            with Session(engine) as db:
+                db.execute(update(PatientORM).where(PatientORM.patient_id == "SYN-WEB")
+                           .values(updated_at=datetime.now(timezone.utc)))
+                db.commit()
+            return labels(batch)
+
+    monkeypatch.setattr(audio, "make_providers", lambda settings: (Transcriber(), Summarizer()))
+    response = draft(client, context["context_id"])
+    assert response.status_code == 409
+    assert TRANSCRIPT not in response.text and "recovery_binding" not in response.text
 
 
 def test_temp_audio_closed_on_failed_provider_and_oversize(monkeypatch, caplog):
@@ -365,7 +1016,12 @@ def test_private_failure_stage_and_http_status_without_clinical_content(monkeypa
 
         monkeypatch.setattr(audio, "make_providers", lambda settings: (StableTranscriber(), RejectedSummarizer()))
         response = draft(client, context["context_id"])
-        assert response.status_code == 502
+        assert response.status_code == 200
+        assert response.json()["processing_status"] == "transcript_only"
+        assert response.json()["processing_failure"] == {
+            "stage": "classification", "code": "provider_http",
+            "provider_http_status": 429, "retryable": True,
+        }
         assert "stage=classification kind=provider_http provider_http_status=429" in caplog.text
         assert TRANSCRIPT not in caplog.text and "SYN-WEB" not in caplog.text
 
@@ -397,8 +1053,10 @@ def test_identity_refusal_and_missing_clinical_content_are_rejected(monkeypatch)
     for mode in ("conflict", "refusal", "empty"):
         monkeypatch.setattr(audio, "make_providers", lambda settings, m=mode: (Transcriber(), Summarizer(m)))
         response = draft(client, context["context_id"])
-        assert response.status_code == 502
-        assert TRANSCRIPT not in response.text
+        assert response.status_code == 200
+        assert response.json()["processing_status"] == "transcript_only"
+        assert response.json()["transcript"] == TRANSCRIPT
+        assert "candidate" not in response.json()
 
 
 def test_browser_web_audio_review_and_confirmed_save(setup, monkeypatch):
@@ -412,6 +1070,7 @@ def test_browser_web_audio_review_and_confirmed_save(setup, monkeypatch):
     enabled(monkeypatch)
     app, _ = setup
     transcribed = []
+    classifications = []
 
     class Transcriber:
         async def transcribe(self, file, mime):
@@ -421,7 +1080,15 @@ def test_browser_web_audio_review_and_confirmed_save(setup, monkeypatch):
 
     class Summarizer:
         async def classify(self, batch, identity):
-            return labels(batch)
+            classifications.append("classify")
+            return labels(batch, bad_id=999) if len(classifications) <= 2 else labels(batch)
+
+        async def classify_retry(self, batch, identity, validation_code):
+            classifications.append("retry")
+            return labels(batch, bad_id=999) if len(classifications) <= 2 else labels(batch)
+
+        async def consider(self, facts):
+            return one_consideration(facts)
 
     monkeypatch.setattr(audio, "make_providers", lambda settings: (Transcriber(), Summarizer()))
     sock = socket.socket()
@@ -432,7 +1099,9 @@ def test_browser_web_audio_review_and_confirmed_save(setup, monkeypatch):
     thread.start()
     try:
         with sync_playwright() as playwright:
-            browser = playwright.chromium.launch(executable_path=shutil.which("google-chrome") or shutil.which("chromium"))
+            browser = playwright.chromium.launch(executable_path=(
+                shutil.which("google-chrome") or shutil.which("chromium")
+                or "/Applications/Dia.app/Contents/MacOS/Dia"))
             page = browser.new_page(viewport={"width": 1280, "height": 950}, timezone_id="Asia/Nicosia")
             errors = []
             save_payloads = []
@@ -441,6 +1110,9 @@ def test_browser_web_audio_review_and_confirmed_save(setup, monkeypatch):
                     if request.method == "POST" and request.url.endswith("/clinical/visit-capture/save") else None)
             page.add_init_script("""
                 window._holdMic=false;window._releaseMic=null;window._audioStarts=0;window._trackStops=0;
+                window._downloadClicks=0;
+                URL.createObjectURL=()=>"blob:synthetic-visit-recording";URL.revokeObjectURL=()=>{};
+                HTMLAnchorElement.prototype.click=function(){window._downloadClicks++;};
                 Object.defineProperty(navigator, 'mediaDevices', {configurable:true, value:{
                   getUserMedia: async()=>{if(window._holdMic)await new Promise(resolve=>{window._releaseMic=resolve;});
                     return {getTracks:()=>[{stop(){window._trackStops++;}}]};}
@@ -480,13 +1152,45 @@ def test_browser_web_audio_review_and_confirmed_save(setup, monkeypatch):
             page.locator("#captureAudioStart").click()
             expect(page.locator("#captureAudioStatus")).to_contain_text("Ηχογράφηση")
             page.locator("#capturePatientInformed").uncheck()
-            expect(page.locator("#captureAudioStatus")).to_contain_text("απορρίφθηκε")
+            expect(page.locator("#captureAudioStatus")).to_contain_text("απορρίφθηκαν")
             page.locator("#capturePatientInformed").check()
             page.locator("#captureAudioStart").click()
             expect(page.locator("#captureAudioStatus")).to_contain_text("Ηχογράφηση")
             page.locator("#captureAudioStop").click()
-            expect(page.locator("#captureAudioStatus")).to_contain_text("έτοιμο για έλεγχο", timeout=15000)
+            expect(page.locator("#captureAudioStatus")).to_contain_text("μεταγραφή διατηρήθηκε", timeout=15000)
+            expect(page.locator("#captureAudioTranscriptTab")).to_be_visible()
+            expect(page.locator("#captureAudioProcessedTab")).to_be_visible()
+            expect(page.locator("#captureAudioTranscriptPanel")).to_be_hidden()
+            expect(page.locator("#captureAudioProcessedUnavailable")).to_be_hidden()
+            expect(page.locator("#captureAudioTranscriptTab")).to_have_attribute("aria-pressed", "false")
+            expect(page.locator("#captureAudioProcessedTab")).to_have_attribute("aria-pressed", "false")
+            expect(page.locator("#captureSave")).to_be_hidden()
+            expect(page.locator("#captureAudioRetryProcess")).to_be_visible()
+            expect(page.locator("#captureAudioDownload")).to_be_visible()
+            page.locator("#captureAudioTranscriptTab").click()
+            expect(page.locator("#captureAudioTranscriptPanel")).to_be_visible()
+            expect(page.locator("#captureAudioTranscriptText")).to_contain_text(TRANSCRIPT)
+            page.locator("#captureAudioTranscriptTab").click()
+            expect(page.locator("#captureAudioTranscriptPanel")).to_be_hidden()
+            page.locator("#captureAudioProcessedTab").click()
+            expect(page.locator("#captureAudioProcessedUnavailable")).to_be_visible()
+            expect(page.locator("#captureAudioProcessedUnavailable")).to_contain_text("δεν είναι διαθέσιμο")
+            page.locator("#captureAudioProcessedTab").click()
+            expect(page.locator("#captureAudioProcessedUnavailable")).to_be_hidden()
+            page.locator("#captureAudioDownload").click()
+            assert page.evaluate("window._downloadClicks") == 1
+            page.locator("#captureAudioRetryProcess").click()
+            expect(page.locator("#captureAudioStatus")).to_contain_text(
+                "έτοιμα για ξεχωριστό έλεγχο", timeout=15000)
+            expect(page.locator("#captureAudioDownload")).to_be_hidden()
+            expect(page.locator("#captureAudioTranscriptPanel")).to_be_hidden()
+            expect(page.locator("#captureReview")).to_be_hidden()
+            expect(page.locator("#captureAudioIdentity")).to_be_hidden()
+            expect(page.locator("#captureAudioProcessedTab")).to_have_attribute("aria-pressed", "false")
             expect(page.locator("#captureSave")).to_be_disabled()
+            page.locator("#captureAudioProcessedTab").click()
+            expect(page.locator("#captureReview")).to_be_visible()
+            expect(page.locator("#captureAudioIdentity")).to_be_visible()
             expect(page.locator("#captureReview .capture-audio-compact-section")).to_have_count(4)
             expect(page.locator("#captureReview section[data-field=findings] textarea")).to_have_value("DEXA T-score -2.8 στο ισχίο.")
             expect(page.locator("#captureReview section[data-field=recommendations] textarea")).to_have_value(
@@ -507,6 +1211,13 @@ def test_browser_web_audio_review_and_confirmed_save(setup, monkeypatch):
             suggestions = page.locator("#captureReview .capture-audio-suggestions")
             expect(suggestions.locator("textarea")).to_have_value("Έλεγχος ανοχής της αναφερόμενης θεραπείας.")
             expect(suggestions.locator("details")).not_to_have_attribute("open", "")
+            ai_considerations = page.locator("#captureReview .capture-ai-considerations")
+            expect(ai_considerations).to_contain_text("Κλινικές σκέψεις AI από τα συμφραζόμενα")
+            expect(ai_considerations).to_contain_text("δεν ειπώθηκαν στην επίσκεψη")
+            expect(ai_considerations).to_contain_text("συνολική επανεκτίμηση του καταγματικού κινδύνου")
+            expect(ai_considerations).to_contain_text("Βεβαιότητα AI: Μέτρια")
+            expect(ai_considerations.locator("details")).not_to_have_attribute("open", "")
+            expect(ai_considerations.locator("button")).to_have_count(0)
             expect(page.locator("#captureReview section[data-field=follow_up]")).to_have_count(0)
             suggestions.get_by_role("button", name="Προσθήκη στο πλάνο", exact=True).click()
             expect(page.locator("#captureReview .capture-audio-suggestions")).to_have_count(0)
@@ -530,8 +1241,10 @@ def test_browser_web_audio_review_and_confirmed_save(setup, monkeypatch):
             expect(page.locator("#patientChart")).to_contain_text("DEXA T-score -2.6")
             assert save_payloads[-1]["candidate"]["follow_up"][0]["text"] == "Έλεγχος ανοχής της αναφερόμενης θεραπείας."
             assert "clinician_edit" in save_payloads[-1]["candidate"]["follow_up"][0]["provenance"]
+            assert "συνολική επανεκτίμηση του καταγματικού κινδύνου" not in str(save_payloads[-1])
+            assert TRANSCRIPT not in str(save_payloads[-1])
             assert not errors, errors
-            assert len(transcribed) == 1  # withdrawn recording never reaches the provider
+            assert len(transcribed) == 1  # transcript retry never retranscribes the retained audio
             browser.close()
     finally:
         server.should_exit = True
