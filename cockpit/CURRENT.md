@@ -1,3 +1,5 @@
+> **2026-10-28 NATIVE AUDIO CONFIRMATION GUARD — DEPLOY BUILDING:** Native Render `dep-dbgsaaq9lscs73922j00` targets exact merge `c090846a` and is `update_in_progress`; prior `73f0910` remains last verified LIVE. No duplicate deploy. Next terminal status, then no-PHI smoke if LIVE. Native app synthetic-only; no patient audio or clinical write.
+
 > **2026-10-28 NATIVE AUDIO CONFIRMATION GUARD — MERGED / DEPLOY NEXT:** PR #242 final head `ac76c106` passed 14/14 checks and squash-merged as `c090846a`; Render deploy not yet observed. Release checkpoint writer `codex/native-audio-confirmation-release` next observes exact deploy and then performs bounded no-PHI smoke. Native app remains synthetic-only; no patient audio or clinical write.
 
 > **2026-10-28 NATIVE AUDIO CONFIRMATION GUARD — PR #242 READY / FINAL CI NEXT:** Docs head `7857424f` passed 14/14 checks; fresh main is still `1c36a6d3`, PR is mergeable and ready, nine changed paths within declared scope. Reviewed runtime/Node unchanged. This readiness checkpoint's exact-head CI, guarded squash merge and Render/no-PHI smoke remain next. No merge/deploy or real audio/write.
