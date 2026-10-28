@@ -53,6 +53,7 @@
     localRequestId: "",
     localResult: null,
     localCandidateActive: false,
+    localConfirmationVersion: 0,
     mediaRecorder: null,
     mediaStream: null,
     audioChunks: [],
@@ -93,6 +94,7 @@
 
   function clearCandidateState(message) {
     clearTimeout(state.previewTimer);
+    state.localConfirmationVersion++;
     state.candidate = null;
     state.preview = null;
     state.localResult = null;
@@ -1046,6 +1048,19 @@
     });
   }
 
+  function invalidateLocalPreview(message) {
+    clearTimeout(state.previewTimer);
+    state.preview = null;
+    $("saveBtn").disabled = true;
+    $("gesyCopyRow").hidden = true;
+    $("previewText").textContent = "Η τοπική προεπισκόπηση χρειάζεται νέα επιβεβαίωση ασθενούς.";
+    $("previewText").className = "preview-text empty";
+    clearFormattedPreview();
+    $("blockingNotice").hidden = false;
+    $("blockingNotice").textContent = message;
+    setChip("previewState", "Απαιτείται επιβεβαίωση", "err");
+  }
+
   async function requestPreview() {
     if (state.mode === "demo") {
       const text = $("candidateInput").value.trim();
@@ -1072,11 +1087,32 @@
     }
     const candidate = parseCandidate();
     if (!candidate || !state.contextId) return;
+    const local = state.localCandidateActive ? {
+      version: state.localConfirmationVersion,
+      contextId: state.contextId,
+      patientId: state.patientId,
+      localSessionId: state.localSessionId,
+      requestId: state.localResult?.request_id,
+      candidateText: $("candidateInput").value,
+      confirmed: $("localIdentityConfirmed").checked,
+    } : null;
+    if (local && (!local.confirmed || !local.patientId || !local.localSessionId || !local.requestId)) {
+      invalidateLocalPreview("Επιβεβαίωσε ότι η καταγραφή ανήκει στον επιλεγμένο ασθενή.");
+      return;
+    }
     try {
+      const payload = {context_id: state.contextId, candidate};
+      if (local) payload.recording_patient_confirmed = local.confirmed;
       const preview = await apiJson("/clinical/visit-capture/preview", {
         method: "POST",
-        body: JSON.stringify({context_id: state.contextId, candidate}),
+        body: JSON.stringify(payload),
       });
+      if (local && (
+        !state.localCandidateActive || state.localConfirmationVersion !== local.version ||
+        state.contextId !== local.contextId || state.patientId !== local.patientId ||
+        state.localSessionId !== local.localSessionId || state.localResult?.request_id !== local.requestId ||
+        $("candidateInput").value !== local.candidateText || !$("localIdentityConfirmed").checked
+      )) return;
       if (preview.patient_id !== state.patientId) throw new Error("Patient context mismatch");
       state.preview = preview;
       $("candidateMessage").textContent = "Το structured candidate πέρασε τον server-side έλεγχο.";
@@ -1108,13 +1144,36 @@
 
   async function save() {
     if (state.mode !== "record" || !state.preview?.can_save || !state.candidate || !state.contextId) return;
+    const local = state.localCandidateActive ? {
+      version: state.localConfirmationVersion,
+      patientId: state.patientId,
+      localSessionId: state.localSessionId,
+      requestId: state.localResult?.request_id,
+      candidate: state.candidate,
+      candidateText: $("candidateInput").value,
+      preview: state.preview,
+      clientSessionId: clientSessionId(),
+    } : null;
+    if (local && (!$("localIdentityConfirmed").checked || !local.requestId)) {
+      invalidateLocalPreview("Επιβεβαίωσε ότι η καταγραφή ανήκει στον επιλεγμένο ασθενή.");
+      return;
+    }
     $("saveBtn").disabled = true;
     $("saveMessage").textContent = "Αποθήκευση…";
     try {
-      if (state.localCandidateActive) await renewLocalContext();
+      if (local) await renewLocalContext();
+      if (local && (
+        !state.localCandidateActive || state.localConfirmationVersion !== local.version ||
+        state.patientId !== local.patientId || state.localSessionId !== local.localSessionId ||
+        state.localResult?.request_id !== local.requestId || state.candidate !== local.candidate ||
+        state.preview !== local.preview || $("candidateInput").value !== local.candidateText ||
+        clientSessionId() !== local.clientSessionId || !$("localIdentityConfirmed").checked
+      )) throw new Error("Η επιβεβαίωση ασθενούς ή το προσχέδιο άλλαξε. Κάνε νέα προεπισκόπηση.");
+      const payload = {context_id: state.contextId, candidate: state.candidate};
+      if (local) payload.recording_patient_confirmed = true;
       const result = await apiJson("/clinical/visit-capture/save", {
         method: "POST",
-        body: JSON.stringify({context_id: state.contextId, candidate: state.candidate}),
+        body: JSON.stringify(payload),
       });
       $("saveMessage").textContent = `Αποθηκεύτηκε: ${result.encounter.encounter_date} · ${result.pending.length} εκκρεμότητες.`;
       setChip("previewState", "Αποθηκεύτηκε", "ok");
@@ -1159,7 +1218,12 @@
   $("startRecordingBtn").addEventListener("click", startLocalRecording);
   $("stopRecordingBtn").addEventListener("click", stopLocalRecording);
   $("localIdentityConfirmed").addEventListener("change", () => {
+    state.localConfirmationVersion++;
     $("prepareLocalCandidateBtn").disabled = !$("localIdentityConfirmed").checked || !$("localRisksConfirmed").checked;
+    if (state.localCandidateActive) {
+      invalidateLocalPreview("Επιβεβαίωσε ξανά ότι η καταγραφή ανήκει στον επιλεγμένο ασθενή.");
+      if ($("localIdentityConfirmed").checked) schedulePreview();
+    }
   });
   $("localRisksConfirmed").addEventListener("change", () => {
     $("prepareLocalCandidateBtn").disabled = !$("localIdentityConfirmed").checked || !$("localRisksConfirmed").checked;

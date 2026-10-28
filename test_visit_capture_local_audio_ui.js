@@ -106,6 +106,10 @@ const windowEvents = new Map();
 const calls = [];
 const portMessages = [];
 let candidate = null;
+let pausePreview = false;
+let releasePreview = null;
+let pauseRenewal = false;
+let releaseRenewal = null;
 
 const port = {
   onmessage: null,
@@ -164,10 +168,23 @@ async function fetch(url, options = {}) {
   if (url === "/clinical/status") body = {authenticated: true};
   else if (url.startsWith("/clinical/patients?query=")) body = [{patient_id: "SYN-000", demographics: {full_name: "Συνθετικός Ασθενής"}}];
   else if (url === "/clinical/visit-capture/context") body = {context_id: "context-before", patient_id: "SYN-000"};
-  else if (url === "/clinical/visit-capture/context/renew") body = {context_id: "context-after", patient_id: "SYN-000", expires_at: "2026-10-26T11:00:00Z"};
+  else if (url === "/clinical/visit-capture/context/renew") {
+    if (pauseRenewal) {
+      pauseRenewal = false;
+      await new Promise((resolve) => { releaseRenewal = resolve; });
+    }
+    body = {context_id: "context-after", patient_id: "SYN-000", expires_at: "2026-10-26T11:00:00Z"};
+  }
   else if (url === "/clinical/visit-capture/preview") {
-    candidate = JSON.parse(options.body).candidate;
-    body = {patient_id: "SYN-000", can_save: true, snapshot: "S", brief: "B", detail: "D", gesy_copy: "GESY"};
+    const payload = JSON.parse(options.body);
+    candidate = payload.candidate;
+    if (pausePreview) {
+      pausePreview = false;
+      await new Promise((resolve) => { releasePreview = resolve; });
+    }
+    body = {patient_id: "SYN-000", can_save: payload.recording_patient_confirmed === true, snapshot: "S", brief: "B", detail: "D", gesy_copy: "GESY"};
+  } else if (url === "/clinical/visit-capture/save") {
+    body = {encounter: {encounter_date: "2026-10-26"}, pending: []};
   } else throw new Error("unexpected request " + url);
   return {ok: true, status: 200, async json() { return body; }};
 }
@@ -255,7 +272,45 @@ async function settle() { await new Promise((resolve) => setImmediate(resolve));
   const previewIndex = calls.findIndex(({url}) => url === "/clinical/visit-capture/preview");
   assert.ok(renewIndex >= 0 && previewIndex > renewIndex, "CAS renewal precedes preview");
   assert.equal(JSON.parse(calls[previewIndex].options.body).context_id, "context-after");
+  assert.equal(JSON.parse(calls[previewIndex].options.body).recording_patient_confirmed, true);
   assert.equal(get("gesyCopyRow").hidden, false);
+
+  pausePreview = true;
+  get("candidateInput").dispatch("input");
+  await settle();
+  assert.ok(releasePreview, "one Preview response remains in flight");
+  get("localIdentityConfirmed").checked = false;
+  get("localIdentityConfirmed").dispatch("change");
+  assert.equal(get("saveBtn").disabled, true, "withdrawal immediately revokes Save");
+  releasePreview();
+  await settle();
+  assert.equal(get("saveBtn").disabled, true, "late Preview success cannot restore Save");
+
+  get("localIdentityConfirmed").checked = true;
+  get("localIdentityConfirmed").dispatch("change");
+  await settle();
+  assert.equal(get("saveBtn").disabled, false, "fresh confirmed Preview restores Save");
+
+  pauseRenewal = true;
+  const interruptedSave = get("saveBtn").dispatch("click");
+  await settle();
+  assert.ok(releaseRenewal, "Save waits for exact-context renewal");
+  get("localIdentityConfirmed").checked = false;
+  get("localIdentityConfirmed").dispatch("change");
+  get("localIdentityConfirmed").checked = true;
+  get("localIdentityConfirmed").dispatch("change");
+  releaseRenewal();
+  await interruptedSave;
+  await settle();
+  assert.equal(calls.filter(({url}) => url === "/clinical/visit-capture/save").length, 0,
+    "withdrawal during renewal cannot be undone by a quick recheck");
+
+  assert.equal(get("saveBtn").disabled, false, "new Preview is required after withdrawal");
+  await get("saveBtn").dispatch("click");
+  await settle();
+  const saveCall = calls.find(({url}) => url === "/clinical/visit-capture/save");
+  assert.ok(saveCall);
+  assert.equal(JSON.parse(saveCall.options.body).recording_patient_confirmed, true);
   console.log("Visit Capture local-audio reviewed flow: PASS");
 })().catch((error) => {
   console.error(error);
