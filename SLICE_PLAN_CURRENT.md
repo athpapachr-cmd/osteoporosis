@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — native local audio recorded-patient confirmation guard
 
-> **STATUS (2026-10-28): DESIGN R2 CLOSED / IMPLEMENTATION NEXT.** The Product Owner selected local native processing on the Mac. This bounded first server prerequisite extends the protected Visit Capture patient-confirmation gate from `web_visit_audio` to both audio source roles. The separate native design correction passed independent focused pre-code R2 closure on `51d3a9d0` with P0:P1:P2=0:0:0 after an initial 0:2:0 BLOCK. Real-chart native capture, local model qualification and clinician-voice accuracy remain HOLD. The released web compact-review slice is archived at `cockpit/archive/SLICE_PLAN_WEB_VISIT_AUDIO_2026-10-28.md` and its Product Owner fictional UX recheck remains pending.
+> **STATUS (2026-10-28): SERVER DESIGN + LOCAL-PAGE DELTA PRE-CODE R2 PASS / IMPLEMENTATION NEXT.** The Product Owner selected local native processing on the Mac. This bounded prerequisite extends protected Visit Capture patient confirmation from `web_visit_audio` to both audio roles and binds the already visible local checkbox to Preview/Save. The native design correction passed focused independent pre-code R2 closure on `51d3a9d0` (0:0:0 after 0:2:0 BLOCK); the discovered existing-page binding delta at `fa31744e` passed focused independent pre-code R2 (0:0:0) with a mandatory late-Preview generation/snapshot guard. Real-chart native capture, model qualification and clinician-voice accuracy remain HOLD. The released web compact-review slice is archived at `cockpit/archive/SLICE_PLAN_WEB_VISIT_AUDIO_2026-10-28.md` and its Product Owner fictional UX recheck remains pending.
 
 ## Product Owner step card
 
@@ -26,4 +26,4 @@ Focused synthetic tests cover local false/true Preview and Save, preserved conte
 
 ## Next action
 
-Close the local-page binding design delta, then implement and verify the two-role server guard and exact local Preview/Save checkbox binding in `static/cockpit/visit-capture/app.js`, followed by one independent post-code R2. No native real-chart capture or clinical write.
+Implement and verify the two-role server guard and exact local Preview/Save checkbox binding in `static/cockpit/visit-capture/app.js`, including withdrawal/late-response rejection, followed by one independent post-code R2. No native real-chart capture or clinical write.
