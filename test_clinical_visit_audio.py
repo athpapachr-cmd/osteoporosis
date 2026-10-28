@@ -412,7 +412,7 @@ def test_browser_web_audio_review_and_confirmed_save(setup, monkeypatch):
             expect(page.locator("#captureReview").get_by_role("button", name="Αφαίρεση", exact=True)).to_have_count(0)
             expect(page.get_by_role("button", name="Επιβεβαιώνω ότι ολοκληρώθηκε", exact=True)).to_have_count(0)
             expect(page.get_by_role("button", name="Μεταφορά στη σωστή κλινική ενότητα", exact=True)).to_have_count(0)
-            attention = page.locator("#captureAudioFocused details")
+            attention = page.locator(".capture-audio-focused details")
             expect(attention).not_to_have_attribute("open", "")
             expect(attention.locator("summary")).to_contain_text("3 σημείων")
             expect(attention.locator("li").first).not_to_be_visible()
