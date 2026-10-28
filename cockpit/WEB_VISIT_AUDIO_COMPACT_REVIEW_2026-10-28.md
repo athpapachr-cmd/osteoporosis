@@ -40,3 +40,7 @@ The Product Owner's screenshots and explicit statement that the nine confirmatio
 ## Risk classification and release
 
 R2: although this is a bounded UI correction, it removes provisional clinical-promotion controls and therefore changes review semantics. One independent pre-code design review and one independent exact-code post-code fidelity review are required. Synthetic data only; no agent recording, provider request or clinical write. Release remains separate and requires exact-head CI plus no-PHI production smoke.
+
+## Release status
+
+Independent pre/post-code R2 passed 0:0:0. PR #240 final head `cc8288ce` passed all 14 checks, including the 46-test Chromium Visit Capture suite. Merge `73f091059f482f726abc3fc77b089422189bfb01` is LIVE through Render deploy `dep-dbgrcc142hec73988oqg`; exact assets, five anonymous 401 probes and release-window ERROR/5xx logs passed. [Release receipt](releases/COCKPIT_WEB_VISIT_AUDIO_COMPACT_REVIEW_RELEASE_2026-10-28.md). Product Owner fictional no-Save recheck remains next.
