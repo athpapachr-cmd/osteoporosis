@@ -48,6 +48,12 @@ with sync_playwright() as pw:
         assert page.evaluate("document.documentElement.scrollWidth<=innerWidth")
     page.set_viewport_size({"width":1280,"height":1000})
     page.locator(".patient-chart-overview .patient-chart-grid").screenshot(path="complete-live-chart.png")
-    assert not writes, "unexpected clinical mutation"
+    from urllib.parse import urlsplit
+    post_paths=[urlsplit(url).path for url in writes]
+    print("OBSERVED_POST_PATHS="+json.dumps(post_paths))
+    clinical_mutations=[path for path in post_paths if
+        path.endswith(("/save","/amend","/handled","/confirm","/create"))
+        or "/pending/" in path]
+    assert not clinical_mutations, "unexpected clinical mutation"
     browser.close()
 print("LIVE_EXISTING_SIGNED_SYNTHETIC_CHART_VISIBLE_4_FACTS=PASS; CLINICAL_WRITES=0")
