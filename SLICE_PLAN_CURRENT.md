@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — no-loss web Visit Audio recovery
 
-> **STATUS (2026-10-28): COLLAPSED REVIEW IMPLEMENTED / TESTED / R1 REVIEW NEXT.** Runtime recovery commit `b7141461` passed independent exact-code R2 closure and PR head `111ecc97` passed the applicable exact-head checks. The Product Owner UX correction is implemented: neither review body opens automatically; each opens only on explicit selection and closes on repeated selection. The affected suite passes `47 passed`, including Chromium through Dia; JavaScript/Python syntax and diff hygiene pass. No backend, model, patient-binding, candidate or Preview/Save delta. One exact-head R1 fidelity review is next; merge/deploy remain separate.
+> **STATUS (2026-10-28): COLLAPSED REVIEW R1 PASS / PR CI NEXT.** Runtime correction `f677130c` passed independent exact-head R1 with `PASS / COMPLETE_FOR_DECLARED_SCOPE=YES / P0:P1:P2=0:0:0`. Neither review body opens automatically; each opens only on explicit selection and closes on repeated selection. The affected suite passes `47 passed`, including Chromium through Dia; JavaScript/Python syntax and diff hygiene pass. No backend, model, patient-binding, candidate or Preview/Save delta. Fresh PR exact-head CI is next; merge/deploy remain separate.
 
 ## Objective
 
