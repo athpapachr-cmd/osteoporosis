@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — contextual AI clinical considerations from visit audio
 
-> **STATUS (2026-10-28): POST-CODE P1 CORRECTED / CLOSURE HOLD.** Exact-code review of `e593052e` blocked 0:1:0 because suggestion merging and a patient-context DB read still sat outside the earlier core cutoff and could consume the five-second finalization reserve. The correction now completes merging, bounded evidence serialization and that DB check inside `core_deadline`, followed by an explicit clock guard; only then can optional reasoning start. Route-level near-cutoff skip and actual optional-timeout tests both return the exact-source candidate with visible `unavailable`. Local affected verification is green: 35 tests, Python compile, JavaScript syntax and diff hygiene pass. Focused independent closure remains mandatory before PR/release.
+> **STATUS (2026-10-28): POST-CODE P1-02 CONTRACT CORRECTED / CLOSURE HOLD.** Closure at `6d6d2f4` confirmed the deadline finding closed, then found an inaccurate privacy claim: the second call omits a separate identity object and the complete transcript, but its validated verbatim excerpts can themselves contain identifiers. The existing standard-retention notice already tells the clinician that the transcript and selected-chart name/DOB go to OpenAI; the contract and provider oracle now state the narrower second-pass payload truth explicitly. Runtime behavior is unchanged. Local affected verification remains green: 35 tests, Python compile, JavaScript syntax and diff hygiene pass. Focused independent closure remains mandatory before PR/release.
 
 ## Objective
 
@@ -16,6 +16,8 @@ Extend the released exact-source audio analysis with a visibly separate, source-
 ## Provider and validation contract
 
 Keep the existing strict per-batch `visit_audio_analysis_v2` response unchanged. After all batches pass validation and the exact-source candidate is built, make one additional bounded `gpt-6-luna` Responses call using only the merged validated facts (`source_id`, exact `excerpt`, `kind`) from the whole visit. It uses the same project/org headers, `store:false`, no tools and existing timeout/model settings.
+
+The second pass does not receive a separate `selected_identity` object or the complete `source_units` transcript. It does receive exact verbatim fact excerpts. Those excerpts can contain identifiers spoken in the visit; they are therefore covered by the same approved standard-retention disclosure and gate as the full transcript and selected-chart name/DOB. The model instruction forbids reproducing identity in its consideration prose, but that instruction is not presented as deterministic de-identification.
 
 The whole-visit input is permitted only when its serialized UTF-8 JSON is at most 60,000 bytes. Otherwise do not truncate or sample it: skip the optional consideration call, return `contextual_considerations_status=input_limit`, and show that unavailability visibly.
 

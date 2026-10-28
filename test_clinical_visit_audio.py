@@ -139,7 +139,7 @@ def test_provider_multipart_and_private_responses_contract(monkeypatch):
         assert (await audio.OpenAISummarizer(settings).classify(
             [(0, "Επανέλεγχος")], {"full_name": "Synthetic"}))["facts"][0]["kind"] == "reason"
         assert await audio.OpenAISummarizer(settings).consider([
-            {"source_id": 0, "excerpt": "Επανέλεγχος", "kind": "reason"}
+            {"source_id": 0, "excerpt": "Η Synthetic ήρθε για επανέλεγχο", "kind": "reason"}
         ]) == considerations([])
     asyncio.run(run())
     transcription = requests[0][1]
@@ -167,6 +167,12 @@ def test_provider_multipart_and_private_responses_contract(monkeypatch):
         "category", "text", "rationale", "source_ids", "confidence"}
     assert "selected_identity" not in consideration_json["input"][1]["content"]
     assert "source_units" not in consideration_json["input"][1]["content"]
+    consideration_source = __import__("json").loads(consideration_json["input"][1]["content"])
+    assert consideration_source == {"validated_facts": [{
+        "source_id": 0,
+        "excerpt": "Η Synthetic ήρθε για επανέλεγχο",
+        "kind": "reason",
+    }]}
     assert "tools" not in consideration_json
 
 

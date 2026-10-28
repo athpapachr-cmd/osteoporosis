@@ -1,6 +1,6 @@
 # Web Visit Audio — contextual AI clinical considerations
 
-> **Implementation checkpoint (2026-10-28): POST-CODE P1 CORRECTED / CLOSURE HOLD.** Review of `e593052e` found post-candidate merge/context work could consume the five-second reserve. The corrected candidate keeps merging, evidence serialization and the pre-optional patient-context read under `core_deadline`; route tests now exercise both near-cutoff optional skip and an actual optional timeout. All 35 affected tests pass, including Chromium via Dia. Focused independent closure is next; no provider request, real audio or clinical write occurred.
+> **Implementation checkpoint (2026-10-28): POST-CODE P1-02 CONTRACT CORRECTED / CLOSURE HOLD.** Closure at `6d6d2f4` confirmed the deadline gap closed, then found the design overstated de-identification. The optional call omits the separate identity object and complete transcript, but exact validated excerpts can contain spoken identifiers. The approved standard-retention notice already covers transcript plus selected-chart name/DOB; the contract and provider oracle now state the exact second-pass payload. Runtime behavior is unchanged and all 35 affected tests pass. Focused independent closure is next; no provider request, real audio or clinical write occurred.
 
 ## Product Owner checkpoint
 
@@ -42,7 +42,7 @@ No extra keys. Text is normalized, must not contain control characters and must 
 
 ## Whole-visit completeness and availability
 
-The second-pass input is serialized validated facts only and must be at most 60,000 UTF-8 bytes. The server never truncates or samples it because that would silently weaken the meaning of whole-visit reasoning.
+The second-pass input is serialized validated facts only and must be at most 60,000 UTF-8 bytes. Each fact contains a global source ID, kind and exact verbatim excerpt. No separate selected-chart identity object or complete transcript-unit list is included, but an excerpt can itself contain a spoken identifier. This is not a de-identification boundary; the same approved standard-retention disclosure/gate covers these excerpts. The server never truncates or samples the facts because that would silently weaken the meaning of whole-visit reasoning.
 
 The audio-draft response includes:
 
@@ -57,7 +57,7 @@ contextual_clinical_considerations: [] | validated items
 
 The optional pass reuses `gpt-6-luna`, project/org headers, `store:false`, no tools and current reasoning settings. The route creates one monotonic pipeline deadline and a core cutoff five seconds earlier. Transcription/classification/candidate construction is bounded by the earlier cutoff, with explicit clock checks immediately before and after the synchronous candidate builder. Crossing it is a pre-candidate fail-closed 502.
 
-After a candidate passes the cutoff, the optional pass may use only `min(summarize_timeout, pipeline_deadline - now - 5 seconds)`; if less than one second remains, it is skipped as `unavailable`. An optional timeout is caught inside the whole-visit layer. Therefore every successfully established candidate keeps five seconds for final patient-context verification and response construction and cannot be discarded by optional reasoning. Failure logging contains only fixed stage/kind/provider-status metadata. No raw transcript or patient identity is sent in this second pass.
+After a candidate passes the cutoff, the optional pass may use only `min(summarize_timeout, pipeline_deadline - now - 5 seconds)`; if less than one second remains, it is skipped as `unavailable`. An optional timeout is caught inside the whole-visit layer. Therefore every successfully established candidate keeps five seconds for final patient-context verification and response construction and cannot be discarded by optional reasoning. Failure logging contains only fixed stage/kind/provider-status metadata. The second pass receives no separate identity object or complete transcript, but its exact fact excerpts may contain spoken identifiers.
 
 ## Prompt semantics
 
