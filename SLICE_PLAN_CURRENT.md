@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — no-loss web Visit Audio recovery
 
-> **STATUS (2026-10-28): DDL CORRECTION EXACT-CODE R2 PASS / PR CI NEXT.** Exact code/migration/test `32d451fc` independently passed `PASS / COMPLETE_FOR_DECLARED_SCOPE=YES / P0:P1:P2=0:0:0`. Review confirmed no startup DDL, exact opaque schema/index match, sufficient least privileges for activate/consume/cleanup, fail-closed pre/postconditions/rerun and unchanged one-shot semantics. Affected 48-test and disposable PostgreSQL evidence remain applicable. Next publish a canonical-impact correction PR and require fresh exact-head CI; only then install the reviewed empty-table migration as administrator before merging/redeploying. No production SQL, recording, provider request or clinical write yet.
+> **STATUS (2026-10-28): DDL CORRECTION PR #248 / EXACT-HEAD CI NEXT.** [PR #248](https://github.com/athpapachr-cmd/osteoporosis/pull/248) publishes independently reviewed code/migration/test `32d451fc` plus release checkpoints; R2 is PASS / COMPLETE / 0:0:0. Next require all exact-head CI on this checkpoint. Only after PASS may the reviewed empty-table migration be installed as administrator before guarded squash merge and native Render redeploy. No production SQL, recording, provider request or clinical write yet; prior production remains LIVE.
 
 ## Objective
 
