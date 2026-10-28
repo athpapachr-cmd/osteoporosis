@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — contextual AI clinical considerations from visit audio
 
-> **STATUS (2026-10-28): PRODUCTION CLASSIFICATION FAILURE / PRE-CODE R2 HOLD.** Two fictional Product Owner recordings reached transcription but failed strict classification with `invalid_output`; shorter speech failed identically. PR #247 contextual reasoning is therefore not being released even though its prior head passed 15/15 CI. The bounded correction preserves the validator and adds at most one same-batch retry only for allowlisted structural codes plus content-free `validation_code` diagnostics; identity uncertainty/conflict never retries. Design: `cockpit/WEB_VISIT_AUDIO_CLASSIFICATION_RETRY_2026-10-28.md`. Independent pre-code R2 is required before runtime mutation.
+> **STATUS (2026-10-28): CLASSIFICATION RETRY IMPLEMENTED / POST-CODE R2 HOLD.** Pre-code R2 on `f028e210` passed 0:0:0. The runtime now performs exactly one same-batch corrective request only after an allowlisted structural validator failure, inside `core_deadline`; identity conflict/uncertainty and provider/cancellation failures do not retry. Final failure logs only the fixed validation code. Local affected evidence is 38 tests including Chromium plus compile/JS/diff checks. Independent exact-code closure is next; PR #247 remains unmerged.
 
 ## Objective
 

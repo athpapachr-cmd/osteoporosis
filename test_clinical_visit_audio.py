@@ -138,6 +138,9 @@ def test_provider_multipart_and_private_responses_contract(monkeypatch):
         assert await audio.OpenAITranscriber(settings).transcribe(io.BytesIO(WEBM), "audio/webm") == TRANSCRIPT
         assert (await audio.OpenAISummarizer(settings).classify(
             [(0, "Επανέλεγχος")], {"full_name": "Synthetic"}))["facts"][0]["kind"] == "reason"
+        assert (await audio.OpenAISummarizer(settings).classify_retry(
+            [(0, "Επανέλεγχος")], {"full_name": "Synthetic"},
+            "classification_overlap"))["facts"][0]["kind"] == "reason"
         assert await audio.OpenAISummarizer(settings).consider([
             {"source_id": 0, "excerpt": "Η Synthetic ήρθε για επανέλεγχο", "kind": "reason"}
         ]) == considerations([])
@@ -158,7 +161,11 @@ def test_provider_multipart_and_private_responses_contract(monkeypatch):
     assert set(suggestion_schema["properties"]) == {"intent", "source_id"}
     assert "text" not in suggestion_schema["properties"] and "rationale" not in suggestion_schema["properties"]
     assert "tools" not in response_json
-    consideration_json = __import__("json").loads(requests[2][1])
+    retry_json = __import__("json").loads(requests[2][1])
+    assert "classification_overlap" in retry_json["input"][0]["content"]
+    assert retry_json["input"][1]["content"] == response_json["input"][1]["content"]
+    assert retry_json["store"] is False and "tools" not in retry_json
+    consideration_json = __import__("json").loads(requests[3][1])
     assert consideration_json["model"] == "gpt-6-luna" and consideration_json["store"] is False
     assert consideration_json["text"]["format"]["name"] == "visit_audio_contextual_considerations_v1"
     consideration_item = consideration_json["text"]["format"]["schema"]["properties"][
@@ -311,6 +318,89 @@ def test_contextual_deadline_helpers_preserve_finalization_reserve():
     audio.ensure_before_deadline(94.9, 95.0)
     with pytest.raises(TimeoutError):
         audio.ensure_before_deadline(95.0, 95.0)
+
+
+def test_structural_classification_failure_retries_once_and_recovers(monkeypatch):
+    enabled(monkeypatch)
+    client, _ = _client_with_engine(monkeypatch)
+    _patient(client, "SYN-WEB")
+    context = _context(client, "SYN-WEB")
+    calls = []
+
+    class Transcriber:
+        async def transcribe(self, file, mime):
+            return TRANSCRIPT
+
+    class Summarizer:
+        async def classify(self, batch, identity):
+            calls.append("first")
+            return labels(batch, bad_id=999)
+
+        async def classify_retry(self, batch, identity, validation_code):
+            calls.append(validation_code)
+            return labels(batch)
+
+        async def consider(self, facts):
+            return considerations(facts)
+
+    monkeypatch.setattr(audio, "make_providers", lambda settings: (Transcriber(), Summarizer()))
+    response = draft(client, context["context_id"])
+    assert response.status_code == 200, response.text
+    assert response.json()["candidate"]["reason_for_visit"]["text"] == "Επανέλεγχος οστεοπόρωσης."
+    assert calls == ["first", "classification_values"]
+
+
+def test_repeated_structural_failure_logs_only_fixed_code(monkeypatch, caplog):
+    enabled(monkeypatch)
+    client, _ = _client_with_engine(monkeypatch)
+    _patient(client, "SYN-WEB")
+    context = _context(client, "SYN-WEB")
+    calls = []
+
+    class Transcriber:
+        async def transcribe(self, file, mime):
+            return TRANSCRIPT
+
+    class Summarizer:
+        async def classify(self, batch, identity):
+            calls.append("first")
+            return labels(batch, bad_id=999)
+
+        async def classify_retry(self, batch, identity, validation_code):
+            calls.append(validation_code)
+            return labels(batch, bad_id=999)
+
+    monkeypatch.setattr(audio, "make_providers", lambda settings: (Transcriber(), Summarizer()))
+    with caplog.at_level(logging.WARNING, logger="clinical_visit_audio"):
+        response = draft(client, context["context_id"])
+    assert response.status_code == 502
+    assert calls == ["first", "classification_values"]
+    assert "validation_code=classification_values" in caplog.text
+    assert TRANSCRIPT not in caplog.text and "SYN-WEB" not in caplog.text
+
+
+def test_identity_conflict_is_not_retried(monkeypatch):
+    enabled(monkeypatch)
+    client, _ = _client_with_engine(monkeypatch)
+    _patient(client, "SYN-WEB")
+    context = _context(client, "SYN-WEB")
+    retried = []
+
+    class Transcriber:
+        async def transcribe(self, file, mime):
+            return TRANSCRIPT
+
+    class Summarizer:
+        async def classify(self, batch, identity):
+            return labels(batch, identity="conflict")
+
+        async def classify_retry(self, batch, identity, validation_code):
+            retried.append(validation_code)
+            return labels(batch)
+
+    monkeypatch.setattr(audio, "make_providers", lambda settings: (Transcriber(), Summarizer()))
+    assert draft(client, context["context_id"]).status_code == 502
+    assert retried == []
 
 
 def test_whole_visit_contextual_pass_combines_different_batches(monkeypatch):

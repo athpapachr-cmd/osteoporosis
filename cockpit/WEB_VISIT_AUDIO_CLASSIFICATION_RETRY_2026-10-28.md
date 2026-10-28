@@ -1,5 +1,7 @@
 # Web Visit Audio — bounded classification retry correction
 
+> **Implementation checkpoint:** Pre-code R2 PASS 0:0:0 on `f028e210`; bounded runtime and three focused retry/identity/log regressions implemented. Local affected suite: 38 PASS including Chromium. Exact-code R2 is pending; PR #247 remains unmerged and no provider replay occurred.
+
 ## Observed production failure
 
 Two Product Owner fictional recordings at `2026-10-28T12:33:24Z` and `12:36:15Z` reached transcription but failed at `stage=classification kind=invalid_output`. Shortening the spoken scenario did not change the result. Render logs contain no clinical content and the ephemeral audio/provider response no longer exists, so the exact deterministic validator code is unavailable.
