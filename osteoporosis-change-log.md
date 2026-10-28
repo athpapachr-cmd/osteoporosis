@@ -1941,3 +1941,10 @@ PR #250 removes the audio identity checkbox, displays the validated summary auto
 ## 2026-10-28 — Complete stored clinical facts restored to the final chart
 
 PR #252 corrects source-proven UI omissions: history, findings, recommendations, follow-up and existing coding now render alongside the reason/assessment/plan in latest card, visit reader and prepared draft cards. Real provider and protected saved-synthetic-chart reads proved the four clinician-reported facts were present; production Chromium run40743751686 proves they are visible after the correction at1280/390 without changing the stored visit. Independent R1 PASS0:0:0, local62 plus focused4/4 and all23 PR checks passed. Merge77b1656c is LIVE on Render dep-dbh3lpss728c73bvk4d0; asset/auth/log smoke passed. No clinical Save or patient-data rewrite; clinician only refreshes the page. [Receipt](cockpit/releases/COCKPIT_COMPLETE_CLINICAL_SUMMARY_RELEASE_2026-10-28.md).
+
+
+## 2026-10-28 — Complete prepared-note import and retained AI capture released
+
+PR #254 adds default direct prepared-note import without a second AI call, arbitrary full headings, verbatim content/copy/export, automatic chart draft and one final Save. Recording/text AI remains the explicit secondary path, retaining recovery. The complete ChatGPT prompt is copyable in app. Only reserved explicit unchecked obligations create tasks; indented AI headings are safely excluded after independent correction closure.
+
+Independent pre-code and final exact-code R2 PASS0:0:0; local79 affected, focused7 correction and one CP2 visibility check PASS. Final17 PR checks PASS. Merge a0c9ad8f024009df7dfca9a53979b9ecf10be52a is LIVE on Render dep-dbh5adcs728c739smeog at20:06:10Z. Three asset hashes, six anonymous401 routes, fresh production browser and empty ERROR/5xx logs passed. No provider/production clinical write. [Receipt](cockpit/releases/COCKPIT_DIRECT_PREPARED_NOTE_RELEASE_2026-10-28.md).
