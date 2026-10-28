@@ -254,12 +254,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
 #captureReview textarea {min-height:3.4em;resize:vertical}
 #captureReview label {margin:8px 0}
 #captureReview .capture-field-group {padding:12px;margin:10px 0}
+.capture-audio-compact-section{margin:14px 0;padding:0;border:0}
+.capture-audio-compact-section h4{margin:0 0 6px}
+.capture-audio-compact-section textarea{margin:0;line-height:1.45}
+#captureAudioIdentity{margin-right:6px}
 .capture-web-audio,.capture-audio-review{margin:16px 0;padding:16px;border:1px solid #c9dddd;border-radius:12px;background:#f5fbfa}
 .capture-web-audio h4,.capture-audio-review h4{margin:0 0 8px}
 .capture-web-audio label,.capture-audio-review label{display:block;margin:12px 0}
 #captureAudioStatus{min-height:1.4em;font-weight:600}
-.capture-audio-unit{border-top:1px solid #d4e4e5;padding:10px 0}
-.capture-audio-focused details{margin-top:12px}
+.capture-audio-focused details{margin-top:8px}
+.capture-audio-focused details ul{margin:8px 0 0;padding-left:22px}
+.capture-audio-focused details li{margin:5px 0}
 .capture-audio-review[hidden],.capture-web-audio[hidden]{display:none!important}
 
 /* Source-backed visit points; connecting line is navigation, not inferred care. */
