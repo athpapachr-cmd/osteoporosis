@@ -53,7 +53,9 @@ contextual_clinical_considerations: [] | validated items
 - `input_limit`: no consideration call ran because the full fact set exceeded the bound;
 - `unavailable`: the optional call failed or its response failed validation; the exact-source draft remains available.
 
-The optional pass reuses `gpt-6-luna`, project/org headers, `store:false`, no tools and current reasoning settings. The route creates one monotonic deadline for the pipeline. After a candidate exists, the optional pass may use only `min(summarize_timeout, remaining_pipeline_time - 5 seconds)`; if less than one second remains, it is skipped as `unavailable`. An optional timeout is caught inside the whole-visit layer, leaving the reserved five seconds for final patient-context verification and response construction. It cannot bubble to the outer timeout and discard the candidate. Failure logging contains only fixed stage/kind/provider-status metadata. No raw transcript or patient identity is sent in this second pass.
+The optional pass reuses `gpt-6-luna`, project/org headers, `store:false`, no tools and current reasoning settings. The route creates one monotonic pipeline deadline and a core cutoff five seconds earlier. Transcription/classification/candidate construction is bounded by the earlier cutoff, with explicit clock checks immediately before and after the synchronous candidate builder. Crossing it is a pre-candidate fail-closed 502.
+
+After a candidate passes the cutoff, the optional pass may use only `min(summarize_timeout, pipeline_deadline - now - 5 seconds)`; if less than one second remains, it is skipped as `unavailable`. An optional timeout is caught inside the whole-visit layer. Therefore every successfully established candidate keeps five seconds for final patient-context verification and response construction and cannot be discarded by optional reasoning. Failure logging contains only fixed stage/kind/provider-status metadata. No raw transcript or patient identity is sent in this second pass.
 
 ## Prompt semantics
 
@@ -82,4 +84,4 @@ Any clinician who accepts the idea must independently enter the appropriate word
 3. Does the UI avoid implying diagnosis, order or guideline authority?
 4. Do existing typed suggestions and one-confirmation behavior remain unchanged?
 5. Does the bounded whole-visit pass actually see validated facts across classification batches, with no silent truncation?
-6. Do `input_limit`, deadline exhaustion and optional-provider failure remain visible without discarding the exact-source draft or leaking content to logs?
+6. Do a near-deadline core overrun fail before candidate authority, while optional deadline exhaustion after a timely candidate remains visible without discarding the draft or leaking content to logs?

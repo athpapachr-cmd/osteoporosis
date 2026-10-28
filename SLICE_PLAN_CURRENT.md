@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — contextual AI clinical considerations from visit audio
 
-> **STATUS (2026-10-28): PRE-CODE R2 SECOND P1 CORRECTION / CLOSURE HOLD.** Closure on `bed4b764` confirmed the whole-visit correction but BLOCKED 0:1:0 because an optional call started near the outer pipeline deadline could cancel and discard an already validated draft. The design now shares one monotonic pipeline deadline, reserves five seconds for response/final context verification, and skips or times out only the optional layer when that budget is unavailable. A synthetic deadline-exhaustion oracle must prove the candidate survives. One focused independent closure is next; no runtime mutation before PASS.
+> **STATUS (2026-10-28): PRE-CODE R2 FINAL DEADLINE CORRECTION / CLOSURE HOLD.** Closure on `00234d03` confirmed cross-batch/global-ID behavior but found the reserve began too late: core candidate construction could finish with under five seconds left and still be cancelled during final verification. The design now gives all core stages a `pipeline_deadline - 5s` cutoff with explicit time checks before/after synchronous candidate construction. A candidate exists only while the finalization reserve remains intact; optional reasoning uses only time above that reserve. Near-deadline core and optional synthetic oracles are required. One focused independent closure is next; no runtime mutation before PASS.
 
 ## Objective
 
@@ -19,7 +19,9 @@ Keep the existing strict per-batch `visit_audio_analysis_v2` response unchanged.
 
 The whole-visit input is permitted only when its serialized UTF-8 JSON is at most 60,000 bytes. Otherwise do not truncate or sample it: skip the optional consideration call, return `contextual_considerations_status=input_limit`, and show that unavailability visibly.
 
-The route creates one monotonic deadline when core processing starts. After candidate construction, the optional layer receives at most `min(summarize_timeout, remaining_pipeline_time - 5 seconds)`. If this budget is below one second, it is not started and status is `unavailable`. Its own timeout, provider/network/invalid-output failure returns `unavailable` without escaping into the outer pipeline timeout. Five seconds remain reserved for final patient-context verification and response construction. Core transcription/classification/candidate failure before a candidate exists retains the existing fail-closed 502 behavior. Optional failure logs only fixed stage/kind/status metadata and no clinical content. `complete` means the whole validated fact set was considered, including a valid empty list; it is not clinical clearance.
+The route creates one monotonic `pipeline_deadline` and a `core_deadline = pipeline_deadline - 5 seconds`. Transcription, every classification batch and candidate construction must complete before `core_deadline`. The implementation checks the monotonic clock before and after the synchronous candidate builder as well as bounding awaited core stages; crossing this cutoff is a pre-candidate fail-closed 502.
+
+Only after the candidate passes the post-build clock check may the optional layer start. It receives at most `min(summarize_timeout, pipeline_deadline - now - 5 seconds)`. If this budget is below one second, it is not started and status is `unavailable`. Its own timeout, provider/network/invalid-output failure returns `unavailable` without escaping into the outer pipeline timeout. Thus every successfully established candidate retains the full five seconds for final patient-context verification and response construction. Optional failure logs only fixed stage/kind/status metadata and no clinical content. `complete` means the whole validated fact set was considered, including a valid empty list; it is not clinical clearance.
 
 The second strict response contains up to four `contextual_clinical_considerations`. Each item contains only:
 
@@ -50,7 +52,7 @@ The model instruction requires a question/consideration rather than diagnosis or
 3. Contextual consideration text is absent from candidate and from protected Preview/Save payloads.
 4. Browser UI labels the inference clearly, shows rationale/confidence, exposes no adoption button and retains one final patient/content confirmation.
 5. Existing typed next-check adoption, manual Dia/amendment labels, local audio and standard-retention behavior do not regress.
-6. Facts placed on opposite sides of the 8KB classification boundary can support one whole-visit consideration; oversize, deadline-exhausted and failed optional passes visibly return unavailable status without losing the exact-source draft.
+6. Facts placed on opposite sides of the 8KB classification boundary can support one whole-visit consideration; oversize, deadline-exhausted and failed optional passes visibly return unavailable status without losing the exact-source draft. Core crossing its earlier cutoff returns 502 before candidate authority; a candidate built before cutoff survives optional deadline exhaustion.
 
 ## Review and release
 
