@@ -1,6 +1,6 @@
 # Web Visit Audio — contextual AI clinical considerations
 
-> **Implementation checkpoint (2026-10-28): PR #247 / EXACT-HEAD CI HOLD.** [PR #247](https://github.com/athpapachr-cmd/osteoporosis/pull/247) carries the reviewed runtime/test/design. Independent R2 is PASS 0:0:0 and 35 affected local tests including Chromium pass. Await exact-head CI before any merge/release decision; no provider request, real audio or clinical write occurred.
+> **Implementation checkpoint (2026-10-28): PR #247 HEAD `fd72a089` CI 15/15 PASS / FINAL DOCS HEAD NEXT.** Reviewed runtime/test/design plus the first PR checkpoint are MERGEABLE and passed every reported gate, including Visit Capture Chromium. Independent R2 is PASS 0:0:0. Require this receipt's own exact head to pass before guarded squash merge; no provider request, real audio or clinical write occurred.
 
 ## Product Owner checkpoint
 

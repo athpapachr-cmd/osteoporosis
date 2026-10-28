@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — contextual AI clinical considerations from visit audio
 
-> **STATUS (2026-10-28): PR #247 / EXACT-HEAD CI HOLD.** [PR #247](https://github.com/athpapachr-cmd/osteoporosis/pull/247) is open from `codex/web-visit-contextual-clinical-suggestions`. Independent correction closure on exact code/design/test `98033f3a` passed COMPLETE_FOR_DECLARED_SCOPE with P0:P1:P2=0:0:0; local evidence is 35 tests including Chromium plus syntax/diff checks. The PR now awaits exact-head canonical-impact and applicable product CI before any merge/release decision. No provider request, real audio or clinical write.
+> **STATUS (2026-10-28): PR #247 CODE+CHECKPOINT HEAD CI 15/15 PASS / FINAL DOCS HEAD NEXT.** Exact PR head `fd72a089` is MERGEABLE and all 15 reported checks passed, including Canonical Impact, Visit Capture Chromium, Visit Brief, Cockpit Home, Office Cases/PostgreSQL, Surgery Queue, Learning and Physio integration gates. Independent R2 remains PASS 0:0:0. This durable CI receipt is docs-only; require its new exact head to pass before guarded squash merge. No provider request, real audio or clinical write.
 
 ## Objective
 
