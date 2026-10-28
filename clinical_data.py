@@ -193,6 +193,7 @@ SourceRole = Literal[
     "dia_summary",
     "local_visit_audio",
     "web_visit_audio",
+    "prepared_clinical_note",
 ]
 VerificationState = Literal["source_stated", "clinician_confirmed"]
 CertaintyState = Literal["certain", "uncertain", "conflicting"]
@@ -337,6 +338,12 @@ class VisitCaptureComparisonBasis(BaseModel):
     source_ref: Optional[str] = Field(default=None, max_length=120)
 
 
+class PreparedClinicalNote(BaseModel):
+    """Clinician-supplied ready note; never an automatically retained transcript."""
+    model_config = {"extra": "forbid"}
+    text: str = Field(min_length=1, max_length=30000)
+
+
 class VisitCaptureCandidateV1(BaseModel):
     model_config = {"extra": "forbid"}
 
@@ -365,6 +372,7 @@ class VisitCaptureCandidateV1(BaseModel):
     next_contact: Optional[VisitCaptureNextContact] = None
     safety_net: List[VisitCaptureFact] = Field(default_factory=list, max_length=20)
     uncertainties: List[VisitCaptureFact] = Field(default_factory=list, max_length=40)
+    prepared_note: Optional[PreparedClinicalNote] = None
 
 
 class VisitCaptureContextCreate(BaseModel):
@@ -514,6 +522,10 @@ def _visit_capture_next_text(item: Optional[VisitCaptureNextContact]) -> str:
 
 
 def _render_visit_capture(candidate: VisitCaptureCandidateV1) -> tuple[str, str, str]:
+    if candidate.prepared_note is not None:
+        # Full original is also the brief: no section can disappear downstream.
+        text = candidate.prepared_note.text
+        return candidate.reason_for_visit.text, text, text
     changed = _visit_capture_fact_text(candidate.what_changed)
     history = _visit_capture_fact_text(candidate.history)
     decisions = _visit_capture_fact_text(candidate.decisions)
@@ -603,6 +615,9 @@ def _render_visit_capture(candidate: VisitCaptureCandidateV1) -> tuple[str, str,
 def _render_gesy_copy(candidate: VisitCaptureCandidateV1) -> str:
     """Render exact reviewed candidate text without model rewriting."""
 
+    if candidate.prepared_note is not None:
+        return candidate.prepared_note.text
+
     sections = [
         ("Λόγος επίσκεψης", candidate.reason_for_visit.text),
         ("Ιστορικό", _visit_capture_fact_text(candidate.history)),
@@ -624,6 +639,21 @@ def _render_gesy_copy(candidate: VisitCaptureCandidateV1) -> str:
 
 
 def _validate_visit_capture_candidate(candidate: VisitCaptureCandidateV1) -> None:
+    prepared_bindings = [b for b in candidate.source_bindings if b.role == 'prepared_clinical_note']
+    if candidate.prepared_note is not None or prepared_bindings:
+        from clinical_prepared_note import note_reason, note_tasks
+        if (candidate.prepared_note is None or len(prepared_bindings) != 1
+                or prepared_bindings[0].source_ref != 'prepared_note'
+                or any(b.role not in {'prepared_clinical_note', 'clinician_edit'}
+                       for b in candidate.source_bindings)):
+            raise HTTPException(422, 'Invalid prepared note source')
+        text = candidate.prepared_note.text
+        try:
+            note_tasks(text)
+        except ValueError:
+            raise HTTPException(422, 'Prepared note obligations exceed supported limits') from None
+        if not text.strip() or candidate.reason_for_visit.text != note_reason(text):
+            raise HTTPException(422, 'Prepared note content and title disagree')
     source_refs = {item.source_ref for item in candidate.source_bindings}
     if candidate.comparison_basis.type == "unavailable" and candidate.what_changed:
         raise HTTPException(

@@ -113,7 +113,7 @@ def test_browser_capture_edit_reject_save_refresh_and_second_session(setup,monke
     url=f'http://localhost:{port}/static/cockpit/index.html'
     try:
         with sync_playwright() as pw:
-            browser=pw.chromium.launch(executable_path=shutil.which('google-chrome') or shutil.which('chromium'))
+            browser=pw.chromium.launch(executable_path=shutil.which('google-chrome') or shutil.which('chromium') or '/Applications/Dia.app/Contents/MacOS/Dia')
             for width in [1280,390]:
                 context=browser.new_context(viewport={'width':width,'height':950},permissions=['clipboard-read','clipboard-write']);page=context.new_page();errors=[]
                 page.on('pageerror',lambda e:errors.append(str(e)));page.goto(url)
@@ -122,7 +122,7 @@ def test_browser_capture_edit_reject_save_refresh_and_second_session(setup,monke
                 expect(page.locator('#ceGlobalAuthStatus')).to_contain_text('Συνδέθηκες')
                 page.keyboard.press('Escape')
                 page.locator('#captureTestPatient').click();expect(page.locator('#captureOpen')).to_be_visible()
-                page.locator('#captureOpen').click()
+                page.locator('#captureOpen').click();page.locator("#captureModeAI").click()
                 page.locator('#captureCopyDiaPrompt').click()
                 expect(page.locator('#captureDiaPromptStatus')).to_contain_text('Αντιγράφηκε')
                 copied=page.evaluate('navigator.clipboard.readText()')
@@ -135,20 +135,20 @@ def test_browser_capture_edit_reject_save_refresh_and_second_session(setup,monke
                 expect(page.locator('#captureDiaPromptStatus')).to_contain_text('Επίλεξε και αντέγραψε')
                 expect(page.locator('#captureText')).to_have_value('Το πρόχειρο παραμένει μετά την αντιγραφή')
                 assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
-                page.locator('.capture-dia-prompt').screenshot(path=str(tmp_path/f'dia-prompt-{width}.png'))
+                page.locator('.capture-dia-prompt:visible').screenshot(path=str(tmp_path/f'dia-prompt-{width}.png'))
                 page.locator('#captureComposer').get_by_role('button',name='Κλείσιμο',exact=True).click()
                 if width==1280:
-                    page.locator('#captureOpen').click();page.locator('#captureText').fill(TEXT)
+                    page.locator('#captureOpen').click();page.locator("#captureModeAI").click();page.locator('#captureText').fill(TEXT)
                     page.get_by_role('button',name='Προετοιμασία καταγραφής',exact=True).click()
                     assert started.wait(5)
                     page.locator('#captureComposer').get_by_role('button',name='Κλείσιμο',exact=True).click()
-                    page.locator('#captureOpen').click()
+                    page.locator('#captureOpen').click();page.locator("#captureModeAI").click()
                     with page.expect_response('**/visit-capture/extract'):
                         release.set()
                     expect(page.locator('#captureSave')).to_be_hidden()
                     expect(page.locator('#captureReview')).to_be_empty()
                     page.locator('#captureComposer').get_by_role('button',name='Κλείσιμο',exact=True).click()
-                    page.locator('#captureOpen').click();page.locator('#captureText').fill(TEXT)
+                    page.locator('#captureOpen').click();page.locator("#captureModeAI").click();page.locator('#captureText').fill(TEXT)
                     page.get_by_role('button',name='Προετοιμασία καταγραφής',exact=True).click()
                     expect(page.locator('#captureSave')).to_be_visible(timeout=15000)
                     expect(page.locator('#captureReview')).to_be_hidden()
@@ -220,7 +220,7 @@ def test_complete_user_case_visible_before_save_and_after_reload(setup, monkeypa
             page.locator("#ceGlobalKey").click(); page.locator("#ceGlobalKeyInput").fill(KEY)
             page.locator("#ceGlobalLoginForm button[type=submit]").click()
             expect(page.locator("#ceGlobalAuthStatus")).to_contain_text("Συνδέθηκες"); page.keyboard.press("Escape")
-            page.locator("#captureTestPatient").click(); page.locator("#captureOpen").click()
+            page.locator("#captureTestPatient").click(); page.locator("#captureOpen").click();page.locator("#captureModeAI").click()
             page.locator("#captureText").fill(" ".join([fracture, pain, tscore, therapy, "Ζητήθηκαν ακτινογραφίες."]))
             page.get_by_role("button", name="Προετοιμασία καταγραφής", exact=True).click()
             summary = page.locator("#captureAudioSummary")

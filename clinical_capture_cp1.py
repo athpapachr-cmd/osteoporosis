@@ -20,6 +20,10 @@ class ExtractRequest(BaseModel):
     encounter_date: date
 
 
+class ImportRequest(ExtractRequest):
+    text: str = Field(min_length=1, max_length=30000)
+
+
 def extract_candidate(source, encounter_date, demographics):
     # Reuse the installed provider and approval boundary. Never relax it based
     # on a test patient ID: pasted text can still contain identifiable data.
@@ -41,6 +45,7 @@ Selected identity is only for detecting explicit conflicting patient name or DOB
 Never echo identifiers in clinical text. Explicit identity conflict sets source_identity_state=conflict.
 Use the supplied encounter_date. Bind exactly source_ref=dia_summary, role=dia_summary.
 All extracted provenance references dia_summary. verification=source_stated, never clinician_confirmed.
+prepared_note must be null: this AI path must not retain the supplied source as a prepared note.
 comparison_basis=unavailable and what_changed=[] (no independently bound prior encounter provided).
 Retain reported history/changes in findings clearly labelled as reported. Retain uncertainty explicitly.
 Only unfulfilled explicitly agreed obligations belong in pending. status=open/awaiting_patient/awaiting_result,
@@ -59,6 +64,8 @@ If no clinical visit can be extracted, use reason 'Δεν περιγράφετα
         if result.status != "completed" or candidate is None:
             raise ValueError("incomplete")
         _validate_visit_capture_candidate(candidate)
+        if candidate.prepared_note is not None:
+            raise ValueError('prepared note is manual-only')
         if candidate.encounter_date != encounter_date or candidate.comparison_basis.type != "unavailable":
             raise ValueError("invalid context")
         if len(candidate.source_bindings)!=1 or candidate.source_bindings[0].source_ref!="dia_summary" or candidate.source_bindings[0].role!="dia_summary":
@@ -76,6 +83,30 @@ If no clinical visit can be extracted, use reason 'Δεν περιγράφετα
 
 
 def attach_cp1(router, engine, protected, context_for, ensure_patient):
+    @router.post('/visit-capture/import', dependencies=protected)
+    async def import_prepared_note(request: Request, response: Response):
+        from clinical_prepared_note import prepared_candidate
+        raw = bytearray()
+        async for chunk in request.stream():
+            raw.extend(chunk)
+            if len(raw) > 200000:
+                raise HTTPException(413, 'Το κείμενο υπερβαίνει το όριο εισαγωγής.')
+        try:
+            req = ImportRequest.model_validate_json(bytes(raw))
+            if not req.text.strip():
+                raise ValueError('empty')
+            candidate = prepared_candidate(req.text, req.encounter_date.isoformat())
+            _validate_visit_capture_candidate(candidate)
+        except Exception:
+            raise HTTPException(422, 'Έλεγξε την ημερομηνία και το κείμενο: έως 30.000 χαρακτήρες και 60 υποχρεώσεις, έως 1.000 χαρακτήρες η καθεμία. Βάλε τις απλές επικεφαλίδες χωρίς εσοχή και τις προϋποθέσεις στην ίδια γραμμή με την ενέργεια. Το κείμενο διατηρήθηκε.') from None
+        response.headers['Cache-Control'] = 'no-store'
+        with Session(engine) as db:
+            context = context_for(db, req.context_id)
+            snapshot, brief, detail = _render_visit_capture(candidate)
+            return {'context_id': context.id, 'patient_id': context.patient_id,
+                    'candidate': candidate.model_dump(mode='json'),
+                    'snapshot': snapshot, 'brief': brief, 'detail': detail}
+
     @router.post("/visit-capture/extract", dependencies=protected)
     async def extract(request: Request, response: Response):
         # Parse privately so validation never echoes the source in error bodies.

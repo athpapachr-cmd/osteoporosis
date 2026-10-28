@@ -1149,7 +1149,7 @@ def test_browser_web_audio_review_and_confirmed_save(setup, monkeypatch):
             page.keyboard.press("Escape")
             page.locator("#captureTestPatient").click()
             expect(page.locator("#captureOpen")).to_be_visible()
-            page.locator("#captureOpen").click()
+            page.locator("#captureOpen").click();page.locator("#captureModeAI").click()
             expect(page.locator("#captureAudioStatus")).to_contain_text("Έτοιμο")
             expect(page.locator("#captureAudioStart")).to_be_disabled()
             expect(page.locator("#captureWebAudio")).to_contain_text("ημερομηνία γέννησης")
@@ -1297,7 +1297,7 @@ def test_browser_web_audio_review_and_confirmed_save(setup, monkeypatch):
             assert not errors, errors
             assert len(transcribed) == 1  # transcript retry never retranscribes the retained audio
             # Identity-blocked audio must still permit the separate paste flow.
-            page.locator("#captureOpen").click()
+            page.locator("#captureOpen").click();page.locator("#captureModeAI").click()
             expect(page.locator("#captureAudioStatus")).to_contain_text("Έτοιμο")
             page.route("**/clinical/visit-capture/audio/draft", lambda route: route.fulfill(
                 json={"patient_id": "cockpit-cp1-test",
