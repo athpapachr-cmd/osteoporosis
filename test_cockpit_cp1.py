@@ -147,9 +147,12 @@ def test_browser_capture_edit_reject_save_refresh_and_second_session(setup,monke
                         release.set()
                     expect(page.locator('#captureSave')).to_be_hidden()
                     expect(page.locator('#captureReview')).to_be_empty()
+                    page.locator('#captureComposer').get_by_role('button',name='Κλείσιμο',exact=True).click()
                     page.locator('#captureOpen').click();page.locator('#captureText').fill(TEXT)
                     page.get_by_role('button',name='Προετοιμασία καταγραφής',exact=True).click()
                     expect(page.locator('#captureSave')).to_be_visible(timeout=15000)
+                    expect(page.locator('#captureReview')).to_be_hidden()
+                    page.locator('#captureAudioSummary').get_by_role('button',name='Επεξεργασία',exact=True).click()
                     finding=page.locator('#captureReview section').filter(has=page.get_by_role('heading',name='Ιστορικό και ευρήματα',exact=True))
                     finding.locator('textarea').fill('Διορθωμένο εύρημα από τον γιατρό')
                     pending=page.locator('#captureReview section').filter(has=page.get_by_role('heading',name='Προτεινόμενες υποχρεώσεις',exact=True))
@@ -172,3 +175,77 @@ def test_browser_capture_edit_reject_save_refresh_and_second_session(setup,monke
             browser.close()
     finally:server.should_exit=True;thread.join(timeout=10);sock.close()
     with Session(engine) as db:assert db.scalar(select(func.count()).select_from(EncounterORM))==1
+
+
+def test_complete_user_case_visible_before_save_and_after_reload(setup, monkeypatch, tmp_path):
+    """The actual final chart card, not just the editable input, must retain each fact."""
+    import socket, threading, shutil
+    import uvicorn
+    from playwright.sync_api import sync_playwright, expect
+    app, engine = setup
+    fact = lambda s: {"text": s, "provenance": ["dia_summary"], "verification": "source_stated"}
+    fracture = "Κάταγμα πηχεοκαρπικής πριν δύο χρόνια."
+    pain = "Πόνος στη θωρακική μοίρα εδώ και τρεις μήνες, κυρίως σε όρθια στάση και βάδιση, χωρίς νευρολογική σημειολογία."
+    tscore = "T-score -2,8 στη σπονδυλική στήλη."
+    therapy = "Σύσταση για έναρξη alendronate μετά από εκτίμηση από οδοντίατρο."
+    case = VisitCaptureCandidateV1.model_validate({
+        "schema_version": "visit_capture_candidate_v1", "source_identity_state": "consistent",
+        "encounter_date": "2026-10-28", "reason_for_visit": fact(pain),
+        "history": [fact(fracture)], "findings": [fact(tscore)],
+        "recommendations": [{**fact(therapy), "type": "therapy"}],
+        "source_bindings": [{"source_ref": "dia_summary", "role": "dia_summary"}],
+        "comparison_basis": {"type": "unavailable"},
+        "pending": [{"item_type": "investigation", "description": "Ζητήθηκαν ακτινογραφίες.",
+                     "source_excerpt": "Ζητήθηκαν ακτινογραφίες.", "provenance": ["dia_summary"],
+                     "status": "open", "responsible_role": "unspecified"}]})
+    monkeypatch.setattr("clinical_capture_cp1.extract_candidate", lambda *a: case)
+    sock = socket.socket(); sock.bind(("127.0.0.1", 0)); port = sock.getsockname()[1]
+    server = uvicorn.Server(uvicorn.Config(app, log_level="error"))
+    thread = threading.Thread(target=server.run, kwargs={"sockets": [sock]}, daemon=True); thread.start()
+    url = f"http://localhost:{port}/static/cockpit/index.html"
+    try:
+        with sync_playwright() as pw:
+            browser = pw.chromium.launch(executable_path=shutil.which("google-chrome") or shutil.which("chromium") or "/Applications/Dia.app/Contents/MacOS/Dia")
+            page = browser.new_page(viewport={"width": 1280, "height": 1000})
+            page.goto(url)
+            page.locator("#ceGlobalKey").click(); page.locator("#ceGlobalKeyInput").fill(KEY)
+            page.locator("#ceGlobalLoginForm button[type=submit]").click()
+            expect(page.locator("#ceGlobalAuthStatus")).to_contain_text("Συνδέθηκες"); page.keyboard.press("Escape")
+            page.locator("#captureTestPatient").click(); page.locator("#captureOpen").click()
+            page.locator("#captureText").fill(" ".join([fracture, pain, tscore, therapy, "Ζητήθηκαν ακτινογραφίες."]))
+            page.get_by_role("button", name="Προετοιμασία καταγραφής", exact=True).click()
+            summary = page.locator("#captureAudioSummary")
+            expect(summary).to_be_visible()
+            expect(page.locator("#captureReview")).to_be_hidden()
+            for text in (fracture, pain, tscore, therapy):
+                expect(summary).to_contain_text(text)
+            with Session(engine) as db:
+                assert db.scalar(select(func.count()).select_from(EncounterORM)) == 0
+            summary.screenshot(path=str(tmp_path / "complete-draft-1280.png"))
+            page.locator("#captureSave").click()
+            expect(page.locator("#captureComposer")).to_be_hidden()
+            for width in (1280, 390):
+                page.set_viewport_size({"width": width, "height": 1000})
+                page.reload()
+                card = page.locator(".patient-chart-overview .patient-chart-card").first
+                expect(card).to_be_visible()
+                for text in (fracture, pain, tscore, therapy):
+                    expect(card).to_contain_text(text)
+                expect(card).not_to_contain_text("Ξεκίνησε alendronate")
+                assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+                page.locator(".patient-chart-overview .patient-chart-grid").screenshot(path=str(tmp_path / f"complete-chart-{width}.png"))
+            data = page.request.get(f"http://localhost:{port}/clinical/patient/{TEST_ID}/chart").json()
+            stored = data["visits"][0]["clinical"]
+            assert stored["history"][0]["text"] == fracture
+            assert stored["findings"][0]["text"] == tscore
+            assert stored["recommendations"][0]["text"] == therapy
+            page.evaluate("([id,eid])=>window.CockpitStoredChart.openVisit(id,eid)", [TEST_ID, data["visits"][0]["encounter_id"]])
+            reader = page.locator(".patient-visit-reader")
+            expect(reader).to_be_visible()
+            for text in (fracture, pain, tscore, therapy):
+                expect(reader).to_contain_text(text)
+            browser.close()
+    finally:
+        server.should_exit = True; thread.join(timeout=10); sock.close()
+    with Session(engine) as db:
+        assert db.scalar(select(func.count()).select_from(EncounterORM)) == 1
