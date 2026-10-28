@@ -1,3 +1,5 @@
+> **2026-10-28 WEB VISIT AUDIO DIAGNOSTICS — CI RETRY PASS / RELEASE GATE:** Final PR #238 head `2631f4d` has 10/10 checks passing after one inherited appointment-chart Playwright timeout was retried once and passed. Security Review and Bugbot found no issue. No runtime/test delta since `4af8ca5`. Next final docs-head CI then guarded merge/Render smoke.
+
 > **2026-10-28 WEB VISIT AUDIO DIAGNOSTICS — FINAL HEAD 10/10 CI + BUGBOT PASS:** Draft PR #238 head `d8f7bd2` passed all checks; independent Bugbot found no bugs and Security Review found no privacy issue. Runtime/test `4af8ca5` unchanged. Next docs-checkpoint head CI and guarded merge/Render smoke. Production still unchanged; original 502 cause unknown.
 
 > **2026-10-28 WEB VISIT AUDIO DIAGNOSTICS — 10/10 CI PASS / FINAL HEAD NEXT:** Draft PR #238 head `9903d2f` passed all checks, including Visit Capture and canonical impact; reviewed code/test unchanged. Next final docs-head CI and guarded release. Production unaffected; original failure cause remains UNKNOWN.
