@@ -184,7 +184,8 @@ def test_local_audio_context_renewal_precedes_preview_and_save_and_gesy_is_copy_
     assert 'async function renewLocalContext()' in js
     assert 'prior_context_id: identity.contextId' in js
     assert 'await renewLocalContext();\n      state.localCandidateActive = true' in js
-    assert 'if (state.localCandidateActive) await renewLocalContext();' in js
+    assert 'if (local) await renewLocalContext();' in js
+    assert 'state.localConfirmationVersion !== local.version' in js
     assert 'navigator.clipboard.writeText(state.preview.gesy_copy)' in js
     assert "δεν ενημερώνει το ΓεΣΥ" in html
     assert "gesy_copy" in js
