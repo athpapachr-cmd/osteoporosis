@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — no-loss web Visit Audio recovery
 
-> **STATUS (2026-10-28): DDL CORRECTION IMPLEMENTED / TESTED / EXACT-CODE R2 NEXT.** Recovery ORM now uses separate metadata and application startup performs no recovery DDL. New one-time admin migration creates only the empty opaque capability table plus two indexes and grants `cockpit_app` SELECT/INSERT/DELETE plus `UPDATE(state)` while preserving no schema CREATE and no expiry/id update. A disposable PostgreSQL execution passed migration, exact privilege/DML, denied-column update and rerun-fail checks; affected Python/browser evidence passes 48 tests with one optional-PG skip, plus syntax/diff checks. Next one independent exact-code R2 on runtime/migration/tests, then fresh canonical-impact PR CI. No production SQL/redeploy, recording, provider request or clinical write.
+> **STATUS (2026-10-28): DDL CORRECTION EXACT-CODE R2 PASS / PR CI NEXT.** Exact code/migration/test `32d451fc` independently passed `PASS / COMPLETE_FOR_DECLARED_SCOPE=YES / P0:P1:P2=0:0:0`. Review confirmed no startup DDL, exact opaque schema/index match, sufficient least privileges for activate/consume/cleanup, fail-closed pre/postconditions/rerun and unchanged one-shot semantics. Affected 48-test and disposable PostgreSQL evidence remain applicable. Next publish a canonical-impact correction PR and require fresh exact-head CI; only then install the reviewed empty-table migration as administrator before merging/redeploying. No production SQL, recording, provider request or clinical write yet.
 
 ## Objective
 
