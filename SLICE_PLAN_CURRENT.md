@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — no-loss web Visit Audio recovery
 
-> **STATUS (2026-10-28): PRODUCT OWNER UX CORRECTION CONFIRMED / R1 IMPLEMENTATION NEXT.** Runtime recovery commit `b7141461` passed independent exact-code R2 closure and PR head `111ecc97` passed the applicable exact-head checks. Product Owner then corrected the review presentation: neither the unverified transcript nor the processed clinical text may expand automatically. The active PR branch remains the sole writer, bounded to compact JS/CSS presentation, one browser regression and root/Cockpit checkpoints. No backend, model, patient-binding, candidate, Preview/Save, merge or deploy delta is authorized. One exact-head R1 review follows the tested UI correction.
+> **STATUS (2026-10-28): COLLAPSED REVIEW IMPLEMENTED / TESTED / R1 REVIEW NEXT.** Runtime recovery commit `b7141461` passed independent exact-code R2 closure and PR head `111ecc97` passed the applicable exact-head checks. The Product Owner UX correction is implemented: neither review body opens automatically; each opens only on explicit selection and closes on repeated selection. The affected suite passes `47 passed`, including Chromium through Dia; JavaScript/Python syntax and diff hygiene pass. No backend, model, patient-binding, candidate or Preview/Save delta. One exact-head R1 fidelity review is next; merge/deploy remain separate.
 
 ## Objective
 

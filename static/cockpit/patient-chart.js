@@ -7,7 +7,7 @@
   let generation=0,patientId=null,contextId=null,candidate=null,source='',busy=false,chartScroll=0,chartReturnPoint=null;
   let audioRecorder=null,audioStream=null,audioChunks=[],audioTimer=null,audioAbort=null,audioBlob=null;
   let audioStarted=0,audioDiscard=false,audioDraft=false,audioReady=false,audioReviewUnits=[],audioSuggestions=[],audioSuggestionDraft='',audioConsiderations=[],audioConsiderationsStatus='complete',audioToken=0,audioPreviewed=null,audioContextExpiresAt='';
-  let audioTranscript='',audioRecoveryBinding='',audioProcessingFailure=null,audioView='processed';
+  let audioTranscript='',audioRecoveryBinding='',audioProcessingFailure=null,audioView='closed';
   const MAX_AUDIO_BYTES=23*1024*1024;
   const session=crypto.randomUUID();
   const el=(parent,tag,value,cls)=>{const n=document.createElement(tag);if(value)n.textContent=value;if(cls)n.className=cls;parent.append(n);return n;};
@@ -48,13 +48,13 @@
   el(audioReview,'h4','Έλεγχος ηχογράφησης και κλινικού κειμένου');
   const audioPatient=el(audioReview,'strong','');
   const audioTabs=el(audioReview,'div','','capture-audio-tabs');
-  const audioTranscriptTab=button(audioTabs,'Μη επαληθευμένη μεταγραφή',()=>showAudioView('transcript'));audioTranscriptTab.id='captureAudioTranscriptTab';
-  const audioProcessedTab=button(audioTabs,'Επεξεργασμένο κλινικό κείμενο',()=>showAudioView('processed'));audioProcessedTab.id='captureAudioProcessedTab';
+  const audioTranscriptTab=button(audioTabs,'Μη επαληθευμένη μεταγραφή',()=>toggleAudioView('transcript'));audioTranscriptTab.id='captureAudioTranscriptTab';audioTranscriptTab.setAttribute('aria-pressed','false');
+  const audioProcessedTab=button(audioTabs,'Επεξεργασμένο κλινικό κείμενο',()=>toggleAudioView('processed'));audioProcessedTab.id='captureAudioProcessedTab';audioProcessedTab.setAttribute('aria-pressed','false');
   const audioTranscriptPanel=el(audioReview,'section','','capture-audio-transcript');audioTranscriptPanel.id='captureAudioTranscriptPanel';audioTranscriptPanel.hidden=true;
   el(audioTranscriptPanel,'p','Η αυτόματη μεταγραφή μπορεί να περιέχει λάθη. Δεν αποθηκεύεται αυτόματα στον φάκελο.','clinical-muted');
   const audioTranscriptText=el(audioTranscriptPanel,'pre','');audioTranscriptText.id='captureAudioTranscriptText';audioTranscriptText.tabIndex=0;
   const audioProcessedUnavailable=el(audioReview,'p','Το επεξεργασμένο κλινικό κείμενο δεν είναι διαθέσιμο. Η μεταγραφή παραμένει ασφαλής σε αυτή την ανοιχτή σελίδα.','clinical-muted');audioProcessedUnavailable.id='captureAudioProcessedUnavailable';audioProcessedUnavailable.hidden=true;
-  const audioConfirmLabel=el(audioReview,'label','');
+  const audioConfirmLabel=el(audioReview,'label','');audioConfirmLabel.hidden=true;
   const audioConfirm=el(audioConfirmLabel,'input');audioConfirm.type='checkbox';audioConfirm.id='captureAudioIdentity';
   audioConfirmLabel.append(document.createTextNode(' Έλεγξα τα παραπάνω και επιβεβαιώνω ότι η ηχογράφηση ανήκει στον εμφανιζόμενο ασθενή'));
   const audioFocused=el(audioReview,'div','','capture-audio-focused');
@@ -275,7 +275,7 @@
   }
   function canLeave(){if(!composer.hidden){feedback.textContent='Κλείσε ή αποθήκευσε την τρέχουσα καταγραφή πριν αλλάξεις ασθενή.';composer.scrollIntoView({behavior:'smooth'});return false;}return true;}
   function releaseAudioBlob(){audioBlob=null;}
-  function clearAudioRecovery(){releaseAudioBlob();audioTranscript='';audioRecoveryBinding='';audioProcessingFailure=null;audioTranscriptText.textContent='';audioRescue.hidden=true;audioTranscriptPanel.hidden=true;audioProcessedUnavailable.hidden=true;audioView='processed';}
+  function clearAudioRecovery(){releaseAudioBlob();audioTranscript='';audioRecoveryBinding='';audioProcessingFailure=null;audioTranscriptText.textContent='';audioRescue.hidden=true;audioTranscriptPanel.hidden=true;audioProcessedUnavailable.hidden=true;audioConfirmLabel.hidden=true;audioFocused.hidden=true;audioView='closed';audioTranscriptTab.setAttribute('aria-pressed','false');audioProcessedTab.setAttribute('aria-pressed','false');}
   function updateAudioRescue(){
     const hasTransient=Boolean(audioBlob||audioTranscript),needsRescue=Boolean(audioProcessingFailure||(audioBlob&&!candidate));
     audioRescue.hidden=!needsRescue;
@@ -286,15 +286,18 @@
   }
   function showAudioView(view){
     if(!audioTranscript)return;
-    audioView=view==='transcript'?'transcript':'processed';
+    audioView=view==='transcript'||view==='processed'?view:'closed';
     const transcriptView=audioView==='transcript';
+    const processedView=audioView==='processed';
     audioTranscriptPanel.hidden=!transcriptView;
-    review.hidden=transcriptView;
-    audioFocused.hidden=transcriptView||!audioDraft;
-    audioProcessedUnavailable.hidden=transcriptView||Boolean(candidate);
+    review.hidden=!processedView;
+    audioConfirmLabel.hidden=!processedView;
+    audioFocused.hidden=!processedView||!audioDraft;
+    audioProcessedUnavailable.hidden=!processedView||Boolean(candidate);
     audioTranscriptTab.setAttribute('aria-pressed',String(transcriptView));
-    audioProcessedTab.setAttribute('aria-pressed',String(!transcriptView));
+    audioProcessedTab.setAttribute('aria-pressed',String(processedView));
   }
+  function toggleAudioView(view){showAudioView(audioView===view?'closed':view);}
   function downloadAudio(){
     if(!audioBlob)return;
     const url=URL.createObjectURL(audioBlob),link=document.createElement('a');
@@ -368,7 +371,7 @@
       if(!audioProcessingFailure||typeof audioProcessingFailure.code!=='string'||typeof audioProcessingFailure.retryable!=='boolean'||'candidate'in result)throw Error('Η μερική επεξεργασία δεν επαληθεύτηκε.');
       candidate=null;audioDraft=false;audioReviewUnits=[];audioSuggestions=[];audioSuggestionDraft='';audioConsiderations=[];audioConsiderationsStatus='complete';
       review.replaceChildren();saveButton.hidden=true;audioFocused.replaceChildren();
-      showAudioView('transcript');updateAudioRescue();
+      showAudioView('closed');updateAudioRescue();
       audioStatus.textContent=audioProcessingFailure.code==='source_identity_unresolved'?
         'Η μεταγραφή διατηρήθηκε, αλλά η ταυτότητα μέσα στην ηχογράφηση χρειάζεται χειροκίνητο έλεγχο. Δεν επιτρέπεται αυτόματη επανάληψη.':
         'Η μεταγραφή διατηρήθηκε. Η δημιουργία κλινικού κειμένου απέτυχε και μπορεί να επαναληφθεί χωρίς νέα ηχογράφηση.';
@@ -380,7 +383,7 @@
        !['complete','input_limit','unavailable'].includes(result.contextual_considerations_status)||result.processing_failure!==null)throw Error('Η ταυτότητα ή η καταγραφή δεν επαληθεύτηκε.');
     candidate=result.candidate;audioDraft=true;audioReviewUnits=result.review_units;audioSuggestions=result.suggested_next_checks.slice(0,6);
     audioSuggestionDraft=audioSuggestions.map(item=>item.text).join('\n');audioConsiderations=result.contextual_clinical_considerations.slice(0,4);audioConsiderationsStatus=result.contextual_considerations_status;
-    bindClinician();review.hidden=false;drawReview();renderAudioFocused();releaseAudioBlob();updateAudioRescue();showAudioView('processed');
+    bindClinician();review.hidden=false;drawReview();renderAudioFocused();releaseAudioBlob();updateAudioRescue();showAudioView('closed');
     saveButton.hidden=false;saveButton.disabled=true;audioStatus.textContent='Η μεταγραφή και το κλινικό κείμενο είναι έτοιμα για ξεχωριστό έλεγχο. Το προσωρινό αντίγραφο ήχου στον server αφαιρέθηκε.';
     feedback.textContent='Έλεγξε και διόρθωσε μόνο ό,τι χρειάζεται. Η μη επαληθευμένη μεταγραφή δεν αποθηκεύεται στον φάκελο.';
   }

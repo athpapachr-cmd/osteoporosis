@@ -285,7 +285,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
 .capture-ai-consideration details p{margin:6px 0}
 .capture-ai-meta{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 6px}
 .capture-ai-meta span{padding:3px 7px;border-radius:999px;background:#f3ead5;color:#5d4b23;font-size:.78rem;font-weight:700}
-.capture-audio-review[hidden],.capture-web-audio[hidden],.capture-audio-rescue[hidden],.capture-audio-transcript[hidden]{display:none!important}
+.capture-audio-review[hidden],.capture-web-audio[hidden],.capture-audio-rescue[hidden],.capture-audio-transcript[hidden],.capture-audio-review label[hidden],.capture-audio-focused[hidden],#captureAudioProcessedUnavailable[hidden],#captureReview[hidden]{display:none!important}
 
 /* Source-backed visit points; connecting line is navigation, not inferred care. */
 .patient-journey-rail{display:flex;overflow-x:auto;gap:0;padding:8px 0 18px;max-width:100%}
