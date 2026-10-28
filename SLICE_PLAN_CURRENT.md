@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — contextual AI clinical considerations from visit audio
 
-> **STATUS (2026-10-28): PRE-CODE R2 P1 CORRECTION / CLOSURE HOLD.** Independent review of design `a8389e59` BLOCKED P0:P1:P2=0:1:0: per-batch generation could not combine facts split across the existing 8KB classification boundary. The corrected design keeps batch classification unchanged and adds one bounded whole-visit `gpt-6-luna` consideration pass over all validated facts with global source IDs. Oversize evidence skips that optional pass and returns an explicit unavailable status so absence cannot masquerade as clearance. One focused independent finding/delta/affected-cumulative closure is next; no runtime mutation before PASS.
+> **STATUS (2026-10-28): PRE-CODE R2 SECOND P1 CORRECTION / CLOSURE HOLD.** Closure on `bed4b764` confirmed the whole-visit correction but BLOCKED 0:1:0 because an optional call started near the outer pipeline deadline could cancel and discard an already validated draft. The design now shares one monotonic pipeline deadline, reserves five seconds for response/final context verification, and skips or times out only the optional layer when that budget is unavailable. A synthetic deadline-exhaustion oracle must prove the candidate survives. One focused independent closure is next; no runtime mutation before PASS.
 
 ## Objective
 
@@ -17,7 +17,9 @@ Extend the released exact-source audio analysis with a visibly separate, source-
 
 Keep the existing strict per-batch `visit_audio_analysis_v2` response unchanged. After all batches pass validation and the exact-source candidate is built, make one additional bounded `gpt-6-luna` Responses call using only the merged validated facts (`source_id`, exact `excerpt`, `kind`) from the whole visit. It uses the same project/org headers, `store:false`, no tools and existing timeout/model settings.
 
-The whole-visit input is permitted only when its serialized UTF-8 JSON is at most 60,000 bytes. Otherwise do not truncate or sample it: skip the optional consideration call, return `contextual_considerations_status=input_limit`, and show that unavailability visibly. A provider/network/invalid-output failure in this optional layer does not discard the already validated clinical draft; it returns `contextual_considerations_status=unavailable`, logs only fixed stage/kind/status metadata and no clinical content. `complete` means the whole validated fact set was considered, including a valid empty list; it is not clinical clearance.
+The whole-visit input is permitted only when its serialized UTF-8 JSON is at most 60,000 bytes. Otherwise do not truncate or sample it: skip the optional consideration call, return `contextual_considerations_status=input_limit`, and show that unavailability visibly.
+
+The route creates one monotonic deadline when core processing starts. After candidate construction, the optional layer receives at most `min(summarize_timeout, remaining_pipeline_time - 5 seconds)`. If this budget is below one second, it is not started and status is `unavailable`. Its own timeout, provider/network/invalid-output failure returns `unavailable` without escaping into the outer pipeline timeout. Five seconds remain reserved for final patient-context verification and response construction. Core transcription/classification/candidate failure before a candidate exists retains the existing fail-closed 502 behavior. Optional failure logs only fixed stage/kind/status metadata and no clinical content. `complete` means the whole validated fact set was considered, including a valid empty list; it is not clinical clearance.
 
 The second strict response contains up to four `contextual_clinical_considerations`. Each item contains only:
 
@@ -48,7 +50,7 @@ The model instruction requires a question/consideration rather than diagnosis or
 3. Contextual consideration text is absent from candidate and from protected Preview/Save payloads.
 4. Browser UI labels the inference clearly, shows rationale/confidence, exposes no adoption button and retains one final patient/content confirmation.
 5. Existing typed next-check adoption, manual Dia/amendment labels, local audio and standard-retention behavior do not regress.
-6. Facts placed on opposite sides of the 8KB classification boundary can support one whole-visit consideration; oversize and failed optional passes visibly return unavailable status without losing the exact-source draft.
+6. Facts placed on opposite sides of the 8KB classification boundary can support one whole-visit consideration; oversize, deadline-exhausted and failed optional passes visibly return unavailable status without losing the exact-source draft.
 
 ## Review and release
 
