@@ -270,6 +270,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
 .capture-audio-suggestions details{margin:8px 0}
 .capture-audio-suggestions details ul{margin:8px 0 0;padding-left:22px}
 .capture-audio-suggestions details li{margin:6px 0;line-height:1.45}
+.capture-ai-considerations{margin:18px 0;padding:14px;border:1px solid #d5c7a5;border-radius:10px;background:#fffaf0}
+.capture-ai-considerations h4{margin:0 0 8px}
+.capture-ai-warning{margin:8px 0 14px;line-height:1.45;color:#624f24}
+.capture-ai-consideration{margin:10px 0;padding:12px;border:1px solid #e8dcc0;border-radius:8px;background:#fff}
+.capture-ai-consideration>strong{display:block;margin:4px 0 6px;line-height:1.4}
+.capture-ai-consideration details{margin:8px 0 0}
+.capture-ai-consideration details p{margin:6px 0}
+.capture-ai-meta{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 6px}
+.capture-ai-meta span{padding:3px 7px;border-radius:999px;background:#f3ead5;color:#5d4b23;font-size:.78rem;font-weight:700}
 .capture-audio-review[hidden],.capture-web-audio[hidden]{display:none!important}
 
 /* Source-backed visit points; connecting line is navigation, not inferred care. */

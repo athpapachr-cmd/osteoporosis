@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — contextual AI clinical considerations from visit audio
 
-> **STATUS (2026-10-28): PRE-CODE R2 PASS / IMPLEMENTATION AUTHORIZED.** Final focused closure on exact design `0da54cce` returned PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2=0:0:0. Cross-batch whole-visit reasoning, global citations, no truncation, display-only authority and the core/optional deadline reserve are closed. Bounded implementation may now change only the frozen backend response, compact web-audio UI/CSS/cache tag, focused synthetic tests and checkpoints. One exact-code post-code R2 remains mandatory before PR/release.
+> **STATUS (2026-10-28): IMPLEMENTED / POST-CODE R2 HOLD.** The bounded backend, compact display-only UI, validation and synthetic/browser oracles are implemented. Local affected verification is green: 34 tests, Python compile, JavaScript syntax and diff hygiene pass. The contextual prose is absent from candidate and Save payloads, while cross-batch, input-limit and deadline-exhaustion paths preserve the exact-source draft. One independent exact-code post-code R2 remains mandatory before PR/release.
 
 ## Objective
 
@@ -30,7 +30,7 @@ category: history_question | focused_examination | investigation_consideration |
           referral_consideration | management_review | safety_check
 text: concise Greek question/consideration, 1..240 characters
 rationale: concise Greek explanation, 1..320 characters
-source_ids: 1..3 unique IDs from the current batch
+source_ids: 1..3 unique global IDs from the current visit
 confidence: low | moderate | high
 ```
 
@@ -57,3 +57,11 @@ The model instruction requires a question/consideration rather than diagnosis or
 ## Review and release
 
 R2: free model-authored clinical reasoning is visible to the clinician even though it cannot write. One independent pre-code design review and one independent exact-code fidelity review are required. Exact-head CI and guarded no-PHI release smoke remain separate gates. No agent recording, provider request or clinical write.
+
+## Implementation evidence
+
+- One additional strict `visit_audio_contextual_considerations_v1` request uses only the fully validated fact set and the existing `gpt-6-luna` settings, project headers, `store:false` and no tools.
+- Server validation enforces shape, category/confidence enums, length/control bounds and global validated source IDs. Optional failure returns only `complete | input_limit | unavailable` plus a bounded list and never mutates the exact-source candidate.
+- The compact browser renders a visibly separate block with category, confidence, a closed rationale disclosure and no adoption control. Its warning states that the content is inferred, may be wrong, was not spoken, is not guideline verification and is never saved automatically.
+- Synthetic route tests cover facts across the 8KB batch boundary, invalid citations/shapes, the 60KB no-truncation gate and optional deadline exhaustion. The browser oracle proves one final confirmation remains and the AI prose is absent from the Save request.
+- Local affected result: `34 passed`; Python compile, JavaScript syntax and `git diff --check` pass. No provider request, real audio or clinical write occurred.

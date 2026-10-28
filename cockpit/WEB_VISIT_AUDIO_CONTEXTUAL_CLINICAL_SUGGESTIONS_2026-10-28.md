@@ -1,5 +1,7 @@
 # Web Visit Audio — contextual AI clinical considerations
 
+> **Implementation checkpoint (2026-10-28): POST-CODE R2 HOLD.** The frozen whole-visit/display-only contract is implemented with 34 affected tests passing, including actual Chromium via Dia. Provider prose remains outside candidate/Preview/Save; exact-code independent review is next. No provider request, real audio or clinical write occurred.
+
 ## Product Owner checkpoint
 
 **Problem now:** the released system can preserve explicit symptoms, therapy, plan and obligations and can generate nine bounded follow-up intents. It still cannot say that a combination of facts may merit an additional clinical question, focused examination or possible investigation unless that step was already spoken.
@@ -80,7 +82,7 @@ Any clinician who accepts the idea must independently enter the appropriate word
 ## R2 questions
 
 1. Does display-only separation fully prevent provider prose from entering candidate/Preview/Save?
-2. Are cited IDs constrained to validated current-batch facts and deduplicated safely?
+2. Are cited IDs constrained to validated whole-visit facts and deduplicated safely?
 3. Does the UI avoid implying diagnosis, order or guideline authority?
 4. Do existing typed suggestions and one-confirmation behavior remain unchanged?
 5. Does the bounded whole-visit pass actually see validated facts across classification batches, with no silent truncation?

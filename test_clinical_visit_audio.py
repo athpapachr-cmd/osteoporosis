@@ -55,6 +55,21 @@ def labels(batch, *, identity="consistent", bad_id=None):
     return result
 
 
+def considerations(facts, items=None):
+    return {"contextual_clinical_considerations": items or []}
+
+
+def one_consideration(facts):
+    source_ids = [item["source_id"] for item in facts if item["kind"] in ("finding", "therapy")]
+    return considerations(facts, [{
+        "category": "management_review",
+        "text": "Να εξεταστεί αν χρειάζεται συνολική επανεκτίμηση του καταγματικού κινδύνου.",
+        "rationale": "Συνδυάζει το ρητό εύρημα οστικής πυκνότητας με τη ρητά αναφερόμενη θεραπεία.",
+        "source_ids": source_ids[:2],
+        "confidence": "moderate",
+    }])
+
+
 def draft(client, context_id):
     return client.post("/clinical/visit-capture/audio/draft", headers={
         **HEADERS, "X-Visit-Context": context_id,
@@ -103,8 +118,13 @@ def test_provider_multipart_and_private_responses_contract(monkeypatch):
         requests.append((request, body))
         if request.url.path.endswith("/transcriptions"):
             return httpx.Response(200, json={"text": TRANSCRIPT})
+        request_json = __import__("json").loads(body)
+        if request_json["text"]["format"]["name"] == "visit_audio_contextual_considerations_v1":
+            output = considerations([])
+        else:
+            output = labels([(0, "Επανέλεγχος")])
         return httpx.Response(200, json={"status": "completed", "output": [{
-            "content": [{"type": "output_text", "text": __import__("json").dumps(labels([(0, "Επανέλεγχος")]))}]
+            "content": [{"type": "output_text", "text": __import__("json").dumps(output)}]
         }]})
 
     real = httpx.AsyncClient
@@ -116,6 +136,9 @@ def test_provider_multipart_and_private_responses_contract(monkeypatch):
         assert await audio.OpenAITranscriber(settings).transcribe(io.BytesIO(WEBM), "audio/webm") == TRANSCRIPT
         assert (await audio.OpenAISummarizer(settings).classify(
             [(0, "Επανέλεγχος")], {"full_name": "Synthetic"}))["facts"][0]["kind"] == "reason"
+        assert await audio.OpenAISummarizer(settings).consider([
+            {"source_id": 0, "excerpt": "Επανέλεγχος", "kind": "reason"}
+        ]) == considerations([])
     asyncio.run(run())
     transcription = requests[0][1]
     assert transcription.count(b'name="languages[]"') == 2
@@ -133,6 +156,16 @@ def test_provider_multipart_and_private_responses_contract(monkeypatch):
     assert set(suggestion_schema["properties"]) == {"intent", "source_id"}
     assert "text" not in suggestion_schema["properties"] and "rationale" not in suggestion_schema["properties"]
     assert "tools" not in response_json
+    consideration_json = __import__("json").loads(requests[2][1])
+    assert consideration_json["model"] == "gpt-6-luna" and consideration_json["store"] is False
+    assert consideration_json["text"]["format"]["name"] == "visit_audio_contextual_considerations_v1"
+    consideration_item = consideration_json["text"]["format"]["schema"]["properties"][
+        "contextual_clinical_considerations"]["items"]
+    assert set(consideration_item["properties"]) == {
+        "category", "text", "rationale", "source_ids", "confidence"}
+    assert "selected_identity" not in consideration_json["input"][1]["content"]
+    assert "source_units" not in consideration_json["input"][1]["content"]
+    assert "tools" not in consideration_json
 
 
 def test_provider_rejection_retains_status_only(monkeypatch):
@@ -230,6 +263,131 @@ def test_ambiguous_excerpt_and_free_text_or_incompatible_suggestion_fail_closed(
             audio.checked_analysis(unsafe, [(0, "Επανέλεγχος")])
 
 
+def test_contextual_considerations_require_validated_sources_and_bounded_shape():
+    facts = [
+        {"source_id": 2, "excerpt": "πόνος στη ράχη", "kind": "symptom"},
+        {"source_id": 8, "excerpt": "απώλεια ύψους", "kind": "finding"},
+    ]
+    valid = {"contextual_clinical_considerations": [{
+        "category": "investigation_consideration",
+        "text": "Να εξεταστεί αν χρειάζεται περαιτέρω διερεύνηση της ράχης.",
+        "rationale": "Ο συνδυασμός πόνου και απώλειας ύψους μπορεί να χρειάζεται κλινική συσχέτιση.",
+        "source_ids": [2, 8],
+        "confidence": "moderate",
+    }]}
+    assert audio.checked_considerations(valid, facts)[0]["source_ids"] == [2, 8]
+
+    invalid_items = [
+        {**valid["contextual_clinical_considerations"][0], "source_ids": [2, 99]},
+        {**valid["contextual_clinical_considerations"][0], "source_ids": [2, 2]},
+        {**valid["contextual_clinical_considerations"][0], "confidence": "certain"},
+        {**valid["contextual_clinical_considerations"][0], "category": "diagnosis"},
+        {**valid["contextual_clinical_considerations"][0], "text": "α\x00β"},
+        {**valid["contextual_clinical_considerations"][0], "extra": "field"},
+    ]
+    for item in invalid_items:
+        with pytest.raises(ValueError):
+            audio.checked_considerations({"contextual_clinical_considerations": [item]}, facts)
+    with pytest.raises(ValueError, match="duplicate"):
+        audio.checked_considerations({
+            "contextual_clinical_considerations": [
+                valid["contextual_clinical_considerations"][0],
+                {**valid["contextual_clinical_considerations"][0],
+                 "text": valid["contextual_clinical_considerations"][0]["text"].upper()},
+            ]}, facts)
+
+
+def test_contextual_deadline_helpers_preserve_finalization_reserve():
+    assert audio.optional_timeout_budget(100.0, 90.0, 90) == 5.0
+    assert audio.optional_timeout_budget(100.0, 94.1, 90) is None
+    audio.ensure_before_deadline(94.9, 95.0)
+    with pytest.raises(TimeoutError):
+        audio.ensure_before_deadline(95.0, 95.0)
+
+
+def test_whole_visit_contextual_pass_combines_different_batches(monkeypatch):
+    enabled(monkeypatch)
+    client, _ = _client_with_engine(monkeypatch)
+    _patient(client, "SYN-WEB")
+    context = _context(client, "SYN-WEB")
+    transcript = (
+        "Επανέλεγχος οστεοπόρωσης " + "α" * 3200 + ". "
+        "Υπάρχει θωρακικός πόνος " + "β" * 3200 + ". "
+        "Αναφέρθηκε απώλεια ύψους " + "γ" * 3200 + "."
+    )
+    assert len(audio.batches(audio.source_units(transcript))) > 1
+
+    class Transcriber:
+        async def transcribe(self, file, mime):
+            return transcript
+
+    class Summarizer:
+        async def classify(self, batch, identity):
+            result = {"identity_state": "consistent", "facts": [],
+                      "suggested_next_checks": [], "unclassified_ids": []}
+            for identifier, text in batch:
+                if identifier == 0:
+                    excerpt, kind = "Επανέλεγχος οστεοπόρωσης", "reason"
+                elif identifier == 1:
+                    excerpt, kind = "Υπάρχει θωρακικός πόνος", "symptom"
+                else:
+                    excerpt, kind = "Αναφέρθηκε απώλεια ύψους", "finding"
+                result["facts"].append({"source_id": identifier, "excerpt": excerpt, "kind": kind})
+            return result
+
+        async def consider(self, facts):
+            assert {item["source_id"] for item in facts} == {0, 1, 2}
+            return considerations(facts, [{
+                "category": "investigation_consideration",
+                "text": "Να εξεταστεί αν ο θωρακικός πόνος και η απώλεια ύψους χρειάζονται συσχέτιση.",
+                "rationale": "Η σκέψη βασίζεται στον συνδυασμό δύο ρητών ευρημάτων από διαφορετικά τμήματα.",
+                "source_ids": [1, 2],
+                "confidence": "moderate",
+            }])
+
+    monkeypatch.setattr(audio, "make_providers", lambda settings: (Transcriber(), Summarizer()))
+    response = draft(client, context["context_id"])
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["contextual_considerations_status"] == "complete"
+    assert body["contextual_clinical_considerations"][0]["source_ids"] == [1, 2]
+    assert body["contextual_clinical_considerations"][0]["text"] not in str(body["candidate"])
+
+
+@pytest.mark.parametrize("mode,expected", [("limit", "input_limit"), ("deadline", "unavailable")])
+def test_optional_contextual_failure_preserves_exact_source_candidate(monkeypatch, mode, expected):
+    enabled(monkeypatch)
+    client, _ = _client_with_engine(monkeypatch)
+    _patient(client, "SYN-WEB")
+    context = _context(client, "SYN-WEB")
+    called = []
+
+    class Transcriber:
+        async def transcribe(self, file, mime):
+            return TRANSCRIPT
+
+    class Summarizer:
+        async def classify(self, batch, identity):
+            return labels(batch)
+
+        async def consider(self, facts):
+            called.append(True)
+            return one_consideration(facts)
+
+    monkeypatch.setattr(audio, "make_providers", lambda settings: (Transcriber(), Summarizer()))
+    if mode == "limit":
+        monkeypatch.setattr(audio, "MAX_CONTEXTUAL_FACT_BYTES", 1)
+    else:
+        monkeypatch.setattr(audio, "optional_timeout_budget", lambda *args: None)
+    response = draft(client, context["context_id"])
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["candidate"]["reason_for_visit"]["text"] == "Επανέλεγχος οστεοπόρωσης."
+    assert body["contextual_considerations_status"] == expected
+    assert body["contextual_clinical_considerations"] == []
+    assert called == []
+
+
 def test_source_copy_provisional_review_and_confirmed_save(monkeypatch):
     enabled(monkeypatch)
     client, engine = _client_with_engine(monkeypatch)
@@ -244,6 +402,9 @@ def test_source_copy_provisional_review_and_confirmed_save(monkeypatch):
     class Summarizer:
         async def classify(self, batch, identity):
             return labels(batch)
+
+        async def consider(self, facts):
+            return one_consideration(facts)
 
     monkeypatch.setattr(audio, "make_providers", lambda settings: (Transcriber(), Summarizer()))
     result = draft(client, context["context_id"])
@@ -261,6 +422,9 @@ def test_source_copy_provisional_review_and_confirmed_save(monkeypatch):
     assert candidate["uncertainties"] == []
     assert candidate["follow_up"] == []
     assert body["suggested_next_checks"][0]["text"] == "Έλεγχος ανοχής της αναφερόμενης θεραπείας."
+    assert body["contextual_considerations_status"] == "complete"
+    assert body["contextual_clinical_considerations"][0]["source_ids"] == [1, 2]
+    assert body["contextual_clinical_considerations"][0]["text"] not in str(candidate)
     assert {item["hint"] for item in body["review_units"]} >= {"finding", "therapy", "preference_undecided"}
     payload = {"context_id": context["context_id"], "candidate": candidate}
     preview = client.post("/clinical/visit-capture/preview", headers=HEADERS, json=payload)
@@ -423,6 +587,9 @@ def test_browser_web_audio_review_and_confirmed_save(setup, monkeypatch):
         async def classify(self, batch, identity):
             return labels(batch)
 
+        async def consider(self, facts):
+            return one_consideration(facts)
+
     monkeypatch.setattr(audio, "make_providers", lambda settings: (Transcriber(), Summarizer()))
     sock = socket.socket()
     sock.bind(("127.0.0.1", 0))
@@ -432,7 +599,9 @@ def test_browser_web_audio_review_and_confirmed_save(setup, monkeypatch):
     thread.start()
     try:
         with sync_playwright() as playwright:
-            browser = playwright.chromium.launch(executable_path=shutil.which("google-chrome") or shutil.which("chromium"))
+            browser = playwright.chromium.launch(executable_path=(
+                shutil.which("google-chrome") or shutil.which("chromium")
+                or "/Applications/Dia.app/Contents/MacOS/Dia"))
             page = browser.new_page(viewport={"width": 1280, "height": 950}, timezone_id="Asia/Nicosia")
             errors = []
             save_payloads = []
@@ -507,6 +676,13 @@ def test_browser_web_audio_review_and_confirmed_save(setup, monkeypatch):
             suggestions = page.locator("#captureReview .capture-audio-suggestions")
             expect(suggestions.locator("textarea")).to_have_value("Έλεγχος ανοχής της αναφερόμενης θεραπείας.")
             expect(suggestions.locator("details")).not_to_have_attribute("open", "")
+            ai_considerations = page.locator("#captureReview .capture-ai-considerations")
+            expect(ai_considerations).to_contain_text("Κλινικές σκέψεις AI από τα συμφραζόμενα")
+            expect(ai_considerations).to_contain_text("δεν ειπώθηκαν στην επίσκεψη")
+            expect(ai_considerations).to_contain_text("συνολική επανεκτίμηση του καταγματικού κινδύνου")
+            expect(ai_considerations).to_contain_text("Βεβαιότητα AI: Μέτρια")
+            expect(ai_considerations.locator("details")).not_to_have_attribute("open", "")
+            expect(ai_considerations.locator("button")).to_have_count(0)
             expect(page.locator("#captureReview section[data-field=follow_up]")).to_have_count(0)
             suggestions.get_by_role("button", name="Προσθήκη στο πλάνο", exact=True).click()
             expect(page.locator("#captureReview .capture-audio-suggestions")).to_have_count(0)
@@ -530,6 +706,7 @@ def test_browser_web_audio_review_and_confirmed_save(setup, monkeypatch):
             expect(page.locator("#patientChart")).to_contain_text("DEXA T-score -2.6")
             assert save_payloads[-1]["candidate"]["follow_up"][0]["text"] == "Έλεγχος ανοχής της αναφερόμενης θεραπείας."
             assert "clinician_edit" in save_payloads[-1]["candidate"]["follow_up"][0]["provenance"]
+            assert "συνολική επανεκτίμηση του καταγματικού κινδύνου" not in str(save_payloads[-1])
             assert not errors, errors
             assert len(transcribed) == 1  # withdrawn recording never reaches the provider
             browser.close()
