@@ -30,12 +30,13 @@ with sync_playwright() as pw:
     page=browser.new_page(viewport={"width":1280,"height":1000})
     writes=[]
     page.on("request",lambda r:writes.append(r.url) if r.method=="POST" and "/clinical/" in r.url and not r.url.endswith("/login") else None)
-    page.goto("https://ortho-reception-backend.onrender.com/static/cockpit/index.html?chart=cockpit-cp1-test")
+    page.goto("https://ortho-reception-backend.onrender.com/static/cockpit/index.html")
     page.locator("#ceGlobalKey").click()
     page.locator("#ceGlobalKeyInput").fill(os.environ["CLINICAL_DATA_KEY"])
     page.locator("#ceGlobalLoginForm button[type=submit]").click()
     expect(page.locator("#ceGlobalAuthStatus")).to_contain_text("Συνδέθηκες")
     page.keyboard.press("Escape")
+    page.goto("https://ortho-reception-backend.onrender.com/static/cockpit/index.html?chart=cockpit-cp1-test")
     card=page.locator(".patient-chart-overview .patient-chart-card").first
     expect(card).to_be_visible()
     for field in ("history","findings","recommendations"):
