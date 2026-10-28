@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — web audio semantic completeness and next-visit suggestions
 
-> **STATUS (2026-10-28): CI MANUAL-LABEL ISOLATION CORRECTION / CLOSURE HOLD.** Corrected clinical semantics passed R2, but PR #245 Chromium proved audio-specific wording had leaked into shared manual/amendment labels. The bounded delta restores shared labels, scopes enhanced wording to compact audio only, and corrects the new Save-payload oracle. One focused independent closure and fresh exact-head CI are required. The prior native recording/ASR qualification remains deferred at `cockpit/archive/SLICE_PLAN_NATIVE_AUDIO_ASR_QUALIFICATION_DEFERRED_2026-10-28.md`.
+> **STATUS (2026-10-28): CI CORRECTION CLOSURE PASS / FRESH EXACT-HEAD CI.** PR #245 Chromium label-isolation correction `17917443` passed independent focused closure 0:0:0. Shared manual/amendment behavior is restored; enhanced labels remain audio-only and Save-payload adoption is directly asserted. Publish the new checkpoint head and require all fresh checks. The prior native recording/ASR qualification remains deferred at `cockpit/archive/SLICE_PLAN_NATIVE_AUDIO_ASR_QUALIFICATION_DEFERRED_2026-10-28.md`.
 
 ## Objective
 
