@@ -86,3 +86,9 @@ Validation is fail closed:
 ## Review and release
 
 R2: this changes clinical semantics, permits bounded model-generated suggestions and can create source-backed pending obligations. One independent pre-code review and one independent exact-code fidelity review are mandatory. Synthetic data only. Exact-head CI and guarded Render/no-PHI smoke precede Product Owner fictional acceptance; no agent recording/provider request/clinical write.
+
+## Release closure
+
+Independent corrected pre-code and post-code reviews passed with P0:P1:P2 = 0:0:0. PR #245 final head passed all 16 checks, including both complete Visit Capture Chromium jobs, and squash-merged as `d4e66a0147771834e27b1f6d1639ecaae1909f8e`.
+
+Render auto-deploy `dep-dbgt23ijnfac739m9ipg` reached LIVE at 10:42:36Z on the exact merge. The three affected served assets matched merged source, five anonymous protected-route probes returned 401, and the release window had no app ERROR or HTTP 5xx. No agent recording, provider request or clinical write was used. Product Owner acceptance remains one fictional recording without Save.
