@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — contextual AI clinical considerations from visit audio
 
-> **STATUS (2026-10-28): POST-CODE P1-02 CONTRACT CORRECTED / CLOSURE HOLD.** Closure at `6d6d2f4` confirmed the deadline finding closed, then found an inaccurate privacy claim: the second call omits a separate identity object and the complete transcript, but its validated verbatim excerpts can themselves contain identifiers. The existing standard-retention notice already tells the clinician that the transcript and selected-chart name/DOB go to OpenAI; the contract and provider oracle now state the narrower second-pass payload truth explicitly. Runtime behavior is unchanged. Local affected verification remains green: 35 tests, Python compile, JavaScript syntax and diff hygiene pass. Focused independent closure remains mandatory before PR/release.
+> **STATUS (2026-10-28): POST-CODE R2 PASS / PR NEXT.** Independent correction closure on exact code/design/test `98033f3a` returned PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2=0:0:0. The deadline-reserve and exact second-pass privacy-contract findings are closed; affected-cumulative display-only, candidate/Save separation, whole-visit evidence and failure behavior passed. Local author evidence remains 35 tests including Chromium, Python compile, JavaScript syntax and diff hygiene. Next is one canonical-impact PR and exact-head CI; merge/release remain separate gates.
 
 ## Objective
 
