@@ -16,7 +16,8 @@ from sqlalchemy.orm import Session
 import clinical_visit_audio as audio
 from clinical_data import PatientORM, VisitCaptureContextORM
 from test_cockpit_synthetic_161 import setup
-from test_visit_capture import HEADERS, _client_with_engine, _context, _patient
+from test_visit_capture import (HEADERS, _client_with_engine as _base_client_with_engine,
+                                _context, _patient)
 
 
 WEBM = b"\x1aE\xdf\xa3" + b"\x00" * 128
@@ -25,6 +26,14 @@ TRANSCRIPT = (
     "Ξεκινά alendronate 70 mg εβδομαδιαίως. "
     "Η ασθενής προτιμά να περιμένει."
 )
+
+
+def _client_with_engine(monkeypatch):
+    """Install the recovery table explicitly only in the synthetic SQLite DB."""
+
+    client, engine = _base_client_with_engine(monkeypatch)
+    audio.VisitAudioRecoveryBase.metadata.create_all(bind=engine)
+    return client, engine
 
 
 def enabled(monkeypatch):
@@ -1068,7 +1077,8 @@ def test_browser_web_audio_review_and_confirmed_save(setup, monkeypatch):
     from test_cockpit_synthetic_161 import KEY
 
     enabled(monkeypatch)
-    app, _ = setup
+    app, engine = setup
+    audio.VisitAudioRecoveryBase.metadata.create_all(bind=engine)
     transcribed = []
     classifications = []
 
