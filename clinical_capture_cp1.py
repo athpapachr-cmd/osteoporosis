@@ -98,7 +98,7 @@ def attach_cp1(router, engine, protected, context_for, ensure_patient):
             candidate = prepared_candidate(req.text, req.encounter_date.isoformat())
             _validate_visit_capture_candidate(candidate)
         except Exception:
-            raise HTTPException(422, 'Έλεγξε την ημερομηνία και το κείμενο: έως 30.000 χαρακτήρες και 60 υποχρεώσεις, έως 1.000 χαρακτήρες η καθεμία. Το κείμενο διατηρήθηκε.') from None
+            raise HTTPException(422, 'Έλεγξε την ημερομηνία και το κείμενο: έως 30.000 χαρακτήρες και 60 υποχρεώσεις, έως 1.000 χαρακτήρες η καθεμία. Βάλε τις απλές επικεφαλίδες χωρίς εσοχή και τις προϋποθέσεις στην ίδια γραμμή με την ενέργεια. Το κείμενο διατηρήθηκε.') from None
         response.headers['Cache-Control'] = 'no-store'
         with Session(engine) as db:
             context = context_for(db, req.context_id)

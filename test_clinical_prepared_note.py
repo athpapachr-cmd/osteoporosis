@@ -40,7 +40,7 @@ T-score −2,8 στην οσφυϊκή μοίρα και −2,3 στον αυχ�
 Ολόκληρο το άγνωστο περιεχόμενο: χωρίς περικοπή.
 Απρόβλεπτη ενότητα:
 Και η επανάληψη παραμένει. <script>alert("text only")</script>
-Προτάσεις AI για επανέλεγχο — δεν αποτελούν αποφάσεις:
+  ## Προτάσεις AI για επανέλεγχο — δεν αποτελούν αποφάσεις:
 - [ ] Ενδεικτική σκέψη AI: να διευκρινιστούν τυχόν νέες πτώσεις.
 '''
 
@@ -105,6 +105,20 @@ def test_unknown_markdown_inline_repeated_sections_and_multiline_tasks():
     assert note_tasks('Πλάνο:\n- [ ] Δεν ενεργοποιείται εδώ.\nΥποχρεώσεις:\nΚαμία.\n- [x] Έγινε.') == []
 
 
+@pytest.mark.parametrize('title', ['  ## Προτάσεις AI για επανέλεγχο — δεν αποτελούν αποφάσεις:',
+                                  '  **Προτάσεις AI:**', '  Προτάσεις AI:'])
+def test_indented_ai_heading_never_opens_an_obligation(setup, title):
+    text = 'Υποχρεώσεις:\n- [ ] Ακτινογραφία\n'+title+'\n- [ ] Έλεγχος νέων πτώσεων'
+    assert note_tasks(text) == [('Ακτινογραφία', '- [ ] Ακτινογραφία')]
+    app, _ = setup; c = login(app); c.post('/clinical/visit-capture/test-patient')
+    r = c.post('/clinical/visit-capture/import', json={'context_id': ctx(c), 'text': text, 'encounter_date': '2026-10-28'})
+    assert r.status_code == 200
+    assert len(r.json()['candidate']['pending']) == 1
+    assert r.json()['candidate']['prepared_note']['text'] == text
+    with pytest.raises(ValueError):
+        note_tasks('Υποχρεώσεις:\n- [ ] Ενέργεια\n  Μόνο μετά: απαραίτητη προϋπόθεση')
+
+
 def test_browser_direct_paste_one_save_full_chart_prompt_edit_and_mode_race(setup, monkeypatch, tmp_path):
     import socket, threading, shutil
     import uvicorn
@@ -145,6 +159,9 @@ def test_browser_direct_paste_one_save_full_chart_prompt_edit_and_mode_race(setu
                 expect(page.locator('#captureAudioSummary')).to_contain_text('Κάταγμα ΠΧΚ πριν δύο χρόνια')
                 expect(page.locator('#captureSave')).to_be_visible()
                 expect(page.locator('#captureStatus')).to_contain_text('Δεν έγινε κλήση AI')
+                with Session(engine) as db:
+                    # The indented AI heading remains visible but creates no task.
+                    assert 'Έλεγχος νέων πτώσεων' not in [p.description for p in db.scalars(select(ClinicalPendingORM))]
                 assert not any('/visit-capture/extract' in u or '/audio/draft' in u for u in calls)
                 assert page.locator('#captureAudioSummary script').count() == 0
                 with Session(engine) as db:
@@ -156,6 +173,7 @@ def test_browser_direct_paste_one_save_full_chart_prompt_edit_and_mode_race(setu
                 expect(page.locator('#patientChart')).to_contain_text('μετά από εκτίμηση από οδοντίατρο')
                 with Session(engine) as db:
                     assert db.scalar(select(func.count()).select_from(EncounterORM)) == before+1
+                    assert len(list(db.scalars(select(ClinicalPendingORM).where(ClinicalPendingORM.source_encounter_id == db.scalar(select(EncounterORM).order_by(EncounterORM.created_at.desc())).id)))) == 1
                 page.reload(); expect(page.locator('#captureOpen')).to_be_visible()
                 expect(page.locator('#patientChart')).to_contain_text('Και η επανάληψη παραμένει')
                 page.locator('#patientChart').get_by_role('button', name='Αντιγραφή πλήρους σημείωσης').first.click()

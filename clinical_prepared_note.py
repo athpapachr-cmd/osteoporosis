@@ -65,14 +65,17 @@ def note_tasks(text):
             current.clear()
 
     for line in text.splitlines(keepends=True):
-        if current and line[:1] in {' ', '\t'} and not re.match(r'^\s*[-*]\s+\[[ xX]\]', line):
-            # Indented conditions/owners remain part of the action.
-            current.append(line)
-            continue
         found = heading(line)
         if found:
+            key = heading_key(found[0])
+            if (current and line[:1] in {' ', '\t'}
+                    and not re.match(r'^\s*(?:#{1,6}\s|\*\*|__)', line)
+                    and not key.startswith(('προτασεις ai', 'ai suggestions'))):
+                # A plain indented label may be a condition or a new section.
+                # Refuse ambiguity rather than detach conditions or create tasks.
+                raise ValueError('ambiguous_task_heading')
             flush()
-            active = heading_key(found[0]) == 'υποχρεωσεις'
+            active = key == 'υποχρεωσεις'
             # Inline prose remains note content; only standalone checkbox rows act.
             continue
         if not active:
