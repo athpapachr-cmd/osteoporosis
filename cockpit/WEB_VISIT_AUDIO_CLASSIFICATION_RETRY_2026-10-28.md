@@ -1,6 +1,6 @@
 # Web Visit Audio — bounded classification retry correction
 
-> **Implementation checkpoint:** Pre-code R2 PASS 0:0:0 on `f028e210`; bounded runtime and three focused retry/identity/log regressions implemented. Local affected suite: 38 PASS including Chromium. Exact-code R2 is pending; PR #247 remains unmerged and no provider replay occurred.
+> **Implementation checkpoint:** Pre-code R2 passed 0:0:0. First post-code review of `f60c0d12` found unresolved identity plus malformed facts could enter retry; corrected code snapshots first identity state and forbids retry for `conflict|uncertain`. Five focused retry/identity/log regressions and 40 affected tests including Chromium pass. Focused closure is pending; PR #247 remains unmerged.
 
 ## Observed production failure
 

@@ -407,12 +407,15 @@ def classification_validation_code(error: BaseException) -> str | None:
 async def checked_batch_analysis(summarizer: SummarizerProvider, batch: list[tuple[int, str]],
                                  identity: dict[str, str]) -> tuple[
                                      str, list[dict[str, Any]], list[dict[str, Any]], list[int]]:
+    first_result = await summarizer.classify(batch, identity)
+    identity_unresolved = (isinstance(first_result, dict)
+                           and first_result.get("identity_state") in ("uncertain", "conflict"))
     try:
-        return checked_analysis(await summarizer.classify(batch, identity), batch)
+        return checked_analysis(first_result, batch)
     except ValueError as first_error:
         code = classification_validation_code(first_error)
         retry = getattr(summarizer, "classify_retry", None)
-        if code is None or not callable(retry):
+        if identity_unresolved or code is None or not callable(retry):
             raise
         return checked_analysis(await retry(batch, identity, code), batch)
 

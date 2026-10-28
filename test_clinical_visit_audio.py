@@ -403,6 +403,31 @@ def test_identity_conflict_is_not_retried(monkeypatch):
     assert retried == []
 
 
+@pytest.mark.parametrize("identity_state", ["conflict", "uncertain"])
+def test_unresolved_identity_with_structural_error_is_not_retried(monkeypatch, identity_state):
+    enabled(monkeypatch)
+    client, _ = _client_with_engine(monkeypatch)
+    _patient(client, "SYN-WEB")
+    context = _context(client, "SYN-WEB")
+    retried = []
+
+    class Transcriber:
+        async def transcribe(self, file, mime):
+            return TRANSCRIPT
+
+    class Summarizer:
+        async def classify(self, batch, identity):
+            return labels(batch, identity=identity_state, bad_id=999)
+
+        async def classify_retry(self, batch, identity, validation_code):
+            retried.append(validation_code)
+            return labels(batch)
+
+    monkeypatch.setattr(audio, "make_providers", lambda settings: (Transcriber(), Summarizer()))
+    assert draft(client, context["context_id"]).status_code == 502
+    assert retried == []
+
+
 def test_whole_visit_contextual_pass_combines_different_batches(monkeypatch):
     enabled(monkeypatch)
     client, _ = _client_with_engine(monkeypatch)

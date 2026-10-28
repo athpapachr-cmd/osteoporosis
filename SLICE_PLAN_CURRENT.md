@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — contextual AI clinical considerations from visit audio
 
-> **STATUS (2026-10-28): CLASSIFICATION RETRY IMPLEMENTED / POST-CODE R2 HOLD.** Pre-code R2 on `f028e210` passed 0:0:0. The runtime now performs exactly one same-batch corrective request only after an allowlisted structural validator failure, inside `core_deadline`; identity conflict/uncertainty and provider/cancellation failures do not retry. Final failure logs only the fixed validation code. Local affected evidence is 38 tests including Chromium plus compile/JS/diff checks. Independent exact-code closure is next; PR #247 remains unmerged.
+> **STATUS (2026-10-28): POST-CODE IDENTITY P1 CORRECTED / CLOSURE HOLD.** Review of `f60c0d12` found that a first `conflict|uncertain` response with malformed facts could reach structural retry. The correction snapshots the first parsed identity state before validation and forbids retry whenever it is unresolved, regardless of other errors. Conflict and uncertain plus invalid-fact route tests now prove one call/502. Local affected evidence is 40 tests including Chromium plus syntax/diff checks. Focused independent closure is next; PR #247 remains unmerged.
 
 ## Objective
 
