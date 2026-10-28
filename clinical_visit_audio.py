@@ -20,9 +20,9 @@ import httpx
 from fastapi import HTTPException, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import Column, DateTime, String, delete, update
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import DeclarativeBase, Session
 
-from clinical_data import (ClinicalBase, VisitCaptureCandidateV1, _validate_visit_capture_candidate,
+from clinical_data import (VisitCaptureCandidateV1, _validate_visit_capture_candidate,
                            _render_visit_capture)
 
 MAX_AUDIO_BYTES = 23 * 1024 * 1024  # 24,117,248 bytes, below OpenAI's 25 MB limit.
@@ -98,7 +98,11 @@ RETRYABLE_PROCESSING_CODES = frozenset({
 logger = logging.getLogger(__name__)
 
 
-class VisitAudioRecoveryORM(ClinicalBase):
+class VisitAudioRecoveryBase(DeclarativeBase):
+    """Separate metadata: production DDL belongs only to the reviewed migration."""
+
+
+class VisitAudioRecoveryORM(VisitAudioRecoveryBase):
     """Ephemeral capability state only; never audio, transcript or clinical content."""
 
     __tablename__ = "clinical_visit_audio_recovery"
@@ -786,7 +790,8 @@ async def process_transcript(transcript: str, encounter_date: str, identity: dic
 
 
 def attach_visit_audio(router, engine, protected, context_for, ensure_patient):
-    VisitAudioRecoveryORM.__table__.create(bind=engine, checkfirst=True)
+    # Production schema installation is owned by the one-time administrator
+    # migration. The restricted application role must never create tables.
 
     def activate_recovery(claims: dict[str, Any]) -> None:
         now = datetime.now(timezone.utc).replace(tzinfo=None)
