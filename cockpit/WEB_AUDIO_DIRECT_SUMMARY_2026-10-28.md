@@ -9,4 +9,3 @@ Transcript-only has no checkbox/Preview/Save. Enable paste after processing fini
 Clarify prompt: absent spoken name/DOB/identifier is consistent; generic age/sex/history do not identify another person or conflict with synthetic chart labels. Only explicit identifying contradiction or genuinely ambiguous named subjects cause conflict/uncertain. Never override those model verdicts.
 
 Evidence: browser Stop -> summary/no extra click/no automatic Save; optional editor; edit -> explicit Save previews latest bytes once; transcript-only paste works/no checkbox; stale results rejected; route identity/expiry checks preserved. Prompt request fixture covers demographic example. Actual model quality needs fictional provider qualification. No model/retention/schema change.
-

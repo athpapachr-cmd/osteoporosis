@@ -701,16 +701,16 @@
     if(busy||!patientId||input.value.trim().length<10||!visitDate.value)return;
     // Manual text is a separate draft owner. Invalidate audio callbacks while
     // keeping its recovery data until extraction actually succeeds.
-    if(!amendment){audioToken++;audioAbort?.abort();audioDraft=false;audioReview.hidden=true;audioSummary.hidden=true;review.hidden=false;}
+    if(!amendment){audioToken++;audioAbort?.abort();audioReview.hidden=true;audioSummary.hidden=true;review.hidden=false;}
     const ticket=generation,draftTicket=++draftGeneration;busy=true;extractButton.disabled=true;saveButton.hidden=true;review.replaceChildren();previews.replaceChildren();feedback.textContent='Προετοιμασία καταγραφής…';
     source=input.value;input.disabled=true;visitDate.disabled=true;
     try{const recovering=Boolean(audioTranscript||audioBlob);
       const context=await request('/visit-capture/context',{patient_id:patientId,client_session_id:recovering?session+'-manual-'+crypto.randomUUID():session});if(ticket!==generation||draftTicket!==draftGeneration)return;
       const result=await request('/visit-capture/extract',{context_id:context.context_id,text:source,encounter_date:visitDate.value});if(ticket!==generation||draftTicket!==draftGeneration)return;
-      contextId=context.context_id;candidate=result.candidate;if(!amendment)discardAudio();pendingBindings=new Map();bindClinician();
+      contextId=context.context_id;candidate=result.candidate;if(!amendment){audioDraft=false;discardAudio();}pendingBindings=new Map();bindClinician();
       drawReview();feedback.textContent=candidate.source_identity_state==='consistent'?'Διόρθωσε ό,τι χρειάζεται και αφαίρεσε όποια υποχρέωση δεν αποδέχεσαι.':'Η σύνοψη περιέχει ασυμφωνία ή αβεβαιότητα ταυτότητας. Διόρθωσε το αρχικό κείμενο και προετοίμασε ξανά.';
       saveButton.hidden=candidate.source_identity_state!=='consistent';saveButton.disabled=false;await preview();
-    }catch(e){if(ticket===generation&&draftTicket===draftGeneration){feedback.textContent=e.message;if(audioTranscript){audioReview.hidden=false;showAudioView('closed');updateAudioRescue();}}}
+    }catch(e){if(ticket===generation&&draftTicket===draftGeneration){feedback.textContent=e.message;if(audioTranscript){audioReview.hidden=false;if(audioDraft){drawReview();renderAudioFocused();audioSummary.hidden=false;saveButton.hidden=false;saveButton.disabled=false;feedback.textContent+=' Η προηγούμενη σύνοψη παραμένει διαθέσιμη.';}showAudioView('closed');updateAudioRescue();}}}
     finally{if(ticket===generation&&draftTicket===draftGeneration){busy=false;extractButton.disabled=false;input.disabled=false;visitDate.disabled=false;}}
   }
   async function refreshAudioContextIfNeeded(){
@@ -737,7 +737,7 @@
     if(audioDraft){audioPreviewed=explicitSaveAcceptance&&p.can_save?submitted:null;audioSummaryText.textContent=p.detail;audioSummary.hidden=false;}
     return p;
   }catch(e){if(ticket===generation&&draftTicket===draftGeneration)feedback.textContent=e.message;}}
-  input.oninput=()=>{draftGeneration++;if(amendment){saveButton.hidden=true;previews.replaceChildren();feedback.textContent='Πάτησε «Προετοιμασία καταγραφής» για να χρησιμοποιήσεις το νέο κείμενο.';return;}if(audioDraft){audioDraft=false;audioReviewUnits=[];audioSuggestions=[];audioSuggestionDraft='';audioConsiderations=[];audioConsiderationsStatus='complete';audioReview.hidden=true;audioPreviewed=null;}candidate=null;saveButton.hidden=true;review.replaceChildren();previews.replaceChildren();};visitDate.oninput=()=>{if(amendment){candidate.encounter_date=visitDate.value;previews.replaceChildren();}else input.oninput();};
+  input.oninput=()=>{draftGeneration++;if(amendment){saveButton.hidden=true;previews.replaceChildren();feedback.textContent='Πάτησε «Προετοιμασία καταγραφής» για να χρησιμοποιήσεις το νέο κείμενο.';return;}if(audioDraft){saveButton.hidden=true;audioPreviewed=null;previews.replaceChildren();feedback.textContent='Πάτησε «Προετοιμασία καταγραφής» για να χρησιμοποιήσεις το επικολλημένο κείμενο. Η προηγούμενη σύνοψη διατηρείται μέχρι να πετύχει.';return;}candidate=null;saveButton.hidden=true;review.replaceChildren();previews.replaceChildren();};visitDate.oninput=()=>{if(amendment){candidate.encounter_date=visitDate.value;previews.replaceChildren();}else input.oninput();};
   async function save(){if(amendment)return saveAmendment();if(busy||!candidate||!contextId)return;
     const ticket=generation,draftTicket=draftGeneration,id=patientId,submitted=JSON.stringify(candidate),wasAudio=audioDraft;
     const current=()=>ticket===generation&&draftTicket===draftGeneration&&id===patientId&&JSON.stringify(candidate)===submitted&&audioDraft===wasAudio;

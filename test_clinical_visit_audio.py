@@ -1219,6 +1219,15 @@ def test_browser_web_audio_review_and_confirmed_save(setup, monkeypatch):
             expect(page.locator("#captureAudioSummary")).to_be_visible()
             expect(page.locator("#captureAudioSummaryText")).to_contain_text("DEXA T-score -2.8")
             assert not save_payloads  # Stop/retry displays summary without a write.
+            page.route("**/clinical/visit-capture/extract", lambda route: route.fulfill(
+                status=502, json={"detail": "synthetic manual failure"}))
+            page.locator("#captureText").fill("Νέα χειροκίνητη σύνοψη που αποτυγχάνει προσωρινά.")
+            page.get_by_role("button", name="Προετοιμασία καταγραφής", exact=True).click()
+            expect(page.locator("#captureStatus")).to_contain_text("Η προηγούμενη σύνοψη παραμένει διαθέσιμη")
+            expect(page.locator("#captureAudioSummaryText")).to_contain_text("DEXA T-score -2.8")
+            expect(page.locator("#captureAudioSummary")).to_be_visible()
+            expect(page.locator("#captureSave")).to_be_enabled()
+            page.unroute("**/clinical/visit-capture/extract")
             page.locator("#captureAudioProcessedTab").click()
             expect(page.locator("#captureReview")).to_be_visible()
             expect(page.locator("#captureAudioIdentity")).to_have_count(0)
