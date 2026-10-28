@@ -23,3 +23,5 @@ Anonymous audio capability, audio draft, context, preview and save routes each r
 ## Handoff
 
 The protected confirmation guard is LIVE. The installed Clinical Cockpit Mac app still has native recording only on its synthetic page. The clinician's latest fictional test improved one previously missed anatomical term but still missed another and showed no observed macOS orange microphone indicator. Local model classification also failed a synthetic reason-for-visit distinction. These observations keep real-chart native recording and clinical-use qualification on HOLD. The next bounded work is native recording/ASR observability and model-quality qualification before implementing the real-chart bridge.
+
+Docs receipt [PR #243](https://github.com/athpapachr-cmd/osteoporosis/pull/243) passed all 9 exact-head checks and merged as `a8c9945d6c4d2afcebd67866b3c1a5d62b955046`. Render event `evt-dbgsf7p42hec7399gurg` recorded `commit_ignored` for this exact `[skip render]` commit at 09:59:59Z. The original code deploy remains LIVE; there was no second deploy.
