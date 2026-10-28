@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — no-loss web Visit Audio recovery
 
-> **STATUS (2026-10-28): MERGED / NATIVE RENDER DEPLOY FAILED / DIAGNOSIS NEXT.** PR #247 squash merge `ef4d633ab9796b5efe29932491133d02eab2361b` automatically created Render deploy `dep-dbh09nuq1p3s73bg835g`, which reached terminal `update_failed` at 2026-10-28T14:23:25Z. Prior deploy `dep-dbgvu2ui0phs73acact0` remains LIVE, so production traffic was preserved. No manual duplicate deploy. Release branch `codex/web-visit-audio-release` next inspects the failed build/deploy event and content-free logs, corrects only a source-proven cause, and requires fresh CI before any retry. No recording, provider request or clinical write.
+> **STATUS (2026-10-28): SOURCE-PROVEN PRODUCTION DDL BLOCKER / BOUNDED R2 CORRECTION.** Render event `evt-dbh0an8bfpgs73c67gog` proves build success then startup exit 1. App logs at 14:23:19Z prove `SQLSTATE 42501`: runtime attempted `CREATE TABLE clinical_visit_audio_recovery`, while the least-privilege `cockpit_app` role correctly lacks schema `CREATE`. Prior deploy remains LIVE. Release branch `codex/web-visit-audio-release` is now the bounded correction writer for removing startup DDL, adding one reviewed admin-owned empty-table migration with only SELECT/INSERT/DELETE and `UPDATE(state)`, synthetic startup/recovery and migration-contract tests, and checkpoints. No privilege widening, production SQL, retry deploy, recording, provider request or clinical write before exact-code R2 and CI.
 
 ## Objective
 
