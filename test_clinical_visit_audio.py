@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import io
 import logging
+import asyncio
+from dataclasses import replace
 from datetime import datetime, timezone
 
 import httpx
@@ -354,8 +356,7 @@ def test_whole_visit_contextual_pass_combines_different_batches(monkeypatch):
     assert body["contextual_clinical_considerations"][0]["text"] not in str(body["candidate"])
 
 
-@pytest.mark.parametrize("mode,expected", [("limit", "input_limit"), ("deadline", "unavailable")])
-def test_optional_contextual_failure_preserves_exact_source_candidate(monkeypatch, mode, expected):
+def test_contextual_input_limit_preserves_exact_source_candidate(monkeypatch):
     enabled(monkeypatch)
     client, _ = _client_with_engine(monkeypatch)
     _patient(client, "SYN-WEB")
@@ -375,17 +376,80 @@ def test_optional_contextual_failure_preserves_exact_source_candidate(monkeypatc
             return one_consideration(facts)
 
     monkeypatch.setattr(audio, "make_providers", lambda settings: (Transcriber(), Summarizer()))
-    if mode == "limit":
-        monkeypatch.setattr(audio, "MAX_CONTEXTUAL_FACT_BYTES", 1)
-    else:
-        monkeypatch.setattr(audio, "optional_timeout_budget", lambda *args: None)
+    monkeypatch.setattr(audio, "MAX_CONTEXTUAL_FACT_BYTES", 1)
     response = draft(client, context["context_id"])
     assert response.status_code == 200, response.text
     body = response.json()
     assert body["candidate"]["reason_for_visit"]["text"] == "Επανέλεγχος οστεοπόρωσης."
-    assert body["contextual_considerations_status"] == expected
+    assert body["contextual_considerations_status"] == "input_limit"
     assert body["contextual_clinical_considerations"] == []
     assert called == []
+
+
+def test_candidate_near_core_cutoff_survives_when_optional_budget_is_too_small(monkeypatch):
+    enabled(monkeypatch)
+    client, _ = _client_with_engine(monkeypatch)
+    _patient(client, "SYN-WEB")
+    context = _context(client, "SYN-WEB")
+    settings = replace(audio.AudioSettings.from_env(), pipeline_timeout=1.1, summarize_timeout=5)
+    monkeypatch.setattr(audio.AudioSettings, "from_env", classmethod(lambda cls: settings))
+    monkeypatch.setattr(audio, "FINALIZATION_RESERVE_SECONDS", 0.4)
+    considered = []
+
+    class Transcriber:
+        async def transcribe(self, file, mime):
+            await asyncio.sleep(0.5)
+            return TRANSCRIPT
+
+    class Summarizer:
+        async def classify(self, batch, identity):
+            return labels(batch)
+
+        async def consider(self, facts):
+            considered.append(True)
+            return one_consideration(facts)
+
+    monkeypatch.setattr(audio, "make_providers", lambda settings: (Transcriber(), Summarizer()))
+    response = draft(client, context["context_id"])
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["candidate"]["reason_for_visit"]["text"] == "Επανέλεγχος οστεοπόρωσης."
+    assert body["contextual_considerations_status"] == "unavailable"
+    assert body["contextual_clinical_considerations"] == []
+    assert considered == []
+
+
+def test_optional_contextual_timeout_preserves_timely_candidate(monkeypatch):
+    enabled(monkeypatch)
+    client, _ = _client_with_engine(monkeypatch)
+    _patient(client, "SYN-WEB")
+    context = _context(client, "SYN-WEB")
+    settings = replace(audio.AudioSettings.from_env(), pipeline_timeout=2.0, summarize_timeout=5)
+    monkeypatch.setattr(audio.AudioSettings, "from_env", classmethod(lambda cls: settings))
+    monkeypatch.setattr(audio, "FINALIZATION_RESERVE_SECONDS", 0.3)
+    considered = []
+
+    class Transcriber:
+        async def transcribe(self, file, mime):
+            return TRANSCRIPT
+
+    class Summarizer:
+        async def classify(self, batch, identity):
+            return labels(batch)
+
+        async def consider(self, facts):
+            considered.append(True)
+            await asyncio.sleep(3.0)
+            return one_consideration(facts)
+
+    monkeypatch.setattr(audio, "make_providers", lambda settings: (Transcriber(), Summarizer()))
+    response = draft(client, context["context_id"])
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["candidate"]["reason_for_visit"]["text"] == "Επανέλεγχος οστεοπόρωσης."
+    assert body["contextual_considerations_status"] == "unavailable"
+    assert body["contextual_clinical_considerations"] == []
+    assert considered == [True]
 
 
 def test_source_copy_provisional_review_and_confirmed_save(monkeypatch):

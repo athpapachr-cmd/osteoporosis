@@ -584,23 +584,24 @@ def attach_visit_audio(router, engine, protected, context_for, ensure_patient):
                     ensure_before_deadline(loop.time(), core_deadline)
                     candidate, review_units = build_candidate(units, facts, unclassified, encounter_date)
                     ensure_before_deadline(loop.time(), core_deadline)
-                merged_suggestions: list[dict[str, Any]] = []
-                seen_suggestions: set[str] = set()
-                for suggestion in suggestions:
-                    key = re.sub(r"\s+", " ", suggestion["text"]).strip().casefold()
-                    if key in seen_suggestions:
-                        continue
-                    seen_suggestions.add(key)
-                    merged_suggestions.append(suggestion)
-                    if len(merged_suggestions) == 6:
-                        break
-                with Session(engine) as db:
-                    if context_for(db, context_id).patient_id != patient_id:
-                        raise HTTPException(409, "Patient context changed")
+                    merged_suggestions: list[dict[str, Any]] = []
+                    seen_suggestions: set[str] = set()
+                    for suggestion in suggestions:
+                        key = re.sub(r"\s+", " ", suggestion["text"]).strip().casefold()
+                        if key in seen_suggestions:
+                            continue
+                        seen_suggestions.add(key)
+                        merged_suggestions.append(suggestion)
+                        if len(merged_suggestions) == 6:
+                            break
+                    evidence = contextual_evidence(facts)
+                    with Session(engine) as db:
+                        if context_for(db, context_id).patient_id != patient_id:
+                            raise HTTPException(409, "Patient context changed")
+                    ensure_before_deadline(loop.time(), core_deadline)
 
                 contextual_status = "complete"
                 contextual_considerations: list[dict[str, Any]] = []
-                evidence = contextual_evidence(facts)
                 if len(evidence) > MAX_CONTEXTUAL_FACT_BYTES:
                     contextual_status = "input_limit"
                 else:

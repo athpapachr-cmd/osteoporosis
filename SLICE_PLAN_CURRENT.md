@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — contextual AI clinical considerations from visit audio
 
-> **STATUS (2026-10-28): IMPLEMENTED / POST-CODE R2 HOLD.** The bounded backend, compact display-only UI, validation and synthetic/browser oracles are implemented. Local affected verification is green: 34 tests, Python compile, JavaScript syntax and diff hygiene pass. The contextual prose is absent from candidate and Save payloads, while cross-batch, input-limit and deadline-exhaustion paths preserve the exact-source draft. One independent exact-code post-code R2 remains mandatory before PR/release.
+> **STATUS (2026-10-28): POST-CODE P1 CORRECTED / CLOSURE HOLD.** Exact-code review of `e593052e` blocked 0:1:0 because suggestion merging and a patient-context DB read still sat outside the earlier core cutoff and could consume the five-second finalization reserve. The correction now completes merging, bounded evidence serialization and that DB check inside `core_deadline`, followed by an explicit clock guard; only then can optional reasoning start. Route-level near-cutoff skip and actual optional-timeout tests both return the exact-source candidate with visible `unavailable`. Local affected verification is green: 35 tests, Python compile, JavaScript syntax and diff hygiene pass. Focused independent closure remains mandatory before PR/release.
 
 ## Objective
 
@@ -64,4 +64,4 @@ R2: free model-authored clinical reasoning is visible to the clinician even thou
 - Server validation enforces shape, category/confidence enums, length/control bounds and global validated source IDs. Optional failure returns only `complete | input_limit | unavailable` plus a bounded list and never mutates the exact-source candidate.
 - The compact browser renders a visibly separate block with category, confidence, a closed rationale disclosure and no adoption control. Its warning states that the content is inferred, may be wrong, was not spoken, is not guideline verification and is never saved automatically.
 - Synthetic route tests cover facts across the 8KB batch boundary, invalid citations/shapes, the 60KB no-truncation gate and optional deadline exhaustion. The browser oracle proves one final confirmation remains and the AI prose is absent from the Save request.
-- Local affected result: `34 passed`; Python compile, JavaScript syntax and `git diff --check` pass. No provider request, real audio or clinical write occurred.
+- Local affected result after the deadline correction: `35 passed`; Python compile, JavaScript syntax and `git diff --check` pass. No provider request, real audio or clinical write occurred.

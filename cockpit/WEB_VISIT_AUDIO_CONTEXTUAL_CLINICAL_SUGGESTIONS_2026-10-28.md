@@ -1,6 +1,6 @@
 # Web Visit Audio — contextual AI clinical considerations
 
-> **Implementation checkpoint (2026-10-28): POST-CODE R2 HOLD.** The frozen whole-visit/display-only contract is implemented with 34 affected tests passing, including actual Chromium via Dia. Provider prose remains outside candidate/Preview/Save; exact-code independent review is next. No provider request, real audio or clinical write occurred.
+> **Implementation checkpoint (2026-10-28): POST-CODE P1 CORRECTED / CLOSURE HOLD.** Review of `e593052e` found post-candidate merge/context work could consume the five-second reserve. The corrected candidate keeps merging, evidence serialization and the pre-optional patient-context read under `core_deadline`; route tests now exercise both near-cutoff optional skip and an actual optional timeout. All 35 affected tests pass, including Chromium via Dia. Focused independent closure is next; no provider request, real audio or clinical write occurred.
 
 ## Product Owner checkpoint
 
