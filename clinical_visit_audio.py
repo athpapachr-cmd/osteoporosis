@@ -30,9 +30,38 @@ REVIEW_KINDS = {"therapy", "decision", "completed", "preference_accepted",
                 "preference_declined", "preference_undecided", "obligation_investigation",
                 "obligation_referral", "obligation_follow_up", "obligation_other", "uncertainty"}
 RISK_PATTERN = re.compile(r"\d|%|\b(?:mg|ml|δεξι\w*|αριστερ\w*|right|left|δεν|χωρίς|no|not|πιθαν\w*|possible)\b", re.I)
-UNSAFE_SUGGESTION_PATTERN = re.compile(
-    r"\b(?:έναρξ\w*|διακοπ\w*|αύξησ\w*|μείωσ\w*|χορήγησ\w*|συνταγογραφ\w*|"
-    r"start|stop|increase|decrease|prescribe|order)\b", re.I)
+SUGGESTION_KINDS = {
+    "symptom_course": {"symptom"},
+    "history_update": {"history"},
+    "finding_course": {"finding", "impression"},
+    "therapy_adherence": {"therapy"},
+    "therapy_tolerance": {"therapy"},
+    "planned_step_status": {"obligation_investigation", "obligation_referral",
+                            "obligation_follow_up", "obligation_other"},
+    "planned_result_review": {"obligation_investigation"},
+    "follow_up_status": {"follow_up"},
+    "safety_update": {"safety"},
+}
+SUGGESTION_TEXT = {
+    "symptom_course": ("Επανεκτίμηση της πορείας του αναφερόμενου συμπτώματος.",
+                       "Βασίζεται σε ρητή αναφορά συμπτώματος στην καταγραφή."),
+    "history_update": ("Έλεγχος για μεταβολή στο αναφερόμενο ιστορικό.",
+                       "Βασίζεται σε ρητή αναφορά ιστορικού στην καταγραφή."),
+    "finding_course": ("Επανεκτίμηση της πορείας του αναφερόμενου ευρήματος.",
+                       "Βασίζεται σε ρητό εύρημα ή κλινική εκτίμηση στην καταγραφή."),
+    "therapy_adherence": ("Έλεγχος αν η αναφερόμενη θεραπεία λαμβάνεται όπως συμφωνήθηκε.",
+                          "Βασίζεται σε ρητή αναφορά θεραπείας στην καταγραφή."),
+    "therapy_tolerance": ("Έλεγχος ανοχής της αναφερόμενης θεραπείας.",
+                          "Βασίζεται σε ρητή αναφορά θεραπείας στην καταγραφή."),
+    "planned_step_status": ("Έλεγχος αν ολοκληρώθηκε το ρητά αναφερόμενο επόμενο βήμα.",
+                            "Βασίζεται σε ρητή υποχρέωση ή επόμενο βήμα στην καταγραφή."),
+    "planned_result_review": ("Έλεγχος αν υπάρχει αποτέλεσμα για το ρητά αναφερόμενο επόμενο βήμα.",
+                              "Βασίζεται σε ρητά προγραμματισμένη διερεύνηση στην καταγραφή."),
+    "follow_up_status": ("Έλεγχος της πορείας στο ρητά αναφερόμενο διάστημα παρακολούθησης.",
+                         "Βασίζεται σε ρητή αναφορά παρακολούθησης στην καταγραφή."),
+    "safety_update": ("Έλεγχος για νέα συμβάματα σχετικά με τη ρητά αναφερόμενη οδηγία ασφάλειας.",
+                      "Βασίζεται σε ρητή οδηγία ασφάλειας στην καταγραφή."),
+}
 logger = logging.getLogger(__name__)
 
 
@@ -146,11 +175,9 @@ def _classification_schema() -> dict[str, Any]:
                            "kind": {"type": "string", "enum": list(FACT_KINDS)}},
             "required": ["source_id", "excerpt", "kind"]}
     suggestion = {"type": "object", "additionalProperties": False,
-                  "properties": {"text": {"type": "string", "minLength": 1, "maxLength": 240},
-                                 "rationale": {"type": "string", "minLength": 1, "maxLength": 360},
-                                 "source_ids": {"type": "array", "minItems": 1, "maxItems": 12,
-                                                "items": {"type": "integer"}}},
-                  "required": ["text", "rationale", "source_ids"]}
+                  "properties": {"intent": {"type": "string", "enum": list(SUGGESTION_KINDS)},
+                                 "source_id": {"type": "integer"}},
+                  "required": ["intent", "source_id"]}
     properties: dict[str, Any] = {
         "identity_state": {"type": "string", "enum": ["consistent", "uncertain", "conflict"]},
         "facts": {"type": "array", "maxItems": 160, "items": fact},
@@ -176,8 +203,11 @@ class OpenAISummarizer:
             "Do not infer negatives, diagnoses, completed acts, medication structure, dates, decisions or tasks from silence. "
             "An option is not a decision; a recommendation is not a final decision; a future plan is not completed. "
             "Use uncertainty for unclear explicit text and unclassified_ids only when no safe fact exists in that unit. "
-            "You may add up to six later-review questions/checks grounded in cited source IDs. These are suggestions, not facts. "
-            "They must not diagnose, assert new facts, or recommend starting/stopping/changing medication, tests or treatment. "
+            "You may select up to six typed later-review intents grounded in one compatible source ID each. "
+            "Return no suggestion prose. symptom_course requires symptom; history_update requires history; "
+            "finding_course requires finding or impression; therapy_adherence/therapy_tolerance require therapy; "
+            "planned_step_status requires an obligation; planned_result_review requires obligation_investigation; "
+            "follow_up_status requires follow_up; safety_update requires safety. Suggestions are not facts. "
             "If the transcript explicitly names a different patient or identity is ambiguous, "
             "set identity_state conflict or uncertain. Absence of a spoken identity is consistent. "
             "Return only IDs supplied in this batch."
@@ -288,19 +318,19 @@ def checked_analysis(result: dict[str, Any], batch: list[tuple[int, str]]) -> tu
     if not isinstance(suggestions, list) or len(suggestions) > 6:
         raise ValueError("classification_suggestions")
     checked_suggestions: list[dict[str, Any]] = []
+    kinds_by_source: dict[int, set[str]] = {}
+    for item in checked_facts:
+        kinds_by_source.setdefault(item["source_id"], set()).add(item["kind"])
     for item in suggestions:
-        if not isinstance(item, dict) or set(item) != {"text", "rationale", "source_ids"}:
+        if not isinstance(item, dict) or set(item) != {"intent", "source_id"}:
             raise ValueError("classification_suggestions")
-        text, rationale, source_ids = item["text"], item["rationale"], item["source_ids"]
-        if (not isinstance(text, str) or not isinstance(rationale, str)
-                or not 1 <= len(text.strip()) <= 240 or not 1 <= len(rationale.strip()) <= 360
-                or UNSAFE_SUGGESTION_PATTERN.search(text)
-                or not isinstance(source_ids, list) or not source_ids
-                or any(type(value) is not int or value not in allowed for value in source_ids)
-                or len(source_ids) != len(set(source_ids))):
+        intent, source_id = item["intent"], item["source_id"]
+        if (intent not in SUGGESTION_KINDS or type(source_id) is not int or source_id not in allowed
+                or not SUGGESTION_KINDS[intent].intersection(kinds_by_source.get(source_id, set()))):
             raise ValueError("classification_suggestions")
-        checked_suggestions.append({"text": text.strip(), "rationale": rationale.strip(),
-                                    "source_ids": source_ids})
+        text, rationale = SUGGESTION_TEXT[intent]
+        checked_suggestions.append({"intent": intent, "source_id": source_id,
+                                    "text": text, "rationale": rationale})
     return identity, checked_facts, checked_suggestions, unclassified
 
 
