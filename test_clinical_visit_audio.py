@@ -402,9 +402,29 @@ def test_browser_web_audio_review_and_confirmed_save(setup, monkeypatch):
             page.locator("#captureAudioStop").click()
             expect(page.locator("#captureAudioStatus")).to_contain_text("έτοιμο για έλεγχο", timeout=15000)
             expect(page.locator("#captureSave")).to_be_disabled()
-            expect(page.locator("#captureReview textarea").nth(1)).to_have_value("DEXA T-score -2.8 στο ισχίο.")
+            expect(page.locator("#captureReview .capture-audio-compact-section")).to_have_count(3)
+            expect(page.locator("#captureReview section[data-field=findings] textarea")).to_have_value("DEXA T-score -2.8 στο ισχίο.")
+            expect(page.locator("#captureReview section[data-field=uncertainties] textarea")).to_have_value(
+                "Συζητήθηκε alendronate 70 mg εβδομαδιαίως.\nΗ ασθενής προτιμά να περιμένει."
+            )
+            expect(page.locator("#captureReview section[data-field=medications]")).to_have_count(0)
+            expect(page.locator("#captureReview").get_by_role("button", name="Προσθήκη", exact=False)).to_have_count(0)
+            expect(page.locator("#captureReview").get_by_role("button", name="Αφαίρεση", exact=True)).to_have_count(0)
+            expect(page.get_by_role("button", name="Επιβεβαιώνω ότι ολοκληρώθηκε", exact=True)).to_have_count(0)
+            expect(page.get_by_role("button", name="Μεταφορά στη σωστή κλινική ενότητα", exact=True)).to_have_count(0)
+            attention = page.locator(".capture-audio-focused details")
+            expect(attention).not_to_have_attribute("open", "")
+            expect(attention.locator("summary")).to_contain_text("3 σημείων")
+            expect(attention.locator("li").first).not_to_be_visible()
+            assert page.locator("#captureAudioIdentity").count() == 1
             expect(page.locator("#captureAudioStatus")).not_to_contain_text(TRANSCRIPT)
             expect(page.locator("#captureAudioStatus")).to_contain_text("στον server")
+            finding = page.locator("#captureReview section[data-field=findings] textarea")
+            finding.fill("DEXA T-score -2.7 στο ισχίο.")
+            page.locator("#captureAudioIdentity").check()
+            finding.fill("DEXA T-score -2.6 στο ισχίο.")
+            expect(page.locator("#captureAudioIdentity")).not_to_be_checked()
+            expect(page.locator("#captureSave")).to_be_disabled()
             page.locator("#captureAudioIdentity").check()
             try:
                 expect(page.locator("#captureSave")).to_be_enabled()
@@ -412,7 +432,7 @@ def test_browser_web_audio_review_and_confirmed_save(setup, monkeypatch):
                 raise AssertionError(page.locator("#captureStatus").inner_text()) from exc
             page.locator("#captureSave").click()
             expect(page.locator("#captureComposer")).to_be_hidden(timeout=15000)
-            expect(page.locator("#patientChart")).to_contain_text("DEXA T-score -2.8")
+            expect(page.locator("#patientChart")).to_contain_text("DEXA T-score -2.6")
             assert not errors, errors
             assert len(transcribed) == 1  # withdrawn recording never reaches the provider
             browser.close()

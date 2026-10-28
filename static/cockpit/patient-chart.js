@@ -42,7 +42,7 @@
   const audioPatient=el(audioReview,'strong','');
   const audioConfirmLabel=el(audioReview,'label','');
   const audioConfirm=el(audioConfirmLabel,'input');audioConfirm.type='checkbox';audioConfirm.id='captureAudioIdentity';
-  audioConfirmLabel.append(document.createTextNode(' Επιβεβαιώνω ότι η ηχογράφηση ανήκει στον εμφανιζόμενο ασθενή και έλεγξα το κείμενο'));
+  audioConfirmLabel.append(document.createTextNode(' Έλεγξα τα παραπάνω και επιβεβαιώνω ότι η ηχογράφηση ανήκει στον εμφανιζόμενο ασθενή'));
   const audioFocused=el(audioReview,'div','','capture-audio-focused');
   const inputLabel=el(composer,'label','Σύνοψη επίσκεψης');
   const input=el(inputLabel,'textarea');input.id='captureText';input.rows=7;input.maxLength=30000;
@@ -339,7 +339,7 @@
       bindClinician();audioPatient.textContent=$('visitSelectedName').textContent;
       audioReview.hidden=false;audioConfirm.checked=false;drawReview();renderAudioFocused();
       saveButton.hidden=false;saveButton.disabled=true;audioStatus.textContent='Το κλινικό κείμενο είναι έτοιμο για έλεγχο. Το προσωρινό αντίγραφο ήχου στον server αφαιρέθηκε.';
-      feedback.textContent='Έλεγξε και διόρθωσε τις ενότητες. Οι κρίσιμες σημασίες παραμένουν προσωρινές μέχρι να τις επιβεβαιώσεις.';
+      feedback.textContent='Έλεγξε και διόρθωσε μόνο ό,τι χρειάζεται. Οι αμφίβολες φράσεις παραμένουν εμφανείς στις Αβεβαιότητες.';
     }catch(e){if(token===audioToken&&ticket===generation&&draftTicket===draftGeneration){audioStatus.textContent=e.name==='AbortError'?'Η επεξεργασία ακυρώθηκε.':e.message;}}
     finally{if(token===audioToken){busy=false;audioAbort=null;input.disabled=false;extractButton.disabled=false;visitDate.disabled=false;audioStart.disabled=!audioReady||!informed.checked||Boolean(candidate);}}
   }
@@ -498,41 +498,68 @@
     return fact;
   }
   function bindClinician(){if(!candidate.source_bindings.some(b=>b.source_ref==='clinician_edit'))candidate.source_bindings.push({source_ref:'clinician_edit',role:'clinician_edit'});}
-  function drawReview(){review.replaceChildren();fields(review,candidate);button(review,'Προεπισκόπηση καταγραφής',preview);}
+  const audioCompactKeys=['reason_for_visit','what_changed','history','findings','clinical_impression','options_discussed','recommendations','completed_actions','decisions','patient_preferences','follow_up','safety_net','administrative_notes','uncertainties'];
+  const audioMetadataKeys=new Set(['schema_version','source_identity_state','source_bindings','comparison_basis','encounter_date']);
+  function hasReviewContent(value){
+    if(value===null||value===undefined||value===''||value===false)return false;
+    if(Array.isArray(value))return value.some(hasReviewContent);
+    if(typeof value==='object')return Object.entries(value).some(([key,item])=>!['provenance','verification','certainty'].includes(key)&&hasReviewContent(item));
+    return true;
+  }
+  function markClinicianFact(fact){
+    if(!fact||typeof fact!=='object')return;
+    if(!Array.isArray(fact.provenance))fact.provenance=[];
+    if(!fact.provenance.includes('clinician_edit'))fact.provenance.push('clinician_edit');
+    if('verification'in fact)fact.verification='clinician_confirmed';
+  }
+  function syncAudioLines(key,value,raw){
+    const lines=raw.split('\n').map(line=>line.trim()).filter(Boolean),available=value.map(item=>({item,used:false}));
+    const next=lines.map((text,index)=>{
+      let match=available.find(entry=>!entry.used&&entry.item&&typeof entry.item==='object'&&entry.item.text===text);
+      if(match){match.used=true;return match.item;}
+      match=available[index]&&!available[index].used?available[index]:available.find(entry=>!entry.used);
+      let fact;
+      if(match&&match.item&&typeof match.item==='object'){match.used=true;fact={...match.item,provenance:[...(match.item.provenance||[])]};}
+      else fact=newField(key);
+      fact.text=text;markClinicianFact(fact);return fact;
+    });
+    value.splice(0,value.length,...next);edited();
+  }
+  function compactAudioFields(parent,obj){
+    const expected=new Set([...audioCompactKeys,...audioMetadataKeys,'coding','medications','pending','next_contact']);
+    const unsupported=Object.entries(obj).some(([key,value])=>!expected.has(key)&&hasReviewContent(value))||
+      ['coding','medications','pending','next_contact'].some(key=>hasReviewContent(obj[key]));
+    if(unsupported){fields(parent,obj);return;}
+    const intro=el(parent,'p','Μόνο οι ενότητες που περιέχουν κείμενο εμφανίζονται. Κάθε γραμμή είναι ένα στοιχείο· διόρθωσε ή αφαίρεσε μόνο ό,τι χρειάζεται.','clinical-muted');
+    intro.id='captureAudioCompactHelp';
+    for(const key of audioCompactKeys){
+      const value=obj[key];
+      if(key==='reason_for_visit'){
+        if(!value||!String(value.text||'').trim())continue;
+        const section=el(parent,'section','','capture-audio-compact-section');section.dataset.field=key;
+        el(section,'h4',labels[key]||key);const textarea=el(section,'textarea');textarea.value=value.text;textarea.rows=2;
+        textarea.setAttribute('aria-describedby',intro.id);textarea.oninput=()=>{value.text=textarea.value;markClinicianFact(value);edited();};
+        continue;
+      }
+      if(!Array.isArray(value)||!value.length)continue;
+      const section=el(parent,'section','','capture-audio-compact-section');section.dataset.field=key;
+      el(section,'h4',labels[key]||key);const textarea=el(section,'textarea');textarea.value=value.map(item=>item.text).join('\n');textarea.rows=Math.min(6,Math.max(2,value.length));
+      textarea.setAttribute('aria-describedby',intro.id);textarea.oninput=()=>syncAudioLines(key,value,textarea.value);
+    }
+  }
+  function drawReview(){
+    review.replaceChildren();
+    if(audioDraft){compactAudioFields(review,candidate);review.append(audioConfirmLabel);}else fields(review,candidate);
+    button(review,'Προεπισκόπηση καταγραφής',preview);
+  }
   function renderAudioFocused(){
     audioFocused.replaceChildren();
     if(!audioDraft)return;
-    const provisional=audioReviewUnits.filter(item=>['recommendation','decision','completed','preference'].includes(item.hint));
-    if(provisional.length)el(audioFocused,'p','Τα επόμενα αποσπάσματα παραμένουν στις αβεβαιότητες ώσπου να επιβεβαιώσεις τη σημασία τους.');
-    const types={therapy:'Θεραπεία',referral:'Παραπομπή',medication:'Αγωγή',investigation:'Εξέταση',advice:'Οδηγία',sick_leave:'Άδεια ασθενείας',admin:'Διοικητικό'};
-    for(const item of provisional){
-      const row=el(audioFocused,'div','','capture-audio-unit');el(row,'blockquote',item.text);
-      let choice=null;
-      if(item.hint==='decision'||item.hint==='recommendation'){
-        const label=el(row,'label','Είδος');choice=el(label,'select');
-        const empty=el(choice,'option','Επίλεξε…');empty.value='';
-        for(const [value,title] of Object.entries(types)){const option=el(choice,'option',title);option.value=value;}
-      }else if(item.hint==='preference'){
-        const label=el(row,'label','Προτίμηση ασθενούς');choice=el(label,'select');
-        const empty=el(choice,'option','Επίλεξε…');empty.value='';
-        for(const [value,title] of Object.entries({accepted:'Αποδέχθηκε',declined:'Αρνήθηκε',undecided:'Δεν αποφάσισε'})){const option=el(choice,'option',title);option.value=value;}
-      }
-      button(row,item.hint==='completed'?'Επιβεβαιώνω ότι ολοκληρώθηκε':'Μεταφορά στη σωστή κλινική ενότητα',()=>{
-        if(choice&&!choice.value){choice.focus();return;}
-        const index=candidate.uncertainties.findIndex(value=>value.text===item.text&&value.provenance.includes('web_visit_audio'));
-        if(index<0)return;
-        candidate.uncertainties.splice(index,1);
-        const fact={text:item.text,provenance:['web_visit_audio','clinician_edit'],verification:'clinician_confirmed',certainty:'certain'};
-        if(item.hint==='recommendation')candidate.recommendations.push({...fact,type:choice.value});
-        else if(item.hint==='decision')candidate.decisions.push({...fact,type:choice.value,responsible_role:null});
-        else if(item.hint==='preference')candidate.patient_preferences.push({...fact,status:choice.value});
-        else candidate.completed_actions.push(fact);
-        audioReviewUnits=audioReviewUnits.filter(value=>value.id!==item.id);edited();drawReview();renderAudioFocused();
-      });
-    }
-    const risk=audioReviewUnits.filter(item=>!['recommendation','decision','completed','preference'].includes(item.hint));
-    if(risk.length){const details=el(audioFocused,'details');el(details,'summary','Σημεία για προσεκτικό έλεγχο · '+risk.length);
-      for(const item of risk)el(details,'blockquote',item.text);}
+    const unique=[...new Map(audioReviewUnits.map(item=>[item.text,item])).values()];
+    if(!unique.length)return;
+    el(audioFocused,'p','Δεν χρειάζεται ξεχωριστή επιβεβαίωση για κάθε σημείο. Οι αμφίβολες φράσεις παραμένουν στις Αβεβαιότητες.','clinical-muted');
+    const details=el(audioFocused,'details');el(details,'summary','Προαιρετικός επανέλεγχος '+unique.length+' σημείων');
+    const list=el(details,'ul');for(const item of unique)el(list,'li',item.text);
   }
   function taskReview(){
     if(!amendment)return;
