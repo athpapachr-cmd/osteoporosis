@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — web audio semantic completeness and next-visit suggestions
 
-> **STATUS (2026-10-28): INHERITED TEST-WAIT CORRECTION / FRESH EXACT-HEAD CI.** PR #245 has one complete 50-test Visit Capture Chromium PASS; the duplicate failed an inherited deferred-DOB row race twice. The test-only correction explicitly awaits that row and changes no runtime. A new exact-head run remains required. The prior native recording/ASR qualification remains deferred at `cockpit/archive/SLICE_PLAN_NATIVE_AUDIO_ASR_QUALIFICATION_DEFERRED_2026-10-28.md`.
+> **STATUS (2026-10-28): LIVE / FICTIONAL PRODUCT-OWNER RECHECK NEXT.** PR #245 passed all 16 final-head checks, including both full Visit Capture Chromium jobs, and squash-merged as `d4e66a0147771834e27b1f6d1639ecaae1909f8e`. Render deploy `dep-dbgt23ijnfac739m9ipg` is LIVE on that exact merge; three served assets, five anonymous 401 probes and release-window ERROR/5xx logs passed without audio, provider or clinical-write activity. The correction is released. Next: one short Product Owner fictional recording without Save, checking clinical completeness and the separate bulk-adopt suggestion block. The prior native recording/ASR qualification remains deferred at `cockpit/archive/SLICE_PLAN_NATIVE_AUDIO_ASR_QUALIFICATION_DEFERRED_2026-10-28.md`.
 
 ## Objective
 
@@ -15,4 +15,4 @@ Preserve exact-source clinical truth while allowing multiple exact excerpts from
 
 ## Gates and next action
 
-R2 because classification semantics, pending obligations and generated suggestions change. Pre-code correction closure passed 0:0:0. Writer `codex/web-visit-semantic-completeness` owns only the bounded provider contract/builder/UI/tests and linked checkpoints. One independent post-code exact-head R2 is now required; then canonical-impact PR, exact-head CI with Chromium and guarded release only if all remain PASS. Native real-chart work remains deferred and no real patient audio/provider request/clinical write is authorized.
+Pre-code and corrected post-code independent R2 closures passed 0:0:0. PR #245 final-head CI passed 16/16, including both full Chromium jobs. The exact merge is LIVE and the no-PHI smoke passed. The implementation writer is released after this documentation-only receipt; native real-chart work remains deferred. Product Owner acceptance uses fictional data first and does not require Save.
