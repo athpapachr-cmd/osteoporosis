@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — no-loss web Visit Audio recovery
 
-> **STATUS (2026-10-28): PRE-CODE R2 SECOND P1 CORRECTION / CLOSURE HOLD.** The HMAC correction closed original P1-01, but closure found an ambiguity between spoken source-identity conflict and a changed server chart binding. Corrected design permits transcript-only/nonretryable recovery only for `source_identity_unresolved` while the live context remains valid. Any context expiry, patient/version change or binding mismatch returns sanitized 409 with no transcript/token; the browser retains only the original Blob for local recovery. Audio-route after-transcription/after-classification context-change oracles are required. Focused independent closure is next; PR #247 remains unmerged and runtime unchanged.
+> **STATUS (2026-10-28): PRE-CODE R2 PASS / IMPLEMENTATION NEXT.** Exact corrected design `c4d925e1` passed focused independent closure with `PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2=0:0:0`. The signed recovery binding closes cross-chart/date/transcript replay; source-identity conflict remains transcript-bearing/nonretryable only under a valid live chart, while context/patient drift returns no transcript/token. Branch writer may implement the frozen backend/browser/test seams. Exact-code R2, PR CI and release remain separate gates.
 
 ## Objective
 
