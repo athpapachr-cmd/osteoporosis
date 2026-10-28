@@ -2,9 +2,11 @@
 from __future__ import annotations
 
 import io
+import logging
 from datetime import datetime, timezone
 
 import httpx
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import update
 from sqlalchemy.orm import Session
@@ -124,6 +126,29 @@ def test_provider_multipart_and_private_responses_contract(monkeypatch):
     assert "tools" not in response_json
 
 
+def test_provider_rejection_retains_status_only(monkeypatch):
+    enabled(monkeypatch)
+    settings = audio.AudioSettings.from_env()
+
+    async def reject(request):
+        return httpx.Response(403, json={"error": {"message": "synthetic private provider text"}})
+
+    real = httpx.AsyncClient
+    monkeypatch.setattr(audio.httpx, "AsyncClient", lambda **kwargs: real(
+        transport=httpx.MockTransport(reject), **kwargs))
+
+    import asyncio
+    async def run():
+        with pytest.raises(audio.ProviderHTTPFailure) as transcription:
+            await audio.OpenAITranscriber(settings).transcribe(io.BytesIO(WEBM), "audio/webm")
+        with pytest.raises(audio.ProviderHTTPFailure) as classification:
+            await audio.OpenAISummarizer(settings).classify([(0, "Επανέλεγχος")], {})
+        for failure in (transcription.value, classification.value):
+            assert failure.status_code == 403
+            assert "synthetic private provider text" not in str(failure)
+    asyncio.run(run())
+
+
 def test_source_copy_provisional_review_and_confirmed_save(monkeypatch):
     enabled(monkeypatch)
     client, engine = _client_with_engine(monkeypatch)
@@ -201,7 +226,7 @@ def test_patient_change_and_malformed_classification_fail_closed(monkeypatch):
     assert TRANSCRIPT not in failed.text
 
 
-def test_temp_audio_closed_on_failed_provider_and_oversize(monkeypatch):
+def test_temp_audio_closed_on_failed_provider_and_oversize(monkeypatch, caplog):
     enabled(monkeypatch)
     client, _ = _client_with_engine(monkeypatch)
     _patient(client, "SYN-WEB")
@@ -218,12 +243,49 @@ def test_temp_audio_closed_on_failed_provider_and_oversize(monkeypatch):
         async def transcribe(self, file, mime):
             raise RuntimeError("secret patient words")
     monkeypatch.setattr(audio, "make_providers", lambda settings: (BrokenTranscriber(), None))
-    response = draft(client, context["context_id"])
+    with caplog.at_level(logging.WARNING, logger="clinical_visit_audio"):
+        response = draft(client, context["context_id"])
     assert response.status_code == 502 and "secret patient words" not in response.text
+    assert "stage=transcription kind=unexpected provider_http_status=None" in caplog.text
+    assert "secret patient words" not in caplog.text
     assert files and all(file.closed for file in files)
     monkeypatch.setattr(audio, "MAX_AUDIO_BYTES", 100)
     assert draft(client, context["context_id"]).status_code == 413
     assert all(file.closed for file in files)
+
+
+def test_private_failure_stage_and_http_status_without_clinical_content(monkeypatch, caplog):
+    enabled(monkeypatch)
+    client, _ = _client_with_engine(monkeypatch)
+    _patient(client, "SYN-WEB")
+    context = _context(client, "SYN-WEB")
+
+    class RejectedTranscriber:
+        async def transcribe(self, file, mime):
+            raise audio.ProviderHTTPFailure(403)
+
+    class StableTranscriber:
+        async def transcribe(self, file, mime):
+            return TRANSCRIPT
+
+    class RejectedSummarizer:
+        async def classify(self, batch, identity):
+            raise audio.ProviderHTTPFailure(429)
+
+    with caplog.at_level(logging.WARNING, logger="clinical_visit_audio"):
+        monkeypatch.setattr(audio, "make_providers", lambda settings: (RejectedTranscriber(), None))
+        response = draft(client, context["context_id"])
+        assert response.status_code == 502
+        assert response.json() == {"detail": "The recording could not be processed safely"}
+        assert "stage=transcription kind=provider_http provider_http_status=403" in caplog.text
+        assert TRANSCRIPT not in caplog.text and "SYN-WEB" not in caplog.text
+        caplog.clear()
+
+        monkeypatch.setattr(audio, "make_providers", lambda settings: (StableTranscriber(), RejectedSummarizer()))
+        response = draft(client, context["context_id"])
+        assert response.status_code == 502
+        assert "stage=classification kind=provider_http provider_http_status=429" in caplog.text
+        assert TRANSCRIPT not in caplog.text and "SYN-WEB" not in caplog.text
 
 
 def test_identity_refusal_and_missing_clinical_content_are_rejected(monkeypatch):

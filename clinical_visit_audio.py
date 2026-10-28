@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import os
 import re
 import tempfile
@@ -25,6 +26,15 @@ CATEGORIES = ("reason", "history", "finding", "impression", "option",
               "follow_up", "safety", "administrative", "uncertain", "unclassified")
 PROVISIONAL = {"recommendation", "decision", "completed", "preference"}
 RISK_PATTERN = re.compile(r"\d|%|\b(?:mg|ml|δεξι\w*|αριστερ\w*|right|left|δεν|χωρίς|no|not|πιθαν\w*|possible)\b", re.I)
+logger = logging.getLogger(__name__)
+
+
+class ProviderHTTPFailure(ValueError):
+    """Provider rejection metadata only; never retain response content."""
+
+    def __init__(self, status_code: int):
+        self.status_code = status_code
+        super().__init__("provider_http")
 
 
 @dataclass(frozen=True)
@@ -111,7 +121,9 @@ class OpenAITranscriber:
             response = await client.post("https://api.openai.com/v1/audio/transcriptions",
                 headers=provider_headers(settings),
                 data=fields, files={"file": (filename, audio, mime)})
-        if response.status_code != 200 or len(response.content) > 600_000:
+        if response.status_code != 200:
+            raise ProviderHTTPFailure(response.status_code)
+        if len(response.content) > 600_000:
             raise ValueError("transcription_unavailable")
         payload = response.json()
         text = payload.get("text") if isinstance(payload, dict) else None
@@ -155,7 +167,9 @@ class OpenAISummarizer:
                                 {"role": "user", "content": source}],
                       "text": {"format": {"type": "json_schema", "name": "visit_audio_units_v1",
                                           "strict": True, "schema": _classification_schema()}}})
-        if response.status_code != 200 or len(response.content) > 120_000:
+        if response.status_code != 200:
+            raise ProviderHTTPFailure(response.status_code)
+        if len(response.content) > 120_000:
             raise ValueError("classification_unavailable")
         payload = response.json()
         if not isinstance(payload, dict) or payload.get("status") != "completed":
@@ -294,6 +308,7 @@ def attach_visit_audio(router, engine, protected, context_for, ensure_patient):
             patient_id = context.patient_id
 
         audio = tempfile.TemporaryFile(mode="w+b")
+        stage = "pipeline"
         try:
             count = 0
             async for chunk in request.stream():
@@ -311,21 +326,26 @@ def attach_visit_audio(router, engine, protected, context_for, ensure_patient):
             audio.seek(0)
 
             async def work():
+                nonlocal stage
                 with Session(engine) as db:
                     if context_for(db, context_id).patient_id != patient_id:
                         raise HTTPException(409, "Patient context changed")
                 transcriber, summarizer = make_providers(AudioSettings.from_env())
+                stage = "transcription"
                 transcript = await transcriber.transcribe(audio, mime)
                 with Session(engine) as db:
                     if context_for(db, context_id).patient_id != patient_id:
                         raise HTTPException(409, "Patient context changed")
+                stage = "source_units"
                 units = source_units(transcript)
                 labels: dict[int, str] = {}
                 for batch in batches(units):
+                    stage = "classification"
                     state, batch_labels = checked_labels(await summarizer.classify(batch, identity), batch)
                     if state != "consistent":
                         raise ValueError("source_identity_unresolved")
                     labels.update(batch_labels)
+                stage = "candidate"
                 candidate, review_units = build_candidate(units, labels, encounter_date)
                 with Session(engine) as db:
                     if context_for(db, context_id).patient_id != patient_id:
@@ -351,7 +371,20 @@ def attach_visit_audio(router, engine, protected, context_for, ensure_patient):
             return result
         except HTTPException:
             raise
-        except (Exception, asyncio.CancelledError):
+        except (Exception, asyncio.CancelledError) as error:
+            if isinstance(error, ProviderHTTPFailure):
+                kind, provider_http_status = "provider_http", error.status_code
+            elif isinstance(error, (asyncio.TimeoutError, httpx.TimeoutException)):
+                kind, provider_http_status = "timeout", None
+            elif isinstance(error, httpx.RequestError):
+                kind, provider_http_status = "network", None
+            elif isinstance(error, ValueError):
+                kind = "disconnected" if str(error) == "client_disconnected" else "invalid_output"
+                provider_http_status = None
+            else:
+                kind, provider_http_status = "unexpected", None
+            logger.warning("visit_audio_draft_failure stage=%s kind=%s provider_http_status=%s",
+                           stage, kind, provider_http_status)
             raise HTTPException(502, "The recording could not be processed safely") from None
         finally:
             audio.close()
