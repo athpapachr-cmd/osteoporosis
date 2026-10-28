@@ -436,7 +436,7 @@ def test_bound_transcript_reprocess_skips_transcription_and_recovers(monkeypatch
     assert calls["transcribe"] == 1
 
 
-def test_reprocess_binding_rejects_substitution_and_allows_context_renewal(monkeypatch):
+def test_reprocess_binding_rejects_substitution_and_new_contexts(monkeypatch):
     enabled(monkeypatch)
     client, _ = _client_with_engine(monkeypatch)
     _patient(client, "SYN-A")
@@ -488,16 +488,48 @@ def test_reprocess_binding_rejects_substitution_and_allows_context_renewal(monke
         "client_session_id": session_id,
     })
     assert renewed.status_code == 200
-    summarizer.fail = False
-    recovered = reprocess(client, renewed.json()["context_id"], TRANSCRIPT, token)
-    assert recovered.status_code == 200, recovered.text
-    assert recovered.json()["processing_status"] == "complete"
+    before_renewed = len(provider_calls)
+    rejected = reprocess(client, renewed.json()["context_id"], TRANSCRIPT, token)
+    assert rejected.status_code == 409
+    assert "transcript" not in rejected.text and len(provider_calls) == before_renewed
+
+    fresh_same_patient = _context(client, "SYN-A", session_id)
+    before_fresh = len(provider_calls)
+    rejected = reprocess(client, fresh_same_patient["context_id"], TRANSCRIPT, token)
+    assert rejected.status_code == 409
+    assert "transcript" not in rejected.text and len(provider_calls) == before_fresh
 
     other = _context(client, "SYN-B", session_id)
     before_other = len(provider_calls)
     rejected = reprocess(client, other["context_id"], TRANSCRIPT, token)
     assert rejected.status_code == 409
     assert "transcript" not in rejected.text and len(provider_calls) == before_other
+
+
+def test_repeated_processing_failure_preserves_original_binding(monkeypatch):
+    enabled(monkeypatch)
+    client, _ = _client_with_engine(monkeypatch)
+    _patient(client, "SYN-WEB")
+    context = _context(client, "SYN-WEB")
+
+    class Transcriber:
+        async def transcribe(self, file, mime):
+            return TRANSCRIPT
+
+    class AlwaysInvalid:
+        async def classify(self, batch, identity):
+            return labels(batch, bad_id=999)
+
+        async def classify_retry(self, batch, identity, validation_code):
+            return labels(batch, bad_id=999)
+
+    monkeypatch.setattr(audio, "make_providers", lambda settings: (Transcriber(), AlwaysInvalid()))
+    partial = draft(client, context["context_id"]).json()
+    original_binding = partial["recovery_binding"]
+    retried = reprocess(client, context["context_id"], TRANSCRIPT, original_binding)
+    assert retried.status_code == 200, retried.text
+    assert retried.json()["processing_status"] == "transcript_only"
+    assert retried.json()["recovery_binding"] == original_binding
 
 
 def test_nonretryable_identity_binding_rejects_reprocess(monkeypatch):

@@ -267,6 +267,7 @@ def verify_recovery_binding(token: str, context: Any, encounter_date: str,
     if (payload["encounter_date"] != encounter_date
             or not hmac.compare_digest(str(payload["transcript_sha256"]),
                                        _transcript_digest(transcript))
+            or payload["original_context_id"] != context.id
             or payload["client_session_id"] != context.client_session_id
             or payload["patient_id"] != context.patient_id
             or payload["patient_updated_at"] != _patient_version(context.patient_updated_at)):
@@ -779,10 +780,12 @@ def attach_visit_audio(router, engine, protected, context_for, ensure_patient):
             return context, patient, identity
 
     def recovery_response(context_id: str, patient_id: str, encounter_date: str,
-                          transcript: str, failure: TranscriptProcessingFailure) -> dict[str, Any]:
+                          transcript: str, failure: TranscriptProcessingFailure,
+                          existing_binding: str | None = None) -> dict[str, Any]:
         context, _, _ = load_binding(context_id, patient_id)
         metadata, kind, validation_code = processing_failure(failure.stage, failure.error)
-        binding = issue_recovery_binding(context, encounter_date, transcript, metadata["retryable"])
+        binding = (existing_binding if existing_binding is not None else
+                   issue_recovery_binding(context, encounter_date, transcript, metadata["retryable"]))
         logger.warning(
             "visit_audio_processing_failure stage=%s kind=%s provider_http_status=%s validation_code=%s",
             metadata["stage"], kind, metadata["provider_http_status"], validation_code)
@@ -912,7 +915,7 @@ def attach_visit_audio(router, engine, protected, context_for, ensure_patient):
                     lambda: load_binding(req.context_id, patient_id), loop.time)
             except TranscriptProcessingFailure as failure:
                 return recovery_response(req.context_id, patient_id, encounter_date,
-                                         req.transcript, failure)
+                                         req.transcript, failure, req.recovery_binding)
             bound_context, _, _ = load_binding(req.context_id, patient_id)
             return {"processing_status": "complete", "context_id": bound_context.id,
                     "patient_id": patient_id, "transcript": req.transcript,

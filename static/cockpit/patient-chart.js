@@ -409,9 +409,6 @@
     if(!audioTranscript||!audioRecoveryBinding||audioProcessingFailure?.retryable!==true||busy||!patientId)return;
     const token=audioToken,ticket=generation,draftTicket=draftGeneration,id=patientId,usedDate=visitDate.value;busy=true;audioAbort=new AbortController();updateAudioRescue();audioStatus.textContent='Επανάληψη επεξεργασίας της διατηρημένης μεταγραφής…';
     try{
-      const renewed=await request('/visit-capture/context/renew',{prior_context_id:contextId,patient_id:id,client_session_id:session});
-      if(token!==audioToken||ticket!==generation||draftTicket!==draftGeneration||id!==patientId||renewed.patient_id!==id)throw Error('Η καρτέλα άλλαξε.');
-      contextId=renewed.context_id;audioContextExpiresAt=renewed.expires_at||'';
       const r=await fetch('/clinical/visit-capture/audio/reprocess',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json','X-Visit-Retention-Acknowledged':'standard'},body:JSON.stringify({context_id:contextId,encounter_date:usedDate,transcript:audioTranscript,recovery_binding:audioRecoveryBinding}),signal:audioAbort.signal});
       if(!r.ok){if(r.status===401)window.dispatchEvent(new Event('clinical:request-login'));const failure=Error(r.status===409?'Η ασφαλής σύνδεση της μεταγραφής με την καρτέλα έληξε. Ο ήχος παραμένει διαθέσιμος για τοπική αποθήκευση.':'Η επεξεργασία απέτυχε ξανά. Η μεταγραφή και ο ήχος παραμένουν σε αυτή τη σελίδα.');failure.status=r.status;throw failure;}
       const result=await r.json();if(token!==audioToken||ticket!==generation||draftTicket!==draftGeneration||id!==patientId||visitDate.value!==usedDate)return;acceptAudioResult(result,id,contextId,usedDate);

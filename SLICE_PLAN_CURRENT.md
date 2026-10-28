@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — no-loss web Visit Audio recovery
 
-> **STATUS (2026-10-28): IMPLEMENTED AND LOCALLY VERIFIED / EXACT-CODE R2 NEXT.** Exact corrected design `c4d925e1` passed focused pre-code review with `PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2=0:0:0`. The backend, browser recovery UI and synthetic failure/retry evidence are implemented; `test_clinical_visit_audio.py + test_visit_capture.py` pass `45 passed` and syntax/diff checks pass. Exact-code R2, PR exact-head CI and release remain separate gates.
+> **STATUS (2026-10-28): IMPLEMENTED AND LOCALLY VERIFIED / R2 CORRECTION READY FOR RE-REVIEW.** Exact corrected design `c4d925e1` passed focused pre-code review. Post-code R2 at `9cc5344c` found one P1: origin/expiry could slide across a same-patient context replacement. The correction now requires the exact original context, preserves the same token after repeated processing failure, and removes browser renewal before retry. `test_clinical_visit_audio.py + test_visit_capture.py` pass `46 passed`; syntax and diff checks pass. Exact-code R2 closure, PR exact-head CI and release remain separate gates.
 
 ## Objective
 
@@ -22,18 +22,18 @@ Prevent loss of a recorded visit when transcription succeeds but structured proc
 4. A protected reprocess route submits the retained transcript to the same classification/candidate pipeline without retranscribing.
 5. Browser keeps the original Blob only in memory until successful structuring or explicit discard; failure exposes retry and local audio download.
 6. UI has two explicit views: unverified transcript and processed clinical text. Transcript-only state cannot Preview or Save.
-7. Every reprocess requires a dedicated-secret signed binding for the original session/patient version/date/transcript digest; client values alone grant no authority.
+7. Every reprocess requires a dedicated-secret signed binding for the exact original context/patient version/date/transcript digest; client values alone grant no authority. Retry never renews or extends that binding.
 8. Identity conflict/uncertain remains transcript-recoverable but cannot be reprocessed.
 9. A server-side chart/context binding failure never returns transcript/token, even after successful transcription; browser Blob recovery remains available.
 
 ## Evidence questions
 
 - Does every post-transcription failure preserve the exact transcript without leaking content to logs or creating clinical authority?
-- Can the same protected context/date/transcript be reprocessed without transcription and transition to a valid candidate?
+- Can the exact protected context/date/transcript be reprocessed without transcription and transition to a valid candidate?
 - Are Blob/transcript lifecycles transient, chart-bound and cleared on discard/success as designed?
 - Are transcript and contextual inference absent from Preview/Save, with the existing single final confirmation preserved?
 - Do fixed logs distinguish the future validator/provider/timeout class without arbitrary exception text?
-- Does every cross-chart/date/transcript/token substitution fail before a provider call while a legitimate same-patient context renewal remains usable?
+- Does every context/date/transcript/token substitution fail before a provider call, including a fresh or renewed same-patient context?
 - Does context/patient drift after transcription or classification return no transcript/token to the invalid chart while preserving browser-held audio recovery?
 
 ## Review and release
