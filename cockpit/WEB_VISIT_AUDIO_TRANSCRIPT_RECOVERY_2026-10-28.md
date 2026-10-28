@@ -54,7 +54,9 @@ processing_failure: null | {
   stage: source_units | classification | candidate | pipeline
   code: fixed allowlisted code
   provider_http_status: null | 100..599
+  retryable: true | false
 }
+recovery_binding: signed short-lived opaque token
 ```
 
 `complete` additionally returns the existing `candidate`, `review_units`, `suggested_next_checks`, contextual status/items and rendered detail. `transcript_only` returns none of those authority-bearing fields. Transcription failure remains a sanitized non-200 response because no transcript exists to recover.
@@ -69,9 +71,42 @@ Add `POST /clinical/visit-capture/audio/reprocess` under the same protected depe
 context_id: existing protected context
 encounter_date: ISO date
 transcript: 10..120000 characters
+recovery_binding: opaque token, maximum 2048 characters
 ```
 
-The request requires `X-Visit-Retention-Acknowledged: standard`, binds the same patient context and sends the transcript only through the existing `gpt-6-luna` classification/contextual path. It never calls transcription. It returns the same `complete | transcript_only` envelope, allowing repeat classification failure without losing the transcript.
+The request requires `X-Visit-Retention-Acknowledged: standard`, verifies the recovery binding described below, binds the live patient context and sends the transcript only through the existing `gpt-6-luna` classification/contextual path. It never calls transcription. It returns the same `complete | transcript_only` envelope, allowing an eligible repeat classification failure without losing the transcript.
+
+### Recovery binding — P1-01 correction
+
+`context_id + date + transcript` are client-supplied and cannot prove original origin. After successful transcription, the server therefore creates a short-lived signed recovery binding containing only:
+
+```text
+version
+original_context_id
+client_session_id
+patient_id
+patient_updated_at
+encounter_date
+sha256(transcript UTF-8)
+issued_at
+expires_at = min(original context expiry, issued_at + 30 minutes)
+retry_allowed
+```
+
+The binding is authenticated with HMAC-SHA256 and a dedicated server-only `VISIT_AUDIO_RECOVERY_SECRET` of at least 32 characters. There is no fallback to the browser-visible `CLINICAL_DATA_KEY`, staff-session secret or OpenAI key. Visit Audio capability is disabled unless this recovery secret is valid, so a deployment cannot silently expose an unbound reprocess path. The payload is compact base64url and contains no transcript text; the signature uses constant-time comparison. Neither token nor digest is logged or persisted.
+
+Reprocess verifies all of the following before any provider call:
+
+- signature, version, fixed shape and token length;
+- issued/expiry bounds against server time;
+- exact encounter date and constant-time SHA-256 digest of the submitted transcript;
+- live context `patient_id`, `patient_updated_at` and `client_session_id` against the signed claims;
+- live context is either the original context or a legitimate renewal with the same client session, patient and patient version;
+- `retry_allowed=true`.
+
+Normal context renewal may replace the original context ID but preserves the signed client-session/patient/version tuple; this is the only allowed context-ID change. Opening another chart in the same browser session changes the signed patient tuple and fails closed. A changed patient version, date, transcript byte, expired token or unrelated context returns 409/422 without returning the transcript in that error and without a provider call.
+
+The server sets `retry_allowed=false` for `source_identity_unresolved` and any context/patient identity failure. This prevents a new stochastic classification call from turning an earlier conflict/uncertain identity result into a candidate. The transcript remains visible and locally recoverable, but the UI exposes no reprocess control. Other retryability is a fixed server allowlist, never client-selected.
 
 ### Safe diagnostic code
 
@@ -93,6 +128,7 @@ No audio, transcript, source excerpt, candidate, patient/context identity, provi
 - A `transcript_only` result keeps both transcript and Blob in memory.
 - A pre-transcription failure keeps the Blob and offers `Επανάληψη αποστολής ήχου`.
 - A post-transcription failure offers `Επανάληψη επεξεργασίας`, using the transcript endpoint without retranscription.
+- A non-retryable identity failure keeps transcript/audio recovery visible but exposes no processing retry.
 - On failure only, offer `Αποθήκευση ήχου στο Mac` using a temporary object URL. Revoke it after the click completes or when the draft is discarded.
 - `Απόρριψη προσωρινών δεδομένων` clears Blob, object URL, transcript and partial state.
 - Closing/reloading the page still destroys in-memory content. The existing unload guard must include retained Blob/transcript and the failure UI must state this plainly.
@@ -113,11 +149,12 @@ This explicit recovery view supersedes the earlier ordinary-UX preference to hid
 1. Classification validator failure after successful transcription returns `transcript_only`, exact transcript and a fixed code, with no candidate/Preview/Save authority.
 2. Classification provider HTTP, timeout, network and malformed JSON paths return transcript recovery and content-free logs.
 3. Transcription failure returns no invented transcript; browser retains the original Blob and can retry/download it.
-4. Reprocess calls classification but never transcription and can transition `transcript_only → complete` for the same context/date/transcript.
-5. Patient/context/date change fails closed and does not expose the transcript to a different chart.
-6. Browser shows two distinct views, retains Blob on failure, downloads locally, clears all transient state on discard and does not use browser persistence.
-7. Save remains disabled for transcript-only state. The transcript and contextual AI prose are absent from Preview/Save payloads.
-8. Existing exact-source candidate, unresolved identity fail-closed behavior, one bounded structural retry, typed suggestion adoption, contextual display-only layer, standard-retention disclosure and one final confirmation do not regress.
+4. Reprocess calls classification but never transcription and can transition `transcript_only → complete` only with a valid binding for the same context renewal chain, patient version, date and exact transcript digest.
+5. Cross-chart context substitution, encounter-date substitution, one-byte transcript substitution, expired/forged binding and changed patient version fail before a provider call. A legitimate same-patient context renewal remains eligible.
+6. `conflict|uncertain` identity returns transcript recovery but a non-retryable binding and no UI retry; direct reprocess is rejected.
+7. Browser shows two distinct views, retains Blob on failure, downloads locally, clears all transient state on discard and does not use browser persistence.
+8. Save remains disabled for transcript-only state. The transcript and contextual AI prose are absent from Preview/Save payloads.
+9. Existing exact-source candidate, unresolved identity fail-closed behavior, one bounded structural retry, typed suggestion adoption, contextual display-only layer, standard-retention disclosure and one final confirmation do not regress.
 
 ## Review and release
 

@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — no-loss web Visit Audio recovery
 
-> **STATUS (2026-10-28): PRODUCT OWNER CONFIRMED / PRE-CODE R2 HOLD.** Fictional recordings proved that successful transcription can be discarded when classification fails. Production logs place both failures at `classification / invalid_output` without provider HTTP rejection, but the historical validator subtype is unrecoverable. The active critical safety slice preserves the transcript independently, retains the original Blob in browser memory on failure, supports transcript-only reprocessing and emits fixed exact future diagnostics. Design authority: `cockpit/WEB_VISIT_AUDIO_TRANSCRIPT_RECOVERY_2026-10-28.md`. PR #247 remains unmerged; no runtime mutation or release before pre-code R2 PASS.
+> **STATUS (2026-10-28): PRE-CODE R2 P1 CORRECTION / CLOSURE HOLD.** Independent review of `94385070` blocked 0:1:0 because client-supplied context/date/transcript could not prove the original recording binding. The corrected design adds a short-lived dedicated-secret HMAC binding over original context/session, patient/version, encounter date and transcript digest; reprocess verifies every claim before provider use and allows only a legitimate same-patient context renewal chain. Identity conflict/uncertain is explicitly non-retryable. Cross-chart/date/transcript/token substitution oracles are required. Focused independent closure is next; PR #247 remains unmerged and runtime unchanged.
 
 ## Objective
 
@@ -22,6 +22,8 @@ Prevent loss of a recorded visit when transcription succeeds but structured proc
 4. A protected reprocess route submits the retained transcript to the same classification/candidate pipeline without retranscribing.
 5. Browser keeps the original Blob only in memory until successful structuring or explicit discard; failure exposes retry and local audio download.
 6. UI has two explicit views: unverified transcript and processed clinical text. Transcript-only state cannot Preview or Save.
+7. Every reprocess requires a dedicated-secret signed binding for the original session/patient version/date/transcript digest; client values alone grant no authority.
+8. Identity conflict/uncertain remains transcript-recoverable but cannot be reprocessed.
 
 ## Evidence questions
 
@@ -30,6 +32,7 @@ Prevent loss of a recorded visit when transcription succeeds but structured proc
 - Are Blob/transcript lifecycles transient, chart-bound and cleared on discard/success as designed?
 - Are transcript and contextual inference absent from Preview/Save, with the existing single final confirmation preserved?
 - Do fixed logs distinguish the future validator/provider/timeout class without arbitrary exception text?
+- Does every cross-chart/date/transcript/token substitution fail before a provider call while a legitimate same-patient context renewal remains usable?
 
 ## Review and release
 
