@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — web audio semantic completeness and next-visit suggestions
 
-> **STATUS (2026-10-28): CI CORRECTION CLOSURE PASS / FRESH EXACT-HEAD CI.** PR #245 Chromium label-isolation correction `17917443` passed independent focused closure 0:0:0. Shared manual/amendment behavior is restored; enhanced labels remain audio-only and Save-payload adoption is directly asserted. Publish the new checkpoint head and require all fresh checks. The prior native recording/ASR qualification remains deferred at `cockpit/archive/SLICE_PLAN_NATIVE_AUDIO_ASR_QUALIFICATION_DEFERRED_2026-10-28.md`.
+> **STATUS (2026-10-28): INHERITED TEST-WAIT CORRECTION / FRESH EXACT-HEAD CI.** PR #245 has one complete 50-test Visit Capture Chromium PASS; the duplicate failed an inherited deferred-DOB row race twice. The test-only correction explicitly awaits that row and changes no runtime. A new exact-head run remains required. The prior native recording/ASR qualification remains deferred at `cockpit/archive/SLICE_PLAN_NATIVE_AUDIO_ASR_QUALIFICATION_DEFERRED_2026-10-28.md`.
 
 ## Objective
 
