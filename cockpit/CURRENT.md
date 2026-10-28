@@ -1,3 +1,5 @@
+> **2026-10-28 WEB VISIT AUDIO DIAGNOSTICS — 10/10 CI PASS / FINAL HEAD NEXT:** Draft PR #238 head `9903d2f` passed all checks, including Visit Capture and canonical impact; reviewed code/test unchanged. Next final docs-head CI and guarded release. Production unaffected; original failure cause remains UNKNOWN.
+
 > **2026-10-28 WEB VISIT AUDIO DIAGNOSTICS — DRAFT PR #238 / CI NEXT:** Draft PR #238 publishes reviewed code/test `4af8ca5` plus root/Cockpit checkpoints on head `9655c48`; final exact-head CI and guarded release pending. Existing production route unchanged. No new recording or clinical write.
 
 > **2026-10-28 WEB VISIT AUDIO DIAGNOSTICS — SECURITY REVIEW PASS / CI NEXT:** Independent exact-branch security review of `4af8ca5` found no material issue in bounded private diagnostics, generic public 502 or audio cleanup. Eight focused synthetic tests PASS; inherited local browser test lacks Chromium. Next draft PR and exact-head CI, then separate release decision. No production change or patient/provider/write action.
