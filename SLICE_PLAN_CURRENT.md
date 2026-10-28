@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — contextual AI clinical considerations from visit audio
 
-> **STATUS (2026-10-28): POST-CODE R2 PASS / PR NEXT.** Independent correction closure on exact code/design/test `98033f3a` returned PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2=0:0:0. The deadline-reserve and exact second-pass privacy-contract findings are closed; affected-cumulative display-only, candidate/Save separation, whole-visit evidence and failure behavior passed. Local author evidence remains 35 tests including Chromium, Python compile, JavaScript syntax and diff hygiene. Next is one canonical-impact PR and exact-head CI; merge/release remain separate gates.
+> **STATUS (2026-10-28): PR #247 / EXACT-HEAD CI HOLD.** [PR #247](https://github.com/athpapachr-cmd/osteoporosis/pull/247) is open from `codex/web-visit-contextual-clinical-suggestions`. Independent correction closure on exact code/design/test `98033f3a` passed COMPLETE_FOR_DECLARED_SCOPE with P0:P1:P2=0:0:0; local evidence is 35 tests including Chromium plus syntax/diff checks. The PR now awaits exact-head canonical-impact and applicable product CI before any merge/release decision. No provider request, real audio or clinical write.
 
 ## Objective
 

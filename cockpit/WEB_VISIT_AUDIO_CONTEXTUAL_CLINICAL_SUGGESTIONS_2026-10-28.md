@@ -1,6 +1,6 @@
 # Web Visit Audio — contextual AI clinical considerations
 
-> **Implementation checkpoint (2026-10-28): POST-CODE R2 PASS / PR NEXT.** Independent closure on exact `98033f3a` passed COMPLETE_FOR_DECLARED_SCOPE with P0:P1:P2=0:0:0. Both deadline-reserve and truthful second-pass privacy-contract findings are closed, with no new material risk. All 35 affected tests pass, including Chromium via Dia. Canonical-impact PR and exact-head CI are next; no provider request, real audio or clinical write occurred.
+> **Implementation checkpoint (2026-10-28): PR #247 / EXACT-HEAD CI HOLD.** [PR #247](https://github.com/athpapachr-cmd/osteoporosis/pull/247) carries the reviewed runtime/test/design. Independent R2 is PASS 0:0:0 and 35 affected local tests including Chromium pass. Await exact-head CI before any merge/release decision; no provider request, real audio or clinical write occurred.
 
 ## Product Owner checkpoint
 
