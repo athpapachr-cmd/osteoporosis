@@ -21,6 +21,7 @@ with httpx.Client(base_url="https://ortho-reception-backend.onrender.com", timeo
         "provider_calls":0,"clinical_writes":0}
     Path("fictional-summary-proof.json").write_text(json.dumps(result,ensure_ascii=False,indent=2))
     print(json.dumps({k:v for k,v in result.items() if k!="candidate"}))
+    assert all(result["checks"].values()), "latest synthetic source does not contain the full acceptance case"
 
 import shutil
 from playwright.sync_api import sync_playwright, expect
