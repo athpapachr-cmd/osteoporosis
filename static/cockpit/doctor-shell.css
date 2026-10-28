@@ -531,3 +531,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
   .doctor-obligation-entry .doctor-obligation-edit{font-size:11px;white-space:normal;max-width:96px}
   .doctor-obligation-dialog-actions{gap:6px}
 }
+
+/* Ready notes retain all content without a separate padded box per paragraph. */
+.capture-input-modes{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.capture-input-modes [aria-pressed="true"]{background:#207c78;color:white}
+.prepared-clinical-note .clinical-preview-text{min-height:0;border:0;background:none;padding:0;margin:4px 0 14px;font:inherit;white-space:pre-wrap}
+.prepared-clinical-note h4{margin:18px 0 5px}

@@ -75,6 +75,8 @@ Properties:
 
 ## 2.2 Transcript-assisted Capture
 
+**2026-10-28 input-path extension:** The clinician may instead supply a complete prepared clinical note with arbitrary headings. This manual route retains the supplied note verbatim, derives its display deterministically, invokes no AI and reuses the same protected encounter/obligation ownership and one final explicit Save. It is a finalized note source, distinct from ephemeral raw audio/transcript. Recording and AI extraction remain the secondary route. Contextual AI ideas in a supplied note remain explicitly labelled suggestions and do not become decisions or tasks.
+
 Purpose:
 
 > Convert what was actually said into provisional structured data with minimal duplicate manual entry.
