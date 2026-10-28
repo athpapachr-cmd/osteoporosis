@@ -352,10 +352,49 @@ def test_local_audio_candidate_preserves_semantic_sections_and_deterministic_ges
     preview = _preview(client, context["context_id"], candidate)
     assert preview.status_code == 200
     body = preview.json()
+    assert body["can_save"] is False
+    confirmed = client.post(
+        "/clinical/visit-capture/preview",
+        headers=HEADERS,
+        json={"context_id": context["context_id"], "candidate": candidate, "recording_patient_confirmed": True},
+    )
+    assert confirmed.status_code == 200 and confirmed.json()["can_save"] is True
     assert "ΠΡΟΤΙΜΗΣΗ ΑΣΘΕΝΟΥΣ: Η ασθενής δεν αποφάσισε" in body["detail"]
     assert "Επιλογές που συζητήθηκαν:\nΣυζητήθηκε η πιθανότητα έγχυσης" in body["gesy_copy"]
     assert "Κλινικές συστάσεις:\nΠροτάθηκε φυσιοθεραπεία" in body["gesy_copy"]
     assert "Τελικές αποφάσεις:" in body["gesy_copy"]
+
+
+def test_both_recorded_audio_roles_require_patient_confirmation_before_preview_and_save(monkeypatch):
+    client, engine = _client_with_engine(monkeypatch)
+    for role, patient_id, source_ref in (
+        ("web_visit_audio", "SYN-AUDIO-WEB-GUARD", "web-audio:ABCDEFGHIJKLMNOPQRSTUV"),
+        ("local_visit_audio", "SYN-AUDIO-LOCAL-GUARD", "local-audio:ABCDEFGHIJKLMNOPQRSTUV"),
+    ):
+        _patient(client, patient_id)
+        context = _context(client, patient_id, "synthetic-confirmation-session-" + role)
+        candidate = _candidate()
+        candidate["source_bindings"].append({"source_ref": source_ref, "role": role})
+        candidate["findings"][0]["provenance"] = [source_ref]
+        payload = {"context_id": context["context_id"], "candidate": candidate}
+
+        preview = client.post("/clinical/visit-capture/preview", headers=HEADERS, json=payload)
+        assert preview.status_code == 200
+        assert preview.json()["can_save"] is False
+        assert "recorded patient's identity" in preview.json()["blocking_reason"]
+        assert client.post("/clinical/visit-capture/save", headers=HEADERS, json=payload).status_code == 409
+        with Session(engine) as session:
+            assert session.get(VisitCaptureContextORM, context["context_id"]) is not None
+
+        payload["recording_patient_confirmed"] = True
+        candidate["source_identity_state"] = "uncertain"
+        assert client.post("/clinical/visit-capture/preview", headers=HEADERS, json=payload).json()["can_save"] is False
+        assert client.post("/clinical/visit-capture/save", headers=HEADERS, json=payload).status_code == 409
+
+        candidate["source_identity_state"] = "consistent"
+        assert client.post("/clinical/visit-capture/preview", headers=HEADERS, json=payload).json()["can_save"] is True
+        assert client.post("/clinical/visit-capture/save", headers=HEADERS, json=payload).status_code == 200
+        assert client.post("/clinical/visit-capture/save", headers=HEADERS, json=payload).status_code == 409
 
 
 def test_case_5_partial_medication_stays_partial(monkeypatch):

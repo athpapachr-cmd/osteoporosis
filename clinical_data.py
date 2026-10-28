@@ -1024,9 +1024,12 @@ def build_clinical_router(engine: Engine) -> APIRouter:
             context = visit_capture_context(session, req.context_id)
             snapshot, brief, detail = _render_visit_capture(req.candidate)
             gesy_copy = _render_gesy_copy(req.candidate)
-            web_audio = any(binding.role == "web_visit_audio" for binding in req.candidate.source_bindings)
+            recorded_audio = any(
+                binding.role in {"web_visit_audio", "local_visit_audio"}
+                for binding in req.candidate.source_bindings
+            )
             blocked = req.candidate.source_identity_state != "consistent" or (
-                web_audio and not req.recording_patient_confirmed)
+                recorded_audio and not req.recording_patient_confirmed)
             return VisitCapturePreview(
                 patient_id=context.patient_id,
                 context_id=context.id,
@@ -1048,7 +1051,10 @@ def build_clinical_router(engine: Engine) -> APIRouter:
     )
     def save_visit_capture(req: VisitCaptureRequest) -> VisitCaptureSaveRecord:
         _validate_visit_capture_candidate(req.candidate)
-        if any(binding.role == "web_visit_audio" for binding in req.candidate.source_bindings) and not req.recording_patient_confirmed:
+        if any(
+            binding.role in {"web_visit_audio", "local_visit_audio"}
+            for binding in req.candidate.source_bindings
+        ) and not req.recording_patient_confirmed:
             raise HTTPException(status_code=409, detail="Recorded patient identity was not confirmed")
         if req.candidate.source_identity_state != "consistent":
             raise HTTPException(
