@@ -1,3 +1,5 @@
+> **2026-10-28 NATIVE AUDIO CONFIRMATION GUARD — LIVE / NO-PHI SMOKE PASS:** Native Render `dep-dbgsaaq9lscs73922j00` for exact merge `c090846a` is LIVE. Three assets matched source hashes, five anonymous protected routes returned 401 and the release window had no app ERROR/HTTP 5xx. Receipt/history docs-only PR next, then release writer. Native Mac app remains synthetic-only pending ASR/mic-indicator/model qualification; no patient audio or clinical write.
+
 > **2026-10-28 NATIVE AUDIO CONFIRMATION GUARD — DEPLOY LIVE / SMOKE NEXT:** Native Render `dep-dbgsaaq9lscs73922j00` for exact merge `c090846a` reached LIVE at 09:51:44Z. No-PHI served-asset/auth/log smoke is next; this status does not qualify real native patient use. No patient audio or clinical write.
 
 > **2026-10-28 NATIVE AUDIO CONFIRMATION GUARD — DEPLOY BUILDING:** Native Render `dep-dbgsaaq9lscs73922j00` targets exact merge `c090846a` and is `update_in_progress`; prior `73f0910` remains last verified LIVE. No duplicate deploy. Next terminal status, then no-PHI smoke if LIVE. Native app synthetic-only; no patient audio or clinical write.
