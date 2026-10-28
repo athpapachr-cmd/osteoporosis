@@ -184,6 +184,7 @@ def test_provider_multipart_and_private_responses_contract(monkeypatch):
     assert "Generic age, sex, symptoms and history" in prompt
     assert "Κυρία 68 χρονών" in prompt
     assert "explicit identifying contradiction" in prompt
+    assert "main presenting complaint" in prompt
     assert response_json["store"] is False
     assert response_json["text"]["format"]["strict"] is True
     suggestion_schema = response_json["text"]["format"]["schema"]["properties"]["suggested_next_checks"]["items"]
