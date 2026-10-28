@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — contextual AI clinical considerations from visit audio
 
-> **STATUS (2026-10-28): PRE-CODE R2 FINAL DEADLINE CORRECTION / CLOSURE HOLD.** Closure on `00234d03` confirmed cross-batch/global-ID behavior but found the reserve began too late: core candidate construction could finish with under five seconds left and still be cancelled during final verification. The design now gives all core stages a `pipeline_deadline - 5s` cutoff with explicit time checks before/after synchronous candidate construction. A candidate exists only while the finalization reserve remains intact; optional reasoning uses only time above that reserve. Near-deadline core and optional synthetic oracles are required. One focused independent closure is next; no runtime mutation before PASS.
+> **STATUS (2026-10-28): PRE-CODE R2 PASS / IMPLEMENTATION AUTHORIZED.** Final focused closure on exact design `0da54cce` returned PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2=0:0:0. Cross-batch whole-visit reasoning, global citations, no truncation, display-only authority and the core/optional deadline reserve are closed. Bounded implementation may now change only the frozen backend response, compact web-audio UI/CSS/cache tag, focused synthetic tests and checkpoints. One exact-code post-code R2 remains mandatory before PR/release.
 
 ## Objective
 
