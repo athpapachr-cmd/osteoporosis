@@ -97,7 +97,7 @@ def test_browser_receipt_review_timeline_refresh_second_session(setup,tmp_path):
                     expect(row).to_contain_text('Παραλήφθηκε το CD;')
                     expect(page.locator('.journey-fork')).to_have_count(1)
                     page.locator('#captureOpen').click();page.locator('#captureText').fill('Πρόχειρη επίσκεψη')
-                    expect(row.get_by_role('button',name='Ναι',exact=True).first).to_be_disabled()
+                    expect(row.get_by_role('button',name='Ναι',exact=True,include_hidden=True).first).to_be_disabled()
                     expect(row.locator('select')).to_have_count(0)
                     expect(page.locator('#captureText')).to_have_value('Πρόχειρη επίσκεψη')
                     page.locator('#captureComposer').get_by_role('button',name='Κλείσιμο',exact=True).click()
