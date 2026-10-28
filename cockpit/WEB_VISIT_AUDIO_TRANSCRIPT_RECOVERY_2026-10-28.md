@@ -106,7 +106,9 @@ Reprocess verifies all of the following before any provider call:
 
 Normal context renewal may replace the original context ID but preserves the signed client-session/patient/version tuple; this is the only allowed context-ID change. Opening another chart in the same browser session changes the signed patient tuple and fails closed. A changed patient version, date, transcript byte, expired token or unrelated context returns 409/422 without returning the transcript in that error and without a provider call.
 
-The server sets `retry_allowed=false` for `source_identity_unresolved` and any context/patient identity failure. This prevents a new stochastic classification call from turning an earlier conflict/uncertain identity result into a candidate. The transcript remains visible and locally recoverable, but the UI exposes no reprocess control. Other retryability is a fixed server allowlist, never client-selected.
+The server sets `retry_allowed=false` for `source_identity_unresolved`. This is a provider assessment made while the original live chart binding is still valid: the transcript remains visible and the original audio remains locally recoverable, but the UI exposes no reprocess control. This prevents a new stochastic classification call from turning an earlier conflict/uncertain spoken identity result into a candidate.
+
+A server-side context/patient binding failure is categorically different. If the context expires, the patient/version changes or the live context no longer matches at any recheck after transcription, the audio route returns a sanitized 409 with **no transcript and no recovery binding**. The browser still retains the original Blob and may download it locally, but must not show a server-returned transcript under the now-invalid chart. Reprocess substitution failures follow the same no-transcript/no-token rule. Other retryability is a fixed server allowlist, never client-selected.
 
 ### Safe diagnostic code
 
@@ -129,6 +131,7 @@ No audio, transcript, source excerpt, candidate, patient/context identity, provi
 - A pre-transcription failure keeps the Blob and offers `Επανάληψη αποστολής ήχου`.
 - A post-transcription failure offers `Επανάληψη επεξεργασίας`, using the transcript endpoint without retranscription.
 - A non-retryable identity failure keeps transcript/audio recovery visible but exposes no processing retry.
+- A server-side chart/context binding failure shows no returned transcript, keeps only the browser Blob for retry/download and requires reopening the correct chart.
 - On failure only, offer `Αποθήκευση ήχου στο Mac` using a temporary object URL. Revoke it after the click completes or when the draft is discarded.
 - `Απόρριψη προσωρινών δεδομένων` clears Blob, object URL, transcript and partial state.
 - Closing/reloading the page still destroys in-memory content. The existing unload guard must include retained Blob/transcript and the failure UI must state this plainly.
@@ -152,9 +155,10 @@ This explicit recovery view supersedes the earlier ordinary-UX preference to hid
 4. Reprocess calls classification but never transcription and can transition `transcript_only → complete` only with a valid binding for the same context renewal chain, patient version, date and exact transcript digest.
 5. Cross-chart context substitution, encounter-date substitution, one-byte transcript substitution, expired/forged binding and changed patient version fail before a provider call. A legitimate same-patient context renewal remains eligible.
 6. `conflict|uncertain` identity returns transcript recovery but a non-retryable binding and no UI retry; direct reprocess is rejected.
-7. Browser shows two distinct views, retains Blob on failure, downloads locally, clears all transient state on discard and does not use browser persistence.
-8. Save remains disabled for transcript-only state. The transcript and contextual AI prose are absent from Preview/Save payloads.
-9. Existing exact-source candidate, unresolved identity fail-closed behavior, one bounded structural retry, typed suggestion adoption, contextual display-only layer, standard-retention disclosure and one final confirmation do not regress.
+7. If patient/context binding changes after transcription or after classification but before response, the audio route returns sanitized 409 without transcript/token and performs no later provider/write action; browser Blob recovery remains.
+8. Browser shows two distinct views, retains Blob on failure, downloads locally, clears all transient state on discard and does not use browser persistence.
+9. Save remains disabled for transcript-only state. The transcript and contextual AI prose are absent from Preview/Save payloads.
+10. Existing exact-source candidate, unresolved identity fail-closed behavior, one bounded structural retry, typed suggestion adoption, contextual display-only layer, standard-retention disclosure and one final confirmation do not regress.
 
 ## Review and release
 
