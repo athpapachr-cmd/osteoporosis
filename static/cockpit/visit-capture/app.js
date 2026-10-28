@@ -1183,9 +1183,22 @@
       $("changePatientBtn").textContent = "Νέα καταγραφή";
     } catch (error) {
       $("saveMessage").textContent = error.message;
+      if (error.status === 401 || error.status === 409) {
+        setChip("previewState", "Δεν αποθηκεύτηκε", "err");
+        resetPatientContext();
+        return;
+      }
+      if (local && state.preview !== local.preview) return;
       setChip("previewState", "Δεν αποθηκεύτηκε", "err");
-      if (error.status === 401 || error.status === 409) resetPatientContext();
-      else $("saveBtn").disabled = false;
+      $("saveBtn").disabled = local ? !(
+        state.mode === "record" && state.localCandidateActive &&
+        state.localConfirmationVersion === local.version && state.contextId &&
+        state.patientId === local.patientId && state.localSessionId === local.localSessionId &&
+        state.localResult?.request_id === local.requestId && state.candidate === local.candidate &&
+        state.preview === local.preview && state.preview?.can_save &&
+        $("candidateInput").value === local.candidateText &&
+        clientSessionId() === local.clientSessionId && $("localIdentityConfirmed").checked
+      ) : false;
     }
   }
 

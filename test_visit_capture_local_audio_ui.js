@@ -292,6 +292,22 @@ async function settle() { await new Promise((resolve) => setImmediate(resolve));
   assert.equal(get("saveBtn").disabled, false, "fresh confirmed Preview restores Save");
 
   pauseRenewal = true;
+  const withdrawnSave = get("saveBtn").dispatch("click");
+  await settle();
+  assert.ok(releaseRenewal, "Save waits for renewal before withdrawal");
+  get("localIdentityConfirmed").checked = false;
+  get("localIdentityConfirmed").dispatch("change");
+  releaseRenewal();
+  await withdrawnSave;
+  await settle();
+  assert.equal(get("saveBtn").disabled, true, "failed renewal cannot reenable Save after withdrawal");
+  assert.equal(calls.filter(({url}) => url === "/clinical/visit-capture/save").length, 0);
+  get("localIdentityConfirmed").checked = true;
+  get("localIdentityConfirmed").dispatch("change");
+  await settle();
+  assert.equal(get("saveBtn").disabled, false, "fresh Preview is needed after withdrawal");
+
+  pauseRenewal = true;
   const interruptedSave = get("saveBtn").dispatch("click");
   await settle();
   assert.ok(releaseRenewal, "Save waits for exact-context renewal");
