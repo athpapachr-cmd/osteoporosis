@@ -163,3 +163,7 @@ This explicit recovery view supersedes the earlier ordinary-UX preference to hid
 ## Review and release
 
 R2 because this changes identifiable-transcript exposure/lifecycle and clinical failure behavior. One independent pre-code review is required on this exact design. After implementation and affected tests, one independent exact-code R2 is required. PR exact-head CI, merge, Render deploy and no-PHI production smoke remain separate gates. No agent real recording, provider replay or clinical write.
+
+## Implementation checkpoint
+
+Implemented on 2026-10-28 after the pre-code R2 PASS. The affected synthetic suite now proves `transcript_only → complete`, local audio download, no retranscription during recovery, candidate/Save denial before successful structuring, transcript exclusion from the Save payload, signed-binding substitution rejection, legitimate same-patient context renewal and sanitized context-drift failure. Local evidence: `45 passed`, Python/JavaScript syntax checks and `git diff --check` pass. Exact-code R2 and release gates remain open.

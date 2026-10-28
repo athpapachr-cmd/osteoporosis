@@ -2,17 +2,22 @@
 from __future__ import annotations
 
 import asyncio
+import base64
+import hashlib
+import hmac
 import json
 import logging
 import os
 import re
 import tempfile
+import time
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime, timezone
 from typing import Any, Protocol
 
 import httpx
 from fastapi import HTTPException, Request, Response
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
 from clinical_data import (VisitCaptureCandidateV1, _validate_visit_capture_candidate,
@@ -23,6 +28,8 @@ MAX_TRANSCRIPT_CHARS = 120_000
 MAX_UNITS = 512
 MAX_CONTEXTUAL_FACT_BYTES = 60_000
 FINALIZATION_RESERVE_SECONDS = 5.0
+RECOVERY_BINDING_MAX_CHARS = 2048
+RECOVERY_BINDING_SECONDS = 30 * 60
 FACT_KINDS = ("reason", "history", "symptom", "finding", "impression", "option",
               "therapy", "decision", "completed", "preference_accepted",
               "preference_declined", "preference_undecided", "obligation_investigation",
@@ -74,6 +81,18 @@ CLASSIFICATION_RETRY_CODES = frozenset({
     "classification_excerpt", "classification_overlap", "classification_accounting",
     "classification_suggestions",
 })
+PROCESSING_FAILURE_CODES = frozenset({
+    *CLASSIFICATION_RETRY_CODES,
+    "classification_unavailable", "classification_incomplete", "classification_invalid",
+    "source_identity_unresolved", "source_units_invalid", "source_unit_oversize",
+    "reason_missing", "clinical_content_missing", "classification_kind", "review_too_large",
+})
+RETRYABLE_PROCESSING_CODES = frozenset({
+    *CLASSIFICATION_RETRY_CODES,
+    "classification_unavailable", "classification_incomplete", "classification_invalid",
+    "reason_missing", "clinical_content_missing", "classification_kind", "review_too_large",
+    "provider_http", "timeout", "network", "unexpected",
+})
 logger = logging.getLogger(__name__)
 
 
@@ -83,6 +102,24 @@ class ProviderHTTPFailure(ValueError):
     def __init__(self, status_code: int):
         self.status_code = status_code
         super().__init__("provider_http")
+
+
+class TranscriptProcessingFailure(Exception):
+    """Fixed-stage wrapper; the original exception is never serialized or logged."""
+
+    def __init__(self, stage: str, error: BaseException):
+        self.stage = stage
+        self.error = error
+        super().__init__("transcript_processing_failure")
+
+
+class TranscriptReprocessRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=False)
+
+    context_id: str = Field(min_length=1, max_length=120)
+    encounter_date: str = Field(min_length=10, max_length=10)
+    transcript: str = Field(min_length=10, max_length=MAX_TRANSCRIPT_CHARS)
+    recovery_binding: str = Field(min_length=80, max_length=RECOVERY_BINDING_MAX_CHARS)
 
 
 @dataclass(frozen=True)
@@ -131,10 +168,12 @@ class AudioSettings:
 def enabled() -> bool:
     project_id = os.getenv("VISIT_AUDIO_OPENAI_PROJECT_ID", "").strip()
     organization_id = os.getenv("VISIT_AUDIO_OPENAI_ORG_ID", "").strip()
+    recovery_secret = os.getenv("VISIT_AUDIO_RECOVERY_SECRET", "")
     return (os.getenv("VISIT_AUDIO_OPENAI_PHI_APPROVED") == "1"
             and os.getenv("VISIT_AUDIO_RETENTION_MODE") == "standard"
             and bool(re.fullmatch(r"proj_[A-Za-z0-9_-]{1,120}", project_id))
             and (not organization_id or bool(re.fullmatch(r"org-[A-Za-z0-9_-]{1,120}", organization_id)))
+            and len(recovery_secret) >= 32
             and bool(os.getenv("OPENAI_API_KEY")))
 
 
@@ -144,6 +183,94 @@ def provider_headers(settings: AudioSettings) -> dict[str, str]:
     if settings.organization_id:
         headers["OpenAI-Organization"] = settings.organization_id
     return headers
+
+
+def _recovery_secret() -> bytes:
+    secret = os.getenv("VISIT_AUDIO_RECOVERY_SECRET", "")
+    if len(secret) < 32:
+        raise HTTPException(503, "Visit audio recovery is not enabled")
+    return secret.encode("utf-8")
+
+
+def _utc_timestamp(value: datetime) -> int:
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return int(value.timestamp())
+
+
+def _patient_version(value: datetime) -> str:
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc).isoformat()
+
+
+def _transcript_digest(transcript: str) -> str:
+    return hashlib.sha256(transcript.encode("utf-8")).hexdigest()
+
+
+def issue_recovery_binding(context: Any, encounter_date: str, transcript: str,
+                           retry_allowed: bool) -> str:
+    now = int(time.time())
+    expires = min(_utc_timestamp(context.expires_at), now + RECOVERY_BINDING_SECONDS)
+    if expires <= now:
+        raise HTTPException(409, "Visit Capture context expired")
+    payload = {
+        "version": 1,
+        "original_context_id": context.id,
+        "client_session_id": context.client_session_id,
+        "patient_id": context.patient_id,
+        "patient_updated_at": _patient_version(context.patient_updated_at),
+        "encounter_date": encounter_date,
+        "transcript_sha256": _transcript_digest(transcript),
+        "issued_at": now,
+        "expires_at": expires,
+        "retry_allowed": retry_allowed,
+    }
+    raw = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    encoded = base64.urlsafe_b64encode(raw).rstrip(b"=").decode("ascii")
+    mac = hmac.new(_recovery_secret(), encoded.encode("ascii"), hashlib.sha256).hexdigest()
+    token = encoded + "." + mac
+    if len(token) > RECOVERY_BINDING_MAX_CHARS:
+        raise HTTPException(503, "Visit audio recovery binding unavailable")
+    return token
+
+
+def verify_recovery_binding(token: str, context: Any, encounter_date: str,
+                            transcript: str) -> None:
+    if not 80 <= len(token) <= RECOVERY_BINDING_MAX_CHARS:
+        raise HTTPException(409, "Visit audio recovery binding invalid")
+    try:
+        encoded, supplied = token.split(".", 1)
+    except ValueError:
+        raise HTTPException(409, "Visit audio recovery binding invalid") from None
+    if len(supplied) != 64 or not supplied.isascii():
+        raise HTTPException(409, "Visit audio recovery binding invalid")
+    expected = hmac.new(_recovery_secret(), encoded.encode("ascii"), hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(expected, supplied):
+        raise HTTPException(409, "Visit audio recovery binding invalid")
+    try:
+        raw = base64.urlsafe_b64decode(encoded + "=" * (-len(encoded) % 4))
+        payload = json.loads(raw)
+    except (ValueError, json.JSONDecodeError):
+        raise HTTPException(409, "Visit audio recovery binding invalid") from None
+    required = {"version", "original_context_id", "client_session_id", "patient_id",
+                "patient_updated_at", "encounter_date", "transcript_sha256", "issued_at",
+                "expires_at", "retry_allowed"}
+    if (not isinstance(payload, dict) or set(payload) != required or payload.get("version") != 1
+            or type(payload.get("issued_at")) is not int or type(payload.get("expires_at")) is not int
+            or payload.get("retry_allowed") is not True):
+        raise HTTPException(409, "Visit audio recovery binding invalid")
+    now = int(time.time())
+    issued, expires = payload["issued_at"], payload["expires_at"]
+    if issued > now + 15 or expires <= now or expires - issued > RECOVERY_BINDING_SECONDS:
+        raise HTTPException(409, "Visit audio recovery binding expired")
+    if (payload["encounter_date"] != encounter_date
+            or not hmac.compare_digest(str(payload["transcript_sha256"]),
+                                       _transcript_digest(transcript))
+            or payload["client_session_id"] != context.client_session_id
+            or payload["patient_id"] != context.patient_id
+            or payload["patient_updated_at"] != _patient_version(context.patient_updated_at)):
+        raise HTTPException(409, "Visit audio recovery binding mismatch")
 
 
 class TranscriberProvider(Protocol):
@@ -415,7 +542,9 @@ async def checked_batch_analysis(summarizer: SummarizerProvider, batch: list[tup
     except ValueError as first_error:
         code = classification_validation_code(first_error)
         retry = getattr(summarizer, "classify_retry", None)
-        if identity_unresolved or code is None or not callable(retry):
+        if identity_unresolved:
+            raise ValueError("source_identity_unresolved") from None
+        if code is None or not callable(retry):
             raise
         return checked_analysis(await retry(batch, identity, code), batch)
 
@@ -484,6 +613,18 @@ def failure_metadata(error: BaseException) -> tuple[str, int | None]:
     return "unexpected", None
 
 
+def processing_failure(stage: str, error: BaseException) -> tuple[dict[str, Any], str, str | None]:
+    kind, provider_http_status = failure_metadata(error)
+    raw_code = str(error) if isinstance(error, ValueError) else ""
+    validation_code = raw_code if raw_code in PROCESSING_FAILURE_CODES else None
+    code = validation_code or kind
+    safe_stage = stage if stage in {"source_units", "classification", "candidate", "pipeline"} else "pipeline"
+    retryable = code in RETRYABLE_PROCESSING_CODES
+    return ({"stage": safe_stage, "code": code,
+             "provider_http_status": provider_http_status, "retryable": retryable},
+            kind, validation_code)
+
+
 def build_candidate(units: list[str], facts: list[dict[str, Any]], unclassified: list[int],
                     encounter_date: str):
     source_ref = "web_visit_audio"
@@ -546,7 +687,123 @@ def build_candidate(units: list[str], facts: list[dict[str, Any]], unclassified:
     return candidate, review_units
 
 
+async def process_transcript(transcript: str, encounter_date: str, identity: dict[str, str],
+                             summarizer: SummarizerProvider, pipeline_deadline: float,
+                             core_deadline: float, summarize_timeout: int,
+                             verify_context, now) -> dict[str, Any]:
+    stage = "source_units"
+    try:
+        async with asyncio.timeout_at(core_deadline):
+            verify_context()
+            units = source_units(transcript)
+            facts: list[dict[str, Any]] = []
+            unclassified: list[int] = []
+            suggestions: list[dict[str, Any]] = []
+            for batch in batches(units):
+                stage = "classification"
+                state, batch_facts, batch_suggestions, batch_unclassified = (
+                    await checked_batch_analysis(summarizer, batch, identity))
+                if state != "consistent":
+                    raise ValueError("source_identity_unresolved")
+                facts.extend(batch_facts)
+                unclassified.extend(batch_unclassified)
+                suggestions.extend(batch_suggestions)
+            verify_context()
+            stage = "candidate"
+            ensure_before_deadline(now(), core_deadline)
+            candidate, review_units = build_candidate(units, facts, unclassified, encounter_date)
+            ensure_before_deadline(now(), core_deadline)
+            merged_suggestions: list[dict[str, Any]] = []
+            seen_suggestions: set[str] = set()
+            for suggestion in suggestions:
+                key = re.sub(r"\s+", " ", suggestion["text"]).strip().casefold()
+                if key in seen_suggestions:
+                    continue
+                seen_suggestions.add(key)
+                merged_suggestions.append(suggestion)
+                if len(merged_suggestions) == 6:
+                    break
+            evidence = contextual_evidence(facts)
+            verify_context()
+            ensure_before_deadline(now(), core_deadline)
+    except (HTTPException, asyncio.CancelledError):
+        raise
+    except Exception as error:
+        raise TranscriptProcessingFailure(stage, error) from None
+
+    contextual_status = "complete"
+    contextual_considerations: list[dict[str, Any]] = []
+    if len(evidence) > MAX_CONTEXTUAL_FACT_BYTES:
+        contextual_status = "input_limit"
+    else:
+        budget = optional_timeout_budget(pipeline_deadline, now(), summarize_timeout)
+        if budget is None:
+            contextual_status = "unavailable"
+        else:
+            try:
+                async with asyncio.timeout(budget):
+                    contextual_considerations = checked_considerations(
+                        await summarizer.consider(facts), facts)
+            except Exception as error:
+                contextual_status = "unavailable"
+                kind, provider_http_status = failure_metadata(error)
+                logger.warning(
+                    "visit_audio_optional_failure stage=contextual_considerations kind=%s provider_http_status=%s",
+                    kind, provider_http_status)
+    verify_context()
+    return {"candidate": candidate.model_dump(mode="json"),
+            "review_units": review_units,
+            "suggested_next_checks": merged_suggestions,
+            "contextual_considerations_status": contextual_status,
+            "contextual_clinical_considerations": contextual_considerations,
+            "detail": _render_visit_capture(candidate)[2]}
+
+
 def attach_visit_audio(router, engine, protected, context_for, ensure_patient):
+    def validate_date(value: str) -> str:
+        try:
+            if date.fromisoformat(value).isoformat() != value:
+                raise ValueError()
+        except ValueError:
+            raise HTTPException(422, "Invalid encounter date") from None
+        return value
+
+    def load_binding(context_id: str, patient_id: str | None = None):
+        with Session(engine) as db:
+            context = context_for(db, context_id)
+            if patient_id is not None and context.patient_id != patient_id:
+                raise HTTPException(409, "Patient context changed")
+            patient = ensure_patient(db, context.patient_id)
+            identity = {key: str((patient.demographics_json or {})[key]) for key in
+                        ("full_name", "dob") if (patient.demographics_json or {}).get(key)}
+            return context, patient, identity
+
+    def recovery_response(context_id: str, patient_id: str, encounter_date: str,
+                          transcript: str, failure: TranscriptProcessingFailure) -> dict[str, Any]:
+        context, _, _ = load_binding(context_id, patient_id)
+        metadata, kind, validation_code = processing_failure(failure.stage, failure.error)
+        binding = issue_recovery_binding(context, encounter_date, transcript, metadata["retryable"])
+        logger.warning(
+            "visit_audio_processing_failure stage=%s kind=%s provider_http_status=%s validation_code=%s",
+            metadata["stage"], kind, metadata["provider_http_status"], validation_code)
+        return {"processing_status": "transcript_only", "context_id": context.id,
+                "patient_id": patient_id, "transcript": transcript,
+                "processing_failure": metadata, "recovery_binding": binding}
+
+    async def monitored(job, request: Request, pipeline_deadline: float):
+        try:
+            async with asyncio.timeout_at(pipeline_deadline):
+                while not job.done():
+                    await asyncio.wait({job}, timeout=0.25)
+                    if not job.done() and await request.is_disconnected():
+                        job.cancel()
+                        raise ValueError("client_disconnected")
+                return await job
+        finally:
+            if not job.done():
+                job.cancel()
+            await asyncio.gather(job, return_exceptions=True)
+
     @router.get("/visit-capture/audio/capability", dependencies=protected)
     def capability(response: Response):
         response.headers["Cache-Control"] = "no-store"
@@ -560,21 +817,12 @@ def attach_visit_audio(router, engine, protected, context_for, ensure_patient):
         if request.headers.get("x-visit-retention-acknowledged") != "standard":
             raise HTTPException(422, "Recording privacy acknowledgement required")
         context_id = request.headers.get("x-visit-context", "")
-        encounter_date = request.headers.get("x-encounter-date", "")
+        encounter_date = validate_date(request.headers.get("x-encounter-date", ""))
         mime = request.headers.get("content-type", "").split(";", 1)[0].strip().lower()
         if len(context_id) > 120 or not context_id or mime not in ("audio/webm", "audio/mp4"):
             raise HTTPException(422, "Invalid recording request")
-        try:
-            if date.fromisoformat(encounter_date).isoformat() != encounter_date:
-                raise ValueError()
-        except ValueError:
-            raise HTTPException(422, "Invalid encounter date") from None
-        with Session(engine) as db:
-            context = context_for(db, context_id)
-            patient = ensure_patient(db, context.patient_id)
-            identity = {key: str((patient.demographics_json or {})[key]) for key in
-                        ("full_name", "dob") if (patient.demographics_json or {}).get(key)}
-            patient_id = context.patient_id
+        context, _, identity = load_binding(context_id)
+        patient_id = context.patient_id
 
         audio = tempfile.TemporaryFile(mode="w+b")
         stage = "pipeline"
@@ -600,96 +848,29 @@ def attach_visit_audio(router, engine, protected, context_for, ensure_patient):
 
             async def work():
                 nonlocal stage
-                with Session(engine) as db:
-                    if context_for(db, context_id).patient_id != patient_id:
-                        raise HTTPException(409, "Patient context changed")
+                load_binding(context_id, patient_id)
                 transcriber, summarizer = make_providers(settings)
+                stage = "transcription"
                 async with asyncio.timeout_at(core_deadline):
-                    stage = "transcription"
                     transcript = await transcriber.transcribe(audio, mime)
-                    with Session(engine) as db:
-                        if context_for(db, context_id).patient_id != patient_id:
-                            raise HTTPException(409, "Patient context changed")
-                    stage = "source_units"
-                    units = source_units(transcript)
-                    facts: list[dict[str, Any]] = []
-                    unclassified: list[int] = []
-                    suggestions: list[dict[str, Any]] = []
-                    for batch in batches(units):
-                        stage = "classification"
-                        state, batch_facts, batch_suggestions, batch_unclassified = (
-                            await checked_batch_analysis(summarizer, batch, identity))
-                        if state != "consistent":
-                            raise ValueError("source_identity_unresolved")
-                        facts.extend(batch_facts)
-                        unclassified.extend(batch_unclassified)
-                        suggestions.extend(batch_suggestions)
-                    stage = "candidate"
-                    ensure_before_deadline(loop.time(), core_deadline)
-                    candidate, review_units = build_candidate(units, facts, unclassified, encounter_date)
-                    ensure_before_deadline(loop.time(), core_deadline)
-                    merged_suggestions: list[dict[str, Any]] = []
-                    seen_suggestions: set[str] = set()
-                    for suggestion in suggestions:
-                        key = re.sub(r"\s+", " ", suggestion["text"]).strip().casefold()
-                        if key in seen_suggestions:
-                            continue
-                        seen_suggestions.add(key)
-                        merged_suggestions.append(suggestion)
-                        if len(merged_suggestions) == 6:
-                            break
-                    evidence = contextual_evidence(facts)
-                    with Session(engine) as db:
-                        if context_for(db, context_id).patient_id != patient_id:
-                            raise HTTPException(409, "Patient context changed")
-                    ensure_before_deadline(loop.time(), core_deadline)
-
-                contextual_status = "complete"
-                contextual_considerations: list[dict[str, Any]] = []
-                if len(evidence) > MAX_CONTEXTUAL_FACT_BYTES:
-                    contextual_status = "input_limit"
-                else:
-                    budget = optional_timeout_budget(pipeline_deadline, loop.time(),
-                                                     settings.summarize_timeout)
-                    if budget is None:
-                        contextual_status = "unavailable"
-                    else:
-                        try:
-                            stage = "contextual_considerations"
-                            async with asyncio.timeout(budget):
-                                contextual_considerations = checked_considerations(
-                                    await summarizer.consider(facts), facts)
-                        except Exception as error:
-                            contextual_status = "unavailable"
-                            kind, provider_http_status = failure_metadata(error)
-                            logger.warning(
-                                "visit_audio_optional_failure stage=%s kind=%s provider_http_status=%s",
-                                stage, kind, provider_http_status)
-                with Session(engine) as db:
-                    if context_for(db, context_id).patient_id != patient_id:
-                        raise HTTPException(409, "Patient context changed")
-                return {"context_id": context_id, "patient_id": patient_id,
-                        "candidate": candidate.model_dump(mode="json"),
-                        "review_units": review_units,
-                        "suggested_next_checks": merged_suggestions,
-                        "contextual_considerations_status": contextual_status,
-                        "contextual_clinical_considerations": contextual_considerations,
-                        "detail": _render_visit_capture(candidate)[2]}
+                load_binding(context_id, patient_id)
+                try:
+                    payload = await process_transcript(
+                        transcript, encounter_date, identity, summarizer, pipeline_deadline,
+                        core_deadline, settings.summarize_timeout,
+                        lambda: load_binding(context_id, patient_id), loop.time)
+                except TranscriptProcessingFailure as failure:
+                    return recovery_response(context_id, patient_id, encounter_date,
+                                             transcript, failure)
+                bound_context, _, _ = load_binding(context_id, patient_id)
+                return {"processing_status": "complete", "context_id": bound_context.id,
+                        "patient_id": patient_id, "transcript": transcript,
+                        "processing_failure": None,
+                        "recovery_binding": issue_recovery_binding(
+                            bound_context, encounter_date, transcript, False), **payload}
 
             job = asyncio.create_task(work())
-            try:
-                async with asyncio.timeout_at(pipeline_deadline):
-                    while not job.done():
-                        await asyncio.wait({job}, timeout=0.25)
-                        if not job.done() and await request.is_disconnected():
-                            job.cancel()
-                            raise ValueError("client_disconnected")
-                    result = await job
-            finally:
-                if not job.done():
-                    job.cancel()
-                await asyncio.gather(job, return_exceptions=True)
-            return result
+            return await monitored(job, request, pipeline_deadline)
         except HTTPException:
             raise
         except (Exception, asyncio.CancelledError) as error:
@@ -705,3 +886,50 @@ def attach_visit_audio(router, engine, protected, context_for, ensure_patient):
             audio.close()
             if not audio.closed:
                 raise HTTPException(503, "Temporary audio cleanup failed")
+
+    @router.post("/visit-capture/audio/reprocess", dependencies=protected)
+    async def reprocess(req: TranscriptReprocessRequest, request: Request, response: Response):
+        response.headers["Cache-Control"] = "no-store"
+        if not enabled():
+            raise HTTPException(503, "Visit audio processing is not enabled")
+        if request.headers.get("x-visit-retention-acknowledged") != "standard":
+            raise HTTPException(422, "Recording privacy acknowledgement required")
+        encounter_date = validate_date(req.encounter_date)
+        context, _, identity = load_binding(req.context_id)
+        verify_recovery_binding(req.recovery_binding, context, encounter_date, req.transcript)
+        patient_id = context.patient_id
+        settings = AudioSettings.from_env()
+        loop = asyncio.get_running_loop()
+        pipeline_deadline = loop.time() + settings.pipeline_timeout
+        core_deadline = pipeline_deadline - FINALIZATION_RESERVE_SECONDS
+
+        async def work():
+            _, summarizer = make_providers(settings)
+            try:
+                payload = await process_transcript(
+                    req.transcript, encounter_date, identity, summarizer, pipeline_deadline,
+                    core_deadline, settings.summarize_timeout,
+                    lambda: load_binding(req.context_id, patient_id), loop.time)
+            except TranscriptProcessingFailure as failure:
+                return recovery_response(req.context_id, patient_id, encounter_date,
+                                         req.transcript, failure)
+            bound_context, _, _ = load_binding(req.context_id, patient_id)
+            return {"processing_status": "complete", "context_id": bound_context.id,
+                    "patient_id": patient_id, "transcript": req.transcript,
+                    "processing_failure": None,
+                    "recovery_binding": issue_recovery_binding(
+                        bound_context, encounter_date, req.transcript, False), **payload}
+
+        job = asyncio.create_task(work())
+        try:
+            return await monitored(job, request, pipeline_deadline)
+        except HTTPException:
+            raise
+        except (Exception, asyncio.CancelledError) as error:
+            kind, provider_http_status = failure_metadata(error)
+            if isinstance(error, ValueError) and str(error) == "client_disconnected":
+                kind = "disconnected"
+            logger.warning(
+                "visit_audio_reprocess_failure stage=pipeline kind=%s provider_http_status=%s validation_code=None",
+                kind, provider_http_status)
+            raise HTTPException(502, "The transcript could not be processed safely") from None

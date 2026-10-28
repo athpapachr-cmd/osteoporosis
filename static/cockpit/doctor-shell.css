@@ -262,6 +262,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
 .capture-web-audio h4,.capture-audio-review h4{margin:0 0 8px}
 .capture-web-audio label,.capture-audio-review label{display:block;margin:12px 0}
 #captureAudioStatus{min-height:1.4em;font-weight:600}
+.capture-audio-rescue{margin:12px 0;padding:12px;border:1px solid #d7b978;border-radius:10px;background:#fff9eb}
+.capture-audio-rescue p{margin:6px 0;line-height:1.45}
+.capture-audio-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.capture-audio-tabs button[aria-pressed=true]{background:#217a75;color:white;border-color:#217a75}
+.capture-audio-transcript{margin:12px 0;padding:12px;border:1px solid #cfdcdf;border-radius:10px;background:white}
+.capture-audio-transcript pre{max-height:360px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;margin:10px 0 0;padding:12px;border-radius:8px;background:#f6f8f8;color:#203c48;font:inherit;line-height:1.5}
 .capture-audio-focused details{margin-top:8px}
 .capture-audio-focused details ul{margin:8px 0 0;padding-left:22px}
 .capture-audio-focused details li{margin:5px 0}
@@ -279,7 +285,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
 .capture-ai-consideration details p{margin:6px 0}
 .capture-ai-meta{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 6px}
 .capture-ai-meta span{padding:3px 7px;border-radius:999px;background:#f3ead5;color:#5d4b23;font-size:.78rem;font-weight:700}
-.capture-audio-review[hidden],.capture-web-audio[hidden]{display:none!important}
+.capture-audio-review[hidden],.capture-web-audio[hidden],.capture-audio-rescue[hidden],.capture-audio-transcript[hidden]{display:none!important}
 
 /* Source-backed visit points; connecting line is navigation, not inferred care. */
 .patient-journey-rail{display:flex;overflow-x:auto;gap:0;padding:8px 0 18px;max-width:100%}

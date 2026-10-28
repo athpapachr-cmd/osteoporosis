@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — no-loss web Visit Audio recovery
 
-> **STATUS (2026-10-28): PRE-CODE R2 PASS / IMPLEMENTATION NEXT.** Exact corrected design `c4d925e1` passed focused independent closure with `PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2=0:0:0`. The signed recovery binding closes cross-chart/date/transcript replay; source-identity conflict remains transcript-bearing/nonretryable only under a valid live chart, while context/patient drift returns no transcript/token. Branch writer may implement the frozen backend/browser/test seams. Exact-code R2, PR CI and release remain separate gates.
+> **STATUS (2026-10-28): IMPLEMENTED AND LOCALLY VERIFIED / EXACT-CODE R2 NEXT.** Exact corrected design `c4d925e1` passed focused pre-code review with `PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2=0:0:0`. The backend, browser recovery UI and synthetic failure/retry evidence are implemented; `test_clinical_visit_audio.py + test_visit_capture.py` pass `45 passed` and syntax/diff checks pass. Exact-code R2, PR exact-head CI and release remain separate gates.
 
 ## Objective
 
@@ -38,4 +38,4 @@ Prevent loss of a recorded visit when transcription succeeds but structured proc
 
 ## Review and release
 
-R2 pre-code review, bounded implementation/tests, exact-code R2, exact-head CI and a separate release decision. This critical safety/data-integrity slice supersedes release of the already-reviewed retry-only head until closed.
+Pre-code R2 is complete. Runtime implementation and affected local tests are complete. Exact-code R2, exact-head CI and a separate release decision remain. This critical safety/data-integrity slice supersedes release of the already-reviewed retry-only head until closed.
