@@ -265,6 +265,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
 .capture-audio-focused details{margin-top:8px}
 .capture-audio-focused details ul{margin:8px 0 0;padding-left:22px}
 .capture-audio-focused details li{margin:5px 0}
+.capture-audio-suggestions{margin:18px 0;padding:14px;border:1px solid #bdd8d6;border-radius:10px;background:#eef8f7}
+.capture-audio-suggestions h4{margin:0 0 6px}
+.capture-audio-suggestions details{margin:8px 0}
+.capture-audio-suggestions details ul{margin:8px 0 0;padding-left:22px}
+.capture-audio-suggestions details li{margin:6px 0;line-height:1.45}
 .capture-audio-review[hidden],.capture-web-audio[hidden]{display:none!important}
 
 /* Source-backed visit points; connecting line is navigation, not inferred care. */

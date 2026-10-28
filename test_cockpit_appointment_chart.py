@@ -139,7 +139,9 @@ def test_browser_single_login_booking_link_latest_and_independent_session(fixtur
                     page.locator('#visitBriefPatientEntry').click();expect(page.locator('#patientEntry')).to_be_visible()
                     expect(page.locator('.patient-entry-match')).to_have_count(2)
                     assert c.post(PATH+'chart-read',json={'booking_uid':source.uid}).json()['mode']=='booking_only'
-                    page.locator('.patient-entry-match').filter(has_text='1970-01-01').get_by_role('button',name='Σύνδεση και άνοιγμα').click()
+                    target=page.locator('.patient-entry-match').filter(has_text='1970-01-01')
+                    expect(target).to_have_count(1)
+                    target.get_by_role('button',name='Σύνδεση και άνοιγμα').click()
                     expect(page.locator('#patientChart')).to_contain_text('Κλινική συνέχεια')
                     page.locator('#visitBackHome').click();page.reload();page.locator('#visitSidebarNext').click()
                 expect(page.locator('#visitBriefIdentity')).to_contain_text('Συνδεδεμένη καρτέλα')

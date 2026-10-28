@@ -1,22 +1,18 @@
-# SLICE_PLAN_CURRENT.md — native Mac recording and ASR qualification
+# SLICE_PLAN_CURRENT.md — web audio semantic completeness and next-visit suggestions
 
-> **STATUS (2026-10-28): NEXT BOUNDED NATIVE SLICE / REAL-CHART CAPTURE HOLD.** The protected audio patient-confirmation prerequisite is complete: [PR #242](https://github.com/athpapachr-cmd/osteoporosis/pull/242) is LIVE on Render `dep-dbgsaaq9lscs73922j00`, no-PHI smoke passed, and the [release receipt](cockpit/releases/COCKPIT_NATIVE_AUDIO_CONFIRMATION_GUARD_RELEASE_2026-10-28.md) was published through [PR #243](https://github.com/athpapachr-cmd/osteoporosis/pull/243). Render ignored that documentation commit. The completed guard plan is archived at `cockpit/archive/SLICE_PLAN_NATIVE_AUDIO_CONFIRMATION_GUARD_2026-10-28.md`. The installed Clinical Cockpit Mac app still records only on its synthetic page. Its latest clinician fictional test improved one anatomical term, missed another and showed no observed macOS orange microphone indicator. Direct local model inference also misclassified a synthetic option/T-score as a visit reason. No real-chart native recording or clinical write is authorized by this checkpoint.
+> **STATUS (2026-10-28): INHERITED TEST-WAIT CORRECTION / FRESH EXACT-HEAD CI.** PR #245 has one complete 50-test Visit Capture Chromium PASS; the duplicate failed an inherited deferred-DOB row race twice. The test-only correction explicitly awaits that row and changes no runtime. A new exact-head run remains required. The prior native recording/ASR qualification remains deferred at `cockpit/archive/SLICE_PLAN_NATIVE_AUDIO_ASR_QUALIFICATION_DEFERRED_2026-10-28.md`.
 
-## Product Owner step card
+## Objective
 
-- **Problem:** the native synthetic Start/Stop yields an editable draft, but natural-speech accuracy and the microphone-use signal remain unqualified. The local classifier has a demonstrated semantic error even when its output is valid JSON.
-- **After this step:** establish an observable, reproducible synthetic-only native recording and transcription path, with known limits and an explicit correction path for uncertain words. Evaluate the local model against synthetic reason/option/T-score cases without promoting model output to clinical fact.
-- **Example:** a fictional recording has a visible recording state, produces an editable draft and flags or otherwise exposes uncertain anatomical wording for clinician correction before any Preview/Save. The app must never infer a visit reason from an option or a measurement alone.
-- **Outside this step:** no real patient recording, native real-chart bridge, provider/cloud request, database/schema change, implicit Save or distribution/notarization.
+Preserve exact-source clinical truth while allowing multiple exact excerpts from one compound transcript unit, populate the existing structured treatment/plan/pending/follow-up sections, and add a strictly separate transient AI suggestion layer for next-visit checks.
 
-## Frozen boundaries and evidence
+## Frozen boundary
 
-1. The Mac app remains a normal single app with no Terminal or localhost companion. The eventual clinician flow uses compact editable fields rather than a raw transcript, prompt or audio-file screen; the current synthetic prototype still shows an exact-source editable draft. Recording starts only from explicit native Start after the synthetic assertion, stops on explicit Stop, chart change or view closure, and temporary audio is removed after processing.
-2. The clinician's report of no orange macOS microphone indicator is an unresolved observation. The appearance of a speech-derived draft proves that some capture reached local transcription, but does not explain the system UI. Do not claim the indicator is fixed without a direct observed retest.
-3. The installed bundled `whisper.cpp` with a revised fixed Greek vocabulary recognized one previously missed term in the clinician's second fictional test but still missed the spine term's initial consonant. Generated TTS fixtures are supporting evidence only, not natural-speech acceptance. No silent clinical correction may be inferred from a plausible ASR typo.
-4. The pinned Krikri GGUF is only a private evaluation asset. The direct local grammar run produced valid source-ID JSON but placed a synthetic option or T-score in `reason_ids`; therefore model-filled `reason_for_visit` remains disallowed. The accepted real-chart design requires a clinician-entered reason with clinician provenance and existing protected Preview/one-shot Save authority.
-5. Before any runtime change, choose a bounded observable behavior and synthetic acceptance oracle, then obtain the applicable independent pre-code design review for recording/clinical-semantics changes. Reuse the completed guard R2 evidence; do not review that protected server seam again without a new finding. Test on fictional data only and require an exact-code review before installing a revised native app.
+- Existing `gpt-transcribe`, `gpt-6-luna`, standard-retention disclosure/gate, patient context, temporary content lifecycle, one final confirmation, Preview and explicit Save remain.
+- Source-backed candidate text must be an exact validated transcript substring. No generated clinical prose, medication structure, dates, diagnoses or roles enter the record.
+- AI suggestions may infer later questions/checks from cited source units but remain outside the candidate until one bulk clinician adoption into follow-up.
+- Dia output is comparison evidence only, not source truth. Synthetic data only in implementation/release evidence.
 
-## Next action
+## Gates and next action
 
-Claim an isolated native writer after the release closeout, inspect the current `AVAudioRecorder` state/permission and the visible recording controls, and freeze one small synthetic-only observability/ASR correction with a direct acceptance test. Keep real-chart capture and clinical use on HOLD.
+R2 because classification semantics, pending obligations and generated suggestions change. Pre-code correction closure passed 0:0:0. Writer `codex/web-visit-semantic-completeness` owns only the bounded provider contract/builder/UI/tests and linked checkpoints. One independent post-code exact-head R2 is now required; then canonical-impact PR, exact-head CI with Chromium and guarded release only if all remain PASS. Native real-chart work remains deferred and no real patient audio/provider request/clinical write is authorized.

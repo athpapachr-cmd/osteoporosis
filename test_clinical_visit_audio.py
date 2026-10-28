@@ -20,7 +20,7 @@ from test_visit_capture import HEADERS, _client_with_engine, _context, _patient
 WEBM = b"\x1aE\xdf\xa3" + b"\x00" * 128
 TRANSCRIPT = (
     "Επανέλεγχος οστεοπόρωσης. DEXA T-score -2.8 στο ισχίο. "
-    "Συζητήθηκε alendronate 70 mg εβδομαδιαίως. "
+    "Ξεκινά alendronate 70 mg εβδομαδιαίως. "
     "Η ασθενής προτιμά να περιμένει."
 )
 
@@ -33,19 +33,25 @@ def enabled(monkeypatch):
 
 
 def labels(batch, *, identity="consistent", bad_id=None):
-    result = {name: [] for name in audio.CATEGORIES}
-    result["identity_state"] = identity
+    result = {"identity_state": identity, "facts": [], "suggested_next_checks": [],
+              "unclassified_ids": []}
     for identifier, text in batch:
         if text.startswith("Επανέλεγχος"):
-            result["reason"].append(identifier)
+            kind = "reason"
         elif text.startswith("DEXA"):
-            result["finding"].append(identifier)
-        elif text.startswith("Συζητήθηκε"):
-            result["recommendation"].append(identifier)
+            kind = "finding"
+        elif text.startswith("Ξεκινά"):
+            kind = "therapy"
         else:
-            result["preference"].append(identifier)
+            kind = "preference_undecided"
+        result["facts"].append({"source_id": identifier, "excerpt": text, "kind": kind})
+        if text.startswith("Ξεκινά"):
+            result["suggested_next_checks"].append({
+                "intent": "therapy_tolerance",
+                "source_id": identifier,
+            })
     if bad_id is not None:
-        result["finding"].append(bad_id)
+        result["facts"].append({"source_id": bad_id, "excerpt": "άγνωστο", "kind": "finding"})
     return result
 
 
@@ -109,7 +115,7 @@ def test_provider_multipart_and_private_responses_contract(monkeypatch):
     async def run():
         assert await audio.OpenAITranscriber(settings).transcribe(io.BytesIO(WEBM), "audio/webm") == TRANSCRIPT
         assert (await audio.OpenAISummarizer(settings).classify(
-            [(0, "Επανέλεγχος")], {"full_name": "Synthetic"}))["reason"] == [0]
+            [(0, "Επανέλεγχος")], {"full_name": "Synthetic"}))["facts"][0]["kind"] == "reason"
     asyncio.run(run())
     transcription = requests[0][1]
     assert transcription.count(b'name="languages[]"') == 2
@@ -123,6 +129,9 @@ def test_provider_multipart_and_private_responses_contract(monkeypatch):
     assert response_json["model"] == "gpt-6-luna"
     assert response_json["store"] is False
     assert response_json["text"]["format"]["strict"] is True
+    suggestion_schema = response_json["text"]["format"]["schema"]["properties"]["suggested_next_checks"]["items"]
+    assert set(suggestion_schema["properties"]) == {"intent", "source_id"}
+    assert "text" not in suggestion_schema["properties"] and "rationale" not in suggestion_schema["properties"]
     assert "tools" not in response_json
 
 
@@ -147,6 +156,78 @@ def test_provider_rejection_retains_status_only(monkeypatch):
             assert failure.status_code == 403
             assert "synthetic private provider text" not in str(failure)
     asyncio.run(run())
+
+
+def test_multi_clause_source_builds_treatment_plan_and_obligation_without_inference():
+    units = [
+        "Επανέλεγχος οστεοπόρωσης με θωρακικό πόνο και σχεδιάστηκε ακτινογραφία.",
+        "Ξεκινά αλενδρονάτη 70 mg εβδομαδιαίως και επανέλεγχος σε τρεις μήνες.",
+    ]
+    result = {
+        "identity_state": "consistent",
+        "facts": [
+            {"source_id": 0, "excerpt": "Επανέλεγχος οστεοπόρωσης", "kind": "reason"},
+            {"source_id": 0, "excerpt": "θωρακικό πόνο", "kind": "symptom"},
+            {"source_id": 0, "excerpt": "σχεδιάστηκε ακτινογραφία", "kind": "obligation_investigation"},
+            {"source_id": 1, "excerpt": "Ξεκινά αλενδρονάτη 70 mg εβδομαδιαίως", "kind": "therapy"},
+            {"source_id": 1, "excerpt": "επανέλεγχος σε τρεις μήνες", "kind": "follow_up"},
+        ],
+        "suggested_next_checks": [{"intent": "therapy_adherence", "source_id": 1}],
+        "unclassified_ids": [],
+    }
+    identity, facts, suggestions, unclassified = audio.checked_analysis(
+        result, list(enumerate(units)))
+    assert identity == "consistent"
+    candidate, review = audio.build_candidate(units, facts, unclassified, "2026-10-28")
+    assert candidate.reason_for_visit.text == "Επανέλεγχος οστεοπόρωσης"
+    assert [item.text for item in candidate.history] == ["θωρακικό πόνο"]
+    assert candidate.recommendations[0].text == "Ξεκινά αλενδρονάτη 70 mg εβδομαδιαίως"
+    assert candidate.recommendations[0].type == "therapy"
+    assert candidate.medications == []
+    assert candidate.pending[0].description == "σχεδιάστηκε ακτινογραφία"
+    assert candidate.pending[0].item_type == "investigation"
+    assert candidate.pending[0].responsible_role == "unspecified"
+    assert candidate.pending[0].review_date is None and candidate.pending[0].trigger is None
+    assert candidate.follow_up[0].text == "επανέλεγχος σε τρεις μήνες"
+    assert suggestions[0]["source_id"] == 1
+    assert suggestions[0]["text"].startswith("Έλεγχος αν η αναφερόμενη θεραπεία")
+    assert {item["hint"] for item in review} >= {"therapy", "obligation_investigation"}
+
+
+@pytest.mark.parametrize("facts", [
+    [
+        {"source_id": 0, "excerpt": "Μπορούμε να κάνουμε μαγνητική", "kind": "option"},
+        {"source_id": 0, "excerpt": "Μπορούμε να κάνουμε μαγνητική", "kind": "obligation_investigation"},
+    ],
+    [
+        {"source_id": 0, "excerpt": "Μπορούμε να κάνουμε μαγνητική", "kind": "option"},
+        {"source_id": 0, "excerpt": "κάνουμε μαγνητική", "kind": "completed"},
+    ],
+])
+def test_conflicting_or_overlapping_source_spans_fail_closed(facts):
+    result = {"identity_state": "consistent", "facts": facts,
+              "suggested_next_checks": [], "unclassified_ids": []}
+    with pytest.raises(ValueError, match="classification_overlap"):
+        audio.checked_analysis(result, [(0, "Μπορούμε να κάνουμε μαγνητική")])
+
+
+def test_ambiguous_excerpt_and_free_text_or_incompatible_suggestion_fail_closed():
+    repeated = {"identity_state": "consistent", "facts": [
+        {"source_id": 0, "excerpt": "πόνος", "kind": "symptom"}],
+        "suggested_next_checks": [], "unclassified_ids": []}
+    with pytest.raises(ValueError, match="classification_excerpt"):
+        audio.checked_analysis(repeated, [(0, "πόνος και ξανά πόνος")])
+    for suggestion in (
+        {"text": "Να γίνει μαγνητική τομογραφία;", "rationale": "Επίμονος πόνος.", "source_ids": [0]},
+        {"text": "Πιθανή νέα διάγνωση οστεοπόρωσης.", "rationale": "Εύρημα.", "source_ids": [0]},
+        {"intent": "diagnose_osteoporosis", "source_id": 0},
+        {"intent": "planned_result_review", "source_id": 0},
+    ):
+        unsafe = {"identity_state": "consistent", "facts": [
+            {"source_id": 0, "excerpt": "Επανέλεγχος", "kind": "reason"}],
+            "suggested_next_checks": [suggestion], "unclassified_ids": []}
+        with pytest.raises(ValueError, match="classification_suggestions"):
+            audio.checked_analysis(unsafe, [(0, "Επανέλεγχος")])
 
 
 def test_source_copy_provisional_review_and_confirmed_save(monkeypatch):
@@ -175,11 +256,12 @@ def test_source_copy_provisional_review_and_confirmed_save(monkeypatch):
     assert candidate["findings"][0]["text"] == "DEXA T-score -2.8 στο ισχίο."
     assert candidate["decisions"] == [] and candidate["medications"] == []
     assert candidate["pending"] == []
-    assert {item["text"] for item in candidate["uncertainties"]} == {
-        "Συζητήθηκε alendronate 70 mg εβδομαδιαίως.",
-        "Η ασθενής προτιμά να περιμένει.",
-    }
-    assert {item["hint"] for item in body["review_units"]} >= {"finding", "recommendation", "preference"}
+    assert candidate["recommendations"][0]["text"] == "Ξεκινά alendronate 70 mg εβδομαδιαίως."
+    assert candidate["patient_preferences"][0]["text"] == "Η ασθενής προτιμά να περιμένει."
+    assert candidate["uncertainties"] == []
+    assert candidate["follow_up"] == []
+    assert body["suggested_next_checks"][0]["text"] == "Έλεγχος ανοχής της αναφερόμενης θεραπείας."
+    assert {item["hint"] for item in body["review_units"]} >= {"finding", "therapy", "preference_undecided"}
     payload = {"context_id": context["context_id"], "candidate": candidate}
     preview = client.post("/clinical/visit-capture/preview", headers=HEADERS, json=payload)
     assert preview.status_code == 200 and preview.json()["can_save"] is False
@@ -307,9 +389,9 @@ def test_identity_refusal_and_missing_clinical_content_are_rejected(monkeypatch)
                 return labels(batch, identity="conflict")
             if self.mode == "refusal":
                 return {"refusal": "untrusted source text"}
-            result = {name: [] for name in audio.CATEGORIES}
-            result["identity_state"] = "consistent"
-            result["reason"].append(batch[0][0])
+            result = {"identity_state": "consistent", "facts": [{"source_id": batch[0][0],
+                      "excerpt": batch[0][1], "kind": "reason"}],
+                      "suggested_next_checks": [], "unclassified_ids": [item[0] for item in batch[1:]]}
             return result
 
     for mode in ("conflict", "refusal", "empty"):
@@ -353,7 +435,10 @@ def test_browser_web_audio_review_and_confirmed_save(setup, monkeypatch):
             browser = playwright.chromium.launch(executable_path=shutil.which("google-chrome") or shutil.which("chromium"))
             page = browser.new_page(viewport={"width": 1280, "height": 950}, timezone_id="Asia/Nicosia")
             errors = []
+            save_payloads = []
             page.on("pageerror", lambda error: errors.append(str(error)))
+            page.on("request", lambda request: save_payloads.append(request.post_data_json)
+                    if request.method == "POST" and request.url.endswith("/clinical/visit-capture/save") else None)
             page.add_init_script("""
                 window._holdMic=false;window._releaseMic=null;window._audioStarts=0;window._trackStops=0;
                 Object.defineProperty(navigator, 'mediaDevices', {configurable:true, value:{
@@ -402,13 +487,15 @@ def test_browser_web_audio_review_and_confirmed_save(setup, monkeypatch):
             page.locator("#captureAudioStop").click()
             expect(page.locator("#captureAudioStatus")).to_contain_text("έτοιμο για έλεγχο", timeout=15000)
             expect(page.locator("#captureSave")).to_be_disabled()
-            expect(page.locator("#captureReview .capture-audio-compact-section")).to_have_count(3)
+            expect(page.locator("#captureReview .capture-audio-compact-section")).to_have_count(4)
             expect(page.locator("#captureReview section[data-field=findings] textarea")).to_have_value("DEXA T-score -2.8 στο ισχίο.")
-            expect(page.locator("#captureReview section[data-field=uncertainties] textarea")).to_have_value(
-                "Συζητήθηκε alendronate 70 mg εβδομαδιαίως.\nΗ ασθενής προτιμά να περιμένει."
-            )
+            expect(page.locator("#captureReview section[data-field=recommendations] textarea")).to_have_value(
+                "Ξεκινά alendronate 70 mg εβδομαδιαίως.")
+            expect(page.locator("#captureReview section[data-field=patient_preferences] textarea")).to_have_value(
+                "Η ασθενής προτιμά να περιμένει.")
+            expect(page.locator("#captureReview section[data-field=uncertainties]")).to_have_count(0)
             expect(page.locator("#captureReview section[data-field=medications]")).to_have_count(0)
-            expect(page.locator("#captureReview").get_by_role("button", name="Προσθήκη", exact=False)).to_have_count(0)
+            expect(page.locator("#captureReview").get_by_role("button", name="Προσθήκη ·", exact=False)).to_have_count(0)
             expect(page.locator("#captureReview").get_by_role("button", name="Αφαίρεση", exact=True)).to_have_count(0)
             expect(page.get_by_role("button", name="Επιβεβαιώνω ότι ολοκληρώθηκε", exact=True)).to_have_count(0)
             expect(page.get_by_role("button", name="Μεταφορά στη σωστή κλινική ενότητα", exact=True)).to_have_count(0)
@@ -417,6 +504,14 @@ def test_browser_web_audio_review_and_confirmed_save(setup, monkeypatch):
             expect(attention.locator("summary")).to_contain_text("3 σημείων")
             expect(attention.locator("li").first).not_to_be_visible()
             assert page.locator("#captureAudioIdentity").count() == 1
+            suggestions = page.locator("#captureReview .capture-audio-suggestions")
+            expect(suggestions.locator("textarea")).to_have_value("Έλεγχος ανοχής της αναφερόμενης θεραπείας.")
+            expect(suggestions.locator("details")).not_to_have_attribute("open", "")
+            expect(page.locator("#captureReview section[data-field=follow_up]")).to_have_count(0)
+            suggestions.get_by_role("button", name="Προσθήκη στο πλάνο", exact=True).click()
+            expect(page.locator("#captureReview .capture-audio-suggestions")).to_have_count(0)
+            expect(page.locator("#captureReview section[data-field=follow_up] textarea")).to_have_value(
+                "Έλεγχος ανοχής της αναφερόμενης θεραπείας.")
             expect(page.locator("#captureAudioStatus")).not_to_contain_text(TRANSCRIPT)
             expect(page.locator("#captureAudioStatus")).to_contain_text("στον server")
             finding = page.locator("#captureReview section[data-field=findings] textarea")
@@ -433,6 +528,8 @@ def test_browser_web_audio_review_and_confirmed_save(setup, monkeypatch):
             page.locator("#captureSave").click()
             expect(page.locator("#captureComposer")).to_be_hidden(timeout=15000)
             expect(page.locator("#patientChart")).to_contain_text("DEXA T-score -2.6")
+            assert save_payloads[-1]["candidate"]["follow_up"][0]["text"] == "Έλεγχος ανοχής της αναφερόμενης θεραπείας."
+            assert "clinician_edit" in save_payloads[-1]["candidate"]["follow_up"][0]["provenance"]
             assert not errors, errors
             assert len(transcribed) == 1  # withdrawn recording never reaches the provider
             browser.close()
