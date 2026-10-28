@@ -8,7 +8,7 @@
 
 **Concrete example:** explicit thoracic pain plus reported height loss may produce `Να εξεταστεί αν χρειάζεται έλεγχος για σπονδυλικό κάταγμα`, with the two source IDs and a rationale. It is labelled as an AI consideration, not a diagnosis or order.
 
-**Outside this step:** no automatic diagnosis, prescribing, dose change, test order, referral, urgency claim, guideline-authority claim, candidate mutation, obligation creation, one-click adoption, new provider/model call, retention/configuration change or real-patient agent test.
+**Outside this step:** no automatic diagnosis, prescribing, dose change, test order, referral, urgency claim, guideline-authority claim, candidate mutation, obligation creation, one-click adoption, new provider or model, retention/configuration change or real-patient agent test. One additional same-model call is required so the whole validated visit context is considered once.
 
 **Why now / next milestone:** the Product Owner explicitly asked for reasoning from context after the exact-source completeness correction went live. The next milestone is synthetic implementation evidence and one independent exact-code R2 before any PR/release decision.
 
@@ -28,7 +28,7 @@ The released typed next-visit checks remain separate: fixed server wording and o
 
 ## Strict response shape
 
-The existing strict `visit_audio_analysis_v2` response gains `contextual_clinical_considerations[]`, maximum four per batch:
+The existing strict per-batch `visit_audio_analysis_v2` response remains unchanged. After all facts are validated and merged, one strict `visit_audio_contextual_considerations_v1` call receives the whole list of validated facts with their global source IDs. Its response contains `contextual_clinical_considerations[]`, maximum four:
 
 - `category`: one of six fixed consideration categories;
 - `text`: 1..240 characters;
@@ -36,7 +36,24 @@ The existing strict `visit_audio_analysis_v2` response gains `contextual_clinica
 - `source_ids`: one to three unique current-batch IDs, all with at least one validated extracted fact;
 - `confidence`: `low`, `moderate` or `high`.
 
-No extra keys. Text is normalized, must not contain control characters and is returned only in the transient audio-draft response. Across batches the server deduplicates normalized text and returns at most four.
+No extra keys. Text is normalized, must not contain control characters and must be unique. Every cited ID must belong to at least one validated fact in the whole visit. The prose is returned only in the transient audio-draft response.
+
+## Whole-visit completeness and availability
+
+The second-pass input is serialized validated facts only and must be at most 60,000 UTF-8 bytes. The server never truncates or samples it because that would silently weaken the meaning of whole-visit reasoning.
+
+The audio-draft response includes:
+
+```text
+contextual_considerations_status: complete | input_limit | unavailable
+contextual_clinical_considerations: [] | validated items
+```
+
+- `complete`: the model saw the complete validated fact set; the list may be empty, but that is not clinical clearance;
+- `input_limit`: no consideration call ran because the full fact set exceeded the bound;
+- `unavailable`: the optional call failed or its response failed validation; the exact-source draft remains available.
+
+The optional pass reuses `gpt-6-luna`, project/org headers, `store:false`, no tools and current timeout/reasoning settings. Failure logging contains only fixed stage/kind/provider-status metadata. No raw transcript or patient identity is sent in this second pass.
 
 ## Prompt semantics
 
@@ -54,7 +71,7 @@ Because semantic prompt compliance is not a deterministic safety control, violat
 
 ## Browser behavior
 
-The block is rendered only when considerations exist. Each card shows a Greek category label, the consideration and confidence. Rationales sit inside one closed disclosure. The warning explicitly distinguishes inferred advice from what was said and from evidence-backed guidance. It disappears with the transient draft and is excluded from the candidate object.
+The block is rendered when considerations exist. Each card shows a Greek category label, the consideration and confidence. Rationales sit inside one closed disclosure. The warning explicitly distinguishes inferred advice from what was said and from evidence-backed guidance, says that an empty result is not clinical clearance, and disappears with the transient draft. When status is `input_limit` or `unavailable`, a compact visible note explains that contextual suggestions were not generated; it never hides that state behind an empty block. All status/prose stays outside the candidate object.
 
 Any clinician who accepts the idea must independently enter the appropriate wording into the existing editable plan. That ordinary edit invalidates the final confirmation and prior Preview under the existing contract.
 
@@ -64,4 +81,5 @@ Any clinician who accepts the idea must independently enter the appropriate word
 2. Are cited IDs constrained to validated current-batch facts and deduplicated safely?
 3. Does the UI avoid implying diagnosis, order or guideline authority?
 4. Do existing typed suggestions and one-confirmation behavior remain unchanged?
-5. Are multi-batch limits, failure behavior and temporary-content boundaries explicit?
+5. Does the bounded whole-visit pass actually see validated facts across classification batches, with no silent truncation?
+6. Do `input_limit` and optional-provider failure remain visible without discarding the exact-source draft or leaking content to logs?
