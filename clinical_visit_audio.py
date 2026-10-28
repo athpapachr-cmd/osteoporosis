@@ -406,8 +406,13 @@ class OpenAISummarizer:
             "finding_course requires finding or impression; therapy_adherence/therapy_tolerance require therapy; "
             "planned_step_status requires an obligation; planned_result_review requires obligation_investigation; "
             "follow_up_status requires follow_up; safety_update requires safety. Suggestions are not facts. "
-            "If the transcript explicitly names a different patient or identity is ambiguous, "
-            "set identity_state conflict or uncertain. Absence of a spoken identity is consistent. "
+            "The selected chart is the destination chosen by the clinician, not a request to identify a patient. "
+            "Absence of a spoken name, date of birth or patient identifier is consistent. "
+            "Generic age, sex, symptoms and history are clinical facts, not identifying evidence. "
+            "For example 'Κυρία 68 χρονών με κάταγμα πριν δύο χρόνια' is consistent even when "
+            "the chart is named 'Δοκιμαστικός ασθενής · Σύνοψη Dia'. Never compare age/sex with that label. "
+            "Set conflict only for an explicit identifying contradiction, and uncertain only when "
+            "spoken identifying evidence is ambiguous between named patients. Preserve a genuine conflict. "
             "Return only IDs supplied in this batch."
         )
         if retry_code:

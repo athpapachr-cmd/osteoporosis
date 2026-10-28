@@ -180,6 +180,10 @@ def test_provider_multipart_and_private_responses_contract(monkeypatch):
     assert audio.provider_headers(audio.AudioSettings.from_env())["OpenAI-Organization"] == "org-synthetic"
     response_json = __import__("json").loads(requests[1][1])
     assert response_json["model"] == "gpt-6-luna"
+    prompt = response_json["input"][0]["content"]
+    assert "Generic age, sex, symptoms and history" in prompt
+    assert "Κυρία 68 χρονών" in prompt
+    assert "explicit identifying contradiction" in prompt
     assert response_json["store"] is False
     assert response_json["text"]["format"]["strict"] is True
     suggestion_schema = response_json["text"]["format"]["schema"]["properties"]["suggested_next_checks"]["items"]
@@ -1175,6 +1179,11 @@ def test_browser_web_audio_review_and_confirmed_save(setup, monkeypatch):
             expect(page.locator("#captureAudioTranscriptTab")).to_have_attribute("aria-pressed", "false")
             expect(page.locator("#captureAudioProcessedTab")).to_have_attribute("aria-pressed", "false")
             expect(page.locator("#captureSave")).to_be_hidden()
+            expect(page.locator("#captureAudioIdentity")).to_have_count(0)
+            expect(page.locator("#captureText")).to_be_enabled()
+            page.locator("#captureText").fill("Δική μου σύνοψη για επεξεργασία")
+            expect(page.get_by_role("button", name="Προετοιμασία καταγραφής", exact=True)).to_be_enabled()
+            page.locator("#captureText").fill("")
             expect(page.locator("#captureAudioRetryProcess")).to_be_visible()
             expect(page.locator("#captureAudioDownload")).to_be_visible()
             page.locator("#captureAudioTranscriptTab").click()
@@ -1191,16 +1200,19 @@ def test_browser_web_audio_review_and_confirmed_save(setup, monkeypatch):
             assert page.evaluate("window._downloadClicks") == 1
             page.locator("#captureAudioRetryProcess").click()
             expect(page.locator("#captureAudioStatus")).to_contain_text(
-                "έτοιμα για ξεχωριστό έλεγχο", timeout=15000)
+                "Η σύνοψη είναι έτοιμη", timeout=15000)
             expect(page.locator("#captureAudioDownload")).to_be_hidden()
             expect(page.locator("#captureAudioTranscriptPanel")).to_be_hidden()
             expect(page.locator("#captureReview")).to_be_hidden()
             expect(page.locator("#captureAudioIdentity")).to_be_hidden()
             expect(page.locator("#captureAudioProcessedTab")).to_have_attribute("aria-pressed", "false")
-            expect(page.locator("#captureSave")).to_be_disabled()
+            expect(page.locator("#captureSave")).to_be_enabled()
+            expect(page.locator("#captureAudioSummary")).to_be_visible()
+            expect(page.locator("#captureAudioSummaryText")).to_contain_text("DEXA T-score -2.8")
+            assert not save_payloads  # Stop/retry displays summary without a write.
             page.locator("#captureAudioProcessedTab").click()
             expect(page.locator("#captureReview")).to_be_visible()
-            expect(page.locator("#captureAudioIdentity")).to_be_visible()
+            expect(page.locator("#captureAudioIdentity")).to_have_count(0)
             expect(page.locator("#captureReview .capture-audio-compact-section")).to_have_count(4)
             expect(page.locator("#captureReview section[data-field=findings] textarea")).to_have_value("DEXA T-score -2.8 στο ισχίο.")
             expect(page.locator("#captureReview section[data-field=recommendations] textarea")).to_have_value(
@@ -1217,7 +1229,7 @@ def test_browser_web_audio_review_and_confirmed_save(setup, monkeypatch):
             expect(attention).not_to_have_attribute("open", "")
             expect(attention.locator("summary")).to_contain_text("3 σημείων")
             expect(attention.locator("li").first).not_to_be_visible()
-            assert page.locator("#captureAudioIdentity").count() == 1
+            assert page.locator("#captureAudioIdentity").count() == 0
             suggestions = page.locator("#captureReview .capture-audio-suggestions")
             expect(suggestions.locator("textarea")).to_have_value("Έλεγχος ανοχής της αναφερόμενης θεραπείας.")
             expect(suggestions.locator("details")).not_to_have_attribute("open", "")
@@ -1234,14 +1246,23 @@ def test_browser_web_audio_review_and_confirmed_save(setup, monkeypatch):
             expect(page.locator("#captureReview section[data-field=follow_up] textarea")).to_have_value(
                 "Έλεγχος ανοχής της αναφερόμενης θεραπείας.")
             expect(page.locator("#captureAudioStatus")).not_to_contain_text(TRANSCRIPT)
-            expect(page.locator("#captureAudioStatus")).to_contain_text("στον server")
+            expect(page.locator("#captureAudioStatus")).to_contain_text("Η σύνοψη είναι έτοιμη")
             finding = page.locator("#captureReview section[data-field=findings] textarea")
             finding.fill("DEXA T-score -2.7 στο ισχίο.")
-            page.locator("#captureAudioIdentity").check()
             finding.fill("DEXA T-score -2.6 στο ισχίο.")
-            expect(page.locator("#captureAudioIdentity")).not_to_be_checked()
+            expect(page.locator("#captureAudioSummary")).to_be_hidden()
+            held_previews = []
+            page.route("**/clinical/visit-capture/preview", lambda route: held_previews.append(route))
+            page.locator("#captureSave").click()
             expect(page.locator("#captureSave")).to_be_disabled()
-            page.locator("#captureAudioIdentity").check()
+            finding.fill("DEXA T-score -2.5 στο ισχίο.")
+            page.wait_for_timeout(50)
+            assert held_previews
+            held_previews.pop().continue_()
+            expect(page.locator("#captureStatus")).to_contain_text("Η σύνοψη άλλαξε")
+            assert not save_payloads
+            page.unroute("**/clinical/visit-capture/preview")
+            finding.fill("DEXA T-score -2.6 στο ισχίο.")
             try:
                 expect(page.locator("#captureSave")).to_be_enabled()
             except AssertionError as exc:
@@ -1255,6 +1276,33 @@ def test_browser_web_audio_review_and_confirmed_save(setup, monkeypatch):
             assert TRANSCRIPT not in str(save_payloads[-1])
             assert not errors, errors
             assert len(transcribed) == 1  # transcript retry never retranscribes the retained audio
+            # Identity-blocked audio must still permit the separate paste flow.
+            page.locator("#captureOpen").click()
+            expect(page.locator("#captureAudioStatus")).to_contain_text("Έτοιμο")
+            page.route("**/clinical/visit-capture/audio/draft", lambda route: route.fulfill(
+                json={"patient_id": "cockpit-cp1-test",
+                      "context_id": route.request.headers["x-visit-context"],
+                      "processing_status": "transcript_only", "transcript": TRANSCRIPT,
+                      "recovery_binding": "synthetic-nonretryable",
+                      "processing_failure": {"code": "source_identity_unresolved", "retryable": False}}))
+            page.locator("#capturePatientInformed").check()
+            page.locator("#captureAudioStart").click()
+            expect(page.locator("#captureAudioStatus")).to_contain_text("Ηχογράφηση")
+            page.locator("#captureAudioStop").click()
+            expect(page.locator("#captureAudioStatus")).to_contain_text("χειροκίνητο έλεγχο")
+            expect(page.locator("#captureAudioIdentity")).to_have_count(0)
+            expect(page.locator("#captureAudioRetryProcess")).to_be_hidden()
+            expect(page.locator("#captureText")).to_be_enabled()
+            from test_visit_capture import _candidate
+            manual = _candidate()
+            manual["encounter_date"] = page.locator("#captureDate").input_value()
+            page.route("**/clinical/visit-capture/extract", lambda route: route.fulfill(json={"candidate": manual}))
+            page.locator("#captureText").fill("Η δική μου κλινική σύνοψη για την επίσκεψη.")
+            page.get_by_role("button", name="Προετοιμασία καταγραφής", exact=True).click()
+            expect(page.locator("#captureReview")).to_contain_text("Λόγος επίσκεψης")
+            expect(page.locator("#captureAudioDownload")).to_be_hidden()
+            expect(page.locator(".capture-audio-review")).to_be_hidden()
+            assert len(save_payloads) == 1  # fallback prepares; never saves on its own.
             browser.close()
     finally:
         server.should_exit = True
