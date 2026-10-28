@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — web audio semantic completeness and next-visit suggestions
 
-> **STATUS (2026-10-28): POST-CODE R2 PASS / PR GATE.** Corrected runtime/test/design `3e5ca4d0` passed independent closure 0:0:0. Exact-source structured symptoms/treatment/plan/obligations and typed server-rendered next-visit suggestions are ready for canonical-impact PR and exact-head CI. The updated Chromium oracle remains mandatory in CI because the local browser binary is absent. The prior native recording/ASR qualification remains deferred at `cockpit/archive/SLICE_PLAN_NATIVE_AUDIO_ASR_QUALIFICATION_DEFERRED_2026-10-28.md`.
+> **STATUS (2026-10-28): CI MANUAL-LABEL ISOLATION CORRECTION / CLOSURE HOLD.** Corrected clinical semantics passed R2, but PR #245 Chromium proved audio-specific wording had leaked into shared manual/amendment labels. The bounded delta restores shared labels, scopes enhanced wording to compact audio only, and corrects the new Save-payload oracle. One focused independent closure and fresh exact-head CI are required. The prior native recording/ASR qualification remains deferred at `cockpit/archive/SLICE_PLAN_NATIVE_AUDIO_ASR_QUALIFICATION_DEFERRED_2026-10-28.md`.
 
 ## Objective
 
