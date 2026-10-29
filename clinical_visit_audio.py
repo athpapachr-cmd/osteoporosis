@@ -569,9 +569,13 @@ def checked_analysis(result: dict[str, Any], batch: list[tuple[int, str]]) -> tu
         if not isinstance(item, dict) or set(item) != {"intent", "source_id"}:
             raise ValueError("classification_suggestions")
         intent, source_id = item["intent"], item["source_id"]
-        if (intent not in SUGGESTION_KINDS or type(source_id) is not int or source_id not in allowed
-                or not SUGGESTION_KINDS[intent].intersection(kinds_by_source.get(source_id, set()))):
+        if intent not in SUGGESTION_KINDS or type(source_id) is not int:
             raise ValueError("classification_suggestions")
+        # Optional hint linkage cannot invalidate the independently checked clinical facts.
+        # Omit this hint; never infer a replacement fact, task or source link.
+        if (source_id not in allowed
+                or not SUGGESTION_KINDS[intent].intersection(kinds_by_source.get(source_id, set()))):
+            continue
         text, rationale = SUGGESTION_TEXT[intent]
         checked_suggestions.append({"intent": intent, "source_id": source_id,
                                     "text": text, "rationale": rationale})

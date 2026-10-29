@@ -292,7 +292,7 @@ def test_conflicting_or_overlapping_source_spans_fail_closed(facts):
         audio.checked_analysis(result, [(0, "Μπορούμε να κάνουμε μαγνητική")])
 
 
-def test_ambiguous_excerpt_and_free_text_or_incompatible_suggestion_fail_closed():
+def test_ambiguous_excerpt_and_free_text_or_unknown_suggestion_fail_closed():
     repeated = {"identity_state": "consistent", "facts": [
         {"source_id": 0, "excerpt": "πόνος", "kind": "symptom"}],
         "suggested_next_checks": [], "unclassified_ids": []}
@@ -302,7 +302,6 @@ def test_ambiguous_excerpt_and_free_text_or_incompatible_suggestion_fail_closed(
         {"text": "Να γίνει μαγνητική τομογραφία;", "rationale": "Επίμονος πόνος.", "source_ids": [0]},
         {"text": "Πιθανή νέα διάγνωση οστεοπόρωσης.", "rationale": "Εύρημα.", "source_ids": [0]},
         {"intent": "diagnose_osteoporosis", "source_id": 0},
-        {"intent": "planned_result_review", "source_id": 0},
     ):
         unsafe = {"identity_state": "consistent", "facts": [
             {"source_id": 0, "excerpt": "Επανέλεγχος", "kind": "reason"}],
