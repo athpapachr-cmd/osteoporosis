@@ -1,3 +1,5 @@
+> **2026-10-29 AUDIO HINT ISOLATION — FINAL SMOKE PASS / IDENTICAL AUDIO RUNNING:** Three served assets match exact3e00d672; anonymous six protected routes401, browser1280/390 both paths/new prompt, JS errors0/capture writes0. Identical proof source5242b252 (same invented TTS/script) running as40948544999 against newLIVE. No clinical Save. Wait result before final closure.
+
 > **2026-10-29 AUDIO HINT ISOLATION — CORRECTIVE DEPLOY LIVE / IDENTICAL AUDIO PROOF NEXT:** Render dep-dbhqkrq9lscs73a6e87g LIVE20:22:54Z for exact3e00d672b5600cc4984fb074be7bfeef17bc7f46. No duplicate manual deploy. Next identical invented TTS full pipeline draft/noSave and final asset/auth/browser/log smoke, then durable final receipt/closeout.
 
 > **2026-10-29 AUDIO HINT ISOLATION — CORRECTIVE DEPLOY BUILDING:** Native Render dep-dbhqkrq9lscs73a6e87g created20:19:59Z for exact3e00d672b5600cc4984fb074be7bfeef17bc7f46, build_in_progress. No duplicate trigger, prior8047966a LIVE. Wait terminal LIVE, then identical invented TTS workflow replay and final smoke.
