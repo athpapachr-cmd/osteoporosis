@@ -146,11 +146,13 @@ def test_browser_supplied_pattern_compact_full_optional_and_completed_history(se
                 context=browser.new_context(viewport={'width':width,'height':1000},permissions=['clipboard-read','clipboard-write']);page=context.new_page()
                 page.goto(f'http://localhost:{port}/static/cockpit/index.html');page.locator('#ceGlobalKey').click();page.locator('#ceGlobalKeyInput').fill(KEY);page.locator('#ceGlobalLoginForm button[type=submit]').click();expect(page.locator('#ceGlobalAuthStatus')).to_contain_text('Συνδέθηκες');page.keyboard.press('Escape')
                 page.locator('#captureTestPatient').click()
-                for text in [LEGACY,READY]:
+                conditional_plan = READY.replace('DEXA τον Ιανουάριο και ενδοκρινολογική επανεκτίμηση για θεραπευτική απόφαση. Δεν καταγράφηκε έναρξη νέας αγωγής.', '- Ενδεχόμενη έναρξη συνθετικού φαρμάκου Χ.\n- Άσκηση.\n- DEXA.\n- Ενδοκρινολογική επανεκτίμηση.\n- ΜΟΝΟ_ΜΕΤΑ_ΠΡΟΕΛΕΓΧΟ: η έναρξη εξαρτάται από ολοκλήρωση του απαραίτητου προελέγχου.')
+                for text in [LEGACY,READY,conditional_plan]:
                     page.locator('#captureOpen').click();page.locator('#captureText').dispatch_event('paste');page.locator('#captureText').fill(text)
                     expect(page.locator('#captureSave')).to_be_visible()
                     main=page.locator('#captureAudioSummary .clinical-compact-overview')
                     expect(main).to_contain_text('οστεοπόρωση');expect(main).to_contain_text('DEXA');expect(main).to_contain_text('ενδοκρινολογική')
+                    if text==conditional_plan: expect(main).to_contain_text('ΜΟΝΟ_ΜΕΤΑ_ΠΡΟΕΛΕΓΧΟ')
                     visible=main.inner_text();assert 'ΔΙΣΚΙΚΟ_ΥΛΙΚΟ_ΛΕΠΤΟΜΕΡΕΙΑ' not in visible and 'ΝΕΦΡΙΚΗ_ΠΥΕΛΟΣ_ΛΕΠΤΟΜΕΡΕΙΑ' not in visible
                     assert 'ΔΙΟΙΚΗΤΙΚΟ_ΠΑΡΑΠΕΜΠΤΙΚΟ' not in visible and len(visible.split())<240
                     full=page.locator('#captureAudioSummary .clinical-full-record');assert full.get_attribute('open') is None
@@ -162,6 +164,7 @@ def test_browser_supplied_pattern_compact_full_optional_and_completed_history(se
                         r=page.request.post(f'http://localhost:{port}/clinical/patient/{TEST_ID}/pending/{task["pending_id"]}/checkpoint-plan',data={'template':'completion','first_observation':'yes_confirmed','idempotency_key':uuid4().hex});assert r.status==200
                     page.reload();expect(page.locator('#captureOpen')).to_be_visible()
                     assert 'ΔΙΟΙΚΗΤΙΚΟ_ΠΑΡΑΠΕΜΠΤΙΚΟ' not in page.locator('.patient-chart-overview').inner_text()
+                    if text==conditional_plan: expect(page.locator('.patient-chart-overview .clinical-compact-overview')).to_contain_text('ΜΟΝΟ_ΜΕΤΑ_ΠΡΟΕΛΕΓΧΟ')
                     expect(page.locator('.completed-obligations').first).to_contain_text('Ολοκληρωμένες')
                     assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
                     page.screenshot(path=str(tmp_path/f'purpose-{width}-{"ready" if text==READY else "legacy"}.png'),full_page=True)

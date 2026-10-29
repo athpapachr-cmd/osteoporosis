@@ -178,7 +178,7 @@
     const paragraphs=String(text||'').trim().split(/\n\s*\n/);
     let first=whole?paragraphs.join('\n\n'):paragraphs[0];
     if(!whole&&paragraphs[1]&&/^(?:όμως|ωστόσο|μόνο|εφόσον|αφού|εκτός|υπό|προηγείται|πρώτα|δεν)/i.test(paragraphs[1]))first+='\n\n'+paragraphs[1];
-    if(/^(?:\d+[.)]|[-*•])\s/.test(first))first=first.split(/\n(?=(?:\d+[.)]|[-*•])\s)/).slice(0,limit).join('\n');
+    if(!whole&&/^(?:\d+[.)]|[-*•])\s/.test(first))first=first.split(/\n(?=(?:\d+[.)]|[-*•])\s)/).slice(0,limit).join('\n');
     return first&&first.length<=1500?first:null;
   }
   function clinicalSummary(parent,v){
