@@ -184,3 +184,44 @@ def test_contextual_response_schema_strict_objects_require_every_property():
         elif isinstance(node, list):
             for value in node: check(value)
     check(audio._consideration_schema())
+
+
+def test_optional_hint_bad_link_omitted_individually_with_facts_intact():
+    batch=[(0,'Επανέλεγχος οστεοπόρωσης.'),(1,'Επανεκτίμηση τον Ιανουάριο.'),(2,'Ακατάτακτο κείμενο.')]
+    raw={'identity_state':'consistent','facts':[{'source_id':i,'excerpt':text,'kind':'reason' if i==0 else 'follow_up'} for i,text in batch[:2]],'unclassified_ids':[2],
+         'suggested_next_checks':[{'intent':'planned_result_review','source_id':0},{'intent':'follow_up_status','source_id':99},{'intent':'history_update','source_id':2},{'intent':'follow_up_status','source_id':1}]}
+    identity,facts,hints,unclassified=audio.checked_analysis(raw,batch)
+    assert identity=='consistent' and facts==raw['facts'] and unclassified==[2]
+    assert [(h['intent'],h['source_id']) for h in hints]==[('follow_up_status',1)]
+    for malformed in [{'intent':'follow_up_status','source_id':'1'},{'intent':'new_diagnosis','source_id':1},{'intent':'follow_up_status','source_id':True}]:
+        with pytest.raises(ValueError,match='classification_suggestions'):
+            audio.checked_analysis({**raw,'suggested_next_checks':[malformed]},batch)
+    # Exact clinical source/accounting checks still run before optional hints.
+    for changed,code in [({**raw,'facts':[{**raw['facts'][0],'excerpt':'Κατασκευασμένο εύρημα.'},raw['facts'][1]]},'classification_excerpt'),({**raw,'unclassified_ids':[]},'classification_accounting')]:
+        with pytest.raises(ValueError,match=code):audio.checked_analysis(changed,batch)
+
+
+def test_actual_failure_class_incompatible_hint_does_not_block_audio_or_save(monkeypatch):
+    enabled(monkeypatch);client,engine=_client_with_engine(monkeypatch)
+    _patient(client,'SYN-WEB');context=_context(client,'SYN-WEB')
+    class Transcriber:
+        async def transcribe(self,*_):return TRANSCRIPT
+    class Summarizer:
+        async def classify(self,batch,identity):
+            result=labels(batch)
+            result['suggested_next_checks'].insert(0,{'intent':'planned_result_review','source_id':0})
+            return result
+        async def classify_retry(self,*_):pytest.fail('An incompatible optional hint must not repeat classification')
+        async def consider(self,*_):return {'contextual_clinical_considerations':[]}
+    monkeypatch.setattr(audio,'make_providers',lambda s:(Transcriber(),Summarizer()))
+    response=draft(client,context['context_id']);assert response.status_code==200
+    data=response.json();assert data['processing_status']=='complete' and data['transcript']==TRANSCRIPT
+    candidate=data['candidate'];assert candidate['pending']==[]
+    assert candidate['reason_for_visit']['text']=='Επανέλεγχος οστεοπόρωσης.'
+    assert candidate['findings'][0]['text']=='DEXA T-score -2.8 στο ισχίο.'
+    assert candidate['recommendations'][0]['text']=='Ξεκινά alendronate 70 mg εβδομαδιαίως.'
+    assert [h['intent'] for h in data['suggested_next_checks']]==['therapy_tolerance']
+    saved=client.post('/clinical/visit-capture/save',headers=HEADERS,json={'context_id':context['context_id'],'candidate':candidate,'recording_patient_confirmed':True})
+    assert saved.status_code==200
+    reopened=client.get('/clinical/patient/SYN-WEB/chart',headers=HEADERS).json()['visits'][0]['clinical']
+    assert reopened['findings']==candidate['findings'] and reopened['pending']==[]
