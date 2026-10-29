@@ -1,64 +1,22 @@
-name: G1 progressive guidance foundation
-
+name: Fictional purpose audio proof (never merge)
 on:
-  push:
-    branches:
-      - feat/module01-g1-progressive-guidance-foundation-2026-08-30
-      - fix/module01-g1-why-now-production-smoke-2026-08-30
-  pull_request:
-    paths:
-      - 'static/baseline-audit/progressive-guidance-core.js'
-      - 'static/baseline-audit/progressive-guidance-ui.js'
-      - 'static/baseline-audit/progressive-guidance.css'
-      - 'static/baseline-audit/adaptive-applicability.js'
-      - 'static/baseline-audit/adaptive-applicability.css'
-      - 'static/baseline-audit/app.js'
-      - 'static/baseline-audit/finalization-coordinator.js'
-      - 'static/baseline-audit/patient-registry.js'
-      - 'static/baseline-audit/pilot-completion.js'
-      - 'test_progressive_guidance_node.js'
-      - 'test_progressive_guidance_wiring.js'
-      - 'test_progressive_guidance_ui_state.js'
-      - 'test_progressive_guidance_why_now_ui.js'
-      - 'test_baseline_finish_browser.js'
-      - 'test_baseline_finalization_api.py'
-      - 'test_encounter_finalization.py'
-      - '.github/workflows/g1-progressive-guidance-tests.yml'
   workflow_dispatch:
-
 jobs:
-  g1-guidance:
+  proof:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-      - name: Check JavaScript syntax
-        run: |
-          node --check static/baseline-audit/progressive-guidance-core.js
-          node --check static/baseline-audit/progressive-guidance-ui.js
-          node --check static/baseline-audit/adaptive-applicability.js
-          node --check static/baseline-audit/finalization-coordinator.js
-          node --check static/baseline-audit/patient-registry.js
-          node --check static/baseline-audit/pilot-completion.js
-          node --check static/baseline-audit/app.js
-          node --check test_progressive_guidance_node.js
-          node --check test_progressive_guidance_wiring.js
-          node --check test_progressive_guidance_ui_state.js
-          node --check test_progressive_guidance_why_now_ui.js
-          node --check test_baseline_finish_browser.js
-      - name: Run progressive guidance core regressions
-        run: node test_progressive_guidance_node.js
-      - name: Run progressive guidance wiring regression
-        run: node test_progressive_guidance_wiring.js
-      - name: Run progressive guidance UI state regressions
-        run: node test_progressive_guidance_ui_state.js
-      - name: Run progressive guidance WHY-NOW presentation regression
-        run: node test_progressive_guidance_why_now_ui.js
-      - name: Preserve authoritative Finish browser regression
-        run: node test_baseline_finish_browser.js
-      - name: Preserve server finalization lifecycle regression
-        run: python -m unittest -v test_baseline_finalization_api.py
+      - run: pip install httpx
+      - name: Synthetic audio draft only, no Save
+        env:
+          CLINICAL_DATA_KEY: ${{ secrets.CLINICAL_DATA_KEY }}
+        run: python scripts/purpose_provider_proof.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: purpose-provider-proof
+          path: purpose-provider-proof.json
