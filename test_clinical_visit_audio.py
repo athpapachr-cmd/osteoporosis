@@ -68,7 +68,10 @@ def labels(batch, *, identity="consistent", bad_id=None):
 
 
 def considerations(facts, items=None):
-    return {"contextual_clinical_considerations": items or []}
+    purpose_ids = [item['source_id'] for item in facts if item['kind'] == 'reason'][:1]
+    return {"contextual_clinical_considerations": [
+        {'purpose_source_ids': purpose_ids, 'role_scope': 'within_role', 'impact': 'continuity', **item}
+        for item in (items or [])]}
 
 
 def one_consideration(facts):
@@ -201,11 +204,11 @@ def test_provider_multipart_and_private_responses_contract(monkeypatch):
     consideration_item = consideration_json["text"]["format"]["schema"]["properties"][
         "contextual_clinical_considerations"]["items"]
     assert set(consideration_item["properties"]) == {
-        "category", "text", "rationale", "source_ids", "confidence"}
+        "category", "text", "rationale", "source_ids", "confidence", "purpose_source_ids", "role_scope", "impact"}
     assert "selected_identity" not in consideration_json["input"][1]["content"]
     assert "source_units" not in consideration_json["input"][1]["content"]
     consideration_source = __import__("json").loads(consideration_json["input"][1]["content"])
-    assert consideration_source == {"validated_facts": [{
+    assert consideration_source == {"clinician_role": "orthopaedic clinician", "purpose_source_ids": [0], "validated_facts": [{
         "source_id": 0,
         "excerpt": "Η Synthetic ήρθε για επανέλεγχο",
         "kind": "reason",
@@ -310,6 +313,7 @@ def test_ambiguous_excerpt_and_free_text_or_incompatible_suggestion_fail_closed(
 
 def test_contextual_considerations_require_validated_sources_and_bounded_shape():
     facts = [
+        {"source_id": 0, "excerpt": "Έλεγχος θωρακικού πόνου", "kind": "reason"},
         {"source_id": 2, "excerpt": "πόνος στη ράχη", "kind": "symptom"},
         {"source_id": 8, "excerpt": "απώλεια ύψους", "kind": "finding"},
     ]
@@ -319,6 +323,7 @@ def test_contextual_considerations_require_validated_sources_and_bounded_shape()
         "rationale": "Ο συνδυασμός πόνου και απώλειας ύψους μπορεί να χρειάζεται κλινική συσχέτιση.",
         "source_ids": [2, 8],
         "confidence": "moderate",
+        "purpose_source_ids": [0], "role_scope": "within_role", "impact": "management",
     }]}
     assert audio.checked_considerations(valid, facts)[0]["source_ids"] == [2, 8]
 
@@ -759,7 +764,8 @@ def test_whole_visit_contextual_pass_combines_different_batches(monkeypatch):
     body = response.json()
     assert body["contextual_considerations_status"] == "complete"
     assert body["contextual_clinical_considerations"][0]["source_ids"] == [1, 2]
-    assert body["contextual_clinical_considerations"][0]["text"] not in str(body["candidate"])
+    assert body['candidate']['next_visit_focus'][0]['origin'] == 'ai_suggested'
+    assert body["contextual_clinical_considerations"][0]["text"] not in str(body["candidate"]['pending'])
 
 
 def test_contextual_input_limit_preserves_exact_source_candidate(monkeypatch):
@@ -896,7 +902,8 @@ def test_source_copy_provisional_review_and_confirmed_save(monkeypatch):
     assert body["suggested_next_checks"][0]["text"] == "Έλεγχος ανοχής της αναφερόμενης θεραπείας."
     assert body["contextual_considerations_status"] == "complete"
     assert body["contextual_clinical_considerations"][0]["source_ids"] == [1, 2]
-    assert body["contextual_clinical_considerations"][0]["text"] not in str(candidate)
+    assert candidate["next_visit_focus"][0]["status"] == "suggestion"
+    assert body["contextual_clinical_considerations"][0]["text"] not in str(candidate["pending"])
     assert {item["hint"] for item in body["review_units"]} >= {"finding", "therapy", "preference_undecided"}
     payload = {"context_id": context["context_id"], "candidate": candidate}
     preview = client.post("/clinical/visit-capture/preview", headers=HEADERS, json=payload)
@@ -1253,14 +1260,14 @@ def test_browser_web_audio_review_and_confirmed_save(setup, monkeypatch):
             suggestions = page.locator("#captureReview .capture-audio-suggestions")
             expect(suggestions.locator("textarea")).to_have_value("Έλεγχος ανοχής της αναφερόμενης θεραπείας.")
             expect(suggestions.locator("details")).not_to_have_attribute("open", "")
-            ai_considerations = page.locator("#captureReview .capture-ai-considerations")
-            expect(ai_considerations).to_contain_text("Κλινικές σκέψεις AI από τα συμφραζόμενα")
-            expect(ai_considerations).to_contain_text("δεν ειπώθηκαν στην επίσκεψη")
+            ai_considerations = page.locator("#captureReview .next-visit-focus")
+            expect(ai_considerations).to_contain_text("Προτεινόμενα σημεία επόμενης επίσκεψης")
+            expect(ai_considerations).to_contain_text("Δεν είναι αποφάσεις ή υποχρεώσεις")
             expect(ai_considerations).to_contain_text("συνολική επανεκτίμηση του καταγματικού κινδύνου")
-            expect(ai_considerations).to_contain_text("Βεβαιότητα AI: Μέτρια")
             expect(ai_considerations.locator("details")).not_to_have_attribute("open", "")
-            expect(ai_considerations.locator("button")).to_have_count(0)
+            expect(ai_considerations.get_by_role("button",name="Αφαίρεση πρότασης")).to_have_count(1)
             expect(page.locator("#captureReview section[data-field=follow_up]")).to_have_count(0)
+            suggestions.locator("summary").first.click()
             suggestions.get_by_role("button", name="Προσθήκη στο πλάνο", exact=True).click()
             expect(page.locator("#captureReview .capture-audio-suggestions")).to_have_count(0)
             expect(page.locator("#captureReview section[data-field=follow_up] textarea")).to_have_value(
@@ -1292,7 +1299,8 @@ def test_browser_web_audio_review_and_confirmed_save(setup, monkeypatch):
             expect(page.locator("#patientChart")).to_contain_text("DEXA T-score -2.6")
             assert save_payloads[-1]["candidate"]["follow_up"][0]["text"] == "Έλεγχος ανοχής της αναφερόμενης θεραπείας."
             assert "clinician_edit" in save_payloads[-1]["candidate"]["follow_up"][0]["provenance"]
-            assert "συνολική επανεκτίμηση του καταγματικού κινδύνου" not in str(save_payloads[-1])
+            assert save_payloads[-1]["candidate"]["next_visit_focus"] == []  # edited grounding removes stale preparation
+            assert "συνολική επανεκτίμηση του καταγματικού κινδύνου" not in str(save_payloads[-1]["candidate"]["pending"])
             assert TRANSCRIPT not in str(save_payloads[-1])
             assert not errors, errors
             assert len(transcribed) == 1  # transcript retry never retranscribes the retained audio

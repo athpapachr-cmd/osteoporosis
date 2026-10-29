@@ -148,7 +148,7 @@ def test_browser_direct_paste_one_save_full_chart_prompt_edit_and_mode_race(setu
                 expect(page.locator('#captureWebAudio')).not_to_be_visible()
                 page.locator('#captureCopyChatGPTPrompt').click()
                 copied = page.evaluate('navigator.clipboard.readText()')
-                for term in ('Ατομικό ιστορικό:', 'Τρέχουσα αγωγή:', 'Απεικονιστικός έλεγχος:', 'Υποχρεώσεις:', 'Προτάσεις AI'):
+                for term in ('Κλινική εικόνα:', 'Πλάνο και παρακολούθηση:', 'Υποχρεώσεις:', 'Προτάσεις για την επόμενη επίσκεψη:', 'ρόλο μου'):
                     assert term in copied
                 # Overlength is retained rather than truncated by the browser.
                 page.locator('#captureText').fill('z'*30001)
@@ -176,6 +176,7 @@ def test_browser_direct_paste_one_save_full_chart_prompt_edit_and_mode_race(setu
                     assert len(list(db.scalars(select(ClinicalPendingORM).where(ClinicalPendingORM.source_encounter_id == db.scalar(select(EncounterORM).order_by(EncounterORM.created_at.desc())).id)))) == 1
                 page.reload(); expect(page.locator('#captureOpen')).to_be_visible()
                 expect(page.locator('#patientChart')).to_contain_text('Και η επανάληψη παραμένει')
+                page.locator('#patientChart .clinical-full-record').first.locator('summary').first.click()
                 page.locator('#patientChart').get_by_role('button', name='Αντιγραφή πλήρους σημείωσης').first.click()
                 assert page.evaluate('navigator.clipboard.readText()') == NOTE
                 assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')

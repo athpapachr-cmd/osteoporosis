@@ -344,6 +344,19 @@ class PreparedClinicalNote(BaseModel):
     text: str = Field(min_length=1, max_length=30000)
 
 
+class VisitPlanningSuggestion(BaseModel):
+    model_config = {'extra': 'forbid'}
+    text: str = Field(min_length=1, max_length=240)
+    rationale: str = Field(min_length=1, max_length=320)
+    purpose: str = Field(min_length=1, max_length=4000)
+    source_excerpts: List[str] = Field(min_length=1, max_length=3)
+    provenance: List[str] = Field(min_length=1, max_length=8)
+    role_scope: Literal['within_role']
+    impact: Literal['management', 'continuity', 'safety']
+    origin: Literal['ai_suggested'] = 'ai_suggested'
+    status: Literal['suggestion'] = 'suggestion'
+
+
 class VisitCaptureCandidateV1(BaseModel):
     model_config = {"extra": "forbid"}
 
@@ -353,6 +366,7 @@ class VisitCaptureCandidateV1(BaseModel):
     visit_type: Optional[str] = Field(default=None, max_length=240)
     specialty: Optional[str] = Field(default=None, max_length=240)
     reason_for_visit: VisitCaptureFact
+    reason_is_unspecified: bool = False
     source_bindings: List[VisitCaptureSourceBinding] = Field(min_length=1, max_length=12)
     comparison_basis: VisitCaptureComparisonBasis
     what_changed: List[VisitCaptureChange] = Field(default_factory=list, max_length=40)
@@ -373,6 +387,7 @@ class VisitCaptureCandidateV1(BaseModel):
     safety_net: List[VisitCaptureFact] = Field(default_factory=list, max_length=20)
     uncertainties: List[VisitCaptureFact] = Field(default_factory=list, max_length=40)
     prepared_note: Optional[PreparedClinicalNote] = None
+    next_visit_focus: List[VisitPlanningSuggestion] = Field(default_factory=list, max_length=3)
 
 
 class VisitCaptureContextCreate(BaseModel):
@@ -639,6 +654,10 @@ def _render_gesy_copy(candidate: VisitCaptureCandidateV1) -> str:
 
 
 def _validate_visit_capture_candidate(candidate: VisitCaptureCandidateV1) -> None:
+    if candidate.reason_is_unspecified and (
+            candidate.reason_for_visit.text != 'Κλινική καταγραφή'
+            or candidate.reason_for_visit.certainty != 'uncertain'):
+        raise HTTPException(422, 'Invalid neutral visit title')
     prepared_bindings = [b for b in candidate.source_bindings if b.role == 'prepared_clinical_note']
     if candidate.prepared_note is not None or prepared_bindings:
         from clinical_prepared_note import note_reason, note_tasks
@@ -683,6 +702,16 @@ def _validate_visit_capture_candidate(candidate: VisitCaptureCandidateV1) -> Non
     ]
     if candidate.next_contact is not None:
         fact_groups.append([candidate.next_contact])
+    grounded_text = [value for group in fact_groups for item in group
+                     for value in [getattr(item, 'text', None), getattr(item, 'source_excerpt', None),
+                                   getattr(item, 'description', None), getattr(item, 'purpose', None)] if value]
+    for suggestion in candidate.next_visit_focus:
+        if (candidate.reason_is_unspecified or suggestion.purpose != candidate.reason_for_visit.text
+                or any(not excerpt or len(excerpt) > 4000
+                       or not any(excerpt in text for text in grounded_text)
+                       for excerpt in suggestion.source_excerpts)):
+            raise HTTPException(422, 'Planning suggestion source changed')
+    fact_groups.append(candidate.next_visit_focus)
     fact_groups.append(candidate.coding.gesy_coded)
     for group in fact_groups:
         for item in group:
