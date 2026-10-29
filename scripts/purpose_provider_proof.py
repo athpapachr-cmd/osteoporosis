@@ -54,6 +54,9 @@ try:
           'relevant_followthrough_focus':('dexa' in focus_text or 'οστικ' in focus_text or 'ενδοκρινολογ' in focus_text),
           'incidental_not_promoted':not any(v in focus_text for v in ['νεφρ','δισκικου υλικου','εξοδος δισκ']),
           'completed_referral_not_active':'παραπεμπτικ' not in active,
+          'no_new_task_for_completed_advice_or_scheduled_followup':candidate.get('pending',[])==[],
+          'short_complete_questions':all(len(v['text'].split())<=28 and v['text'].rstrip().endswith(('?',';',';')) for v in focus),
+          'greek_latin_letters_only':all(not ch.isalpha() or unicodedata.name(ch,'').startswith(('GREEK','LATIN')) for v in focus for ch in v['text']),
         }
         result['checks']=checks
         require(all(checks.values()), 'synthetic_acceptance_failed')
