@@ -537,3 +537,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
 .capture-input-modes [aria-pressed="true"]{background:#207c78;color:white}
 .prepared-clinical-note .clinical-preview-text{min-height:0;border:0;background:none;padding:0;margin:4px 0 14px;font:inherit;white-space:pre-wrap}
 .prepared-clinical-note h4{margin:18px 0 5px}
+
+.clinical-compact-overview .compact-note-text{white-space:pre-wrap;line-height:1.55;margin:5px 0 14px;overflow-wrap:anywhere}
+.clinical-full-record{margin-top:18px;border-top:1px solid #dce6e7;padding-top:12px}
+.clinical-full-record>summary,.completed-obligations>summary{cursor:pointer;color:#267875;font-weight:600}
+.completed-obligations{margin-top:14px}

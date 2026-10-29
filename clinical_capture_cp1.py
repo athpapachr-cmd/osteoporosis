@@ -46,6 +46,8 @@ Never echo identifiers in clinical text. Explicit identity conflict sets source_
 Use the supplied encounter_date. Bind exactly source_ref=dia_summary, role=dia_summary.
 All extracted provenance references dia_summary. verification=source_stated, never clinician_confirmed.
 prepared_note must be null: this AI path must not retain the supplied source as a prepared note.
+next_visit_focus=[] and reason_is_unspecified=false. Do not manufacture AI planning notes in this extraction path.
+Keep clinical clauses concise and avoid restating the same fact across history, impression and decisions.
 comparison_basis=unavailable and what_changed=[] (no independently bound prior encounter provided).
 Retain reported history/changes in findings clearly labelled as reported. Retain uncertainty explicitly.
 Only unfulfilled explicitly agreed obligations belong in pending. status=open/awaiting_patient/awaiting_result,

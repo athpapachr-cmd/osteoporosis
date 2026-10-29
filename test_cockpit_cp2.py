@@ -129,6 +129,7 @@ def test_browser_receipt_review_timeline_refresh_second_session(setup,tmp_path):
                 expect(row.locator('.patient-followthrough-end')).to_have_attribute('data-complete',str(width==390).lower())
                 expect(points.filter(has_text='Παραλήφθηκε')).to_have_count(0)
                 if width==390:
+                    if branches.get_attribute('open') is None:branches.locator('summary').first.click()
                     last=row.locator('.pending-stage').last
                     undo=last.get_by_role('button',name='Αναίρεση',exact=True).bounding_box()
                     delete=last.get_by_role('button',name='Διαγραφή υποχρέωσης',exact=True).bounding_box()
@@ -601,13 +602,14 @@ def test_browser_real_obligation_popup_complete_delete_restore(setup,tmp_path):
                     link.click();expect(popup).to_contain_text('Όχι ακόμη')
                 popup.get_by_role('button',name='Ναι',exact=True).click()
                 expect(page.locator('.patient-chart-grid .patient-obligation-link')).to_contain_text('Ολοκληρώθηκε')
-                page.reload();link.click();expect(popup).to_contain_text('✓ Ολοκληρώθηκε η ενέργεια')
+                page.reload();page.locator('.completed-obligations summary').first.click();link.click();expect(popup).to_contain_text('✓ Ολοκληρώθηκε η ενέργεια')
                 expect(popup.get_by_role('button',name='Διαγραφή υποχρέωσης',exact=True)).to_be_visible()
                 popup.screenshot(path=str(tmp_path/f'obligation-popup-{width}.png'))
                 assert popup.bounding_box()['width']<=width
                 popup.get_by_role('button',name='Κλείσιμο',exact=True).click()
                 # Inline confirmation works without a dialog, including a completed task.
                 branch=page.locator('.patient-followthrough-branch')
+                if branch.get_attribute('open') is None:branch.locator('summary').first.click()
                 branch.get_by_role('button',name='Διαγραφή υποχρέωσης',exact=True).click()
                 branch.get_by_role('button',name='Διατήρηση',exact=True).click()
                 expect(branch.get_by_role('button',name='Διαγραφή υποχρέωσης',exact=True)).to_be_visible()
@@ -820,6 +822,8 @@ def test_compact_branch_and_permanent_removal_browser(setup,tmp_path):
                 page.locator('#ceGlobalLoginForm button[type=submit]').click();expect(page.locator('#ceGlobalAuthStatus')).to_contain_text('Συνδέθηκες');page.keyboard.press('Escape')
                 page.goto(f'http://localhost:{port}/static/cockpit/index.html?chart=outside-synthetic-scope')
                 row=page.locator('.patient-followthrough-branch article[data-pending-id="'+p['pending_id']+'"]')
+                branch=page.locator('.patient-followthrough-branch').filter(has=page.locator('article[data-pending-id="'+p['pending_id']+'"]'))
+                expect(row).not_to_be_visible();branch.locator('summary').first.click()
                 expect(row).to_be_visible();expect(row.locator('blockquote')).to_have_count(0)
                 expect(row.get_by_role('button',name='Δημιουργήθηκε στην επίσκεψη',exact=False)).to_have_count(0)
                 undo=row.get_by_role('button',name='Αναίρεση',exact=True).bounding_box();remove=row.get_by_role('button',name='Διαγραφή υποχρέωσης',exact=True).bounding_box()

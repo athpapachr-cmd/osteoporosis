@@ -161,7 +161,7 @@ def test_browser_capture_edit_reject_save_refresh_and_second_session(setup,monke
                     assess.locator('input').fill('Αφαιρεθέν στοιχείο')
                     assess.get_by_role('button',name='Αφαίρεση').click()
                     page.locator('#captureSave').click();expect(page.locator('#captureComposer')).to_be_hidden()
-                expect(page.locator('#patientChart')).to_contain_text('Δημιουργήθηκε υποχρέωση: Να προσκομιστεί το CD')
+                expect(page.locator('#patientChart')).to_contain_text('Ενεργή υποχρέωση: Να προσκομιστεί το CD')
                 page.reload();expect(page.locator('#patientChart')).to_contain_text('Να προσκομιστεί το CD')
                 page.locator('.patient-journey-point').first.click()
                 page.get_by_role('button',name='Άνοιγμα',exact=True).click()

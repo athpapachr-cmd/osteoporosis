@@ -22,7 +22,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import Column, DateTime, String, delete, update
 from sqlalchemy.orm import DeclarativeBase, Session
 
-from clinical_data import (VisitCaptureCandidateV1, _validate_visit_capture_candidate,
+from clinical_data import (VisitCaptureCandidateV1, VisitPlanningSuggestion, _validate_visit_capture_candidate,
                            _render_visit_capture)
 
 MAX_AUDIO_BYTES = 23 * 1024 * 1024  # 24,117,248 bytes, below OpenAI's 25 MB limit.
@@ -369,8 +369,13 @@ def _consideration_schema() -> dict[str, Any]:
                 "source_ids": {"type": "array", "minItems": 1, "maxItems": 3,
                                "items": {"type": "integer"}},
                 "confidence": {"type": "string", "enum": list(CONSIDERATION_CONFIDENCE)},
+                "purpose_source_ids": {"type": "array", "minItems": 1, "maxItems": 3,
+                                       "items": {"type": "integer"}},
+                "role_scope": {"type": "string", "enum": ["within_role", "handoff", "incidental"]},
+                "impact": {"type": "string", "enum": ["management", "continuity", "safety", "none"]},
             },
-            "required": ["category", "text", "rationale", "source_ids", "confidence"]}
+            "required": ["category", "text", "rationale", "source_ids", "confidence",
+                         "purpose_source_ids", "role_scope", "impact"]}
     return {"type": "object", "additionalProperties": False,
             "properties": {"contextual_clinical_considerations": {
                 "type": "array", "maxItems": 4, "items": item}},
@@ -434,6 +439,16 @@ class OpenAISummarizer:
             "Phrase each item as something the clinician may consider, never as a diagnosis, order or requirement. "
             "Do not prescribe, start, stop or change treatment or dose. Do not invent urgency, timing, negatives, "
             "patient identity, guideline authority or facts absent from the input. An empty list is valid."
+            " The treating clinician is an orthopaedic doctor. Focus only on the explicit purpose_source_ids "
+            "and questions that could change that clinician's management, continuity or safety decisions. "
+            "Return at most three items. Every purpose_source_id must refer to an explicit reason fact. "
+            "For each item declare role_scope=within_role/handoff/incidental and impact=management/continuity/safety/none. "
+            "Do not turn every uncertain phrase, absent field or incidental finding into a follow-up demand. "
+            "For osteoporosis follow-up and vertebral-fracture exclusion, prioritize stated DEXA and endocrine "
+            "treatment follow-through. Asymptomatic disc-material detail or an incidental renal-pelvis finding "
+            "already handed to primary care does not by itself justify an orthopaedic follow-up demand. "
+            "If disc disease is the explicit purpose of another visit, it may be relevant; never use a keyword blacklist. "
+            "Explain briefly what decision the item could affect. Completed administrative referrals are not clinical priorities."
         )
         return await self._request(source, system, "visit_audio_contextual_considerations_v1",
                                    _consideration_schema())
@@ -587,7 +602,9 @@ async def checked_batch_analysis(summarizer: SummarizerProvider, batch: list[tup
 
 
 def contextual_evidence(facts: list[dict[str, Any]]) -> bytes:
-    return json.dumps({"validated_facts": facts}, ensure_ascii=False,
+    return json.dumps({"validated_facts": facts,
+                       "clinician_role": "orthopaedic clinician",
+                       "purpose_source_ids": sorted({f['source_id'] for f in facts if f['kind'] == 'reason'})}, ensure_ascii=False,
                       separators=(",", ":")).encode("utf-8")
 
 
@@ -604,9 +621,11 @@ def checked_considerations(result: dict[str, Any], facts: list[dict[str, Any]]) 
     if not isinstance(items, list) or len(items) > 4:
         raise ValueError("contextual_considerations_values")
     allowed = {item["source_id"] for item in facts}
+    purposes = {item['source_id'] for item in facts if item['kind'] == 'reason'}
     seen: set[str] = set()
     checked: list[dict[str, Any]] = []
-    required = {"category", "text", "rationale", "source_ids", "confidence"}
+    required = {"category", "text", "rationale", "source_ids", "confidence",
+                "purpose_source_ids", "role_scope", "impact"}
     for item in items:
         if not isinstance(item, dict) or set(item) != required:
             raise ValueError("contextual_considerations_values")
@@ -624,12 +643,27 @@ def checked_considerations(result: dict[str, Any], facts: list[dict[str, Any]]) 
                 or any(type(value) is not int for value in source_ids)
                 or len(source_ids) != len(set(source_ids)) or not set(source_ids).issubset(allowed)):
             raise ValueError("contextual_considerations_sources")
+        purpose_ids = item['purpose_source_ids']
+        if (not isinstance(purpose_ids, list) or not 1 <= len(purpose_ids) <= 3
+                or any(type(value) is not int for value in purpose_ids)
+                or len(purpose_ids) != len(set(purpose_ids))
+                or item['role_scope'] not in {'within_role', 'handoff', 'incidental'}
+                or item['impact'] not in {'management', 'continuity', 'safety', 'none'}):
+            raise ValueError('contextual_considerations_scope')
+        # Declared linkage is a bounded structural filter, not proof of medical relevance.
+        if (not purposes or not set(purpose_ids).issubset(purposes)
+                or item['role_scope'] != 'within_role' or item['impact'] == 'none'):
+            continue
         key = text.casefold()
         if key in seen:
             raise ValueError("contextual_considerations_duplicate")
         seen.add(key)
         checked.append({"category": category, "text": text, "rationale": rationale,
-                        "source_ids": source_ids, "confidence": confidence})
+                        "source_ids": source_ids, "confidence": confidence,
+                        "purpose_source_ids": purpose_ids, "role_scope": item['role_scope'],
+                        "impact": item['impact']})
+        if len(checked) == 3:
+            break
     return checked
 
 
@@ -676,9 +710,8 @@ def build_candidate(units: list[str], facts: list[dict[str, Any]], unclassified:
                "option": "options_discussed", "follow_up": "follow_up", "safety": "safety_net",
                "administrative": "administrative_notes", "uncertainty": "uncertainties"}
     reasons = [item["excerpt"] for item in facts if item["kind"] == "reason"]
-    if not reasons:
-        raise ValueError("reason_missing")
-    if not any(item["kind"] not in ("reason", "uncertainty") for item in facts):
+    if not any(item["kind"] in {'history', 'symptom', 'finding', 'impression', 'therapy',
+                               'decision', 'follow_up', 'safety', 'option'} for item in facts):
         raise ValueError("clinical_content_missing")
     review_units = []
     for item in facts:
@@ -715,8 +748,10 @@ def build_candidate(units: list[str], facts: list[dict[str, Any]], unclassified:
         review_units.append({"id": identifier, "text": text, "hint": "unclassified"})
     if len(review_units) > 60:
         raise ValueError("review_too_large")
+    reason = fact('; '.join(reasons)) if reasons else {**fact('Κλινική καταγραφή'), 'certainty': 'uncertain'}
     raw = {"schema_version": "visit_capture_candidate_v1", "source_identity_state": "consistent",
-           "encounter_date": encounter_date, "reason_for_visit": fact("; ".join(reasons)),
+           "encounter_date": encounter_date, "reason_for_visit": reason,
+           "reason_is_unspecified": not bool(reasons),
            "source_bindings": [{"source_ref": source_ref, "role": source_ref}],
            "comparison_basis": {"type": "unavailable", "source_ref": None}, **groups}
     candidate = VisitCaptureCandidateV1.model_validate(raw)
@@ -770,7 +805,9 @@ async def process_transcript(transcript: str, encounter_date: str, identity: dic
 
     contextual_status = "complete"
     contextual_considerations: list[dict[str, Any]] = []
-    if len(evidence) > MAX_CONTEXTUAL_FACT_BYTES:
+    if candidate.reason_is_unspecified:
+        contextual_status = "purpose_unspecified"
+    elif len(evidence) > MAX_CONTEXTUAL_FACT_BYTES:
         contextual_status = "input_limit"
     else:
         budget = optional_timeout_budget(pipeline_deadline, now(), summarize_timeout)
@@ -788,6 +825,18 @@ async def process_transcript(transcript: str, encounter_date: str, identity: dic
                     "visit_audio_optional_failure stage=contextual_considerations kind=%s provider_http_status=%s",
                     kind, provider_http_status)
     verify_context()
+    facts_by_id: dict[int, list[str]] = {}
+    for source_fact in facts:
+        facts_by_id.setdefault(source_fact['source_id'], []).append(source_fact['excerpt'])
+    candidate.next_visit_focus = [
+        VisitPlanningSuggestion.model_validate({'text': item['text'], 'rationale': item['rationale'],
+         'purpose': candidate.reason_for_visit.text,
+         'source_excerpts': [facts_by_id[sid][0] for sid in item['source_ids']],
+         'provenance': ['web_visit_audio'], 'role_scope': 'within_role',
+         'impact': item['impact'], 'origin': 'ai_suggested', 'status': 'suggestion'})
+        for item in contextual_considerations]
+    candidate = VisitCaptureCandidateV1.model_validate(candidate.model_dump(mode='json'))
+    _validate_visit_capture_candidate(candidate)
     return {"candidate": candidate.model_dump(mode="json"),
             "review_units": review_units,
             "suggested_next_checks": merged_suggestions,
