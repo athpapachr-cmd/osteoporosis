@@ -188,6 +188,8 @@ def test_provider_multipart_and_private_responses_contract(monkeypatch):
     assert "Κυρία 68 χρονών" in prompt
     assert "explicit identifying contradiction" in prompt
     assert "main presenting complaint" in prompt
+    assert "completed communication, not a new agreed obligation" in prompt
+    assert "already scheduled patient investigation is follow_up" in prompt
     assert response_json["store"] is False
     assert response_json["text"]["format"]["strict"] is True
     suggestion_schema = response_json["text"]["format"]["schema"]["properties"]["suggested_next_checks"]["items"]
@@ -200,6 +202,8 @@ def test_provider_multipart_and_private_responses_contract(monkeypatch):
     assert retry_json["store"] is False and "tools" not in retry_json
     consideration_json = __import__("json").loads(requests[3][1])
     assert consideration_json["model"] == "gpt-6-luna" and consideration_json["store"] is False
+    assert "one complete direct Greek question" in consideration_json["input"][0]["content"]
+    assert "8–18 words" in consideration_json["input"][0]["content"]
     assert consideration_json["text"]["format"]["name"] == "visit_audio_contextual_considerations_v1"
     consideration_item = consideration_json["text"]["format"]["schema"]["properties"][
         "contextual_clinical_considerations"]["items"]
