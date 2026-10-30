@@ -470,6 +470,7 @@ def exercise_reception_call_peek(page, width, call_source):
 def exercise_icloud_mail_peek(page, width):
     """Real Chromium, provider-shaped but fictional alias mail; no external access."""
     payload = {"source": "icloud_mail", "scope": "recipient_alias_inbox_only",
+        "next_cursor": "765-2", "skipped_count": 1, "coverage_complete": False,
         "items": [
             {"id": "765-4", "subject": "<svg onload=alert(1)> MRI",
              "from": "Fictional sender", "date": "2026-10-30T09:00:00+00:00",
@@ -487,16 +488,25 @@ def exercise_icloud_mail_peek(page, width):
         assert not any(k.lower() == "x-clinical-key" for k in route.request.headers)
         route.fulfill(json=payload)
     def full(route):
+        if "cursor=765-2" in route.request.url:
+            return route.fulfill(json={"source": "icloud_mail",
+                "scope": "recipient_alias_inbox_only",
+                "next_cursor": None, "skipped_count": 0, "coverage_complete": True,
+                "items": [{"id": "765-1", "subject": "Παλαιότερο κλινικό",
+                   "from": "Old synthetic", "date": "2026-10-28T09:00:00+00:00",
+                   "category": "clinical"}]})
         route.fulfill(json=payload)
     def item(route):
         route.fulfill(json=detail)
     page.route("**/clinical/icloud-mail/peek", peek)
     page.route("**/clinical/icloud-mail", full)
+    page.route("**/clinical/icloud-mail?*", full)
     page.route("**/clinical/icloud-mail/items/765-4", item)
     page.locator("#doctorInboxButton").click()
     content = page.locator("#doctorPopoverContent")
     expect(content).to_contain_text("<svg onload=alert(1)>")
     expect(content).to_contain_text("Για έλεγχο")
+    expect(content).to_contain_text("Μερική κάλυψη")
     assert content.locator("svg, img").count() == 0
     content.locator("button.doctor-action-row").first.click()
     expect(page.locator("#doctorIcloudInboxView")).to_be_visible()
@@ -505,15 +515,23 @@ def exercise_icloud_mail_peek(page, width):
     assert details.locator("svg, img").count() == 0
     expect(details).to_contain_text("συνημμένα που δεν μπορούν να προβληθούν")
     assert details.locator("a.doctor-icloud-attachment").count() == 1
+    expect(details).to_contain_text("δεν έχουν ελεγχθεί για κακόβουλα")
     assert details.locator("a.doctor-icloud-attachment").first.get_attribute("href").endswith(
         "/clinical/icloud-mail/items/765-4/attachments/2")
     assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1")
+    expect(page.locator("#doctorIcloudInboxRows")).to_contain_text("Μερική κάλυψη")
+    page.locator("#doctorIcloudInboxRows").get_by_role("button", name="Παλαιότερα").click()
+    expect(page.locator("#doctorIcloudInboxRows")).to_contain_text("Παλαιότερο κλινικό")
+    expect(page.locator("#doctorIcloudInboxShown")).to_contain_text("Σελίδα 2")
+    page.locator("#doctorIcloudInboxRows").get_by_role("button", name="Νεότερα").click()
+    expect(page.locator("#doctorIcloudInboxRows")).to_contain_text("<svg onload=alert(1)>")
     if width == 390:
         page.screenshot(path=str(OUT / "cockpit-icloud-inbox-mobile.png"), full_page=True)
     page.locator("#doctorIcloudInboxBack").click()
     expect(page.locator("#doctorIcloudInboxView")).to_be_hidden()
     assert details.text_content() == "", "Clinical mail retained in closed DOM"
     page.unroute("**/clinical/icloud-mail/items/765-4", item)
+    page.unroute("**/clinical/icloud-mail?*", full)
     page.unroute("**/clinical/icloud-mail", full)
     page.unroute("**/clinical/icloud-mail/peek", peek)
 

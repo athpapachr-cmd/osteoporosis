@@ -294,17 +294,27 @@
         if(!activePeek("inbox",ticket))return;
         if(data?.source!=="icloud_mail"||data.scope!=="recipient_alias_inbox_only"||
           !Array.isArray(data.items)||data.items.length>4||
+          !Number.isInteger(data.skipped_count)||data.skipped_count<0||
+          typeof data.coverage_complete!=="boolean"||
+          !(data.next_cursor===null||
+            (typeof data.next_cursor==="string" &&
+             /^[1-9][0-9]{0,18}-[1-9][0-9]{0,18}$/.test(data.next_cursor)))||
           data.items.some(x=>!x||typeof x.id!=="string"||
             typeof x.subject!=="string"||typeof x.from!=="string"||
             !["clinical","review"].includes(x.category)))throw Error("Invalid iCloud source");
         content.replaceChildren();
         content.append(text("iCloud · μόνο μηνύματα προς το alias ιατρείου. Δεν έχει γίνει κλινική ταυτοποίηση."));
+        if(!data.coverage_complete)content.append(text(
+          "Μερική κάλυψη: "+
+          (data.skipped_count?data.skipped_count+" προβληματικά μηνύματα δεν ελέγχθηκαν. ":"")+
+          (data.next_cursor?"Υπάρχουν παλαιότερα προς έλεγχο.":"Η λίστα μπορεί να μην είναι πλήρης.")));
         for(const item of data.items)content.append(action(
           (item.category==="review"?"Για έλεγχο · ":"")+item.subject,
           item.from+" · "+(item.category==="review"?"Απαιτείται αξιολόγηση":"Πιθανώς κλινικό"),
           ()=>showIcloudInbox(item.id)));
-        if(!data.items.length)content.append(text(
-          "Δεν βρέθηκαν μηνύματα στη συγκεκριμένη προβολή. Δεν καλύπτονται Bcc και άλλοι φάκελοι."));
+        if(!data.items.length)content.append(text(data.next_cursor?
+          "Δεν βρέθηκαν σε αυτή την ενότητα. Υπάρχουν παλαιότερα προς έλεγχο από την πλήρη προβολή.":
+          "Δεν βρέθηκαν μηνύματα στην ελεγμένη ενότητα. Δεν καλύπτονται Bcc και άλλοι φάκελοι."));
         content.append(action("Όλα τα εισερχόμενα ασθενών",
           "Μόνο ανάγνωση iCloud · χωρίς σύνδεση με κλινικό φάκελο",
           ()=>showIcloudInbox()));

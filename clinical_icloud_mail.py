@@ -25,10 +25,13 @@ from clinical_reception_calls import _require_clinical_key
 _HOST = "imap.mail.me.com"
 _ALIAS_RE = re.compile(r"^[a-z0-9][a-z0-9._+-]{0,80}@icloud\.com$", re.I)
 _ITEM_RE = re.compile(r"^([1-9][0-9]{0,18})-([1-9][0-9]{0,18})$")
-_MAX_CANDIDATES = 80
+_MAX_CANDIDATES = 80  # Header fetches per request, not a permanent mailbox cut-off
+_UID_WINDOW = 256  # IMAP server limits each SEARCH to this bounded UID interval
+_MAX_WINDOWS = 8
+_MAX_SEARCH_REPLY_BYTES = _UID_WINDOW * 21
 _MAX_MESSAGE_BYTES = 12 * 1024 * 1024
 _MAX_HEADER_BYTES = 64 * 1024
-_HEADER_FETCH = "(BODY.PEEK[HEADER.FIELDS (FROM TO CC SUBJECT DATE LIST-UNSUBSCRIBE PRECEDENCE AUTO-SUBMITTED)] RFC822.SIZE)"
+_HEADER_FETCH = "(BODY.PEEK[HEADER.FIELDS (FROM TO CC SUBJECT DATE LIST-UNSUBSCRIBE PRECEDENCE AUTO-SUBMITTED)]<0.65537> RFC822.SIZE)"
 _MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024
 _CLINICAL_TERMS = (
     "ασθεν", "ιατρ", "ορθοπ", "ακτινογραφ", "μαγνητικ", "εξετασ",
@@ -47,6 +50,10 @@ _ALLOWED_ATTACHMENTS = {
 
 class _SourceUnavailable(Exception):
     pass
+
+
+class _BadMessage(Exception):
+    """A single malformed/unreadable header; preserve the remaining mailbox."""
 
 
 def _settings() -> tuple[str, str, str]:
@@ -135,13 +142,18 @@ def _fetch_headers(mail, uid: str):
     )
     found = re.search(rb"RFC822\.SIZE\s+(\d+)", size_fields, re.I)
     if not found:
-        raise _SourceUnavailable()
-    header = _literal(items)
-    if len(header) > _MAX_HEADER_BYTES:
-        raise _SourceUnavailable()
-    message = BytesParser(policy=policy.default).parsebytes(
-        header, headersonly=True
-    )
+        raise _BadMessage()
+    try:
+        header = _literal(items)
+        if len(header) > _MAX_HEADER_BYTES:
+            raise _BadMessage()
+        message = BytesParser(policy=policy.default).parsebytes(
+            header, headersonly=True
+        )
+    except _BadMessage:
+        raise
+    except (TypeError, ValueError, UnicodeError, _SourceUnavailable):
+        raise _BadMessage() from None
     return message, int(found.group(1))
 
 
@@ -166,28 +178,86 @@ def _summary(uid: str, validity: str, message, alias: str):
     }
 
 
-def _search(mail, alias: str) -> list[str]:
-    # Server searches recipient headers. Never download the entire personal inbox.
+def _uid_next(mail) -> int:
+    kind, values = mail.response("UIDNEXT")
+    raw = next((v for v in (values or []) if isinstance(v, bytes)), b"")
+    if kind != "UIDNEXT" or not raw.isdigit() or not (0 < int(raw) < 10**19):
+        raise _SourceUnavailable()
+    return int(raw)
+
+
+def _search_window(mail, alias: str, low: int, high: int) -> list[int]:
+    """Bound the IMAP server's response *before* it searches/returns any UIDs."""
     quoted = '"' + alias + '"'
-    status, data = mail.uid("SEARCH", None, "OR", "TO", quoted, "CC", quoted)
+    status, data = mail.uid(
+        "SEARCH", None, "UID", f"{low}:{high}", "OR", "TO", quoted, "CC", quoted
+    )
     if status != "OK" or not data or not isinstance(data[0], bytes):
         raise _SourceUnavailable()
-    uids = data[0].split()
-    if any(not uid.isdigit() or not (0 < int(uid) < 10**19) for uid in uids):
+    if len(data[0]) > _MAX_SEARCH_REPLY_BYTES:
         raise _SourceUnavailable()
-    return [u.decode("ascii") for u in uids[-_MAX_CANDIDATES:]]
-
-
-def _list_items(mail, validity: str, alias: str, limit: int):
+    tokens = data[0].split()
+    if len(tokens) > _UID_WINDOW:
+        raise _SourceUnavailable()
     result = []
-    for uid in reversed(_search(mail, alias)):
-        header, _ = _fetch_headers(mail, uid)
-        item = _summary(uid, validity, header, alias)
-        if item is not None:
-            result.append(item)
-        if len(result) >= limit:
-            break
-    return result
+    for raw in tokens:
+        if not raw.isdigit():
+            raise _SourceUnavailable()
+        uid = int(raw)
+        if not (low <= uid <= high):
+            raise _SourceUnavailable()
+        result.append(uid)
+    return sorted(set(result), reverse=True)
+
+
+def _list_items(mail, validity: str, alias: str, limit: int, cursor: str | None = None):
+    last_uid = _uid_next(mail) - 1
+    if cursor is not None:
+        match = _ITEM_RE.fullmatch(cursor)
+        if not match:
+            raise HTTPException(422, "Invalid mail continuation")
+        if match.group(1) != validity:
+            raise HTTPException(409, "Mailbox changed; restart from newest")
+        high = int(match.group(2))
+        if high > last_uid:
+            raise HTTPException(422, "Invalid mail continuation")
+    else:
+        high = last_uid
+
+    result = []
+    skipped = 0
+    headers_checked = 0
+    windows = 0
+    while high > 0 and windows < _MAX_WINDOWS and headers_checked < _MAX_CANDIDATES:
+        low = max(1, high - _UID_WINDOW + 1)
+        found = _search_window(mail, alias, low, high)
+        windows += 1
+        exhausted_early = False
+        for uid in found:
+            high = uid - 1
+            headers_checked += 1
+            try:
+                header, _ = _fetch_headers(mail, str(uid))
+                item = _summary(str(uid), validity, header, alias)
+            except (_BadMessage, ValueError, TypeError, UnicodeError):
+                skipped += 1
+                item = None
+            if item is not None:
+                result.append(item)
+            if len(result) >= limit or headers_checked >= _MAX_CANDIDATES:
+                exhausted_early = True
+                break
+        if not exhausted_early:
+            high = low - 1
+
+    # Partial coverage is explicit. A page with no matches is NOT necessarily
+    # an empty mailbox, and one damaged message does not hide healthy ones.
+    return {
+        "items": result,
+        "next_cursor": f"{validity}-{high}" if high > 0 else None,
+        "skipped_count": skipped,
+        "coverage_complete": high == 0 and skipped == 0,
+    }
 
 
 def _message(mail, validity: str, alias: str, item_id: str):
@@ -195,9 +265,12 @@ def _message(mail, validity: str, alias: str, item_id: str):
     if not match or match.group(1) != validity:
         raise HTTPException(404, "Mail item not found")
     uid = match.group(2)
-    header, size = _fetch_headers(mail, uid)
-    if not _summary(uid, validity, header, alias):
-        raise HTTPException(404, "Mail item not found")
+    try:
+        header, size = _fetch_headers(mail, uid)
+        if not _summary(uid, validity, header, alias):
+            raise HTTPException(404, "Mail item not found")
+    except _BadMessage:
+        raise HTTPException(422, "Mail item cannot be safely read") from None
     if size > _MAX_MESSAGE_BYTES:
         raise HTTPException(413, "Mail item exceeds safe size limit")
     status, data = mail.uid("FETCH", uid, "(BODY.PEEK[])")
@@ -263,6 +336,19 @@ def _body(message) -> str:
     return ""
 
 
+def _looks_like_declared_file(content_type: str, data: bytes) -> bool:
+    """Reject obvious MIME spoofing; this is not a malware/antivirus scan."""
+    if content_type == "application/pdf":
+        return b"%PDF-" in data[:32]
+    if content_type == "image/jpeg":
+        return data.startswith(bytes.fromhex("ffd8ff"))
+    if content_type == "image/png":
+        return data.startswith(bytes.fromhex("89504e470d0a1a0a"))
+    if content_type == "image/webp":
+        return data.startswith(b"RIFF") and data[8:12] == b"WEBP"
+    return False
+
+
 def _attachments(message):
     items = []
     for index, part in enumerate(message.walk()):
@@ -275,6 +361,8 @@ def _attachments(message):
             continue
         data = part.get_payload(decode=True)
         if not isinstance(data, bytes) or len(data) > _MAX_ATTACHMENT_BYTES:
+            continue
+        if not _looks_like_declared_file(ctype, data):
             continue
         filename = part.get_filename() or ("Συνημμένο" + _ALLOWED_ATTACHMENTS[ctype])
         name = _clean(filename.replace("\\", "/").split("/")[-1], 90)
@@ -320,15 +408,19 @@ def build_icloud_mail_router() -> APIRouter:
         _no_store(response)
         return {
             "source": "icloud_mail", "scope": "recipient_alias_inbox_only",
-            "items": _read(lambda mail, validity, alias: _list_items(mail, validity, alias, 4)),
+            **_read(lambda mail, validity, alias: _list_items(mail, validity, alias, 4)),
         }
 
     @router.get("")
-    def list_mail(response: Response, limit: int = Query(default=20, ge=1, le=25)):
+    def list_mail(
+        response: Response,
+        limit: int = Query(default=20, ge=1, le=25),
+        cursor: str | None = Query(default=None, max_length=40),
+    ):
         _no_store(response)
         return {
             "source": "icloud_mail", "scope": "recipient_alias_inbox_only",
-            "items": _read(lambda mail, validity, alias: _list_items(mail, validity, alias, limit)),
+            **_read(lambda mail, validity, alias: _list_items(mail, validity, alias, limit, cursor)),
         }
 
     @router.get("/items/{item_id}")
