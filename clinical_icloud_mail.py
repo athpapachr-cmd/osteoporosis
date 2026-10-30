@@ -27,6 +27,8 @@ _ALIAS_RE = re.compile(r"^[a-z0-9][a-z0-9._+-]{0,80}@icloud\.com$", re.I)
 _ITEM_RE = re.compile(r"^([1-9][0-9]{0,18})-([1-9][0-9]{0,18})$")
 _MAX_CANDIDATES = 80
 _MAX_MESSAGE_BYTES = 12 * 1024 * 1024
+_MAX_HEADER_BYTES = 64 * 1024
+_HEADER_FETCH = "(BODY.PEEK[HEADER.FIELDS (FROM TO CC SUBJECT DATE LIST-UNSUBSCRIBE PRECEDENCE AUTO-SUBMITTED)] RFC822.SIZE)"
 _MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024
 _CLINICAL_TERMS = (
     "ασθεν", "ιατρ", "ορθοπ", "ακτινογραφ", "μαγνητικ", "εξετασ",
@@ -95,15 +97,18 @@ def _normalized(value: str) -> str:
 
 
 def _classification(message) -> str | None:
-    if message.get("List-Unsubscribe"):
-        return None
-    if str(message.get("Precedence", "")).casefold() in ("bulk", "list", "junk"):
-        return None
-    auto = str(message.get("Auto-Submitted", "")).casefold()
-    if auto and auto != "no":
-        return None
     subject = _normalized(str(message.get("Subject", "")))
-    return "clinical" if any(term in subject for term in _CLINICAL_TERMS) else "review"
+    clinical_hint = any(term in subject for term in _CLINICAL_TERMS)
+    auto = str(message.get("Auto-Submitted", "")).casefold()
+    bulk = (bool(message.get("List-Unsubscribe"))
+            or str(message.get("Precedence", "")).casefold() in ("bulk", "list", "junk")
+            or (bool(auto) and auto != "no"))
+    # Lab/clinical notifications can be auto-generated and include a
+    # List-Unsubscribe header. Keep plausible clinical mail in the doctor's
+    # review bucket instead of silently losing it.
+    if bulk:
+        return "review" if clinical_hint else None
+    return "clinical" if clinical_hint else "review"
 
 
 def _to_alias(message, alias: str) -> bool:
@@ -121,7 +126,7 @@ def _literal(items) -> bytes:
 
 
 def _fetch_headers(mail, uid: str):
-    status, items = mail.uid("FETCH", uid, "(BODY.PEEK[HEADER] RFC822.SIZE)")
+    status, items = mail.uid("FETCH", uid, _HEADER_FETCH)
     if status != "OK":
         raise _SourceUnavailable()
     size_fields = b" ".join(
@@ -131,8 +136,11 @@ def _fetch_headers(mail, uid: str):
     found = re.search(rb"RFC822\.SIZE\s+(\d+)", size_fields, re.I)
     if not found:
         raise _SourceUnavailable()
+    header = _literal(items)
+    if len(header) > _MAX_HEADER_BYTES:
+        raise _SourceUnavailable()
     message = BytesParser(policy=policy.default).parsebytes(
-        _literal(items), headersonly=True
+        header, headersonly=True
     )
     return message, int(found.group(1))
 

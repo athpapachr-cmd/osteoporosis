@@ -162,3 +162,59 @@ def test_no_secret_or_provider_message_in_errors(client, monkeypatch):
     assert response.status_code == 503
     assert "synthetic-only-password" not in response.text
     assert "patient data" not in response.text
+
+
+
+def test_generated_medical_notification_is_not_silently_dropped(client):
+    http, fake = client
+    fake.rows["2"] = mail(subject="Laboratory results available", newsletter=True)
+    response = get(http, "/peek")
+    assert response.status_code == 200
+    assert ("765-2", "review") in [
+        (row["id"], row["category"]) for row in response.json()["items"]
+    ]
+
+
+def test_untrusted_oversized_headers_fail_closed(client):
+    http, fake = client
+    fake.rows["4"] = mail(subject="MRI " + ("Z" * (ic._MAX_HEADER_BYTES + 100)))
+    response = get(http, "/peek")
+    assert response.status_code == 503
+    assert not any(
+        op == "FETCH" and args[-1] == "(BODY.PEEK[])"
+        for op, args in fake.operations
+    )
+
+
+def test_real_imap_session_contract_is_readonly_and_tls(monkeypatch):
+    actions = []
+
+    class FakeIMAP:
+        def __init__(self, host, port, ssl_context, timeout):
+            assert host == "imap.mail.me.com"
+            assert port == 993 and timeout == 8
+            assert ssl_context.verify_mode
+            actions.append("connect")
+
+        def login(self, username, password):
+            assert username == "example" and password == "fake-pass"
+            actions.append("login")
+            return "OK", [b"logged in"]
+
+        def select(self, mailbox, readonly=False):
+            assert mailbox == "INBOX" and readonly is True
+            actions.append("examine")
+            return "OK", [b"2"]
+
+        def response(self, key):
+            assert key == "UIDVALIDITY"
+            return "UIDVALIDITY", [b"765"]
+
+        def logout(self):
+            actions.append("logout")
+            return "BYE", [b"closed"]
+
+    monkeypatch.setattr(ic.imaplib, "IMAP4_SSL", FakeIMAP)
+    with ic._session("example", "fake-pass") as (_client, uidvalidity):
+        assert uidvalidity == "765"
+    assert actions == ["connect", "login", "examine", "logout"]
