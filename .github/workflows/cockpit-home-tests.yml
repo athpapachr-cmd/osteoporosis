@@ -5,12 +5,15 @@ on:
     paths:
       - "main.py"
       - "clinical_notion_tasks.py"
+      - "clinical_icloud_mail.py"
+      - "test_clinical_icloud_mail.py"
       - "test_clinical_notion_tasks.py"
       - "static/cockpit/**"
       - "static/baseline-audit/index.html"
       - "static/baseline-audit/g4-workspace-ergonomics.js"
       - "test_cockpit_home.py"
       - "test_cockpit_doctor_shell.js"
+      - "test_cockpit_icloud_ui.js"
       - "test_cockpit_shared_navigation.js"
       - "test_cockpit_doctor_browser.py"
       - "test_cockpit_unified_home.js"
@@ -20,12 +23,15 @@ on:
     paths:
       - "main.py"
       - "clinical_notion_tasks.py"
+      - "clinical_icloud_mail.py"
+      - "test_clinical_icloud_mail.py"
       - "test_clinical_notion_tasks.py"
       - "static/cockpit/**"
       - "static/baseline-audit/index.html"
       - "static/baseline-audit/g4-workspace-ergonomics.js"
       - "test_cockpit_home.py"
       - "test_cockpit_doctor_shell.js"
+      - "test_cockpit_icloud_ui.js"
       - "test_cockpit_shared_navigation.js"
       - "test_cockpit_doctor_browser.py"
       - "test_cockpit_unified_home.js"
@@ -46,19 +52,22 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r requirements.txt pytest
       - name: Python syntax
-        run: python -m py_compile main.py clinical_reception_calls.py clinical_notion_tasks.py test_clinical_reception_calls.py test_clinical_notion_tasks.py test_cockpit_home.py
+        run: python -m py_compile main.py clinical_reception_calls.py clinical_icloud_mail.py clinical_notion_tasks.py test_clinical_reception_calls.py test_clinical_icloud_mail.py test_clinical_notion_tasks.py test_cockpit_home.py
       - name: Browser JavaScript syntax
         run: |
           node --check static/cockpit/app.js
           node --check static/cockpit/clinical-workspace.js
           node --check static/cockpit/obligations-view.js
           node --check static/cockpit/doctor-shell.js
+          node --check static/cockpit/icloud-inbox.js
           node --check static/cockpit/shared-nav.js
           node --check static/baseline-audit/g4-workspace-ergonomics.js
       - name: Cockpit Home deterministic tests
-        run: pytest -q test_cockpit_home.py test_clinical_reception_calls.py test_clinical_notion_tasks.py
+        run: pytest -q test_cockpit_home.py test_clinical_reception_calls.py test_clinical_icloud_mail.py test_clinical_notion_tasks.py
       - name: Cockpit Doctor Shell synthetic workflow
-        run: node test_cockpit_doctor_shell.js
+        run: |
+          node test_cockpit_doctor_shell.js
+          node test_cockpit_icloud_ui.js
       - name: Shared navigation and key login synthetic flow
         run: node test_cockpit_shared_navigation.js
       - name: Install browser smoke dependency

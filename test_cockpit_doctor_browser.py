@@ -464,6 +464,56 @@ def exercise_reception_call_peek(page, width, call_source):
     page.unroute("**/clinical/reception-calls/peek", pause)
 
 
+
+def exercise_icloud_mail_peek(page, width):
+    """Real Chromium, provider-shaped but fictional alias mail; no external access."""
+    payload = {"source": "icloud_mail", "scope": "recipient_alias_inbox_only",
+        "items": [
+            {"id": "765-4", "subject": "<svg onload=alert(1)> MRI",
+             "from": "Fictional sender", "date": "2026-10-30T09:00:00+00:00",
+             "category": "clinical"},
+            {"id": "765-3", "subject": "Καλημέρα", "from": "Other sender",
+             "date": "2026-10-29T09:00:00+00:00", "category": "review"},
+        ]}
+    detail = {"source": "icloud_mail", "item": {**payload["items"][0],
+        "body": "<img src=x onerror=alert(1)> Synthetic clinical description",
+        "attachments": [{"index": 2, "name": "image.pdf",
+                         "content_type": "application/pdf", "size": 256}]}}
+    def peek(route):
+        assert route.request.method == "GET"
+        assert not any(k.lower() == "x-clinical-key" for k in route.request.headers)
+        route.fulfill(json=payload)
+    def full(route):
+        route.fulfill(json=payload)
+    def item(route):
+        route.fulfill(json=detail)
+    page.route("**/clinical/icloud-mail/peek", peek)
+    page.route("**/clinical/icloud-mail", full)
+    page.route("**/clinical/icloud-mail/items/765-4", item)
+    page.locator("#doctorInboxButton").click()
+    content = page.locator("#doctorPopoverContent")
+    expect(content).to_contain_text("<svg onload=alert(1)>")
+    expect(content).to_contain_text("Για έλεγχο")
+    assert content.locator("svg, img").count() == 0
+    content.locator("button.doctor-action-row").first.click()
+    expect(page.locator("#doctorIcloudInboxView")).to_be_visible()
+    details = page.locator("#doctorIcloudInboxDetails")
+    expect(details).to_contain_text("<img src=x onerror=alert(1)>")
+    assert details.locator("svg, img").count() == 0
+    assert details.locator("a.doctor-icloud-attachment").count() == 1
+    assert details.locator("a.doctor-icloud-attachment").first.get_attribute("href").endswith(
+        "/clinical/icloud-mail/items/765-4/attachments/2")
+    assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1")
+    if width == 390:
+        page.screenshot(path=str(OUT / "cockpit-icloud-inbox-mobile.png"), full_page=True)
+    page.locator("#doctorIcloudInboxBack").click()
+    expect(page.locator("#doctorIcloudInboxView")).to_be_hidden()
+    assert details.text_content() == "", "Clinical mail retained in closed DOM"
+    page.unroute("**/clinical/icloud-mail/items/765-4", item)
+    page.unroute("**/clinical/icloud-mail", full)
+    page.unroute("**/clinical/icloud-mail/peek", peek)
+
+
 def browser_suite(width, screenshot_name):
     errors = []
     outbound = []
@@ -764,7 +814,8 @@ def browser_suite(width, screenshot_name):
             expect(page.locator("#doctorAttentionList")).to_contain_text("Δεν υπάρχει ακόμη αξιόπιστη καταμέτρηση")
             assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1")
             # Actual Chromium: hidden registry and Dia details are removed on auth loss.
-            exercise_reception_call_peek(page, width, call_source)
+            exercise_icloud_mail_peek(page, width)
+        exercise_reception_call_peek(page, width, call_source)
             assert_delayed_recent_purged_after_logout(page)
             page.evaluate("""() => {
                 document.getElementById('visitDiaPreviewText').textContent='SYN-PHI';
@@ -859,6 +910,7 @@ def browser_suite(width, screenshot_name):
             expect(page.locator("#visitSidebarPrevious")).to_be_disabled()
             expect(page.locator("#visitBriefOverlay")).to_be_hidden()
         assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1"), "horizontal overflow"
+        exercise_icloud_mail_peek(page, width)
         exercise_reception_call_peek(page, width, call_source)
         assert_delayed_recent_purged_after_logout(page)
         page.evaluate("window.dispatchEvent(new Event('clinical:authenticated'))")

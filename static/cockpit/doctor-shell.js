@@ -284,8 +284,40 @@
     const ticket=++state.request;
     content.replaceChildren();
     if(!syntheticInbox()){
-      content.append(text("Δεν έχει συνδεθεί ακόμη το Clinical Inbox με πραγματική πηγή. Δεν υπάρχει αξιόπιστη μέτρηση νέων κλινικών μηνυμάτων."));
-      content.append(newLink("Άνοιγμα Gmail","https://mail.google.com/","Χωρίς σύνδεση με το Cockpit"));
+      content.append(text("Φόρτωση εισερχομένων iCloud προς το ιατρείο…"));
+      try{
+        const response=await fetch("/clinical/icloud-mail/peek",{
+          credentials:"same-origin",cache:"no-store",headers:{"Accept":"application/json"}
+        });
+        if(!response.ok){const e=new Error("Unavailable");e.status=response.status;throw e;}
+        const data=await response.json();
+        if(!activePeek("inbox",ticket))return;
+        if(data?.source!=="icloud_mail"||data.scope!=="recipient_alias_inbox_only"||
+          !Array.isArray(data.items)||data.items.length>4||
+          data.items.some(x=>!x||typeof x.id!=="string"||
+            typeof x.subject!=="string"||typeof x.from!=="string"||
+            !["clinical","review"].includes(x.category)))throw Error("Invalid iCloud source");
+        content.replaceChildren();
+        content.append(text("iCloud · μόνο μηνύματα προς το alias ιατρείου. Δεν έχει γίνει κλινική ταυτοποίηση."));
+        for(const item of data.items)content.append(action(
+          (item.category==="review"?"Για έλεγχο · ":"")+item.subject,
+          item.from+" · "+(item.category==="review"?"Απαιτείται αξιολόγηση":"Πιθανώς κλινικό"),
+          ()=>showIcloudInbox(item.id)));
+        if(!data.items.length)content.append(text(
+          "Δεν βρέθηκαν μηνύματα στη συγκεκριμένη προβολή. Δεν καλύπτονται Bcc και άλλοι φάκελοι."));
+        content.append(action("Όλα τα εισερχόμενα ασθενών",
+          "Μόνο ανάγνωση iCloud · χωρίς σύνδεση με κλινικό φάκελο",
+          ()=>showIcloudInbox()));
+      }catch(error){
+        if(!activePeek("inbox",ticket))return;
+        content.replaceChildren();
+        content.append(text(error.status===401||error.status===403?
+          "Απαιτείται κλινική σύνδεση. Δεν εμφανίζονται μηνύματα.":
+          "Δεν έχει συνδεθεί ακόμη το iCloud Mail ή η πηγή δεν είναι διαθέσιμη. Δεν γνωρίζουμε αν υπάρχουν νέα μηνύματα."));
+        if(error.status===401||error.status===403)
+          content.append(action("Σύνδεση","Clinical Key",
+            ()=>window.dispatchEvent(new Event("clinical:request-login"))));
+      }
       return;
     }
     content.append(text("Φόρτωση συνθετικών εισερχομένων…"));
@@ -671,6 +703,19 @@
     };
     input.addEventListener("input",draw);draw();input.focus();
   }
+  function showIcloudInbox(itemId=null){
+    if(!window.CockpitIcloudInbox)return;
+    if(typeof window.CockpitStoredChart?.canLeave==="function" &&
+       !window.CockpitStoredChart.canLeave())return;
+    close();window.CockpitObligations?.close();
+    window.CockpitClinicalInbox?.close();
+    $("doctorClinicalInboxView").hidden=true;
+    $("doctorObligationsView").hidden=true;
+    $("doctorLibraryView").hidden=true;
+    $("doctorMainView").hidden=true;
+    $("doctorIcloudInboxView").hidden=false;
+    window.CockpitIcloudInbox.open(itemId);
+  }
   function showClinicalInbox(itemId=null){
     // Normal live Cockpit retains the honest unconnected source placeholder.
     if(window.CockpitSynthetic!==true ||
@@ -681,6 +726,8 @@
     if(typeof window.CockpitStoredChart?.canLeave==="function" &&
        !window.CockpitStoredChart.canLeave())return;
     close();window.CockpitObligations?.close();
+    window.CockpitIcloudInbox?.close();
+    $("doctorIcloudInboxView").hidden=true;
     $("doctorObligationsView").hidden=true;
     $("doctorLibraryView").hidden=true;
     $("doctorMainView").hidden=true;
@@ -695,6 +742,8 @@
     close();
     window.CockpitClinicalInbox?.close();
     $("doctorClinicalInboxView").hidden=true;
+    window.CockpitIcloudInbox?.close();
+    $("doctorIcloudInboxView").hidden=true;
     const screen=$("doctorObligationsView");
     if(!screen)return;
     $("doctorMainView").hidden=true;
@@ -714,6 +763,8 @@
     close();
     window.CockpitClinicalInbox?.close();
     $("doctorClinicalInboxView").hidden=true;
+    window.CockpitIcloudInbox?.close();
+    $("doctorIcloudInboxView").hidden=true;
     window.CockpitObligations?.close();
     $("doctorObligationsView").hidden=true;
     $("doctorMainView").hidden=true;
@@ -731,6 +782,8 @@
     close();
     window.CockpitClinicalInbox?.close();
     $("doctorClinicalInboxView").hidden=true;
+    window.CockpitIcloudInbox?.close();
+    $("doctorIcloudInboxView").hidden=true;
     window.CockpitObligations?.close();
     $("doctorObligationsView").hidden=true;
     $("doctorLibraryView").hidden=true;
@@ -824,6 +877,7 @@
   buttons.calls.addEventListener("click",()=>openPanel("calls",buttons.calls));
   buttons.inbox.addEventListener("click",()=>openPanel("inbox",buttons.inbox));
   $("doctorClinicalInboxBack").addEventListener("click",showHome);
+  $("doctorIcloudInboxBack").addEventListener("click",showHome);
   window.addEventListener("cockpit:clinical-updates-changed",()=>{if(state.panel==="inbox")inbox();else if(state.panel==="tasks")tasks();});
   window.addEventListener("clinical:unauthenticated",()=>{showHome();});
   buttons.tasks.addEventListener("click",()=>openPanel("tasks",buttons.tasks));

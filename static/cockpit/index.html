@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/static/cockpit/styles.css" />
   <link rel="stylesheet" href="/static/cockpit/clinical-workspace.css" />
   <link rel="stylesheet" href="/static/cockpit/doctor-shell.css?v=purpose-focused-20261029" />
-  <link rel="stylesheet" href="/static/cockpit/clinical-inbox.css?v=phase-a-20261024" />
+  <link rel="stylesheet" href="/static/cockpit/clinical-inbox.css?v=icloud-read-20261030" />
   <link rel="stylesheet" href="/static/cockpit/shared-nav.css" />
 </head>
 <body>
@@ -273,6 +273,27 @@ ENCOUNTER DETAIL
         <button id="doctorObligationsScope" class="doctor-command-button" type="button">Προβολή δοκιμαστικού ασθενούς</button>
       </div>
     </section>
+    <section id="doctorIcloudInboxView" class="doctor-library" hidden aria-label="Προστατευμένα εισερχόμενα ασθενών iCloud">
+      <header class="doctor-library-header">
+        <div><p class="eyebrow">iCloud Mail · Μόνο ανάγνωση</p><h2>Εισερχόμενα ασθενών</h2></div>
+        <button id="doctorIcloudInboxBack" class="doctor-command-button" type="button">← Αρχική</button>
+      </header>
+      <p class="clinical-inbox-banner">Μόνο μηνύματα προς το alias του ιατρείου στον κύριο φάκελο iCloud Mail. Η προβολή δεν είναι πλήρης για κρυφούς παραλήπτες ή άλλους φακέλους. Καμία αυτόματη σύνδεση με ασθενή, αποδοχή αποτελεσμάτων ή αλλαγή κατάστασης email.</p>
+      <div class="clinical-inbox-tools">
+        <button id="doctorIcloudInboxReload" class="doctor-command-button" type="button">Ανανέωση</button>
+      </div>
+      <p id="doctorIcloudInboxState" role="status" aria-live="polite"></p>
+      <p id="doctorIcloudInboxShown"></p>
+      <div class="clinical-inbox-layout">
+        <section class="clinical-inbox-list" aria-label="Μηνύματα προς το ιατρείο">
+          <div id="doctorIcloudInboxRows"></div>
+        </section>
+        <section class="clinical-inbox-detail" aria-label="Περιεχόμενο μηνύματος χωρίς επεξεργασία">
+          <div id="doctorIcloudInboxDetails"></div>
+        </section>
+      </div>
+    </section>
+
     <section id="doctorClinicalInboxView" class="doctor-library" hidden aria-label="Κλινικά εισερχόμενα — συνθετική δοκιμή">
       <header class="doctor-library-header">
         <div><p class="eyebrow">Κλινική προσοχή · Phase A</p><h2>Κλινικά εισερχόμενα</h2></div>
@@ -590,7 +611,8 @@ ENCOUNTER DETAIL
   <script src="/static/cockpit/patient-entry.js?v=chart-continuity-20261018" defer></script>
   <script src="/static/cockpit/obligations-view.js?v=topbar-peeks-20261024" defer></script>
   <script src="/static/cockpit/clinical-inbox.js?v=one-tap-source-review-20261024" defer></script>
-  <script src="/static/cockpit/doctor-shell.js?v=office-cases-20261026" defer></script>
+  <script src="/static/cockpit/icloud-inbox.js?v=icloud-read-20261030" defer></script>
+  <script src="/static/cockpit/doctor-shell.js?v=icloud-read-20261030" defer></script>
   <script src="/static/cockpit/shared-nav.js" defer></script>
 </body>
 </html>
