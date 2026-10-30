@@ -14,6 +14,8 @@ assert.match(ui, /credentials:"same-origin"/);
 assert.match(ui, /cache:"no-store"/);
 assert.match(ui, /textContent = String\(value\)/);
 assert.match(ui, /clinical:unauthenticated/);
+assert.match(ui, /attachments_unavailable/);
+assert.match(ui, /Το email υπερβαίνει το όριο ασφαλούς προβολής/);
 assert.match(ui, /state\.controller\?\.abort\(\)/);
 assert.match(shell, /\/clinical\/icloud-mail\/peek/);
 assert.doesNotMatch(ui, /innerHTML|outerHTML|localStorage|sessionStorage/);

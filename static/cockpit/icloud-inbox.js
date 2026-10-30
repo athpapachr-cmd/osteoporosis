@@ -47,7 +47,9 @@
   function sourceError(error, target) {
     target.textContent = (error.status === 401 || error.status === 403)
       ? "Απαιτείται κλινική σύνδεση. Δεν εμφανίζονται μηνύματα."
-      : "Δεν έχει συνδεθεί ακόμη το iCloud Mail ή η πηγή δεν είναι διαθέσιμη. Δεν γνωρίζουμε αν υπάρχουν νέα μηνύματα.";
+      : error.status === 413
+        ? "Το email υπερβαίνει το όριο ασφαλούς προβολής. Δες τα πλήρη συνημμένα στο αρχικό μήνυμα στο iCloud Mail."
+        : "Δεν έχει συνδεθεί ακόμη το iCloud Mail ή η πηγή δεν είναι διαθέσιμη. Δεν γνωρίζουμε αν υπάρχουν νέα μηνύματα.";
     if (error.status === 401 || error.status === 403) {
       window.dispatchEvent(new Event("clinical:unauthenticated"));
       window.dispatchEvent(new Event("clinical:request-login"));
@@ -114,7 +116,9 @@
       if (!current(ticket) || selected !== state.selection || state.id !== id) return;
       if (data?.source !== "icloud_mail" || !validItem(data.item) ||
           data.item.id !== id || typeof data.item.body !== "string" ||
-          !Array.isArray(data.item.attachments) || data.item.attachments.length > 60)
+          !Array.isArray(data.item.attachments) || data.item.attachments.length > 60 ||
+          !Number.isInteger(data.item.attachments_unavailable) ||
+          data.item.attachments_unavailable < 0 || data.item.attachments_unavailable > 10000)
         throw Error("Invalid message");
       details.replaceChildren();
       details.append(el("h3", "", rowTitle(data.item)),
@@ -124,6 +128,11 @@
       const body = el("div", "doctor-icloud-body", data.item.body ||
         "Δεν υπάρχει ασφαλές απλό κείμενο για εμφάνιση. Ελέγξτε τυχόν συνημμένα.");
       details.append(body);
+      if (data.item.attachments_unavailable > 0) {
+        details.append(el("p", "clinical-inbox-warning",
+          "Υπάρχουν " + data.item.attachments_unavailable +
+          " συνημμένα που δεν μπορούν να προβληθούν εδώ λόγω τύπου ή μεγέθους. Έλεγξέ τα στο αρχικό iCloud Mail."));
+      }
       if (data.item.attachments.length) {
         details.append(el("h4", "", "Συνημμένα · ασφαλής λήψη"));
         for (const attachment of data.item.attachments) {

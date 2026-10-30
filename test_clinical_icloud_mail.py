@@ -14,7 +14,8 @@ ALIAS = "practice.alias@icloud.com"
 
 
 def mail(to=ALIAS, subject="Μαγνητική τομογραφία", body="Αποτέλεσμα εξέτασης",
-         sender="patient@example.invalid", newsletter=False, attached=False):
+         sender="patient@example.invalid", newsletter=False, attached=False,
+         unsupported=False):
     msg = EmailMessage()
     msg["From"] = sender
     msg["To"] = to
@@ -27,6 +28,9 @@ def mail(to=ALIAS, subject="Μαγνητική τομογραφία", body="Απ
         msg.add_attachment(b"%PDF-1.7\nSynthetic test PDF",
                            maintype="application", subtype="pdf",
                            filename="scan.pdf")
+    if unsupported:
+        msg.add_attachment(b"Sample test archive", maintype="application",
+                           subtype="zip", filename="imaging-study.zip")
     return msg.as_bytes()
 
 
@@ -218,3 +222,24 @@ def test_real_imap_session_contract_is_readonly_and_tls(monkeypatch):
     with ic._session("example", "fake-pass") as (_client, uidvalidity):
         assert uidvalidity == "765"
     assert actions == ["connect", "login", "examine", "logout"]
+
+
+
+def test_unsupported_attachment_is_exposed_as_missing_not_an_empty_list(client):
+    http, source = client
+    source.rows["4"] = mail(subject="MRI report", attached=True, unsupported=True)
+    response = get(http, "/items/765-4")
+    assert response.status_code == 200
+    item = response.json()["item"]
+    assert len(item["attachments"]) == 1
+    assert item["attachments_unavailable"] == 1
+    assert "imaging-study.zip" not in response.text
+
+
+def test_oversized_attachment_is_exposed_as_missing(client):
+    http, source = client
+    source.rows["4"] = mail(subject="MRI report", unsupported=True)
+    # Treat a small unsupported archive as absent from the download allowlist.
+    item = get(http, "/items/765-4").json()["item"]
+    assert item["attachments"] == []
+    assert item["attachments_unavailable"] == 1

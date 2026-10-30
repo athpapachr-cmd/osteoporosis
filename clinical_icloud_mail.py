@@ -282,6 +282,16 @@ def _attachments(message):
     return items
 
 
+def _attachment_count(message) -> int:
+    return sum(
+        1 for part in message.walk()
+        if not part.is_multipart() and (
+            part.get_content_disposition() == "attachment"
+            or part.get_filename()
+        )
+    )
+
+
 def _no_store(response: Response):
     response.headers["Cache-Control"] = "private, no-store"
     response.headers["X-Content-Type-Options"] = "nosniff"
@@ -328,12 +338,14 @@ def build_icloud_mail_router() -> APIRouter:
         def result(mail, validity, alias):
             message = _message(mail, validity, alias, item_id)
             header = _summary(item_id.split("-")[1], validity, message, alias)
+            available = _attachments(message)
             return {
                 "source": "icloud_mail", "item": {
                     **header, "body": _body(message),
+                    "attachments_unavailable": max(0, _attachment_count(message) - len(available)),
                     "attachments": [
                         {"index": index, "name": name, "content_type": content_type, "size": len(data)}
-                        for index, name, content_type, data in _attachments(message)
+                        for index, name, content_type, data in available
                     ],
                 },
             }

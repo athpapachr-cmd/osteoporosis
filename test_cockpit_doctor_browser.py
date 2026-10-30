@@ -479,6 +479,7 @@ def exercise_icloud_mail_peek(page, width):
         ]}
     detail = {"source": "icloud_mail", "item": {**payload["items"][0],
         "body": "<img src=x onerror=alert(1)> Synthetic clinical description",
+        "attachments_unavailable": 1,
         "attachments": [{"index": 2, "name": "image.pdf",
                          "content_type": "application/pdf", "size": 256}]}}
     def peek(route):
@@ -502,6 +503,7 @@ def exercise_icloud_mail_peek(page, width):
     details = page.locator("#doctorIcloudInboxDetails")
     expect(details).to_contain_text("<img src=x onerror=alert(1)>")
     assert details.locator("svg, img").count() == 0
+    expect(details).to_contain_text("συνημμένα που δεν μπορούν να προβληθούν")
     assert details.locator("a.doctor-icloud-attachment").count() == 1
     assert details.locator("a.doctor-icloud-attachment").first.get_attribute("href").endswith(
         "/clinical/icloud-mail/items/765-4/attachments/2")
