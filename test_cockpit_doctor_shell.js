@@ -312,7 +312,7 @@ function findAction(label,node=$('doctorPopoverContent')){
 
  let pendingReads=0;
  windowStub.CockpitStoredChart={renderUpdates(){pendingReads++;}};
- $("doctorInboxButton").fire("click");
+ $("doctorInboxButton").fire("click");await tick();await tick();
  assert.equal(pendingReads,0,"stored obligations cannot substitute for incoming source updates");
  assert.equal($("doctorInboxBadge").hidden,true);
  assert.ok($("doctorPopoverContent").children.some(x=>x.textContent?.includes("Δεν έχει συνδεθεί")));

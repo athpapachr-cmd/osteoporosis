@@ -143,7 +143,7 @@ def _summary(uid: str, validity: str, message, alias: str):
     classification = _classification(message)
     if classification is None:
         return None
-    name, sender = getaddresses([str(message.get("From", ""))])[:1] or [("", "")]
+    name, sender = (getaddresses([str(message.get("From", ""))]) or [("", "")])[0]
     try:
         dt = parsedate_to_datetime(str(message.get("Date", "")))
         date = dt.astimezone(timezone.utc).isoformat() if dt.tzinfo else ""

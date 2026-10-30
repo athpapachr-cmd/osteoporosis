@@ -190,7 +190,7 @@ def test_clinician_home_v4_preserves_existing_tools_without_legacy_blocks_under_
     assert "Το πλήρες ημερήσιο πρόγραμμα ανοίγει από την ημερομηνία" not in html
     assert "Οστεοπόρωση" in html and "Καταγραφή επίσκεψης" in html
     assert "Πλήρες πρόγραμμα Γραμματείας" in shell
-    assert "Δεν έχει συνδεθεί ακόμη το Clinical Inbox" in shell
+    assert "Δεν έχει συνδεθεί ακόμη το iCloud Mail" in shell
     assert 'doctorInboxBadge").hidden=true' in shell
     assert "last-minute" not in shell
     assert ".doctor-popover" in css and "doctor-rail-open" in css
