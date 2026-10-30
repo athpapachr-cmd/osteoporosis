@@ -14,6 +14,7 @@ CSS = "\n".join((ROOT / part).read_text(encoding="utf-8") for part in (
     "static/cockpit/styles.css",
     "static/cockpit/clinical-workspace.css",
     "static/cockpit/doctor-shell.css",
+    "static/cockpit/clinical-inbox.css",
     "static/cockpit/shared-nav.css",
 ))
 JS = [(ROOT / part).read_text(encoding="utf-8") for part in (
@@ -22,6 +23,7 @@ JS = [(ROOT / part).read_text(encoding="utf-8") for part in (
     "static/cockpit/app.js",
     "static/cockpit/office-cases.js",
     "static/cockpit/obligations-view.js",
+    "static/cockpit/icloud-inbox.js",
     "static/cockpit/doctor-shell.js",
     "static/cockpit/shared-nav.js",
 )]
