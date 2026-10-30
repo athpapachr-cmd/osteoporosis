@@ -817,7 +817,7 @@ def browser_suite(width, screenshot_name):
             assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1")
             # Actual Chromium: hidden registry and Dia details are removed on auth loss.
             exercise_icloud_mail_peek(page, width)
-        exercise_reception_call_peek(page, width, call_source)
+            exercise_reception_call_peek(page, width, call_source)
             assert_delayed_recent_purged_after_logout(page)
             page.evaluate("""() => {
                 document.getElementById('visitDiaPreviewText').textContent='SYN-PHI';
