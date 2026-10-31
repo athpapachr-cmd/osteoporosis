@@ -96,7 +96,7 @@ class SyntheticCycleLedger:
                 reviewed.pop(part, None)
                 # A corrected report invalidates previous review/communication
                 # for the current obligation. The old event remains in audit.
-                if instruction:
+                if instruction and instruction["part"] == part:
                     instruction = None
                     contact = "not_requested"
                     callback = False
