@@ -336,3 +336,139 @@ def test_spoofed_pdf_mime_does_not_become_downloadable(client):
     assert detail.json()["item"]["attachments"] == []
     assert detail.json()["item"]["attachments_unavailable"] == 1
     assert get(http, "/items/765-4/attachments/1").status_code == 404
+
+
+# Diagnostic failures are synthetic, stage-only, and never read real provider mail.
+@pytest.mark.parametrize("phase,expected_code,endpoint", [
+    ("connect", "TLS_CONNECTION_FAILED", "/peek"),
+    ("connect_timeout", "TLS_CONNECTION_FAILED", "/peek"),
+    ("auth", "IMAP_AUTH_FAILED", "/peek"),
+    ("auth_timeout", "IMAP_AUTH_FAILED", "/peek"),
+    ("auth_rejected", "IMAP_AUTH_FAILED", "/peek"),
+    ("select", "INBOX_SELECT_FAILED", "/peek"),
+    ("select_disconnect", "INBOX_SELECT_FAILED", "/peek"),
+    ("uidvalidity", "UIDVALIDITY_OR_UIDNEXT_FAILED", "/peek"),
+    ("uidnext", "UIDVALIDITY_OR_UIDNEXT_FAILED", "/peek"),
+    ("search", "IMAP_SEARCH_FAILED", "/peek"),
+    ("headers", "IMAP_HEADER_FETCH_FAILED", "/peek"),
+    ("body", "IMAP_MESSAGE_FETCH_FAILED", "/items/765-1"),
+])
+def test_fixed_imap_stage_codes_hide_provider_errors(monkeypatch, caplog, phase, expected_code, endpoint):
+    monkeypatch.setenv("CLINICAL_DATA_KEY", "synthetic-clinical-key")
+    monkeypatch.setenv("ICLOUD_CLINICAL_READ_ENABLED", "1")
+    monkeypatch.setenv("ICLOUD_CLINICAL_IMAP_USERNAME", "test-primary-username")
+    monkeypatch.setenv("ICLOUD_CLINICAL_APP_PASSWORD", "synthetic-secret-password")
+    monkeypatch.setenv("ICLOUD_CLINICAL_ALIAS", ALIAS)
+    actions = []
+
+    class StageIMAP:
+        def __init__(self, host, port, ssl_context, timeout):
+            assert host == "imap.mail.me.com" and port == 993 and timeout == 8
+            assert ssl_context.verify_mode
+            actions.append("tls")
+            if phase == "connect":
+                raise RuntimeError("synthetic-secret-password patient private provider error")
+            if phase == "connect_timeout":
+                raise TimeoutError("synthetic-secret-password patient private provider error")
+
+        def login(self, username, password):
+            assert username == "test-primary-username"
+            assert password == "synthetic-secret-password"
+            actions.append("login")
+            if phase == "auth":
+                raise RuntimeError("synthetic-secret-password patient private provider error")
+            if phase == "auth_timeout":
+                raise TimeoutError("synthetic-secret-password patient private provider error")
+            if phase == "auth_rejected":
+                return "NO", [b"synthetic-secret-password"]
+            return "OK", [b"synthetic logged in"]
+
+        def select(self, name, readonly=False):
+            assert name == "INBOX" and readonly is True
+            actions.append("examine")
+            if phase == "select":
+                return "NO", [b"synthetic-secret-password"]
+            if phase == "select_disconnect":
+                raise ConnectionError("synthetic-secret-password patient private provider error")
+            return "OK", [b"one"]
+
+        def response(self, name):
+            actions.append(name)
+            if name == "UIDVALIDITY":
+                return "UIDVALIDITY", [b"invalid"] if phase == "uidvalidity" else [b"765"]
+            assert name == "UIDNEXT"
+            return "UIDNEXT", [b"invalid"] if phase == "uidnext" else [b"2"]
+
+        def uid(self, method, *args):
+            actions.append(method)
+            if method == "SEARCH":
+                assert args[0] is None and args[1] == "UID"
+                if phase == "search":
+                    return "NO", [b"synthetic-secret-password"]
+                return "OK", [b"1"] if phase == "headers" else [b""]
+            assert method == "FETCH"
+            uid, spec = args
+            assert uid == "1"
+            if "HEADER" in spec:
+                if phase == "headers":
+                    return "NO", [b"synthetic-secret-password"]
+                sample = mail(subject="MRI results")
+                header = sample.split(b"\n\n", 1)[0] + b"\r\n\r\n"
+                return "OK", [(b"1 (UID 1 RFC822.SIZE " + str(len(sample)).encode() + b")", header)]
+            assert spec == "(BODY.PEEK[])" and phase == "body"
+            return "NO", [b"synthetic-secret-password"]
+
+        def logout(self):
+            actions.append("logout")
+            return "BYE", [b"gone"]
+
+    monkeypatch.setattr(ic.imaplib, "IMAP4_SSL", StageIMAP)
+    app = FastAPI()
+    app.include_router(ic.build_icloud_mail_router())
+    http = TestClient(app)
+
+    # The clinician's existing Clinical Key is the only new API authority.
+    assert http.get("/clinical/icloud-mail" + endpoint).status_code == 401
+    assert actions == []
+    response = http.get("/clinical/icloud-mail" + endpoint,
+                        headers={"X-Clinical-Key": "synthetic-clinical-key"})
+    assert response.status_code == 503
+    assert response.json() == {"detail": {"code": expected_code}}
+    assert f"icloud_mail_diagnostic code={expected_code}" in caplog.text
+    for forbidden in ("synthetic-secret-password", "test-primary-username",
+                      "patient private provider error", "sample@example.invalid"):
+        assert forbidden not in caplog.text
+        assert forbidden not in response.text
+    assert "examine" not in actions if phase in ("connect", "connect_timeout", "auth", "auth_timeout", "auth_rejected") else "examine" in actions
+    assert "STORE" not in actions and "EXPUNGE" not in actions
+
+
+def test_config_diagnostic_never_leaks_secret(client, monkeypatch, caplog):
+    http, _ = client
+    monkeypatch.delenv("ICLOUD_CLINICAL_READ_ENABLED")
+    off = get(http, "/peek")
+    assert off.status_code == 503
+    assert off.json() == {"detail": {"code": "CONFIG_DISABLED"}}
+    monkeypatch.setenv("ICLOUD_CLINICAL_READ_ENABLED", "1")
+    monkeypatch.delenv("ICLOUD_CLINICAL_APP_PASSWORD")
+    missing = get(http, "/peek")
+    assert missing.status_code == 503
+    assert missing.json() == {"detail": {"code": "CONFIG_MISSING"}}
+    assert "synthetic-clinical-key" not in caplog.text
+
+
+def test_unexpected_imap_exception_has_static_fallback(client, monkeypatch, caplog):
+    http, _ = client
+
+    @contextmanager
+    def provider_exception(_username, _password):
+        raise RuntimeError("synthetic-secret-password private patient subject")
+        yield
+
+    monkeypatch.setattr(ic, "_session", provider_exception)
+    response = get(http, "/peek")
+    assert response.status_code == 503
+    assert response.json() == {"detail": {"code": "IMAP_UNEXPECTED_FAILURE"}}
+    assert "icloud_mail_diagnostic code=IMAP_UNEXPECTED_FAILURE" in caplog.text
+    assert "synthetic-secret-password" not in caplog.text
+    assert "private patient subject" not in response.text

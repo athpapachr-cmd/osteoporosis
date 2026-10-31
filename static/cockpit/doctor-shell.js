@@ -289,7 +289,14 @@
         const response=await fetch("/clinical/icloud-mail/peek",{
           credentials:"same-origin",cache:"no-store",headers:{"Accept":"application/json"}
         });
-        if(!response.ok){const e=new Error("Unavailable");e.status=response.status;throw e;}
+        if(!response.ok){
+          const e=new Error("Unavailable");e.status=response.status;
+          if(response.status===503){
+            try{const payload=await response.json();e.code=payload?.detail?.code;}
+            catch(_){/* Non-JSON 503 still shows the generic source error. */}
+          }
+          throw e;
+        }
         const data=await response.json();
         if(!activePeek("inbox",ticket))return;
         if(data?.source!=="icloud_mail"||data.scope!=="recipient_alias_inbox_only"||
@@ -321,8 +328,11 @@
       }catch(error){
         if(!activePeek("inbox",ticket))return;
         content.replaceChildren();
+        const diagnostic=error.status===503 && window.CockpitIcloudStageMessage?.(error.code);
         content.append(text(error.status===401||error.status===403?
           "Απαιτείται κλινική σύνδεση. Δεν εμφανίζονται μηνύματα.":
+          diagnostic?
+          "iCloud Mail: "+diagnostic+" Δεν γνωρίζουμε αν υπάρχουν νέα μηνύματα.":
           "Δεν έχει συνδεθεί ακόμη το iCloud Mail ή η πηγή δεν είναι διαθέσιμη. Δεν γνωρίζουμε αν υπάρχουν νέα μηνύματα."));
         if(error.status===401||error.status===403)
           content.append(action("Σύνδεση","Clinical Key",
