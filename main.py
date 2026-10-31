@@ -12,6 +12,7 @@ from legacy_main import app, engine
 from clinical_auth import ClinicalCookieMiddleware, build_auth_router
 from clinical_reception_calls import build_reception_calls_router
 from clinical_icloud_mail import build_icloud_mail_router
+from clinical_icloud_actions import build_icloud_actions_router
 from clinical_notion_tasks import build_notion_tasks_router
 from clinical_calendar import build_clinical_calendar_router
 from clinical_data import build_clinical_router
@@ -67,6 +68,7 @@ app.add_middleware(ClinicalCookieMiddleware)
 app.include_router(build_auth_router())
 app.include_router(build_reception_calls_router())
 app.include_router(build_icloud_mail_router())
+app.include_router(build_icloud_actions_router(engine))
 app.include_router(build_notion_tasks_router(engine))
 app.include_router(build_clinical_status_router(engine))
 app.include_router(build_clinical_router(engine))
