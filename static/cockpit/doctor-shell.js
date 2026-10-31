@@ -797,6 +797,7 @@
     }
   }
   const links=[
+    {name:"Εισερχόμενα ασθενών",hint:"Όλα τα iCloud email · μόνο ανάγνωση",href:"/static/cockpit/#icloud-mail"},
     {name:"Καταγραφή επίσκεψης",hint:"Visit Capture",href:"/static/cockpit/visit-capture/"},
     {name:"Παραπεμπτικό φυσιοθεραπείας",hint:"Κείμενο για ΓεΣΥ",href:"/clinical/clinic-utilities/physio-referral"},
     {name:"Αναρρωτική άδεια",hint:"Κλινικό έγγραφο",href:"/clinical/clinic-utilities/sick-leave"},
@@ -835,6 +836,8 @@
     $("doctorLibraryView").hidden=true;
     $("doctorMainView").hidden=true;
     $("doctorIcloudInboxView").hidden=false;
+    if(window.location?.hash!=="#icloud-mail")
+      window.history?.replaceState?.(null,"","/static/cockpit/#icloud-mail");
     window.CockpitIcloudInbox.open(itemId);
   }
   function showClinicalInbox(itemId=null){
@@ -909,6 +912,8 @@
     $("doctorObligationsView").hidden=true;
     $("doctorLibraryView").hidden=true;
     $("doctorMainView").hidden=false;
+    if(window.location?.hash==="#icloud-mail")
+      window.history?.replaceState?.(null,"","/static/cockpit/");
     $("doctorActionsButton").focus();
   }
   const rfCounterNames = [
@@ -1091,5 +1096,12 @@
         unreadPeek.authorized=true;maybeRefreshUnread(true);
       }
     }).catch(()=>{});
+  // One stable deep link shared by all Cockpit modules and browser bookmarks.
+  function openIcloudRoute(){
+    if(window.location?.hash==="#icloud-mail" && $("doctorIcloudInboxView").hidden)
+      showIcloudInbox();
+  }
+  window.addEventListener("hashchange",openIcloudRoute);
+  openIcloudRoute();
   loadRfAttention();
 })();
