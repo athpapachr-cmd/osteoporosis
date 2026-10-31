@@ -32,6 +32,7 @@ _MAX_WINDOWS = 8
 _MAX_SEARCH_REPLY_BYTES = _UID_WINDOW * 21
 _MAX_MESSAGE_BYTES = 12 * 1024 * 1024
 _MAX_HEADER_BYTES = 64 * 1024
+_MAX_FETCH_METADATA_BYTES = 4096  # Bounded IMAP FETCH response atoms, not header literals
 _HEADER_FETCH = "(BODY.PEEK[HEADER.FIELDS (FROM TO CC SUBJECT DATE LIST-UNSUBSCRIBE PRECEDENCE AUTO-SUBMITTED)]<0.65537> RFC822.SIZE)"
 _MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024
 _CLINICAL_TERMS = (
@@ -171,12 +172,24 @@ def _fetch_headers(mail, uid: str):
         raise _StageFailure("IMAP_HEADER_FETCH_FAILED") from None
     if status != "OK":
         raise _StageFailure("IMAP_HEADER_FETCH_FAILED")
-    size_fields = b" ".join(
-        row[0] for row in (items or [])
-        if isinstance(row, tuple) and isinstance(row[0], bytes)
-    )
-    found = re.search(rb"RFC822\.SIZE\s+(\d+)", size_fields, re.I)
-    if not found:
+    # imaplib returns a FETCH literal as (metadata_prefix, header_bytes),
+    # followed by standalone metadata trailer bytes. iCloud can place
+    # RFC822.SIZE in that trailer rather than before the header literal.
+    # Never scan literal email contents for server size metadata.
+    metadata_atoms = []
+    total_metadata_bytes = 0
+    for row in items or []:
+        atom = row[0] if isinstance(row, tuple) and len(row) >= 2 else row
+        if not isinstance(atom, bytes):
+            continue
+        total_metadata_bytes += len(atom)
+        if total_metadata_bytes > _MAX_FETCH_METADATA_BYTES:
+            raise _BadMessage()
+        metadata_atoms.append(atom)
+    size_fields = b" ".join(metadata_atoms)
+    sizes = re.findall(rb"RFC822\.SIZE\s+([0-9]{1,20})(?=[\s)]|$)", size_fields, re.I)
+    if len(sizes) != 1:
+        # Missing, duplicate or malformed size remains a per-message skip.
         raise _BadMessage()
     try:
         header = _literal(items)
@@ -189,7 +202,7 @@ def _fetch_headers(mail, uid: str):
         raise
     except (TypeError, ValueError, UnicodeError, _SourceUnavailable):
         raise _BadMessage() from None
-    return message, int(found.group(1))
+    return message, int(sizes[0])
 
 
 def _summary(uid: str, validity: str, message, alias: str):
