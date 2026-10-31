@@ -323,8 +323,17 @@
         });
         if(!stillCurrent())return;
         if(!res.ok){const err=Error("Mail decision unavailable");err.status=res.status;throw err;}
-        record=await res.json();record.source_valid=true;
+        record=await res.json();
         if(!stillCurrent())return;
+        if(typeof record?.source_valid!=="boolean" ||
+           !Number.isInteger(record.version)){
+          throw Error("Invalid saved action projection");
+        }
+        const visible=state.items.find(x=>x.id===id);
+        if(visible&&typeof record.category==="string"){
+          visible.category=record.category;
+          rows();
+        }
         // The source and visit may have changed; the server rechecks both.
         paint();
       }catch(err){
@@ -383,7 +392,9 @@
       panel.append(heading);
       if(record.source_valid===false||record.review_status==="source_invalidated"){
         panel.append(el("p","clinical-inbox-warning",
-          "Η προηγούμενη σύνδεση με την επίσκεψη δεν ισχύει πλέον. Δεν επιτρέπονται νέες κλινικές ενέργειες."));
+          "Η προηγούμενη σύνδεση με την επίσκεψη δεν ισχύει πλέον. Επίλεξε αποσύνδεση για να συνδέσεις σωστά το email."));
+        panel.append(control("Αποσύνδεση και διόρθωση",
+          ()=>request("unlink")));
         return;
       }
       const row=el("div","clinical-inbox-actions");
@@ -443,6 +454,12 @@
           contact.append(el("p","clinical-inbox-note","Ο κύκλος επικοινωνίας ολοκληρώθηκε."));
         }
         panel.append(contact);
+      }
+      if(record.review_status!=="not_reviewed"){
+        panel.append(control("Διόρθωση αξιολόγησης",
+          ()=>request("reopen_review")));
+        panel.append(control("Αποσύνδεση από λανθασμένο φάκελο",
+          ()=>request("unlink")));
       }
       const outcome=el("p","clinical-inbox-note","");
       outcome.setAttribute("role","status");
