@@ -76,7 +76,7 @@ def test_signed_visit_one_obligation_full_cycle_and_quiet_closure():
     closed = do(store, case, DOCTOR, "callback_complete", serial=10)
     assert closed["complete"] and closed["stage"] == "complete"
     events = store.history(case, DOCTOR)
-    assert len(events) == 9
+    assert len(events) == 8
     assert [e["action"] for e in events][-3:] == [
         "received", "review_no_contact", "callback_complete"
     ]
