@@ -135,6 +135,21 @@
       text(obligations,"h3","Υποχρεώσεις · "+openItems.length+(openItems.length===1?" ανοικτή":" ανοικτές"));
       const pendingBox=text(obligations,"div","");
       renderPending(pendingBox,patientId,data.pending);
+      // Show the evolving obligation beside the original signed visit.
+      // Never modify an immutable signed clinical note from this projection.
+      for(const cycle of data.followthrough||[]){
+        const progress=text(obligations,"div","");
+        progress.className="synthetic-visit-followthrough";
+        text(progress,"strong","Κύκλος εξετάσεων · MRI");
+        text(progress,"p",{
+          awaiting_result:"Αναμένονται αποτελέσματα",
+          partially_received:"Έχουν παραληφθεί ορισμένα αποτελέσματα",
+          awaiting_doctor_review:"Αναμένει ιατρική αξιολόγηση",
+          awaiting_secretary:"Αναμένει ενημέρωση από γραμματέα",
+          awaiting_callback:"Αναμένει τηλεφωνική επικοινωνία",
+          complete:"Ολοκληρώθηκε"
+        }[cycle.stage]||"Χρειάζεται έλεγχος");
+      }
       const timeline=text(chart,"section","");timeline.className="patient-timeline";
       text(timeline,"h3","Πορεία ασθενούς");
       const entries=data.visits.map(visit=>({at:visit.date+"T08:00:00",kind:"visit",visit}));
@@ -193,6 +208,7 @@
       await request("/prepare", "POST");
       status.textContent = "Η δοκιμή αποθηκεύτηκε. Επίλεξε ένα από τα τρία ραντεβού.";
       window.dispatchEvent(new Event("clinical:authenticated"));
+      window.dispatchEvent(new Event("synthetic:prepared"));
     } catch (e) { status.textContent = e.message; }
     finally { button.disabled = false; }
   });
