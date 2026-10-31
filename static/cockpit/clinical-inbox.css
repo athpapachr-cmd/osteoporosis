@@ -30,3 +30,29 @@
 #doctorIcloudInboxShown{font-size:12px;color:#6a8087}
 .doctor-icloud-body{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px;line-height:1.6;margin:15px 0;padding:12px;border-radius:12px;background:#f6faf9}
 .doctor-icloud-attachment{display:block;max-width:100%;overflow-wrap:anywhere;font-size:13px;line-height:1.5;padding:9px 0}
+
+
+/* Real iCloud: comfortable reading and a useful empty detail panel.
+   Synthetic Clinical Inbox retains its existing layout and typography. */
+#doctorIcloudInboxView .clinical-inbox-layout{
+  grid-template-columns:minmax(300px,.9fr) minmax(0,1.3fr);
+  gap:16px;
+}
+#doctorIcloudInboxView .clinical-inbox-list{padding:12px 15px}
+#doctorIcloudInboxView .clinical-inbox-detail{
+  padding:20px;min-height:240px;position:sticky;top:14px
+}
+#doctorIcloudInboxView .clinical-inbox-row{
+  padding:13px 9px;line-height:1.45
+}
+#doctorIcloudInboxView .clinical-inbox-row strong{font-size:14px;line-height:1.4}
+#doctorIcloudInboxView .clinical-inbox-row small{font-size:12px;line-height:1.5}
+#doctorIcloudInboxView .clinical-inbox-empty-detail{
+  font-size:14px;line-height:1.65;color:#69818a;
+  margin:0;padding:20px 8px
+}
+@media(max-width:790px){
+  #doctorIcloudInboxView .clinical-inbox-layout{grid-template-columns:1fr;gap:12px}
+  #doctorIcloudInboxView .clinical-inbox-detail{position:static;min-height:150px}
+  #doctorIcloudInboxView .clinical-inbox-list{padding:12px}
+}

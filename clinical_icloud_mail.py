@@ -60,6 +60,7 @@ _DIAGNOSTIC_CODES = frozenset({
     "IMAP_AUTH_FAILED", "INBOX_SELECT_FAILED",
     "UIDVALIDITY_OR_UIDNEXT_FAILED", "IMAP_SEARCH_FAILED",
     "IMAP_HEADER_FETCH_FAILED", "IMAP_MESSAGE_FETCH_FAILED",
+    "IMAP_FLAGS_FETCH_FAILED",
     "IMAP_UNEXPECTED_FAILURE",
 })
 _LOG = logging.getLogger(__name__)
@@ -276,15 +277,15 @@ def _uid_next(mail) -> int:
     return int(raw)
 
 
-def _search_window(mail, alias: str, low: int, high: int, *, unseen_only: bool = False) -> list[int]:
+def _search_window(mail, alias: str, low: int, high: int) -> list[int]:
     """Bound the IMAP server's response before it returns any UIDs."""
     quoted = '"' + alias + '"'
     try:
-        # IMAP SEARCH combines criteria with AND: UID range + UNSEEN + (TO or CC).
-        # READ-ONLY EXAMINE and BODY.PEEK never set the server's Seen flag.
+        # Use the provider-proven bounded UID + recipient search for both paths.
+        # A combined UNSEEN/UID/OR expression may fail on this provider; the
+        # peek checks exact UID-bound FLAGS separately without changing Seen.
         status, data = mail.uid(
             "SEARCH", None, "UID", f"{low}:{high}",
-            *(("UNSEEN",) if unseen_only else ()),
             "OR", "TO", quoted, "CC", quoted
         )
     except Exception:
@@ -307,6 +308,47 @@ def _search_window(mail, alias: str, low: int, high: int, *, unseen_only: bool =
     return sorted(set(result), reverse=True)
 
 
+_FETCH_FLAGS_NAME = re.compile(rb"(?:^|[\s(])FLAGS(?=[\s)]|$)", re.I)
+_FETCH_FLAGS_VALUE = re.compile(rb"(?:^|[\s(])FLAGS[ \t]+\(([^()]{0,512})\)", re.I)
+
+
+def _uid_is_unseen(mail, uid: str) -> bool:
+    """Read exact UID-bound flags; ambiguity never becomes an unread claim."""
+    try:
+        status, rows = mail.uid("FETCH", uid, "(UID FLAGS)")
+    except Exception:
+        raise _StageFailure("IMAP_FLAGS_FETCH_FAILED") from None
+    if status != "OK":
+        raise _StageFailure("IMAP_FLAGS_FETCH_FAILED")
+    if not isinstance(rows, (list, tuple)):
+        raise _BadMessage()
+    wanted = uid.encode("ascii")
+    verified = None
+    metadata_size = 0
+    for row in rows:
+        if row is None:
+            continue
+        if not isinstance(row, bytes):
+            raise _BadMessage()
+        metadata_size += len(row)
+        if metadata_size > _MAX_FETCH_METADATA_BYTES:
+            raise _BadMessage()
+        if not _FETCH_START.match(row):
+            continue  # A bounded trailer, never evidence for the requested UID.
+        uids = _FETCH_UID_VALUE.findall(row)
+        if wanted not in uids:
+            continue
+        if verified is not None or len(uids) != 1 or len(_FETCH_UID_NAME.findall(row)) != 1:
+            raise _BadMessage()
+        flags = _FETCH_FLAGS_VALUE.findall(row)
+        if len(flags) != 1 or len(_FETCH_FLAGS_NAME.findall(row)) != 1:
+            raise _BadMessage()
+        verified = b"\\seen" not in (flag.lower() for flag in flags[0].split())
+    if verified is None:
+        raise _BadMessage()
+    return verified
+
+
 def _list_items(mail, validity: str, alias: str, limit: int, cursor: str | None = None, *, unseen_only: bool = False):
     last_uid = _uid_next(mail) - 1
     if cursor is not None:
@@ -327,15 +369,20 @@ def _list_items(mail, validity: str, alias: str, limit: int, cursor: str | None 
     windows = 0
     while high > 0 and windows < _MAX_WINDOWS and headers_checked < _MAX_CANDIDATES:
         low = max(1, high - _UID_WINDOW + 1)
-        found = _search_window(mail, alias, low, high, unseen_only=unseen_only)
+        found = _search_window(mail, alias, low, high)
         windows += 1
         exhausted_early = False
         for uid in found:
             high = uid - 1
             headers_checked += 1
             try:
-                header, _ = _fetch_headers(mail, str(uid))
-                item = _summary(str(uid), validity, header, alias)
+                # At most 80 candidate flag reads per peek, never an unbounded
+                # mailbox-wide UNSEEN query. Each FLAGS response is tied to UID.
+                if unseen_only and not _uid_is_unseen(mail, str(uid)):
+                    item = None
+                else:
+                    header, _ = _fetch_headers(mail, str(uid))
+                    item = _summary(str(uid), validity, header, alias)
             except (_BadMessage, ValueError, TypeError, UnicodeError):
                 skipped += 1
                 item = None
