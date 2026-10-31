@@ -1,0 +1,58 @@
+name: Cockpit individual staff identity V2 (feature-OFF)
+
+on:
+  push:
+    paths:
+      - "clinical_individual_staff_v2.py"
+      - "clinical_auth.py"
+      - "test_clinical_individual_staff_v2.py"
+      - ".github/workflows/cockpit-individual-staff-v2.yml"
+      - "cockpit/staff-identity-v2/**"
+  pull_request:
+    paths:
+      - "clinical_individual_staff_v2.py"
+      - "clinical_auth.py"
+      - "test_clinical_individual_staff_v2.py"
+      - ".github/workflows/cockpit-individual-staff-v2.yml"
+      - "cockpit/staff-identity-v2/**"
+
+permissions:
+  contents: read
+
+jobs:
+  v2-auth:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt pytest
+      - name: Syntax
+        run: python -m py_compile clinical_individual_staff_v2.py clinical_auth.py clinical_staff_auth.py test_clinical_individual_staff_v2.py
+      - name: Individually attributable actor isolation and legacy regression
+        run: pytest -q test_clinical_individual_staff_v2.py test_clinical_visit_brief.py
+      - name: Verify disabled by default and no new clinical write authority
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          module = Path("clinical_individual_staff_v2.py").read_text()
+          auth = Path("clinical_auth.py").read_text()
+          assert 'COCKPIT_INDIVIDUAL_STAFF_V2_ENABLED' in module
+          assert '!= "1"' in module
+          assert 'COCKPIT_INDIVIDUAL_STAFF_V2_ACTORS_JSON' in module
+          assert 'require_individual_clinician' in module
+          assert 'require_individual_secretary' in module
+          assert 'build_individual_staff_v2_router()' in auth
+          for forbidden in ("PatientORM", "EncounterORM", "ClinicalPendingORM",
+                            "DATABASE_URL", "imaplib", "httpx.", "requests.",
+                            "send_sms", "send_email", ".create_all("):
+              assert forbidden not in module, forbidden
+          PY
+      - name: Diff hygiene
+        run: git diff --check HEAD^ HEAD
