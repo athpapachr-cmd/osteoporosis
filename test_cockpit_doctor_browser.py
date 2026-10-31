@@ -558,6 +558,7 @@ def exercise_icloud_mail_peek(page, width):
     page.locator("#doctorIcloudInboxBack").click()
     page.evaluate("window.location.hash = '#icloud-mail'")
     expect(page.locator("#doctorIcloudInboxView")).to_be_visible()
+    expect(page.locator('[data-icloud-view="all"]')).to_have_attribute("aria-pressed","true")
     expect(page.locator("#doctorIcloudInboxDetails")).to_contain_text(
         "Επίλεξε ένα μήνυμα από τη λίστα")
     detail_position = page.evaluate("""() => getComputedStyle(
