@@ -553,6 +553,11 @@ def exercise_icloud_mail_peek(page, width):
     expect(page.locator("#doctorIcloudInboxView")).to_be_hidden()
     assert page.locator("#doctorIcloudInboxRows").inner_text() == ""
     assert "Fictional sender" not in page.locator("#doctorIcloudInboxRows").inner_text()
+    # Auth expiry deliberately opens the common Clinical Key panel. Close it
+    # before continuing with unrelated browser smoke interactions.
+    expect(page.locator("#ceGlobalAccessPanel")).to_be_visible()
+    page.keyboard.press("Escape")
+    expect(page.locator("#ceGlobalAccessPanel")).to_be_hidden()
     page.unroute("**/clinical/status", expired_status)
 
     page.unroute("**/clinical/icloud-mail/items/765-4", item)
