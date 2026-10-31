@@ -22,12 +22,38 @@ assert.match(ui, /INBOX_SELECT_FAILED: "Απέτυχε το στάδιο ανο�
 assert.match(ui, /Δεν έχει επιβεβαιωθεί/);
 assert.doesNotMatch(ui, /Ο IMAP server απέρριψε τη σύνδεση|Ο IMAP server δεν επέτρεψε άνοιγμα/);
 assert.match(ui, /IMAP_HEADER_FETCH_FAILED/);
-assert.match(shell, /payload\?\.detail\?\.code/);
+assert.match(shell, /detail\?\.code/);
 assert.match(shell, /CockpitIcloudStageMessage/);
 assert.match(shell, /PEEK_SOURCE|PEEK_ITEMS|PEEK_COVERAGE|PEEK_CURSOR|PEEK_ITEM_FIELDS/);
 assert.match(shell, /PEEK_JSON|PEEK_RENDER|PEEK_NETWORK/);
-assert.match(shell, /sourceResponded=true/);
-assert.match(html, /doctor-shell\.js\?v=icloud-peek-200-truth-20261031/);
+assert.match(shell, /unreadPeek/);
+assert.match(shell, /verifiedUnreadPanelTicket/);
+assert.match(shell, /Έλεγχος κλινικής πρόσβασης στα μη αναγνωσμένα/);
+assert.match(shell, /verifiedUnreadPanelTicket!==state\.request/);
+assert.match(shell, /status\.status===401\|\|status\.status===403/);
+assert.match(shell, /clearUnreadPeek\(\); \/\/ Includes the dot/);
+assert.match(shell, /\[PEEK_AUTH_CHECK\]/);
+
+assert.match(shell, /if\(syntheticInbox\(\) \|\| secretaryIcloudSession\(\)\)return;/);
+assert.match(shell, /if\(secretaryIcloudSession\(\)\)return null;/);
+assert.match(shell, /Η σύνδεση γραμματείας παραμένει ενεργή/);
+assert.match(shell, /async function verifiedStaffRole\(\)/);
+assert.match(ui, /async function verifiedStaffRole\(\)/);
+assert.match(shell, /STAFF_SESSION_UNVERIFIED/);
+assert.match(ui, /STAFF_SESSION_UNVERIFIED/);
+assert.match(ui, /guardSecretarySession\(\)/);
+assert.doesNotMatch(shell, /if\(secretaryIcloudSession\(\)\)return true;/,
+  "Local role must never prove that a staff cookie is still valid");
+assert.doesNotMatch(ui, /let secretary=secretaryIcloudSession\(\);/,
+  "A denied iCloud read must independently validate existing staff authority");
+assert.match(shell, /if\(syntheticInbox\(\)\)\{openPanel\("inbox",buttons\.inbox\);return;\}/);
+assert.match(shell, /ICLOUD_PEEK_TTL_MS = 5 \* 60 \* 1000/);
+assert.match(shell, /data\.filter!=="unseen"/);
+assert.match(shell, /PEEK_ITEMS_LIMIT/);
+assert.match(ui, /data\.filter!=="all"/);
+assert.match(ui, /LIST_ITEMS_LIMIT/);
+assert.match(html, /icloud-unread-inbox-20261031/);
+assert.match(html, /doctor-shell\.js\?v=icloud-unread-inbox-20261031/);
 assert.doesNotMatch(shell, /console\.error\(error\)|localStorage|sessionStorage/);
 assert.match(ui, /Παλαιότερα/);
 assert.match(ui, /δεν έχουν ελεγχθεί για κακόβουλα/);

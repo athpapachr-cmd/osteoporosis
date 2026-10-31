@@ -717,7 +717,9 @@ def test_patient_task_groups_and_incoming_sources_remain_separate(setup,tmp_path
                 expect(page.locator('#visitRecentRows .clinical-patient-row')).to_have_count(2)
                 page.locator('#doctorInboxButton').click();expect(page.locator('#doctorPopoverTitle')).to_have_text('Κλινικά εισερχόμενα')
                 expect(page.locator('#doctorPopoverContent')).to_contain_text('PEEK_HTTP_ERROR')
-                expect(page.locator('#doctorPopoverContent button.doctor-action-row')).to_have_count(0);assert not reads
+                expect(page.locator('#doctorPopoverContent button.doctor-action-row')).to_have_count(1)
+                expect(page.locator('#doctorPopoverContent').get_by_role('button',name='Ανανέωση τώρα')).to_be_visible()
+                assert not reads
                 page.locator('#doctorTasksButton').click()
                 expect(page.locator('#doctorPopover')).to_be_visible()
                 expect(page.locator('#doctorObligationsView')).to_be_hidden()

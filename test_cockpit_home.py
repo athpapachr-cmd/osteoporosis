@@ -190,9 +190,11 @@ def test_clinician_home_v4_preserves_existing_tools_without_legacy_blocks_under_
     assert "Το πλήρες ημερήσιο πρόγραμμα ανοίγει από την ημερομηνία" not in html
     assert "Οστεοπόρωση" in html and "Καταγραφή επίσκεψης" in html
     assert "Πλήρες πρόγραμμα Γραμματείας" in shell
-    assert "Το iCloud απάντησε επιτυχώς (HTTP 200)" in shell
+    assert "Μη αναγνωσμένα στο iCloud" in shell
+    assert "PEEK_ITEMS_LIMIT" in shell
     assert "PEEK_SOURCE_503" in shell
-    assert 'doctorInboxBadge").hidden=true' in shell
+    assert "badge.hidden=!hasUnread" in shell
+    assert "unreadPeek.data?.items?.length" in shell
     assert "last-minute" not in shell
     assert ".doctor-popover" in css and "doctor-rail-open" in css
     assert "max-width:990px" in css or "max-width:990px" in css.replace(" ", "")

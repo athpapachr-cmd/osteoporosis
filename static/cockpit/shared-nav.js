@@ -4,6 +4,7 @@
   // A floating key entry is a convenience, not a new login authority.
   const ROOT = "/static/cockpit/";
   const shortcuts = [
+    ["Εισερχόμενα ασθενών", "/static/cockpit/#icloud-mail"],
     ["Εβδομαδιαίο ημερολόγιο", "/static/clinical-calendar/"],
     ["Καταγραφή επίσκεψης", "/static/cockpit/visit-capture/"],
     ["RF · Ραδιοσυχνότητες", "/clinical/clinic-utilities/rf"],

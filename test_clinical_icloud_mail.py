@@ -44,16 +44,22 @@ class FakeMail:
                       attached=True),
         }
         self.operations = []
+        self.seen = set()  # Server-side Seen flags in synthetic read-only mailbox.
 
     def uid(self, operation, *args):
         self.operations.append((operation, args))
         if operation == "SEARCH":
             assert args[:2] == (None, "UID")
-            assert args[3:] == ("OR", "TO", '"' + ALIAS + '"',
-                                "CC", '"' + ALIAS + '"')
+            criteria = args[3:]
+            unseen_only = criteria[:1] == ("UNSEEN",)
+            if unseen_only:
+                criteria = criteria[1:]
+            assert criteria == ("OR", "TO", '"' + ALIAS + '"',
+                               "CC", '"' + ALIAS + '"')
             low, high = map(int, args[2].split(":"))
             assert 1 <= low <= high and high - low < ic._UID_WINDOW
-            uids = [int(uid) for uid in self.rows if low <= int(uid) <= high]
+            uids = [int(uid) for uid in self.rows if low <= int(uid) <= high
+                    and (not unseen_only or uid not in self.seen)]
             return "OK", [b" ".join(str(uid).encode() for uid in sorted(uids))]
         if operation == "FETCH":
             uid, spec = args
@@ -129,6 +135,56 @@ def test_alias_only_bulk_excluded_and_review_bucket(client):
     assert all(op in ("SEARCH", "FETCH") for op, args in source.operations)
     assert all("BODY.PEEK" in args[-1] for op, args in source.operations if op == "FETCH")
     assert "synthetic-only-password" not in response.text
+
+
+def test_icloud_peek_is_unseen_only_and_never_mutates_seen_flags(client):
+    http, fake = client
+    fake.seen = {"4"}
+    peek = get(http, "/peek")
+    assert peek.status_code == 200
+    payload = peek.json()
+    assert payload["filter"] == "unseen"
+    assert [(item["id"], item["category"]) for item in payload["items"]] == [
+        ("765-3", "review")
+    ]
+    assert all("UNSEEN" in args for op, args in fake.operations if op == "SEARCH")
+    assert not any(op in ("STORE", "EXPUNGE") for op, args in fake.operations)
+    fake.operations.clear()
+    full = get(http, "")
+    assert full.status_code == 200
+    assert full.json()["filter"] == "all"
+    assert any(item["id"] == "765-4" for item in full.json()["items"])
+    assert all("UNSEEN" not in args for op, args in fake.operations if op == "SEARCH")
+
+
+def test_peek_exactly_four_unseen_and_full_archive_exactly_twenty(client):
+    http, fake = client
+    fake.rows = {str(i): mail(subject=f"MRI result {i}") for i in range(1, 101)}
+    fake.seen = {"100", "98"}
+    peek = get(http, "/peek")
+    assert peek.status_code == 200
+    payload = peek.json()
+    assert payload["filter"] == "unseen"
+    assert [x["id"] for x in payload["items"]] == [
+        "765-99", "765-97", "765-96", "765-95"
+    ]
+    assert payload["next_cursor"] == "765-94"
+    assert payload["coverage_complete"] is False
+    assert payload["skipped_count"] == 0
+    assert len(payload["items"]) == 4
+
+    full = get(http, "")
+    assert full.status_code == 200
+    archive = full.json()
+    assert archive["filter"] == "all"
+    assert len(archive["items"]) == 20
+    assert archive["items"][0]["id"] == "765-100"
+    assert archive["next_cursor"] == "765-80"
+    next_page = get(http, "/?cursor=" + archive["next_cursor"])
+    assert next_page.status_code == 200
+    assert len(next_page.json()["items"]) == 20
+    assert next_page.json()["items"][0]["id"] == "765-80"
+    assert all(op in ("SEARCH", "FETCH") for op, args in fake.operations)
 
 
 def test_detail_safe_body_and_pdf_attachment(client):

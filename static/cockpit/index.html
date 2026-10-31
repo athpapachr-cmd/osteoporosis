@@ -26,7 +26,7 @@
       <nav class="doctor-command-bar" aria-label="Γρήγορη πρόσβαση">
         <button id="doctorDateButton" class="doctor-date-button" type="button" aria-expanded="false" aria-haspopup="dialog">Πρόγραμμα σήμερα <span aria-hidden="true">▾</span></button>
         <button id="doctorCallsButton" class="doctor-icon" type="button" aria-expanded="false" aria-haspopup="dialog" aria-label="Κλήσεις γραμματέα" title="Κλήσεις γραμματέα"><span aria-hidden="true">☎</span></button>
-        <button id="doctorInboxButton" class="doctor-icon" type="button" aria-expanded="false" aria-haspopup="dialog" aria-label="Πρόσφατα κλινικά εισερχόμενα" title="Πρόσφατα κλινικά εισερχόμενα"><span aria-hidden="true">✉</span><span id="doctorInboxBadge" hidden></span></button>
+        <button id="doctorInboxButton" class="doctor-icon" type="button" aria-expanded="false" aria-haspopup="dialog" aria-label="Μη αναγνωσμένα κλινικά email" title="Μη αναγνωσμένα στο iCloud"><span aria-hidden="true">✉</span><span id="doctorInboxBadge" hidden></span></button>
         <button id="doctorTasksButton" class="doctor-icon" type="button" aria-expanded="false" aria-haspopup="dialog" aria-label="Πρόσφατες υποχρεώσεις ασθενών" title="Πρόσφατες υποχρεώσεις"><span aria-hidden="true">☑</span><span id="doctorTasksBadge" hidden></span></button>
         <button id="doctorNotionButton" class="doctor-icon" type="button" aria-expanded="false" aria-haspopup="dialog" aria-label="Οι εργασίες μου στο Notion" title="Οι εργασίες μου στο Notion"><span aria-hidden="true">▤</span></button>
         <button id="doctorActionsButton" class="doctor-command-button" type="button" aria-expanded="false" aria-label="Άνοιγμα ενεργειών"><span aria-hidden="true">⌘</span> Ενέργειες</button>
@@ -611,8 +611,8 @@ ENCOUNTER DETAIL
   <script src="/static/cockpit/patient-entry.js?v=chart-continuity-20261018" defer></script>
   <script src="/static/cockpit/obligations-view.js?v=topbar-peeks-20261024" defer></script>
   <script src="/static/cockpit/clinical-inbox.js?v=one-tap-source-review-20261024" defer></script>
-  <script src="/static/cockpit/icloud-inbox.js?v=icloud-review-correction-20261030" defer></script>
-  <script src="/static/cockpit/doctor-shell.js?v=icloud-peek-200-truth-20261031" defer></script>
+  <script src="/static/cockpit/icloud-inbox.js?v=icloud-unread-inbox-20261031" defer></script>
+  <script src="/static/cockpit/doctor-shell.js?v=icloud-unread-inbox-20261031" defer></script>
   <script src="/static/cockpit/shared-nav.js" defer></script>
 </body>
 </html>

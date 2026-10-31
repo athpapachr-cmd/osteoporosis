@@ -469,7 +469,9 @@ def exercise_reception_call_peek(page, width, call_source):
 
 def exercise_icloud_mail_peek(page, width):
     """Real Chromium, provider-shaped but fictional alias mail; no external access."""
-    payload = {"source": "icloud_mail", "scope": "recipient_alias_inbox_only",
+    mail_ui_errors = []
+    page.on("pageerror", lambda error: mail_ui_errors.append(str(error)))
+    payload = {"source": "icloud_mail", "scope": "recipient_alias_inbox_only", "filter": "unseen",
         "next_cursor": "765-2", "skipped_count": 1, "coverage_complete": False,
         "items": [
             {"id": "765-4", "subject": "<svg onload=alert(1)> MRI",
@@ -483,19 +485,21 @@ def exercise_icloud_mail_peek(page, width):
         "attachments_unavailable": 1,
         "attachments": [{"index": 2, "name": "image.pdf",
                          "content_type": "application/pdf", "size": 256}]}}
+    peek_requests = {"count": 0}
     def peek(route):
         assert route.request.method == "GET"
         assert not any(k.lower() == "x-clinical-key" for k in route.request.headers)
+        peek_requests["count"] += 1
         route.fulfill(json=payload)
     def full(route):
         if "cursor=765-2" in route.request.url:
             return route.fulfill(json={"source": "icloud_mail",
-                "scope": "recipient_alias_inbox_only",
+                "scope": "recipient_alias_inbox_only", "filter": "all",
                 "next_cursor": None, "skipped_count": 0, "coverage_complete": True,
                 "items": [{"id": "765-1", "subject": "Παλαιότερο κλινικό",
                    "from": "Old synthetic", "date": "2026-10-28T09:00:00+00:00",
                    "category": "clinical"}]})
-        route.fulfill(json=payload)
+        route.fulfill(json={**payload, "filter": "all"})
     def item(route):
         route.fulfill(json=detail)
     page.route("**/clinical/icloud-mail/peek", peek)
@@ -504,12 +508,21 @@ def exercise_icloud_mail_peek(page, width):
     page.route("**/clinical/icloud-mail/items/765-4", item)
     page.locator("#doctorInboxButton").click()
     content = page.locator("#doctorPopoverContent")
+    content.get_by_role("button", name="Ανανέωση τώρα").click()
     expect(content).to_contain_text("<svg onload=alert(1)>")
     expect(content).to_contain_text("Για έλεγχο")
     expect(content).to_contain_text("Μερική κάλυψη")
     assert content.locator("svg, img").count() == 0
+    observed = peek_requests["count"]
+    page.locator("#doctorInboxButton").click()
+    page.locator("#doctorInboxButton").click()
+    expect(content).to_contain_text("<svg onload=alert(1)>")
+    assert peek_requests["count"] == observed, (
+        "Opening cached unread preview unnecessarily re-fetched provider mail")
     content.locator("button.doctor-action-row").first.click()
     expect(page.locator("#doctorIcloudInboxView")).to_be_visible()
+    assert not mail_ui_errors, "Unexpected iCloud JS navigation error: " + str(mail_ui_errors)
+    expect(page.locator("#doctorIcloudInboxState")).to_contain_text("Απευθείας")
     details = page.locator("#doctorIcloudInboxDetails")
     expect(details).to_contain_text("<img src=x onerror=alert(1)>")
     assert details.locator("svg, img").count() == 0
@@ -519,6 +532,9 @@ def exercise_icloud_mail_peek(page, width):
     assert details.locator("a.doctor-icloud-attachment").first.get_attribute("href").endswith(
         "/clinical/icloud-mail/items/765-4/attachments/2")
     assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1")
+    # Peek selection loads its exact protected UID first; the archive is
+    # separate and appears only when explicitly refreshed or opened by route.
+    page.locator("#doctorIcloudInboxReload").click()
     expect(page.locator("#doctorIcloudInboxRows")).to_contain_text("Μερική κάλυψη")
     page.locator("#doctorIcloudInboxRows").get_by_role("button", name="Παλαιότερα").click()
     expect(page.locator("#doctorIcloudInboxRows")).to_contain_text("Παλαιότερο κλινικό")
@@ -530,11 +546,252 @@ def exercise_icloud_mail_peek(page, width):
     page.locator("#doctorIcloudInboxBack").click()
     expect(page.locator("#doctorIcloudInboxView")).to_be_hidden()
     assert details.text_content() == "", "Clinical mail retained in closed DOM"
+    page.evaluate("window.location.hash = '#icloud-mail'")
+    expect(page.locator("#doctorIcloudInboxView")).to_be_visible()
+    page.locator("#doctorIcloudInboxBack").click()
+    expect(page.locator("#doctorIcloudInboxView")).to_be_hidden()
+    assert page.evaluate("window.location.hash") != "#icloud-mail"
+
+    # A previously cached PHI-bearing archive must not bypass a lost Clinical
+    # Key session. Reopening checks /clinical/status before rendering subjects.
+    def expired_status(route):
+        route.fulfill(status=401, json={"detail": "Clinical sign-in required"})
+    page.route("**/clinical/status", expired_status)
+    page.evaluate("window.location.hash = '#icloud-mail'")
+    expect(page.locator("#doctorIcloudInboxView")).to_be_hidden()
+    assert page.locator("#doctorIcloudInboxRows").inner_text() == ""
+    assert "Fictional sender" not in page.locator("#doctorIcloudInboxRows").inner_text()
+    # Auth expiry deliberately opens the common Clinical Key panel. Close it
+    # before continuing with unrelated browser smoke interactions.
+    expect(page.locator("#ceGlobalAccessPanel")).to_be_visible()
+    page.keyboard.press("Escape")
+    expect(page.locator("#ceGlobalAccessPanel")).to_be_hidden()
+    page.unroute("**/clinical/status", expired_status)
+
     page.unroute("**/clinical/icloud-mail/items/765-4", item)
     page.unroute("**/clinical/icloud-mail?*", full)
     page.unroute("**/clinical/icloud-mail", full)
     page.unroute("**/clinical/icloud-mail/peek", peek)
 
+
+
+
+def exercise_cached_unread_requires_fresh_clinical_key(page):
+    """An external logout/rotation must never expose cached iCloud subjects."""
+    synthetic_subject = "PRIVATE-SYNTHETIC-UNREAD-SENTINEL"
+    synthetic_from = "PRIVATE-SYNTHETIC-SENDER"
+    payload = {
+        "source": "icloud_mail", "scope": "recipient_alias_inbox_only",
+        "filter": "unseen", "next_cursor": None,
+        "skipped_count": 0, "coverage_complete": True,
+        "items": [{
+            "id": "765-21", "subject": synthetic_subject,
+            "from": synthetic_from, "date": "2026-10-31T10:00:00Z",
+            "category": "clinical"
+        }]
+    }
+    peek_reads = {"count": 0}
+    def peek(route):
+        peek_reads["count"] += 1
+        assert route.request.method == "GET"
+        route.fulfill(status=200, json=payload)
+
+    page.route("**/clinical/icloud-mail/peek", peek)
+    # A fresh login supplies authority to prefetch, using only synthetic
+    # routes; the source returns a genuine UNSEEN shape, without real mail.
+    page.evaluate("window.dispatchEvent(new Event('clinical:authenticated'))")
+    page.locator("#doctorInboxButton").click()
+    popup = page.locator("#doctorPopoverContent")
+    popup.get_by_role("button", name="Ανανέωση τώρα").click()
+    expect(popup).to_contain_text(synthetic_subject)
+    expect(page.locator("#doctorInboxBadge")).to_be_visible()
+    page.locator("#doctorInboxButton").click()
+    reads_after_load = peek_reads["count"]
+
+    verified = {"count": 0}
+    def valid_status(route):
+        assert route.request.method == "GET"
+        assert not any(k.lower() == "x-clinical-key" for k in route.request.headers)
+        verified["count"] += 1
+        route.fulfill(status=200, json={"protected": True})
+
+    page.route("**/clinical/status", valid_status)
+    page.locator("#doctorInboxButton").click()
+    expect(popup).to_contain_text(synthetic_subject)
+    assert verified["count"] >= 1, "Cached preview requires protected status"
+    assert peek_reads["count"] == reads_after_load, "Status check must not re-read Apple IMAP"
+    page.locator("#doctorInboxButton").click()
+    page.unroute("**/clinical/status", valid_status)
+
+    # Simulate key revocation in another tab. Delay /status to ensure the
+    # snapshot remains hidden during the check, not just after HTTP 401.
+    pending = []
+    def delayed_rejected_status(route):
+        if not pending:
+            pending.append(route)
+        else:
+            route.fulfill(status=401, json={"detail": "Session no longer valid"})
+    page.route("**/clinical/status", delayed_rejected_status)
+    page.locator("#doctorInboxButton").click()
+    expect(popup).to_contain_text("Έλεγχος κλινικής πρόσβασης")
+    expect(popup).not_to_contain_text(synthetic_subject)
+    expect(popup).not_to_contain_text(synthetic_from)
+    assert pending, "Expected protected status validation before cached render"
+    pending[0].fulfill(status=401, json={"detail": "Session no longer valid"})
+    expect(page.locator("#doctorInboxBadge")).to_be_hidden()
+    expect(page.locator("#doctorPopover")).to_be_hidden()
+    assert synthetic_subject not in popup.inner_text()
+    assert synthetic_from not in popup.inner_text()
+    assert peek_reads["count"] == reads_after_load
+    expect(page.locator("#ceGlobalAccessPanel")).to_be_visible()
+    page.keyboard.press("Escape")
+    page.unroute("**/clinical/status", delayed_rejected_status)
+    page.unroute("**/clinical/icloud-mail/peek", peek)
+
+
+def exercise_icloud_secretary_session_isolation(page, auth):
+    """A successful existing secretary login must not become iCloud logout."""
+    attempts = {"peek": 0}
+    def forbidden_peek(route):
+        attempts["peek"] += 1
+        route.fulfill(status=401, json={"detail": "Clinician access required"})
+
+    page.route("**/clinical/icloud-mail/peek", forbidden_peek)
+    page.evaluate("""() => {
+        window.__secretaryIcloudAuthLoss = 0;
+        window.addEventListener('clinical:unauthenticated',
+            () => { window.__secretaryIcloudAuthLoss++; });
+    }""")
+    # Use the real shared-nav login form, not a hand-dispatched auth event.
+    page.locator("#ceGlobalKey").click()
+    key = page.locator("#ceGlobalKeyInput")
+    key.fill("synthetic-secretary-key")
+    page.locator("#ceGlobalLoginForm button[type=submit]").click()
+    expect(page.locator("#ceGlobalAuthStatus")).to_contain_text("Συνδέθηκες ως γραμματεία")
+    assert auth["staff_role"] == "secretary"
+    assert page.evaluate("window.CockpitStaffRole") == "secretary"
+    page.wait_for_timeout(80)
+    assert attempts["peek"] == 0, "Secretary login triggered an unauthorized iCloud IMAP peek"
+    expect(page.locator("#doctorInboxBadge")).to_be_hidden()
+    page.keyboard.press("Escape")  # Close the sticky key panel before clicking ✉.
+
+    # Manual icon access must verify a real server-side staff session, not the
+    # cached CockpitStaffRole='secretary' hint.
+    staff_before = auth["staff_checks"]
+    # Manual icon access stays PHI-free without treating a valid staff cookie
+    # as revoked. Focus/visibility cannot re-enable the background poll.
+    page.locator("#doctorInboxButton").click()
+    peek = page.locator("#doctorPopoverContent")
+    expect(peek).to_contain_text("Η σύνδεση γραμματείας παραμένει ενεργή")
+    assert auth["staff_checks"] > staff_before, "Secretary status requires a fresh server probe"
+    assert "PRIVATE-SYNTHETIC-UNREAD-SENTINEL" not in peek.inner_text()
+    page.evaluate("window.dispatchEvent(new Event('focus'))")
+    page.wait_for_timeout(80)
+    assert attempts["peek"] == 0
+    assert page.evaluate("window.CockpitStaffRole") == "secretary"
+    assert page.evaluate("window.__secretaryIcloudAuthLoss") == 0
+    page.locator("#doctorInboxButton").click()
+    page.unroute("**/clinical/icloud-mail/peek", forbidden_peek)
+
+    # Before shared-nav's role bootstrap completes, the protected status
+    # denial must discover the existing secretary cookie without a logout.
+    page.evaluate("window.CockpitStaffRole=null")
+    page.locator("#doctorInboxButton").click()
+    expect(page.locator("#doctorPopoverContent")).to_contain_text(
+        "Η σύνδεση γραμματείας παραμένει ενεργή")
+    assert page.evaluate("window.CockpitStaffRole") == "secretary"
+    assert page.evaluate("window.__secretaryIcloudAuthLoss") == 0
+    page.locator("#doctorInboxButton").click()
+
+    # The same authority separation applies to a cold full-inbox deep link,
+    # and Reload may not initiate another unauthorized mailbox request.
+    full_attempts = {"count": 0}
+    def denied_full(route):
+        full_attempts["count"] += 1
+        route.fulfill(status=401, json={"detail": "Clinician access required"})
+    page.route("**/clinical/icloud-mail", denied_full)
+    page.route("**/clinical/icloud-mail?*", denied_full)
+    page.evaluate("window.CockpitStaffRole=null; window.location.hash='#icloud-mail'")
+    expect(page.locator("#doctorIcloudInboxView")).to_be_visible()
+    expect(page.locator("#doctorIcloudInboxState")).to_contain_text(
+        "Η σύνδεση γραμματείας παραμένει ενεργή")
+    assert full_attempts["count"] == 1, "Expected one denied full-list read before role bootstrap"
+    assert page.evaluate("window.CockpitStaffRole") == "secretary"
+    assert page.evaluate("window.__secretaryIcloudAuthLoss") == 0
+    page.locator("#doctorIcloudInboxReload").click()
+    expect(page.locator("#doctorIcloudInboxState")).to_contain_text(
+        "Η σύνδεση γραμματείας παραμένει ενεργή")
+    assert full_attempts["count"] == 1
+    page.locator("#doctorIcloudInboxBack").click()
+    page.evaluate("window.location.hash='#icloud-mail'")
+    expect(page.locator("#doctorIcloudInboxState")).to_contain_text(
+        "Η σύνδεση γραμματείας παραμένει ενεργή")
+    assert full_attempts["count"] == 1
+    page.locator("#doctorIcloudInboxBack").click()
+    page.unroute("**/clinical/icloud-mail?*", denied_full)
+    page.unroute("**/clinical/icloud-mail", denied_full)
+
+    # Staff verification failure is UNKNOWN, not proof that an active staff
+    # session is still valid, and not a reason to log out a legitimate secretary.
+    def staff_unavailable(route):
+        route.abort("failed")
+    page.route("**/clinical/staff-session", staff_unavailable)
+    page.locator("#doctorInboxButton").click()
+    expect(page.locator("#doctorPopoverContent")).to_contain_text("STAFF_SESSION_UNVERIFIED")
+    expect(page.locator("#doctorPopoverContent")).not_to_contain_text(
+        "Η σύνδεση γραμματείας παραμένει ενεργή")
+    assert page.evaluate("window.__secretaryIcloudAuthLoss") == 0
+    assert attempts["peek"] == 0
+    page.locator("#doctorInboxButton").click()
+    page.evaluate("window.location.hash='#icloud-mail'")
+    expect(page.locator("#doctorIcloudInboxState")).to_contain_text("STAFF_SESSION_UNVERIFIED")
+    assert page.evaluate("window.__secretaryIcloudAuthLoss") == 0
+    page.locator("#doctorIcloudInboxBack").click()
+    page.unroute("**/clinical/staff-session", staff_unavailable)
+
+    # P2-02: another tab expires/rotates the real staff cookie while this tab
+    # retains a stale local "secretary" role. Delay the probe and prove that
+    # neither the peek nor the full viewer claims the session is still active.
+    auth["authenticated"] = False
+    page.evaluate("window.CockpitStaffRole='secretary'")
+    held = []
+    def expired_staff(route):
+        held.append(route)
+    page.route("**/clinical/staff-session", expired_staff)
+    page.locator("#doctorInboxButton").click()
+    expect(page.locator("#doctorPopoverContent")).to_contain_text("Έλεγχος συνεδρίας")
+    expect(page.locator("#doctorPopoverContent")).not_to_contain_text(
+        "Η σύνδεση γραμματείας παραμένει ενεργή")
+    assert held, "Expired secretary status must trigger real server verification"
+    # Subsequent status checks use the existing synthetic server (also 401);
+    # only the FIRST request is intentionally held to assert no early claims.
+    page.unroute("**/clinical/staff-session", expired_staff)
+    held.pop(0).fulfill(status=401, json={"detail": "Staff session expired"})
+    expect(page.locator("#ceGlobalAccessPanel")).to_be_visible()
+    assert page.evaluate("window.__secretaryIcloudAuthLoss") >= 1
+    expect(page.locator("#doctorInboxBadge")).to_be_hidden()
+    assert attempts["peek"] == 0
+    page.keyboard.press("Escape")
+
+    # The full-inbox bookmark is likewise fail-closed on expired staff role.
+    page.evaluate("window.CockpitStaffRole='secretary'; window.location.hash='#icloud-mail'")
+    expect(page.locator("#doctorIcloudInboxView")).to_be_hidden()
+    expect(page.locator("#ceGlobalAccessPanel")).to_be_visible()
+    assert page.evaluate("window.__secretaryIcloudAuthLoss") >= 2
+    assert full_attempts["count"] == 1
+    page.keyboard.press("Escape")
+
+    # The same original login can re-authorize clinician reads without a new
+    # staff mechanism or shared Clinical Key changes.
+    if page.locator("#ceGlobalAccessPanel").is_hidden():
+        page.locator("#ceGlobalKey").click()
+    key.fill("synthetic-key")
+    page.locator("#ceGlobalLoginForm button[type=submit]").click()
+    expect(page.locator("#ceGlobalAuthStatus")).to_contain_text("Συνδέθηκες")
+    assert auth["staff_role"] == "clinician"
+    assert page.evaluate("window.CockpitStaffRole") == "clinician"
+    assert page.evaluate("window.__secretaryIcloudAuthLoss") >= 2
+    page.keyboard.press("Escape")
 
 
 def exercise_icloud_stage_failure(page):
@@ -553,6 +810,7 @@ def exercise_icloud_stage_failure(page):
         page.route("**/clinical/icloud-mail/peek", staged_failure)
         page.locator("#doctorInboxButton").click()
         popup = page.locator("#doctorPopoverContent")
+        popup.get_by_role("button", name="Ανανέωση τώρα").click()
         expect(popup).to_contain_text(code)
         expect(popup).to_contain_text(stage)
         expect(popup).to_contain_text("Δεν έχει επιβεβαιωθεί")
@@ -567,10 +825,10 @@ def exercise_icloud_stage_failure(page):
 def exercise_icloud_peek_200_client_truth(page):
     """HTTP 200 cannot be mislabeled as disconnected iCloud. No PHI in diagnostics."""
     cases = [
-        ("PEEK_COVERAGE", {"source": "icloud_mail", "scope": "recipient_alias_inbox_only",
+        ("PEEK_COVERAGE", {"source": "icloud_mail", "scope": "recipient_alias_inbox_only", "filter": "unseen",
                            "items": [], "next_cursor": "765-2",
                            "skipped_count": "not-an-integer", "coverage_complete": False}),
-        ("PEEK_CURSOR", {"source": "icloud_mail", "scope": "recipient_alias_inbox_only",
+        ("PEEK_CURSOR", {"source": "icloud_mail", "scope": "recipient_alias_inbox_only", "filter": "unseen",
                          "items": [], "next_cursor": "invalid-cursor",
                          "skipped_count": 0, "coverage_complete": False}),
     ]
@@ -583,10 +841,11 @@ def exercise_icloud_peek_200_client_truth(page):
         page.route("**/clinical/icloud-mail/peek", reply)
         page.locator("#doctorInboxButton").click()
         peek = page.locator("#doctorPopoverContent")
+        peek.get_by_role("button", name="Ανανέωση τώρα").click()
         expect(peek).to_contain_text("HTTP 200")
         expect(peek).to_contain_text(code)
         expect(peek).not_to_contain_text("Δεν έχει συνδεθεί ακόμη")
-        expect(peek.get_by_role("button", name="Άνοιγμα πλήρων εισερχομένων")).to_be_visible()
+        expect(peek).to_contain_text("Όλα τα email: Συντομεύσεις")
         assert peek.locator("svg, img").count() == 0
         page.locator("#doctorInboxButton").click()
         page.unroute("**/clinical/icloud-mail/peek", reply)
@@ -595,6 +854,7 @@ def exercise_icloud_peek_200_client_truth(page):
         route.fulfill(status=200, content_type="application/json", body="{broken")
     page.route("**/clinical/icloud-mail/peek", broken_json)
     page.locator("#doctorInboxButton").click()
+    page.locator("#doctorPopoverContent").get_by_role("button", name="Ανανέωση τώρα").click()
     expect(page.locator("#doctorPopoverContent")).to_contain_text("PEEK_JSON")
     page.locator("#doctorInboxButton").click()
     page.unroute("**/clinical/icloud-mail/peek", broken_json)
@@ -604,6 +864,7 @@ def exercise_icloud_peek_200_client_truth(page):
     page.route("**/clinical/icloud-mail/peek", offline)
     page.locator("#doctorInboxButton").click()
     peek = page.locator("#doctorPopoverContent")
+    peek.get_by_role("button", name="Ανανέωση τώρα").click()
     expect(peek).to_contain_text("PEEK_NETWORK")
     expect(peek).not_to_contain_text("HTTP 200")
     page.locator("#doctorInboxButton").click()
@@ -613,7 +874,8 @@ def exercise_icloud_peek_200_client_truth(page):
 def browser_suite(width, screenshot_name):
     errors = []
     outbound = []
-    auth = {"authenticated": False, "linked": False, "confirmations": 0}
+    auth = {"authenticated": False, "staff_role": None, "staff_checks": 0,
+            "linked": False, "confirmations": 0}
     call_source = {"status": 200, "handled": False, "write_status": 200}
     notion_source = {"writes": 0}
     rf_bridge = {"linked": False, "exact_reads": 0}
@@ -625,8 +887,9 @@ def browser_suite(width, screenshot_name):
         def handle(route):
             url = route.request.url
             if url.endswith("/clinical/status"):
-                return route.fulfill(status=200 if auth["authenticated"] else 401,
-                                     json={"authenticated": auth["authenticated"]})
+                clinician = auth["authenticated"] and auth["staff_role"] != "secretary"
+                return route.fulfill(status=200 if clinician else 401,
+                                     json={"authenticated": clinician})
             if url.endswith("/clinical/reception-calls/peek"):
                 assert route.request.method == "GET"
                 assert not any(k.lower() == "x-clinical-key" for k in route.request.headers)
@@ -705,9 +968,12 @@ def browser_suite(width, screenshot_name):
             if url.endswith("/clinical/login"):
                 assert route.request.method == "POST"
                 assert route.request.post_data_json is not None
-                if route.request.post_data_json.get("key") == "synthetic-key":
+                if route.request.post_data_json.get("key") in ("synthetic-key", "synthetic-secretary-key"):
+                    role = ("secretary" if route.request.post_data_json["key"] == "synthetic-secretary-key"
+                            else "clinician")
                     auth["authenticated"] = True
-                    return route.fulfill(status=200, json={"authenticated": True, "staff_role": "clinician"})
+                    auth["staff_role"] = role
+                    return route.fulfill(status=200, json={"authenticated": True, "staff_role": role})
                 return route.fulfill(status=401, json={"detail": "Unauthorized"})
             if "/clinical/calendar/cockpit-context" in url:
                 return route.fulfill(json=CONTEXT)
@@ -725,8 +991,10 @@ def browser_suite(width, screenshot_name):
                       "start_at": "2026-10-11T07:30:00Z"},
                 } if auth["authenticated"] else {"detail": "Unauthorized"})
             if url.endswith("/clinical/staff-session"):
+                auth["staff_checks"] += 1
                 return route.fulfill(status=200 if auth["authenticated"] else 401,
-                    json=({"staff_role": "clinician", "principal_id": "clinic-clinician"}
+                    json=({"staff_role": auth["staff_role"],
+                           "principal_id": "clinic-" + auth["staff_role"]}
                           if auth["authenticated"] else {"detail": "Unauthorized"}))
             if url.endswith("/clinical/calendar/visit-brief/patient-search"):
                 assert route.request.method == "POST"
@@ -825,7 +1093,8 @@ def browser_suite(width, screenshot_name):
         }"""), "shared toolbar overflows the viewport or is not sticky"
         page.locator("#ceGlobalShortcuts").click()
         expect(page.locator("#ceGlobalShortcutsPanel")).to_be_visible()
-        assert page.locator("#ceGlobalShortcutsPanel a.ce-global-shortcut").count() == 8
+        assert page.locator("#ceGlobalShortcutsPanel a.ce-global-shortcut").count() == 9
+        assert page.locator("#ceGlobalShortcutsPanel a[href=\"/static/cockpit/#icloud-mail\"]").count() == 1
         panel = page.locator("#ceGlobalShortcutsPanel").bounding_box()
         assert panel and panel["x"] >= -1 and panel["x"] + panel["width"] <= width + 1, "shortcuts popover off-screen"
         page.keyboard.press("Escape")
@@ -911,8 +1180,10 @@ def browser_suite(width, screenshot_name):
             assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1")
             # Actual Chromium: hidden registry and Dia details are removed on auth loss.
             exercise_icloud_mail_peek(page, width)
+            exercise_cached_unread_requires_fresh_clinical_key(page)
             exercise_icloud_stage_failure(page)
             exercise_icloud_peek_200_client_truth(page)
+            exercise_icloud_secretary_session_isolation(page, auth)
             exercise_reception_call_peek(page, width, call_source)
             assert_delayed_recent_purged_after_logout(page)
             page.evaluate("""() => {
@@ -1009,8 +1280,10 @@ def browser_suite(width, screenshot_name):
             expect(page.locator("#visitBriefOverlay")).to_be_hidden()
         assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1"), "horizontal overflow"
         exercise_icloud_mail_peek(page, width)
+        exercise_cached_unread_requires_fresh_clinical_key(page)
         exercise_icloud_stage_failure(page)
         exercise_icloud_peek_200_client_truth(page)
+        exercise_icloud_secretary_session_isolation(page, auth)
         exercise_reception_call_peek(page, width, call_source)
         assert_delayed_recent_purged_after_logout(page)
         page.evaluate("window.dispatchEvent(new Event('clinical:authenticated'))")

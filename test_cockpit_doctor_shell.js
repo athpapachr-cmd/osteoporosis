@@ -75,6 +75,12 @@ const mockAppointments=[
 ];
 async function fakeFetch(url,opts){
  calls.push({url,method:opts.method||"GET",options:opts});
+ if(url==="/clinical/status"){
+   assert.equal(opts.credentials,"same-origin");
+   assert.equal(opts.cache,"no-store");
+   return {ok:authenticated,status:authenticated?200:401,
+     json:async()=>({protected:authenticated})};
+ }
  if(url==="/clinical/clinic-utilities/rf/api/outcomes/search"){
    assert.equal(opts.method,"POST","RF endpoint is read-intent POST only");
    assert.deepEqual(JSON.parse(opts.body),{query:"",scope:"all",page:1});
@@ -318,6 +324,7 @@ function findAction(label,node=$('doctorPopoverContent')){
  assert.ok($("doctorPopoverContent").children.some(x=>x.textContent?.includes("PEEK_NETWORK")), "browser fetch failure cannot masquerade as disconnected iCloud");
  const incomingRows=$("doctorPopoverContent").children.length;
  windowHandlers.get("cockpit:clinical-updates-changed")();
+ await tick();await tick(); // Protected status revalidation is asynchronous.
  assert.equal($("doctorPopoverContent").children.length,incomingRows,"refresh replaces rather than repeats incoming state");
  assert.equal(pendingReads,0);
  $("doctorInboxButton").fire("click");
@@ -406,7 +413,11 @@ function findAction(label,node=$('doctorPopoverContent')){
  resolve({ok:true,status:200,json:async()=>mockAppointments});
  await tick();await tick();
  assert.equal($("doctorPopover").dataset.kind,"inbox","late day response cannot replace Inbox");
- assert.equal($("doctorPopoverContent").children.length,inboxState);
+ assert.ok($("doctorPopoverContent").children.length>=inboxState,
+    "Protected asynchronous inbox revalidation must not be overwritten by stale calendar");
+ assert.ok(!$("doctorPopoverContent").children.some(x=>
+    (x.textContent||"").includes("STALE_TODAY")),
+    "Late calendar response must not replace inbox or render stale appointments");
  assert.ok(calls.every(x=>x.method==="GET" || (x.method==="POST"
    && ["/clinical/clinic-utilities/rf/api/outcomes/search",
        "/clinical/reception-calls/handled", "/clinical/notion-tasks/confirm",
