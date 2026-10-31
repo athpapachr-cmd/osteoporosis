@@ -413,7 +413,11 @@ function findAction(label,node=$('doctorPopoverContent')){
  resolve({ok:true,status:200,json:async()=>mockAppointments});
  await tick();await tick();
  assert.equal($("doctorPopover").dataset.kind,"inbox","late day response cannot replace Inbox");
- assert.equal($("doctorPopoverContent").children.length,inboxState);
+ assert.ok($("doctorPopoverContent").children.length>=inboxState,
+    "Protected asynchronous inbox revalidation must not be overwritten by stale calendar");
+ assert.ok(!$("doctorPopoverContent").children.some(x=>
+    (x.textContent||"").includes("STALE_TODAY")),
+    "Late calendar response must not replace inbox or render stale appointments");
  assert.ok(calls.every(x=>x.method==="GET" || (x.method==="POST"
    && ["/clinical/clinic-utilities/rf/api/outcomes/search",
        "/clinical/reception-calls/handled", "/clinical/notion-tasks/confirm",
