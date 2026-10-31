@@ -598,6 +598,9 @@ def build_icloud_mail_router(engine=None) -> APIRouter:
         def result(mail, validity, alias):
             message = _message(mail, validity, alias, item_id)
             header = _summary(item_id.split("-")[1], validity, message, alias, include_nonclinical=True)
+            saved = overrides(validity, [int(item_id.split("-")[1])])
+            if header and header["id"] in saved:
+                header["category"] = saved[header["id"]]
             available = _attachments(message)
             return {
                 "source": "icloud_mail", "item": {
