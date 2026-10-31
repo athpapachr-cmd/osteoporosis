@@ -763,13 +763,15 @@ def exercise_icloud_secretary_session_isolation(page, auth):
     expect(page.locator("#doctorPopoverContent")).not_to_contain_text(
         "Η σύνδεση γραμματείας παραμένει ενεργή")
     assert held, "Expired secretary status must trigger real server verification"
+    # Subsequent status checks use the existing synthetic server (also 401);
+    # only the FIRST request is intentionally held to assert no early claims.
+    page.unroute("**/clinical/staff-session", expired_staff)
     held.pop(0).fulfill(status=401, json={"detail": "Staff session expired"})
     expect(page.locator("#ceGlobalAccessPanel")).to_be_visible()
     assert page.evaluate("window.__secretaryIcloudAuthLoss") >= 1
     expect(page.locator("#doctorInboxBadge")).to_be_hidden()
     assert attempts["peek"] == 0
     page.keyboard.press("Escape")
-    page.unroute("**/clinical/staff-session", expired_staff)
 
     # The full-inbox bookmark is likewise fail-closed on expired staff role.
     page.evaluate("window.CockpitStaffRole='secretary'; window.location.hash='#icloud-mail'")
