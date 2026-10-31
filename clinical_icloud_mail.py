@@ -7,6 +7,7 @@ pending task, mailbox flag, or provider write is performed.
 from __future__ import annotations
 
 import imaplib
+import logging
 import os
 import re
 import ssl
@@ -52,38 +53,69 @@ class _SourceUnavailable(Exception):
     pass
 
 
+# Only fixed stage names may appear in protected HTTP responses or server logs.
+_DIAGNOSTIC_CODES = frozenset({
+    "CONFIG_DISABLED", "CONFIG_MISSING", "TLS_CONNECTION_FAILED",
+    "IMAP_AUTH_FAILED", "INBOX_SELECT_FAILED",
+    "UIDVALIDITY_OR_UIDNEXT_FAILED", "IMAP_SEARCH_FAILED",
+    "IMAP_HEADER_FETCH_FAILED", "IMAP_MESSAGE_FETCH_FAILED",
+    "IMAP_UNEXPECTED_FAILURE",
+})
+_LOG = logging.getLogger(__name__)
+
+
+class _StageFailure(Exception):
+    def __init__(self, code: str):
+        if code not in _DIAGNOSTIC_CODES:
+            raise ValueError("Unknown diagnostic stage")
+        super().__init__(code)
+        self.code = code
+
+
 class _BadMessage(Exception):
     """A single malformed/unreadable header; preserve the remaining mailbox."""
 
 
 def _settings() -> tuple[str, str, str]:
     if os.getenv("ICLOUD_CLINICAL_READ_ENABLED") != "1":
-        raise HTTPException(503, "iCloud clinical mail is not enabled")
+        raise _StageFailure("CONFIG_DISABLED")
     username = os.getenv("ICLOUD_CLINICAL_IMAP_USERNAME", "").strip()
     password = os.getenv("ICLOUD_CLINICAL_APP_PASSWORD", "")
     alias = os.getenv("ICLOUD_CLINICAL_ALIAS", "").strip().lower()
     if not username or not password or not _ALIAS_RE.fullmatch(alias):
-        raise HTTPException(503, "iCloud clinical mail is not configured")
+        raise _StageFailure("CONFIG_MISSING")
     return username, password, alias
 
 
 @contextmanager
 def _session(username: str, password: str):
-    """Fixed host, TLS verification and IMAP EXAMINE (read-only)."""
-    mail = imaplib.IMAP4_SSL(
-        _HOST, 993, ssl_context=ssl.create_default_context(), timeout=8
-    )
+    """Fixed TLS IMAP and read-only EXAMINE. Never expose provider exception text."""
     try:
-        status, _ = mail.login(username, password)
+        mail = imaplib.IMAP4_SSL(
+            _HOST, 993, ssl_context=ssl.create_default_context(), timeout=8
+        )
+    except Exception:
+        raise _StageFailure("TLS_CONNECTION_FAILED") from None
+    try:
+        try:
+            status, _ = mail.login(username, password)
+        except Exception:
+            raise _StageFailure("IMAP_AUTH_FAILED") from None
         if status != "OK":
-            raise _SourceUnavailable()
-        status, _ = mail.select("INBOX", readonly=True)
+            raise _StageFailure("IMAP_AUTH_FAILED")
+        try:
+            status, _ = mail.select("INBOX", readonly=True)
+        except Exception:
+            raise _StageFailure("INBOX_SELECT_FAILED") from None
         if status != "OK":
-            raise _SourceUnavailable()
-        _, values = mail.response("UIDVALIDITY")
-        raw = next((v for v in (values or []) if isinstance(v, bytes)), b"")
+            raise _StageFailure("INBOX_SELECT_FAILED")
+        try:
+            _, values = mail.response("UIDVALIDITY")
+            raw = next((v for v in (values or []) if isinstance(v, bytes)), b"")
+        except Exception:
+            raise _StageFailure("UIDVALIDITY_OR_UIDNEXT_FAILED") from None
         if not raw.isdigit() or not (0 < int(raw) < 10**19):
-            raise _SourceUnavailable()
+            raise _StageFailure("UIDVALIDITY_OR_UIDNEXT_FAILED")
         yield mail, str(int(raw))
     finally:
         try:
@@ -133,9 +165,12 @@ def _literal(items) -> bytes:
 
 
 def _fetch_headers(mail, uid: str):
-    status, items = mail.uid("FETCH", uid, _HEADER_FETCH)
+    try:
+        status, items = mail.uid("FETCH", uid, _HEADER_FETCH)
+    except Exception:
+        raise _StageFailure("IMAP_HEADER_FETCH_FAILED") from None
     if status != "OK":
-        raise _SourceUnavailable()
+        raise _StageFailure("IMAP_HEADER_FETCH_FAILED")
     size_fields = b" ".join(
         row[0] for row in (items or [])
         if isinstance(row, tuple) and isinstance(row[0], bytes)
@@ -179,33 +214,39 @@ def _summary(uid: str, validity: str, message, alias: str):
 
 
 def _uid_next(mail) -> int:
-    kind, values = mail.response("UIDNEXT")
-    raw = next((v for v in (values or []) if isinstance(v, bytes)), b"")
+    try:
+        kind, values = mail.response("UIDNEXT")
+        raw = next((v for v in (values or []) if isinstance(v, bytes)), b"")
+    except Exception:
+        raise _StageFailure("UIDVALIDITY_OR_UIDNEXT_FAILED") from None
     if kind != "UIDNEXT" or not raw.isdigit() or not (0 < int(raw) < 10**19):
-        raise _SourceUnavailable()
+        raise _StageFailure("UIDVALIDITY_OR_UIDNEXT_FAILED")
     return int(raw)
 
 
 def _search_window(mail, alias: str, low: int, high: int) -> list[int]:
-    """Bound the IMAP server's response *before* it searches/returns any UIDs."""
+    """Bound the IMAP server's response before it returns any UIDs."""
     quoted = '"' + alias + '"'
-    status, data = mail.uid(
-        "SEARCH", None, "UID", f"{low}:{high}", "OR", "TO", quoted, "CC", quoted
-    )
+    try:
+        status, data = mail.uid(
+            "SEARCH", None, "UID", f"{low}:{high}", "OR", "TO", quoted, "CC", quoted
+        )
+    except Exception:
+        raise _StageFailure("IMAP_SEARCH_FAILED") from None
     if status != "OK" or not data or not isinstance(data[0], bytes):
-        raise _SourceUnavailable()
+        raise _StageFailure("IMAP_SEARCH_FAILED")
     if len(data[0]) > _MAX_SEARCH_REPLY_BYTES:
-        raise _SourceUnavailable()
+        raise _StageFailure("IMAP_SEARCH_FAILED")
     tokens = data[0].split()
     if len(tokens) > _UID_WINDOW:
-        raise _SourceUnavailable()
+        raise _StageFailure("IMAP_SEARCH_FAILED")
     result = []
     for raw in tokens:
         if not raw.isdigit():
-            raise _SourceUnavailable()
+            raise _StageFailure("IMAP_SEARCH_FAILED")
         uid = int(raw)
         if not (low <= uid <= high):
-            raise _SourceUnavailable()
+            raise _StageFailure("IMAP_SEARCH_FAILED")
         result.append(uid)
     return sorted(set(result), reverse=True)
 
@@ -273,10 +314,15 @@ def _message(mail, validity: str, alias: str, item_id: str):
         raise HTTPException(422, "Mail item cannot be safely read") from None
     if size > _MAX_MESSAGE_BYTES:
         raise HTTPException(413, "Mail item exceeds safe size limit")
-    status, data = mail.uid("FETCH", uid, "(BODY.PEEK[])")
-    if status != "OK":
-        raise _SourceUnavailable()
-    raw = _literal(data)
+    try:
+        status, data = mail.uid("FETCH", uid, "(BODY.PEEK[])")
+        if status != "OK":
+            raise _StageFailure("IMAP_MESSAGE_FETCH_FAILED")
+        raw = _literal(data)
+    except _StageFailure:
+        raise
+    except Exception:
+        raise _StageFailure("IMAP_MESSAGE_FETCH_FAILED") from None
     if len(raw) > _MAX_MESSAGE_BYTES:
         raise HTTPException(413, "Mail item exceeds safe size limit")
     message = BytesParser(policy=policy.default).parsebytes(raw)
@@ -386,15 +432,19 @@ def _no_store(response: Response):
 
 
 def _read(operation):
-    username, password, alias = _settings()
     try:
+        username, password, alias = _settings()
         with _session(username, password) as (mail, validity):
             return operation(mail, validity, alias)
     except HTTPException:
         raise
+    except _StageFailure as error:
+        # One allowlisted stage code only; no exception, credentials or PHI.
+        _LOG.warning("icloud_mail_diagnostic code=%s", error.code)
+        raise HTTPException(503, {"code": error.code}) from None
     except Exception:
-        # Neither credentials nor provider responses enter logs or HTTP errors.
-        raise HTTPException(503, "iCloud clinical mail source unavailable") from None
+        _LOG.warning("icloud_mail_diagnostic code=IMAP_UNEXPECTED_FAILURE")
+        raise HTTPException(503, {"code": "IMAP_UNEXPECTED_FAILURE"}) from None
 
 
 def build_icloud_mail_router() -> APIRouter:
