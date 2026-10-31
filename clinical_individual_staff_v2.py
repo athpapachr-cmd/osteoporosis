@@ -32,9 +32,9 @@ from dataclasses import dataclass
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 
-from clinical_staff_auth import STAFF_COOKIE, StaffActor
+from clinical_staff_auth import STAFF_COOKIE, STAFF_V2_COOKIE, StaffActor
 
-COOKIE_V2 = "cockpit_individual_staff_v2"
+COOKIE_V2 = STAFF_V2_COOKIE
 LIFETIME_SECONDS = 3600
 _ID = re.compile(r"^[a-z][a-z0-9_-]{3,63}$")
 _REV = re.compile(r"^[A-Za-z0-9_-]{1,24}$")
