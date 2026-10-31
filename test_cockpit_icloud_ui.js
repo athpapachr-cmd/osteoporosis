@@ -37,6 +37,15 @@ assert.match(shell, /\[PEEK_AUTH_CHECK\]/);
 assert.match(shell, /if\(syntheticInbox\(\) \|\| secretaryIcloudSession\(\)\)return;/);
 assert.match(shell, /if\(secretaryIcloudSession\(\)\)return null;/);
 assert.match(shell, /Η σύνδεση γραμματείας παραμένει ενεργή/);
+assert.match(shell, /async function verifiedStaffRole\(\)/);
+assert.match(ui, /async function verifiedStaffRole\(\)/);
+assert.match(shell, /STAFF_SESSION_UNVERIFIED/);
+assert.match(ui, /STAFF_SESSION_UNVERIFIED/);
+assert.match(ui, /guardSecretarySession\(\)/);
+assert.doesNotMatch(shell, /if\(secretaryIcloudSession\(\)\)return true;/,
+  "Local role must never prove that a staff cookie is still valid");
+assert.doesNotMatch(ui, /let secretary=secretaryIcloudSession\(\);/,
+  "A denied iCloud read must independently validate existing staff authority");
 assert.match(shell, /if\(syntheticInbox\(\)\)\{openPanel\("inbox",buttons\.inbox\);return;\}/);
 assert.match(shell, /ICLOUD_PEEK_TTL_MS = 5 \* 60 \* 1000/);
 assert.match(shell, /data\.filter!=="unseen"/);
