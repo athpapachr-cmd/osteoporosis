@@ -171,8 +171,10 @@
     const controller = new AbortController();
     state.controller = controller;
     $("doctorIcloudInboxState").textContent = "Ανάγνωση προστατευμένων εισερχομένων iCloud…";
+    let sourceReturned=false;
     try {
       const data = await api(cursor ? "?cursor=" + encodeURIComponent(cursor) : "", controller.signal);
+      sourceReturned=true;
       if (!current(ticket)) return;
       const invalid=listContractCode(data);
       if(invalid){const err=new Error("Invalid list contract");err.clientCode=invalid;throw err;}
@@ -187,6 +189,7 @@
       if (focusId && /^[1-9][0-9]{0,18}-[1-9][0-9]{0,18}$/.test(focusId)) select(focusId);
     } catch (error) {
       if (!current(ticket)) return;
+      if(sourceReturned&&!error.status&&!error.clientCode)error.clientCode="LIST_RENDER";
       clear();
       if(cursor===null && state.latest){
         const data=state.latest;
