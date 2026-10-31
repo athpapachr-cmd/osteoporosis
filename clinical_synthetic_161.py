@@ -24,6 +24,7 @@ from clinical_data import (
 )
 from clinical_staff_auth import StaffActor
 from clinical_attention_phase_a import SyntheticAttentionStore, build_synthetic_attention_router
+from clinical_followthrough_demo import build_synthetic_followthrough_router
 from clinical_visit_brief import (attach_visit_brief_routes, BookingIntent,
                                   _minimal_brief, _booking_card, _record_access, VisitBriefStaffAuditORM)
 
@@ -190,6 +191,23 @@ def build_synthetic_161_router(engine):
     router.include_router(build_synthetic_attention_router(
         attention, require_test_access, verify_synthetic_patient, synthetic_patients))
 
+    def verified_fixture_pending():
+        with Session(engine) as db:
+            patient_id = SYNTHETIC_161_PATIENT_IDS[0]
+            _test_patient(db, patient_id)
+            pending = db.get(ClinicalPendingORM, patient_id + "-pending")
+            source = db.get(EncounterORM, pending.source_encounter_id) if pending else None
+            signed = (source.payload_json or {}).get("_visit_capture_v1", {}) if source else {}
+            if (not pending or pending.patient_id != patient_id
+                    or not source or source.patient_id != patient_id
+                    or source.status != "completed" or not signed.get("signed")
+                    or signed.get("synthetic_scenario") != SCENARIO):
+                raise HTTPException(409, "Signed synthetic Pending source unavailable")
+            return pending.id, source.id
+
+    router.include_router(build_synthetic_followthrough_router(
+        require_test_access, verified_fixture_pending))
+
 
     def booking(db, uid):
         if uid not in BOOKINGS:
@@ -222,12 +240,13 @@ def build_synthetic_161_router(engine):
           <p>Σενάριο 17/10/2026 · Επίλεξε ραντεβού για την προετοιμασία της επίσκεψης.</p>
           <button id="synthetic161Prepare" type="button">Προετοιμασία δοκιμής #161</button>
           <span id="synthetic161Status" role="status"></span>
+          <section id="syntheticFollowthroughDemo" aria-label="Πλήρης κύκλος εξέτασης · συνθετική δοκιμή" hidden></section>
           <a href="/static/cockpit/">Επιστροφή στο Cockpit</a>
         </section><div id="doctorMainView">''')
         text = text.replace("Έλεγξα ανεξάρτητα τα στοιχεία αυτού του προσώπου στον προστατευμένο φάκελο. Το όνομα ή το UID του ραντεβού δεν αρκούν.",
                             "Έλεγξα το όνομα και την ημερομηνία γέννησης του επιλεγμένου δοκιμαστικού ασθενούς. Αυτή είναι μόνο δοκιμαστική επιβεβαίωση.")
         text = text.replace('<p class="clinical-muted">Πλήρης κλινική σύνοψη και προηγούμενο σχέδιο εμφανίζονται μόνο μετά από επιβεβαιωμένη σύνδεση με τον προστατευμένο φάκελο.</p>', "")
-        text = text.replace("</body>", '<script src="/static/cockpit/synthetic-161.js"></script></body>')
+        text = text.replace("</body>", '<script src="/static/cockpit/synthetic-161.js"></script><script src="/static/cockpit/followthrough-synthetic.js"></script></body>')
         return HTMLResponse(text, headers={"Cache-Control": "no-store"})
 
     @router.post("/prepare", dependencies=protected)
