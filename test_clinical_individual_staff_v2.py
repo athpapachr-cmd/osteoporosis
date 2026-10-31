@@ -121,8 +121,12 @@ def test_individual_login_never_issues_broad_clinical_access(setup):
     c = TestClient(app, base_url="https://testserver")
     assert login(c, doctor).status_code == 200
     assert not c.get("/clinical/v2-test-legacy-header").json()["has_broad_clinical_key"]
-    # Legacy role-wide staff session is not silently created.
-    assert c.get("/clinical/staff-session").status_code == 503
+    # Shared /staff-session now resolves the V2 personally attributable
+    # principal, never creates or revives the old role-wide V1 session.
+    assert c.get("/clinical/staff-session").json() == {
+        "principal_id": DOCTOR_ID, "staff_role": "clinician"
+    }
+    assert c.get("/clinical/v1-test-staff").status_code == 401
     assert not c.cookies.get(STAFF_COOKIE)
     assert c.get("/clinical/v2-test-clinician").status_code == 200
     d = TestClient(app, base_url="https://testserver")
