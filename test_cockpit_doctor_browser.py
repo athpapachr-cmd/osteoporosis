@@ -538,20 +538,28 @@ def exercise_icloud_mail_peek(page, width):
 
 
 def exercise_icloud_stage_failure(page):
-    """Protected browser reports a fixed stage; never sends provider data."""
-    def staged_failure(route):
-        assert route.request.method == "GET"
-        assert not any(k.lower() == "x-clinical-key" for k in route.request.headers)
-        route.fulfill(status=503, json={"detail": {"code": "IMAP_AUTH_FAILED"}})
+    """Show only the failed IMAP stage, never an unverified cause."""
+    cases = (
+        ("IMAP_AUTH_FAILED", "Απέτυχε το στάδιο IMAP LOGIN", "Ο IMAP server απέρριψε"),
+        ("INBOX_SELECT_FAILED", "Απέτυχε το στάδιο ανοίγματος του INBOX",
+         "Ο IMAP server δεν επέτρεψε"),
+    )
+    for code, stage, unsupported_claim in cases:
+        def staged_failure(route):
+            assert route.request.method == "GET"
+            assert not any(k.lower() == "x-clinical-key" for k in route.request.headers)
+            route.fulfill(status=503, json={"detail": {"code": code}})
 
-    page.route("**/clinical/icloud-mail/peek", staged_failure)
-    page.locator("#doctorInboxButton").click()
-    popup = page.locator("#doctorPopoverContent")
-    expect(popup).to_contain_text("IMAP_AUTH_FAILED")
-    expect(popup).to_contain_text("Ο IMAP server απέρριψε")
-    assert popup.locator("svg, img").count() == 0
-    page.locator("#doctorInboxButton").click()
-    page.unroute("**/clinical/icloud-mail/peek", staged_failure)
+        page.route("**/clinical/icloud-mail/peek", staged_failure)
+        page.locator("#doctorInboxButton").click()
+        popup = page.locator("#doctorPopoverContent")
+        expect(popup).to_contain_text(code)
+        expect(popup).to_contain_text(stage)
+        expect(popup).to_contain_text("Δεν έχει επιβεβαιωθεί")
+        expect(popup).not_to_contain_text(unsupported_claim)
+        assert popup.locator("svg, img").count() == 0
+        page.locator("#doctorInboxButton").click()
+        page.unroute("**/clinical/icloud-mail/peek", staged_failure)
 
 
 def browser_suite(width, screenshot_name):
