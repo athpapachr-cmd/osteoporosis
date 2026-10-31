@@ -27,6 +27,7 @@ assert.match(shell, /CockpitIcloudStageMessage/);
 assert.match(shell, /PEEK_SOURCE|PEEK_ITEMS|PEEK_COVERAGE|PEEK_CURSOR|PEEK_ITEM_FIELDS/);
 assert.match(shell, /PEEK_JSON|PEEK_RENDER|PEEK_NETWORK/);
 assert.match(shell, /unreadPeek/);
+assert.match(shell, /if\(syntheticInbox\(\)\)return;/);
 assert.match(shell, /ICLOUD_PEEK_TTL_MS = 5 \* 60 \* 1000/);
 assert.match(shell, /data\.filter!=="unseen"/);
 assert.match(shell, /PEEK_ITEMS_LIMIT/);
