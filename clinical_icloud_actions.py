@@ -125,8 +125,14 @@ def _qualify(item_id: str, *, include_body: bool = False) -> dict:
 
 def _origin(request: Request) -> None:
     origin = request.headers.get("origin", "")
-    expected = f"{request.url.scheme}://{request.url.netloc}"
-    if not hmac.compare_digest(origin, expected):
+    host = request.headers.get("host", "")
+    if not host or any(c in host for c in "\r\n\t /"):
+        raise HTTPException(403, "Invalid clinical origin")
+    # Render terminates HTTPS at a reverse proxy. The ASGI request scheme
+    # can reflect the internal HTTP hop; accept only external HTTPS Host
+    # (or exact internal scheme in isolated local tests), never wildcard Origin.
+    allowed = (f"https://{host}", f"{request.url.scheme}://{host}")
+    if not origin or not any(hmac.compare_digest(origin, x) for x in allowed):
         raise HTTPException(403, "Same-origin clinical action required")
 
 
@@ -156,7 +162,8 @@ def _source_valid(db: Session, row: MailDecisionORM) -> bool:
         if (not encounter or encounter.patient_id != row.patient_id
                 or encounter.status not in ("completed", "amended")):
             return False
-        signed = (encounter.payload_json or {}).get("_visit_capture_v1", {})
+        payload = encounter.payload_json
+        signed = payload.get("_visit_capture_v1", {}) if isinstance(payload, dict) else {}
         if not isinstance(signed, dict) or not signed.get("signed"):
             return False
     if row.patient_id and db.get(PatientORM, row.patient_id) is None:
@@ -191,7 +198,8 @@ def _validate_link(db: Session, patient_id: str | None,
         if pending is None or pending.patient_id != patient_id or pending.status not in _ACTIVE:
             raise HTTPException(409, "Pending is not a current obligation for this chart")
         source = db.get(EncounterORM, pending.source_encounter_id)
-        signed = (source.payload_json or {}).get("_visit_capture_v1", {}) if source else {}
+        payload = source.payload_json if source else None
+        signed = payload.get("_visit_capture_v1", {}) if isinstance(payload, dict) else {}
         if (not source or source.patient_id != patient_id
                 or source.status not in ("completed", "amended")
                 or not isinstance(signed, dict) or not signed.get("signed")):
