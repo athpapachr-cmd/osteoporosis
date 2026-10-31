@@ -344,6 +344,7 @@ def test_spoofed_pdf_mime_does_not_become_downloadable(client):
     ("connect_timeout", "TLS_CONNECTION_FAILED", "/peek"),
     ("auth", "IMAP_AUTH_FAILED", "/peek"),
     ("auth_timeout", "IMAP_AUTH_FAILED", "/peek"),
+    ("auth_rejected", "IMAP_AUTH_FAILED", "/peek"),
     ("select", "INBOX_SELECT_FAILED", "/peek"),
     ("select_disconnect", "INBOX_SELECT_FAILED", "/peek"),
     ("uidvalidity", "UIDVALIDITY_OR_UIDNEXT_FAILED", "/peek"),
@@ -378,6 +379,8 @@ def test_fixed_imap_stage_codes_hide_provider_errors(monkeypatch, caplog, phase,
                 raise RuntimeError("synthetic-secret-password patient private provider error")
             if phase == "auth_timeout":
                 raise TimeoutError("synthetic-secret-password patient private provider error")
+            if phase == "auth_rejected":
+                return "NO", [b"synthetic-secret-password"]
             return "OK", [b"synthetic logged in"]
 
         def select(self, name, readonly=False):
@@ -436,7 +439,7 @@ def test_fixed_imap_stage_codes_hide_provider_errors(monkeypatch, caplog, phase,
                       "patient private provider error", "sample@example.invalid"):
         assert forbidden not in caplog.text
         assert forbidden not in response.text
-    assert "examine" not in actions if phase in ("connect", "connect_timeout", "auth", "auth_timeout") else "examine" in actions
+    assert "examine" not in actions if phase in ("connect", "connect_timeout", "auth", "auth_timeout", "auth_rejected") else "examine" in actions
     assert "STORE" not in actions and "EXPUNGE" not in actions
 
 
