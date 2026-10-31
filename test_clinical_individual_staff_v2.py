@@ -18,7 +18,7 @@ from clinical_individual_staff_v2 import (
     COOKIE_V2, require_individual_staff, require_individual_clinician,
     require_individual_secretary,
 )
-from clinical_staff_auth import STAFF_COOKIE, StaffActor, issue_staff_cookie
+from clinical_staff_auth import STAFF_COOKIE, StaffActor, issue_staff_cookie, require_staff_actor
 
 DOCTOR_ID = "synthetic_doctor_01"
 SECRETARY_ID = "synthetic_secretary_01"
@@ -51,6 +51,10 @@ def app_factory():
 
     @app.get("/clinical/v2-test-any")
     def either(actor: StaffActor = Depends(require_individual_staff)):
+        return {"role": actor.role, "principal": actor.principal_id}
+
+    @app.get("/clinical/v1-test-staff")
+    def v1_staff(actor: StaffActor = Depends(require_staff_actor)):
         return {"role": actor.role, "principal": actor.principal_id}
 
     @app.get("/clinical/v2-test-legacy-header")
@@ -157,7 +161,9 @@ def test_old_staff_cookie_cannot_claim_individual_identity(setup):
     assert c.get("/clinical/v2-test-clinician").status_code == 401
     assert c.get("/clinical/staff-session").json()["principal_id"] == "clinic-clinician"
     assert login(c, doctor).status_code == 200
-    assert c.get("/clinical/staff-session").status_code == 401
+    assert c.get("/clinical/staff-session").json()["principal_id"] == DOCTOR_ID
+    # No legacy V1-scoped endpoint may downgrade after an attributable login.
+    assert c.get("/clinical/v1-test-staff").status_code == 401
     assert c.get("/clinical/v2-test-clinician").json()["principal"] == DOCTOR_ID
 
 
@@ -222,9 +228,11 @@ def test_cookie_tampering_and_role_swapping_are_denied(setup):
         "v3." + authentic.split(".", 1)[1],
     )
     for forged in tokens:
-        c.cookies.set(COOKIE_V2, forged, path="/clinical")
-        assert c.get("/clinical/v2-test-any").status_code == 401
-    c.cookies.set(COOKIE_V2, authentic, path="/clinical")
+        # A new browser session has NO authentic cookie to overshadow the
+        # deliberately forged cookie with identical name/different domains.
+        forged_session = TestClient(app, base_url="https://testserver")
+        forged_session.cookies.set(COOKIE_V2, forged, path="/clinical")
+        assert forged_session.get("/clinical/v2-test-any").status_code == 401
     assert c.get("/clinical/v2-test-clinician").status_code == 200
 
 
