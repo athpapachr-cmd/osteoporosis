@@ -67,7 +67,7 @@ def clinical_workspace_root() -> RedirectResponse:
 app.add_middleware(ClinicalCookieMiddleware)
 app.include_router(build_auth_router())
 app.include_router(build_reception_calls_router())
-app.include_router(build_icloud_mail_router())
+app.include_router(build_icloud_mail_router(engine))
 app.include_router(build_icloud_actions_router(engine))
 app.include_router(build_notion_tasks_router(engine))
 app.include_router(build_clinical_status_router(engine))
