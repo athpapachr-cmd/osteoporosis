@@ -280,100 +280,166 @@
     }
   }
 
-  // Static, PHI-free validation codes only. Never log or display source data
-  // when the protected endpoint returned HTTP 200 but the client cannot render.
+  // Clinician-session, volatile unread-summary cache. No local/session storage,
+  // Postgres, cross-principal data, raw IMAP, or background fetch without auth.
+  const ICLOUD_PEEK_TTL_MS = 5 * 60 * 1000;
+  const unreadPeek = {
+    authorized:false, generation:0, data:null, updatedAt:0, checkedAt:0,
+    error:null, pending:null, controller:null
+  };
   function icloudPeekContractCode(data) {
-    if(data?.source!=="icloud_mail"||data.scope!=="recipient_alias_inbox_only")
-      return "PEEK_SOURCE";
-    if(!Array.isArray(data.items)||data.items.length>4)return "PEEK_ITEMS";
+    if(data?.source!=="icloud_mail"||data.scope!=="recipient_alias_inbox_only"||
+       data.filter!=="unseen")return "PEEK_SOURCE";
+    if(!Array.isArray(data.items))return "PEEK_ITEMS_MISSING";
+    if(data.items.length>4)return "PEEK_ITEMS_LIMIT";
     if(!Number.isInteger(data.skipped_count)||data.skipped_count<0||
        typeof data.coverage_complete!=="boolean")return "PEEK_COVERAGE";
     if(!(data.next_cursor===null||
-         (typeof data.next_cursor==="string"&&
-          /^[1-9][0-9]{0,18}-[1-9][0-9]{0,18}$/.test(data.next_cursor))))
+      (typeof data.next_cursor==="string"&&
+       /^[1-9][0-9]{0,18}-[1-9][0-9]{0,18}$/.test(data.next_cursor))))
       return "PEEK_CURSOR";
     if(data.items.some(x=>!x||typeof x.id!=="string"||
        typeof x.subject!=="string"||typeof x.from!=="string"||
        !["clinical","review"].includes(x.category)))return "PEEK_ITEM_FIELDS";
     return null;
   }
-  async function inbox() {
-    const ticket=++state.request;
-    content.replaceChildren();
-    if(!syntheticInbox()){
-      let sourceResponded=false;
-      content.append(text("Φόρτωση εισερχομένων iCloud προς το ιατρείο…"));
-      try{
-        const response=await fetch("/clinical/icloud-mail/peek",{
-          credentials:"same-origin",cache:"no-store",headers:{"Accept":"application/json"}
-        });
-        if(!response.ok){
-          const e=new Error("Unavailable");e.status=response.status;
-          if(response.status===503){
-            try{const payload=await response.json();e.code=payload?.detail?.code;}
-            catch(_){/* Non-JSON 503 still shows the generic source error. */}
-          }
-          throw e;
-        }
-        sourceResponded=true;
-        let data;
-        try{data=await response.json();}
-        catch(_){const e=new Error("Invalid protected JSON");e.clientCode="PEEK_JSON";throw e;}
-        if(!activePeek("inbox",ticket))return;
-        const shapeCode=icloudPeekContractCode(data);
-        if(shapeCode){
-          const e=new Error("Invalid protected iCloud contract");
-          e.clientCode=shapeCode;throw e;
-        }
-        content.replaceChildren();
-        content.append(text("iCloud · μόνο μηνύματα προς το alias ιατρείου. Δεν έχει γίνει κλινική ταυτοποίηση."));
-        if(!data.coverage_complete)content.append(text(
-          "Μερική κάλυψη: "+
-          (data.skipped_count?data.skipped_count+" προβληματικά μηνύματα δεν ελέγχθηκαν. ":"")+
-          (data.next_cursor?"Υπάρχουν παλαιότερα προς έλεγχο.":"Η λίστα μπορεί να μην είναι πλήρης.")));
-        for(const item of data.items)content.append(action(
-          (item.category==="review"?"Για έλεγχο · ":"")+item.subject,
-          item.from+" · "+(item.category==="review"?"Απαιτείται αξιολόγηση":"Πιθανώς κλινικό"),
-          ()=>showIcloudInbox(item.id)));
-        if(!data.items.length)content.append(text(data.next_cursor?
-          "Δεν βρέθηκαν σε αυτή την ενότητα. Υπάρχουν παλαιότερα προς έλεγχο από την πλήρη προβολή.":
-          "Δεν βρέθηκαν μηνύματα στην ελεγμένη ενότητα. Δεν καλύπτονται Bcc και άλλοι φάκελοι."));
-        content.append(action("Όλα τα εισερχόμενα ασθενών",
-          "Μόνο ανάγνωση iCloud · χωρίς σύνδεση με κλινικό φάκελο",
-          ()=>showIcloudInbox()));
-      }catch(error){
-        if(!activePeek("inbox",ticket))return;
-        content.replaceChildren();
-        if(error.status===401||error.status===403){
-          content.append(text("Απαιτείται κλινική σύνδεση. Δεν εμφανίζονται μηνύματα."));
-          content.append(action("Σύνδεση","Clinical Key",
-            ()=>window.dispatchEvent(new Event("clinical:request-login"))));
-        }else if(sourceResponded){
-          const known=["PEEK_SOURCE","PEEK_ITEMS","PEEK_COVERAGE","PEEK_CURSOR",
-            "PEEK_ITEM_FIELDS","PEEK_JSON"];
-          const code=known.includes(error.clientCode)?error.clientCode:"PEEK_RENDER";
-          content.append(text("Το iCloud απάντησε επιτυχώς (HTTP 200), αλλά το Cockpit "+
-            "δεν μπόρεσε να εμφανίσει την απάντηση. ["+code+"] "+
-            "Αυτό ΔΕΝ σημαίνει ότι το γραμματοκιβώτιο είναι άδειο."));
-          content.append(action("Άνοιγμα πλήρων εισερχομένων",
-            "Ίδια προστατευμένη σύνδεση · μόνο ανάγνωση",
-            ()=>showIcloudInbox()));
-        }else if(error.status===503){
-          const diagnostic=window.CockpitIcloudStageMessage?.(error.code);
-          content.append(text(diagnostic?
-            "iCloud Mail: "+diagnostic+" Δεν γνωρίζουμε αν υπάρχουν νέα μηνύματα.":
-            "Η πηγή iCloud δεν είναι διαθέσιμη αυτή τη στιγμή [PEEK_SOURCE_503]. "+
-            "Δεν γνωρίζουμε αν υπάρχουν νέα μηνύματα."));
-        }else{
-          content.append(text(error.status?
-            "Το αίτημα iCloud απέτυχε στον server [PEEK_HTTP_ERROR]. "+
-            "Δεν γνωρίζουμε αν υπάρχουν νέα μηνύματα.":
-            "Το αίτημα iCloud δεν ολοκληρώθηκε στον browser [PEEK_NETWORK]. "+
-            "Δεν γνωρίζουμε αν υπάρχουν νέα μηνύματα."));
-        }
-      }
+  function updateUnreadBadge() {
+    // A dot means at least one verified UNSEEN message, never a false total.
+    const badge=$("doctorInboxBadge");
+    const hasUnread=!!(unreadPeek.data?.items?.length);
+    badge.hidden=!hasUnread;
+    badge.textContent=hasUnread?"•":"";
+    buttons.inbox.setAttribute("aria-label",hasUnread?
+      "Υπάρχουν μη αναγνωσμένα κλινικά email":"Μη αναγνωσμένα κλινικά email");
+  }
+  function clearUnreadPeek() {
+    unreadPeek.generation++;
+    unreadPeek.controller?.abort();
+    unreadPeek.authorized=false;unreadPeek.pending=null;unreadPeek.controller=null;
+    unreadPeek.data=null;unreadPeek.updatedAt=0;unreadPeek.checkedAt=0;
+    unreadPeek.error=null;updateUnreadBadge();
+  }
+  function displayUnreadError(err) {
+    if(err?.status===401||err?.status===403) {
+      content.append(text("Απαιτείται κλινική σύνδεση. Δεν εμφανίζονται μηνύματα."));
+      content.append(action("Σύνδεση","Clinical Key",
+        ()=>window.dispatchEvent(new Event("clinical:request-login"))));
       return;
     }
+    if(err?.status===503) {
+      const msg=window.CockpitIcloudStageMessage?.(err.code);
+      content.append(text(msg?"iCloud Mail: "+msg+" Δεν γνωρίζουμε αν υπάρχουν νέα μηνύματα.":
+        "Η πηγή iCloud δεν είναι διαθέσιμη [PEEK_SOURCE_503]. Δεν γνωρίζουμε αν υπάρχουν νέα μηνύματα."));
+    } else if(err?.clientCode) {
+      const safe=["PEEK_SOURCE","PEEK_ITEMS_MISSING","PEEK_ITEMS_LIMIT",
+        "PEEK_COVERAGE","PEEK_CURSOR","PEEK_ITEM_FIELDS","PEEK_JSON"];
+      const code=safe.includes(err.clientCode)?err.clientCode:"PEEK_RENDER";
+      content.append(text("Το iCloud απάντησε HTTP 200 αλλά η προβολή μη αναγνωσμένων απέτυχε ["+
+        code+"]. Δεν συμπεραίνουμε ότι η θυρίδα είναι άδεια."));
+    } else {
+      content.append(text(err?.status?
+        "Αποτυχία αιτήματος iCloud [PEEK_HTTP_ERROR]. Δεν γνωρίζουμε αν υπάρχουν νέα μηνύματα.":
+        "Αποτυχία δικτύου iCloud [PEEK_NETWORK]. Δεν γνωρίζουμε αν υπάρχουν νέα μηνύματα."));
+    }
+  }
+  function displayUnreadPeek() {
+    content.replaceChildren();
+    const data=unreadPeek.data;
+    const outdated=unreadPeek.updatedAt &&
+      Date.now()-unreadPeek.updatedAt>=ICLOUD_PEEK_TTL_MS;
+    if(data){
+      const checked=new Date(unreadPeek.updatedAt).toLocaleTimeString("el-CY",
+        {hour:"2-digit",minute:"2-digit"});
+      content.append(text("Μη αναγνωσμένα στο iCloud · ενημέρωση "+checked+
+        (outdated?" · απαιτείται ανανέωση":"")));
+      if(unreadPeek.error)content.append(text(
+        "Η τελευταία ανανέωση απέτυχε. Εμφανίζεται η προηγούμενη λίστα, όχι επιβεβαιωμένη τρέχουσα κατάσταση."));
+      if(!data.coverage_complete)content.append(text(
+        "Μερική κάλυψη: "+(data.skipped_count?
+        data.skipped_count+" μηνύματα δεν ελέγχθηκαν. ":"")+
+        (data.next_cursor?"Υπάρχουν παλαιότερα μη αναγνωσμένα προς έλεγχο.":
+        "Ο έλεγχος δεν είναι επιβεβαιωμένα πλήρης.")));
+      for(const item of data.items)content.append(action(
+        (item.category==="review"?"Για έλεγχο · ":"")+item.subject,
+        item.from+" · Μη αναγνωσμένο στο iCloud",()=>showIcloudInbox(item.id)));
+      if(!data.items.length)content.append(text(data.coverage_complete?
+        "Δεν υπάρχουν μη αναγνωσμένα μηνύματα προς το alias στο ελεγμένο INBOX.":
+        "Δεν βρέθηκαν μη αναγνωσμένα στην ελεγμένη ενότητα. Η θυρίδα μπορεί να έχει παλαιότερα."));
+    } else if(unreadPeek.error){
+      displayUnreadError(unreadPeek.error);
+    } else {
+      content.append(text("Φόρτωση μη αναγνωσμένων iCloud για το ιατρείο…"));
+    }
+    if(unreadPeek.pending && data) content.append(text("Ανανέωση στο παρασκήνιο…"));
+    content.append(action("Ανανέωση τώρα","Μη αναγνωσμένα στο iCloud",
+      ()=>{unreadPeek.checkedAt=0;void fetchUnreadPeek(true,true);}));
+    content.append(text("Όλα τα email: Συντομεύσεις → Εισερχόμενα ασθενών."));
+  }
+  function fetchUnreadPeek(force=false, manual=false) {
+    if(!manual && (!unreadPeek.authorized || document.hidden))return null;
+    if(unreadPeek.pending)return unreadPeek.pending;
+    if(!force && unreadPeek.checkedAt &&
+       Date.now()-unreadPeek.checkedAt<ICLOUD_PEEK_TTL_MS)return null;
+    const generation=unreadPeek.generation;
+    const controller=new AbortController();
+    unreadPeek.controller=controller;
+    const pending=(async()=>{
+      let err=null;
+      try{
+        const response=await fetch("/clinical/icloud-mail/peek",{
+          credentials:"same-origin",cache:"no-store",signal:controller.signal,
+          headers:{"Accept":"application/json"}
+        });
+        if(!response.ok){
+          err={status:response.status};
+          if(response.status===503){
+            try{err.code=(await response.json())?.detail?.code;}catch(_){}
+          }
+          throw err;
+        }
+        let data;
+        try{data=await response.json();}
+        catch(_){throw {clientCode:"PEEK_JSON"};}
+        const code=icloudPeekContractCode(data);
+        if(code)throw {clientCode:code};
+        if(unreadPeek.generation!==generation)return;
+        unreadPeek.data=data;unreadPeek.updatedAt=Date.now();unreadPeek.error=null;
+      }catch(error){
+        if(unreadPeek.generation!==generation)return;
+        if(controller.signal.aborted)return;
+        unreadPeek.error={
+          status:Number.isInteger(error?.status)?error.status:0,
+          code:typeof error?.code==="string"?error.code:null,
+          clientCode:typeof error?.clientCode==="string"?error.clientCode:null
+        };
+        if(unreadPeek.error.status===401||unreadPeek.error.status===403){
+          window.dispatchEvent(new Event("clinical:unauthenticated"));
+        }
+      }finally{
+        if(unreadPeek.generation!==generation)return;
+        unreadPeek.checkedAt=Date.now();
+        unreadPeek.pending=null;unreadPeek.controller=null;
+        updateUnreadBadge();
+        if(state.panel==="inbox"&&!popover.hidden)displayUnreadPeek();
+      }
+    })();
+    unreadPeek.pending=pending;
+    return pending;
+  }
+  function maybeRefreshUnread(force=false){
+    if(unreadPeek.authorized && !document.hidden)void fetchUnreadPeek(force);
+  }
+  function inbox() {
+    ++state.request;
+    if(!syntheticInbox()){
+      displayUnreadPeek(); // Instant last known list; never re-fetch on each click.
+      // An uncached first visit can use the already-authorized browser cookie.
+      if(!unreadPeek.authorized)void fetchUnreadPeek(false,true);
+      else maybeRefreshUnread();
+      return;
+    }
+    const ticket=state.request;
+    content.replaceChildren();
     content.append(text("Φόρτωση συνθετικών εισερχομένων…"));
     try{
       const response=await fetch(window.CockpitClinicalBase+"/attention",{
@@ -1001,10 +1067,28 @@
     if (state.panel === "tasks") tasks();
   }
     window.addEventListener("cockpit:surgery-counts",e=>updateSurgeryCounts(e.detail));
-  // No fake unread-mail badge. It remains hidden until the real Inbox owner exists.
-  $("doctorInboxBadge").hidden=true;
+  // The badge is an existence dot only, never an invented unread total.
+  updateUnreadBadge();
   buttons.day.firstChild.textContent=dateLabel.format(new Date())+" ";
   attention();
   updateSurgeryCounts(window.CockpitSurgerySummary);
+  // One protected bootstrap check; background email requests only after
+  // existing clinician auth. A five-minute interval operates only in a
+  // visible Cockpit tab. Hidden or logged-out tabs make no provider requests.
+  if(typeof window.setInterval==="function")
+    window.setInterval(()=>maybeRefreshUnread(),ICLOUD_PEEK_TTL_MS);
+  document.addEventListener("visibilitychange",()=>maybeRefreshUnread());
+  window.addEventListener("focus",()=>maybeRefreshUnread());
+  window.addEventListener("clinical:authenticated",()=>{
+    clearUnreadPeek();unreadPeek.authorized=true;maybeRefreshUnread(true);
+  });
+  window.addEventListener("clinical:unauthenticated",clearUnreadPeek);
+  const bootstrapGeneration=unreadPeek.generation;
+  fetch("/clinical/status",{credentials:"same-origin",cache:"no-store"})
+    .then(r=>{
+      if(r.ok&&bootstrapGeneration===unreadPeek.generation){
+        unreadPeek.authorized=true;maybeRefreshUnread(true);
+      }
+    }).catch(()=>{});
   loadRfAttention();
 })();
