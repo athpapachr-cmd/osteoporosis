@@ -520,6 +520,9 @@ def exercise_icloud_mail_peek(page, width):
     assert details.locator("a.doctor-icloud-attachment").first.get_attribute("href").endswith(
         "/clinical/icloud-mail/items/765-4/attachments/2")
     assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1")
+    # Peek selection loads its exact protected UID first; the archive is
+    # separate and appears only when explicitly refreshed or opened by route.
+    page.locator("#doctorIcloudInboxReload").click()
     expect(page.locator("#doctorIcloudInboxRows")).to_contain_text("Μερική κάλυψη")
     page.locator("#doctorIcloudInboxRows").get_by_role("button", name="Παλαιότερα").click()
     expect(page.locator("#doctorIcloudInboxRows")).to_contain_text("Παλαιότερο κλινικό")
