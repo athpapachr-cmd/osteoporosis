@@ -601,7 +601,7 @@ def exercise_icloud_peek_200_client_truth(page):
         expect(peek).to_contain_text("HTTP 200")
         expect(peek).to_contain_text(code)
         expect(peek).not_to_contain_text("Δεν έχει συνδεθεί ακόμη")
-        expect(peek.get_by_role("button", name="Άνοιγμα πλήρων εισερχομένων")).to_be_visible()
+        expect(peek).to_contain_text("Όλα τα email: Συντομεύσεις")
         assert peek.locator("svg, img").count() == 0
         page.locator("#doctorInboxButton").click()
         page.unroute("**/clinical/icloud-mail/peek", reply)
