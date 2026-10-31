@@ -673,6 +673,7 @@ def exercise_icloud_secretary_session_isolation(page, auth):
     page.wait_for_timeout(80)
     assert attempts["peek"] == 0, "Secretary login triggered an unauthorized iCloud IMAP peek"
     expect(page.locator("#doctorInboxBadge")).to_be_hidden()
+    page.keyboard.press("Escape")  # Close the sticky key panel before clicking ✉.
 
     # Manual icon access stays PHI-free without treating a valid staff cookie
     # as revoked. Focus/visibility cannot re-enable the background poll.
@@ -687,6 +688,44 @@ def exercise_icloud_secretary_session_isolation(page, auth):
     assert page.evaluate("window.__secretaryIcloudAuthLoss") == 0
     page.locator("#doctorInboxButton").click()
     page.unroute("**/clinical/icloud-mail/peek", forbidden_peek)
+
+    # Before shared-nav's role bootstrap completes, the protected status
+    # denial must discover the existing secretary cookie without a logout.
+    page.evaluate("window.CockpitStaffRole=null")
+    page.locator("#doctorInboxButton").click()
+    expect(page.locator("#doctorPopoverContent")).to_contain_text(
+        "Η σύνδεση γραμματείας παραμένει ενεργή")
+    assert page.evaluate("window.CockpitStaffRole") == "secretary"
+    assert page.evaluate("window.__secretaryIcloudAuthLoss") == 0
+    page.locator("#doctorInboxButton").click()
+
+    # The same authority separation applies to a cold full-inbox deep link,
+    # and Reload may not initiate another unauthorized mailbox request.
+    full_attempts = {"count": 0}
+    def denied_full(route):
+        full_attempts["count"] += 1
+        route.fulfill(status=401, json={"detail": "Clinician access required"})
+    page.route("**/clinical/icloud-mail", denied_full)
+    page.route("**/clinical/icloud-mail?*", denied_full)
+    page.evaluate("window.CockpitStaffRole=null; window.location.hash='#icloud-mail'")
+    expect(page.locator("#doctorIcloudInboxView")).to_be_visible()
+    expect(page.locator("#doctorIcloudInboxState")).to_contain_text(
+        "Η σύνδεση γραμματείας παραμένει ενεργή")
+    assert full_attempts["count"] == 1, "Expected one denied full-list read before role bootstrap"
+    assert page.evaluate("window.CockpitStaffRole") == "secretary"
+    assert page.evaluate("window.__secretaryIcloudAuthLoss") == 0
+    page.locator("#doctorIcloudInboxReload").click()
+    expect(page.locator("#doctorIcloudInboxState")).to_contain_text(
+        "Η σύνδεση γραμματείας παραμένει ενεργή")
+    assert full_attempts["count"] == 1
+    page.locator("#doctorIcloudInboxBack").click()
+    page.evaluate("window.location.hash='#icloud-mail'")
+    expect(page.locator("#doctorIcloudInboxState")).to_contain_text(
+        "Η σύνδεση γραμματείας παραμένει ενεργή")
+    assert full_attempts["count"] == 1
+    page.locator("#doctorIcloudInboxBack").click()
+    page.unroute("**/clinical/icloud-mail?*", denied_full)
+    page.unroute("**/clinical/icloud-mail", denied_full)
 
     # The same original login can re-authorize clinician reads without a new
     # staff mechanism or shared Clinical Key changes.

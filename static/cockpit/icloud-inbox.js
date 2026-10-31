@@ -21,6 +21,11 @@
     Object.prototype.hasOwnProperty.call(stageText, code)
       ? stageText[code] + " [" + code + "]" : null;
   window.CockpitIcloudStageMessage = stageLabel;
+  const secretaryIcloudSession=()=>window.CockpitStaffRole==="secretary";
+  function secretaryIcloudNotice(){
+    $("doctorIcloudInboxState").textContent=
+      "Τα iCloud email απαιτούν σύνδεση ιατρού. Η σύνδεση γραμματείας παραμένει ενεργή.";
+  }
   const state = {active:false, epoch:0, selection:0, id:null, items:[], controller:null,
     pages:[null], pageIndex:0, nextCursor:null, skipped:0, coverageComplete:false,
     latest:null, latestAt:0};
@@ -92,8 +97,32 @@
         ? "Η πηγή iCloud επέστρεψε σφάλμα HTTP ["+((error.status===503)?"LIST_SOURCE_503":"LIST_HTTP_ERROR")+"]."
         : "Δεν ολοκληρώθηκε η ανάγνωση στον browser [LIST_NETWORK].";
     if (error.status === 401 || error.status === 403) {
-      window.dispatchEvent(new Event("clinical:unauthenticated"));
-      window.dispatchEvent(new Event("clinical:request-login"));
+      // A denied clinician-only read may coexist with a valid secretary cookie,
+      // including when shared-nav has not yet resolved the staff role.
+      const ticket=state.epoch;
+      void (async()=>{
+        let secretary=secretaryIcloudSession();
+        if(!secretary){
+          try{
+            const response=await fetch("/clinical/staff-session",{
+              credentials:"same-origin",cache:"no-store",
+              headers:{"Accept":"application/json"}
+            });
+            if(response.ok){
+              const actor=await response.json();
+              secretary=actor?.staff_role==="secretary";
+            }
+          }catch(_){}
+        }
+        if(!current(ticket))return;
+        if(secretary){
+          window.CockpitStaffRole="secretary";
+          secretaryIcloudNotice();
+          return;
+        }
+        window.dispatchEvent(new Event("clinical:unauthenticated"));
+        window.dispatchEvent(new Event("clinical:request-login"));
+      })();
     }
   }
   function listContractCode(data) {
@@ -161,6 +190,11 @@
   }
   async function load(focusId) {
     if (!state.active) return;
+    if(secretaryIcloudSession()){
+      clear(true);
+      secretaryIcloudNotice();
+      return;
+    }
     const cursor = state.pages[state.pageIndex];
     const ticket = ++state.epoch;
     ++state.selection;
@@ -210,6 +244,11 @@
   }
   async function select(id) {
     if (!state.active || !/^[1-9][0-9]{0,18}-[1-9][0-9]{0,18}$/.test(id)) return;
+    if(secretaryIcloudSession()){
+      clear(true);
+      secretaryIcloudNotice();
+      return;
+    }
     const ticket = state.epoch;
     const selected = ++state.selection;
     state.id = id;
@@ -254,6 +293,11 @@
       }
     } catch (error) {
       if (!current(ticket) || selected !== state.selection) return;
+      if(error?.status===401||error?.status===403){
+        clear(true); // Do not retain the previous page during staff-role lookup.
+        sourceError(error,$("doctorIcloudInboxState"));
+        return;
+      }
       details.replaceChildren();
       sourceError(error, details.appendChild(el("p", "clinical-inbox-warning")));
     }
@@ -261,6 +305,11 @@
   function open(id=null) {
     state.active = true;
     view.hidden = false;
+    if(secretaryIcloudSession()){
+      clear(true);
+      secretaryIcloudNotice();
+      return;
+    }
     // Open an unread peek selection directly. The full archive may place
     // this UID many pages later; never depend on fetching page one first.
     if(typeof id==="string" && /^[1-9][0-9]{0,18}-[1-9][0-9]{0,18}$/.test(id)){

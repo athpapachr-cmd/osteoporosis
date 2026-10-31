@@ -188,6 +188,20 @@
   // A secretary login is authenticated staff, not iCloud clinician authority.
   // This is a presentation/refresh guard; the server still authorizes every read.
   const secretaryIcloudSession=()=>window.CockpitStaffRole==="secretary";
+  // On a clinician-only 401, distinguish a still-valid secretary staff cookie
+  // using the existing read-only endpoint; never infer staff logout from mail.
+  async function hasSecretaryStaffSession(){
+    if(secretaryIcloudSession())return true;
+    try{
+      const response=await fetch("/clinical/staff-session",{
+        credentials:"same-origin",cache:"no-store",
+        headers:{"Accept":"application/json"}
+      });
+      if(!response.ok)return false;
+      const actor=await response.json();
+      return actor?.staff_role==="secretary";
+    }catch(_){return false;}
+  }
   const activePeek=(kind,ticket)=>state.panel===kind &&
     !popover.hidden && state.request===ticket;
 
@@ -430,6 +444,18 @@
           clientCode:typeof error?.clientCode==="string"?error.clientCode:null
         };
         if(unreadPeek.error.status===401||unreadPeek.error.status===403){
+          clearUnreadPeek(); // Remove PHI and dot before probing staff identity.
+          const deniedGeneration=unreadPeek.generation;
+          const deniedTicket=state.request;
+          if(state.panel==="inbox"&&!popover.hidden)
+            content.replaceChildren(text("Έλεγχος κλινικής πρόσβασης…"));
+          const secretary=await hasSecretaryStaffSession();
+          if(unreadPeek.generation!==deniedGeneration)return;
+          if(secretary){
+            window.CockpitStaffRole="secretary";
+            if(activePeek("inbox",deniedTicket))secretaryIcloudNotice();
+            return;
+          }
           window.dispatchEvent(new Event("clinical:unauthenticated"));
           window.dispatchEvent(new Event("clinical:request-login"));
         }
@@ -480,8 +506,12 @@
            unreadPeek.generation!==generation)return;
         if(status.status===401||status.status===403){
           clearUnreadPeek(); // Includes the dot and all sender/subject memory.
-          if(secretaryIcloudSession()){
-            secretaryIcloudNotice();
+          const deniedGeneration=unreadPeek.generation;
+          const secretary=await hasSecretaryStaffSession();
+          if(unreadPeek.generation!==deniedGeneration)return;
+          if(secretary){
+            window.CockpitStaffRole="secretary";
+            if(activePeek("inbox",ticket))secretaryIcloudNotice();
             return;
           }
           window.dispatchEvent(new Event("clinical:unauthenticated"));
