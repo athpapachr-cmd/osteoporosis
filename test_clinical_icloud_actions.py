@@ -254,3 +254,56 @@ def test_cancelled_pending_revokes_prior_action_authority(scenario):
     assert r.json()["source_valid"] is False
     assert r.json()["review_status"]=="source_invalidated"
     assert post(client,"765-10","review_notify",1).status_code==409
+
+
+def test_phone_and_reversed_name_in_attachment_are_suggestions_not_auto_links(scenario):
+    from email.message import EmailMessage
+    client, mailbox, engine = scenario
+    msg=EmailMessage()
+    msg["From"]="Radiology Unit <radiology@example.invalid>"
+    msg["To"]=ALIAS
+    msg["Subject"]=""
+    msg["Date"]="Fri, 30 Oct 2026 12:00:00 +0200"
+    msg.set_content("Contact number +35799000000")
+    msg.add_attachment(b"synthetic JPG",maintype="image",subtype="jpeg",
+                       filename="Alpha_Patient_Synthetic.jpg")
+    mailbox.rows["21"]=msg.as_bytes()
+    result=get(client,endpoint("765-21")+"/candidates")
+    assert result.status_code==200,result.text
+    suggested=[x for x in result.json()["items"] if x["id"]==PATIENT]
+    assert len(suggested)==1
+    assert suggested[0]["evidence"]=="name_phone"
+    with Session(engine) as db:
+        assert db.scalar(select(func.count()).select_from(MailDecisionORM))==0
+
+
+def test_manual_reclassification_revokes_prior_review_and_notification(scenario):
+    client, _, engine = scenario
+    assert post(client,"765-10","link",0,patient_id=PATIENT,pending_id=PENDING).status_code==200
+    assert post(client,"765-10","review_notify",1).status_code==200
+    assert post(client,"765-10","patient_notified",2).status_code==200
+    corrected=post(client,"765-10","classify",3,category="administrative")
+    assert corrected.status_code==200
+    assert corrected.json()["review_status"]=="not_reviewed"
+    assert corrected.json()["contact_status"]=="not_requested"
+    assert corrected.json()["callback_complete"] is False
+    assert post(client,"765-10","callback_complete",4).status_code==409
+    assert post(client,"765-10","review_notify",4).status_code==409
+    assert get(client,endpoint()).json()["category"]=="administrative"
+
+
+def test_signed_pending_membership_amendment_invalidates_mail_link(scenario):
+    client, _, engine = scenario
+    assert post(client,"765-10","link",0,patient_id=PATIENT,pending_id=PENDING).status_code==200
+    with Session(engine) as db,db.begin():
+        visit=db.get(EncounterORM,VISIT)
+        payload=dict(visit.payload_json)
+        signed=dict(payload["_visit_capture_v1"])
+        signed["pending_ids"]=[]
+        signed["candidate"]={"pending":[]}
+        payload["_visit_capture_v1"]=signed
+        visit.payload_json=payload
+    refreshed=get(client,endpoint())
+    assert refreshed.status_code==200
+    assert refreshed.json()["source_valid"] is False
+    assert post(client,"765-10","review_notify",1).status_code==409
