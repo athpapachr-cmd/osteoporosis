@@ -72,7 +72,7 @@ def apply(store, case, actor, action, no, version=None, **attrs):
     )
 
 
-def receipt(store, case, part="report", version="r1", no=1, ref=None, actor=SOURCE):
+def receipt(store, case, part="report", version="revision-01", no=1, ref=None, actor=SOURCE):
     return apply(
         store, case, actor, "received", no, part=part,
         source_ref=ref or "synthetic-mail-" + part,
@@ -88,12 +88,12 @@ def test_restart_retains_one_signed_pending_and_original_event_history(setup):
     assert start["pending_ref"] == PENDING and start["mode"] == "signed_pending"
     assert start["stage"] == "awaiting_result"
 
-    stage1 = receipt(store, case, "report", "r1", 1)
+    stage1 = receipt(store, case, "report", "revision-01", 1)
     assert stage1["stage"] == "partially_received"
     apply(store, case, DOCTOR, "identity_verified", 2,
           evidence="qualified_referral", evidence_ref="synthetic-qualified-referral")
     after_review = apply(store, case, DOCTOR, "review_notify", 3,
-                         part="report", source_version="r1")
+                         part="report", source_version="revision-01")
     assert after_review["stage"] == "partially_received"
     assert store.secretary_view(case, STAFF)["doctor_reviewed"] is True
     assert "source_ref" not in str(store.secretary_view(case, STAFF))
@@ -109,10 +109,10 @@ def test_restart_retains_one_signed_pending_and_original_event_history(setup):
     assert restarted.history(case, DOCTOR) == history
     assert signed(restarted) == case
 
-    images = receipt(restarted, case, "images", "r1", 4)
+    images = receipt(restarted, case, "images", "revision-01", 4)
     assert images["stage"] == "awaiting_doctor_review"
     apply(restarted, case, DOCTOR, "review_no_contact", 5,
-          part="images", source_version="r1")
+          part="images", source_version="revision-01")
     assert restarted.view(case, DOCTOR)["stage"] == "awaiting_secretary"
     assert not restarted.view(case, DOCTOR)["complete"]
     apply(restarted, case, STAFF, "contact_attempt", 6)
@@ -132,9 +132,9 @@ def test_no_chart_lab_close_requires_no_fabricated_encounter_or_extra_tap(setup)
     store, _engine, _path, _qualify = setup
     case = provisional(store)
     assert store.view(case, DOCTOR)["pending_ref"] is None
-    receipt(store, case, "labs", "r1", 10)
+    receipt(store, case, "labs", "revision-01", 10)
     result = apply(store, case, DOCTOR, "review_no_contact", 11,
-                   part="labs", source_version="r1")
+                   part="labs", source_version="revision-01")
     assert result["complete"] and result["version"] == 2
     assert result["verified_contact"] is False
     with pytest.raises(CycleForbidden):
@@ -169,51 +169,51 @@ def test_claimed_source_reused_only_for_same_case_and_part(setup):
     other = store.register(DOCTOR, visit_ref="synthetic-visit-mri-02",
                            request_ref="synthetic-request-mri-02", required=("report",),
                            mode="provisional_visit")["case_id"]
-    receipt(store, case, "report", "r1", 20, ref="synthetic-shared-uid-01")
+    receipt(store, case, "report", "revision-01", 20, ref="synthetic-shared-uid-01")
     with pytest.raises(CycleConflict):
-        receipt(store, other, "report", "r1", 21, ref="synthetic-shared-uid-01")
+        receipt(store, other, "report", "revision-01", 21, ref="synthetic-shared-uid-01")
     with pytest.raises(CycleConflict):
-        receipt(store, case, "images", "r1", 22, ref="synthetic-shared-uid-01")
+        receipt(store, case, "images", "revision-01", 22, ref="synthetic-shared-uid-01")
     assert store.view(other, DOCTOR)["version"] == 0
 
 
 def test_duplicate_poll_and_actor_scoped_idempotency_do_not_write_extra_event(setup):
     store, engine, _path, _qualify = setup
     case = signed(store, required=("report",))
-    data = receipt(store, case, "report", "r1", 30)
-    replay = receipt(store, case, "report", "r1", 30)
-    another_poll = receipt(store, case, "report", "r1", 31)
+    data = receipt(store, case, "report", "revision-01", 30)
+    replay = receipt(store, case, "report", "revision-01", 30)
+    another_poll = receipt(store, case, "report", "revision-01", 31)
     assert data == replay == another_poll
     with Session(engine) as db:
         assert db.scalar(select(func.count()).select_from(ObligationEventFixture)) == 1
     with pytest.raises(CycleConflict):
-        receipt(store, case, "report", "r2", 30)
+        receipt(store, case, "report", "revision-02", 30)
     with pytest.raises(CycleConflict):
         apply(store, case, DOCTOR, "review_no_contact", 32, version=0,
-              part="report", source_version="r1")
+              part="report", source_version="revision-01")
     assert store.view(case, DOCTOR)["version"] == 1
 
 
 def test_corrected_report_reopens_review_and_revokes_old_secretary_instruction(setup):
     store, engine, _path, _qualify = setup
     case = signed(store, required=("report",))
-    receipt(store, case, "report", "r1", 40)
+    receipt(store, case, "report", "revision-01", 40)
     apply(store, case, DOCTOR, "identity_verified", 41,
           evidence="clinician_verified", evidence_ref="synthetic-verified-contact")
-    apply(store, case, DOCTOR, "review_notify", 42, part="report", source_version="r1")
+    apply(store, case, DOCTOR, "review_notify", 42, part="report", source_version="revision-01")
     apply(store, case, STAFF, "patient_notified", 43)
     assert store.view(case, DOCTOR)["stage"] == "awaiting_callback"
-    new = receipt(store, case, "report", "r2", 44)
+    new = receipt(store, case, "report", "revision-02", 44)
     assert new["stage"] == "awaiting_doctor_review"
     assert not new["reviewed"] and new["contact_status"] == "not_requested"
     with pytest.raises(CycleForbidden):
         store.secretary_view(case, STAFF)
     with pytest.raises(CycleConflict):
         apply(store, case, DOCTOR, "review_no_contact", 45,
-              part="report", source_version="r1")
+              part="report", source_version="revision-01")
     assert not store.view(case, DOCTOR)["complete"]
     fresh = apply(store, case, DOCTOR, "review_no_contact", 46,
-                  part="report", source_version="r2")
+                  part="report", source_version="revision-02")
     assert fresh["complete"]
     with Session(engine) as db:
         assert db.scalar(select(func.count()).select_from(ObligationEventFixture)) == 6
@@ -227,17 +227,17 @@ def test_actor_guards_refuse_real_roles_extra_attributes_and_unproven_contact(se
     with pytest.raises(CycleForbidden):
         store.secretary_view(case, REAL_ROLE)
     with pytest.raises(CycleForbidden):
-        receipt(store, case, "report", "r1", 50, actor=UNTRUSTED)
+        receipt(store, case, "report", "revision-01", 50, actor=UNTRUSTED)
     with pytest.raises(CycleConflict):
         apply(store, case, DOCTOR, "received", 51, part="report",
-              source_ref="synthetic-uid-51", source_version="r1",
+              source_ref="synthetic-uid-51", source_version="revision-01",
               proof="clinician_verified", patient_name="REAL NAME DISALLOWED")
-    with pytest.raises(CycleForbidden):
+    with pytest.raises(CycleConflict):
         apply(store, case, DOCTOR, "identity_verified", 52,
               evidence="name_match", evidence_ref="synthetic-name-only")
     with pytest.raises(CycleForbidden):
         apply(store, case, STAFF, "review_no_contact", 53,
-              part="report", source_version="r1")
+              part="report", source_version="revision-01")
     with pytest.raises(CycleForbidden):
         store.history(case, STAFF)
     with Session(engine) as db:
@@ -247,16 +247,16 @@ def test_actor_guards_refuse_real_roles_extra_attributes_and_unproven_contact(se
 def test_no_contact_notification_or_callback_without_doctor_review(setup):
     store, _engine, _path, _qualify = setup
     case = signed(store, required=("report",))
-    receipt(store, case, "report", "r1", 60)
+    receipt(store, case, "report", "revision-01", 60)
     with pytest.raises(CycleForbidden):
         apply(store, case, STAFF, "patient_notified", 61)
     with pytest.raises(CycleConflict):
         apply(store, case, DOCTOR, "callback_complete", 62)
     with pytest.raises(CycleForbidden):
         apply(store, case, DOCTOR, "review_notify", 63,
-              part="report", source_version="r1")
+              part="report", source_version="revision-01")
     result = apply(store, case, DOCTOR, "review_no_contact", 64,
-                   part="report", source_version="r1")
+                   part="report", source_version="revision-01")
     assert result["complete"] and result["contact_status"] == "not_requested"
 
 
@@ -269,7 +269,7 @@ def test_same_source_two_concurrent_opaque_visits_never_both_claim_it(setup):
 
     def arrive(case_id, no):
         try:
-            return receipt(store, case_id, "report", "r1", no,
+            return receipt(store, case_id, "report", "revision-01", no,
                            ref="synthetic-uid-unique-crosscase-01")
         except CycleConflict:
             return None
