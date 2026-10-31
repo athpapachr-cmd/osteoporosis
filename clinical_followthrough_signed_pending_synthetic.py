@@ -183,6 +183,44 @@ class SyntheticSignedPendingBinding:
         except (CycleForbidden, ValueError):
             return False
 
+    def qualify_in_transaction(self, db: Session, visit_ref: str,
+                               pending_ref: str) -> bool:
+        """Same-DB, lock-ordered signed source gate for atomic registration.
+
+        When the clinical and follow-through tables share PostgreSQL, acquire
+        Encounter then Pending locks (consistent with visit-amendment order).
+        Caller cannot pass an unrelated DB session and bypass source ownership.
+        This is synthetic-only and has NO real principal or identity authority.
+        """
+        if db.get_bind() is not self.engine:
+            return False
+        if (not isinstance(visit_ref, str) or not isinstance(pending_ref, str)
+                or not visit_ref.startswith(_PREFIX)
+                or not pending_ref.startswith(_PREFIX)):
+            return False
+        try:
+            encounter_id = _native(visit_ref[len(_PREFIX):])
+            pending_id = _native(pending_ref[len(_PREFIX):])
+            # Lock visit before Pending to avoid lock inversion with
+            # clinical_visit_amendments.py's existing load() ordering.
+            encounter = db.scalar(
+                select(EncounterORM)
+                .where(EncounterORM.id == encounter_id)
+                .with_for_update()
+            )
+            if encounter is None:
+                return False
+            pending = db.scalar(
+                select(ClinicalPendingORM)
+                .where(ClinicalPendingORM.id == pending_id)
+                .with_for_update()
+            )
+            if pending is None or pending.source_encounter_id != encounter_id:
+                return False
+            return self._signed_membership(db, pending).id == encounter_id
+        except (CycleForbidden, ValueError, TypeError):
+            return False
+
     def register_existing(
         self, store: DurableSyntheticFollowthrough, actor: Actor, *,
         patient_id: str, pending_id: str, encounter_id: str,
@@ -201,10 +239,17 @@ class SyntheticSignedPendingBinding:
                 or getattr(store.qualified_signed_pending, "__func__", None)
                 is not SyntheticSignedPendingBinding.qualify_refs):
             raise CycleForbidden("Durable store must use this qualified Pending verifier")
+        # Atomic source validation only when clinical and event tables share
+        # the SAME engine; separate disposable SQLite fixtures retain their
+        # independent qualifier but do not claim cross-DB atomicity.
+        same_db = store.engine is self.engine
         return store.register(
             actor, visit_ref=qualified.visit_ref,
             request_ref=qualified.request_ref, required=req,
             mode="signed_pending", pending_ref=qualified.pending_ref,
+            transactional_qualification=(
+                self.qualify_in_transaction if same_db else None
+            ),
         )
 
     def project_pending(self, store: DurableSyntheticFollowthrough,
