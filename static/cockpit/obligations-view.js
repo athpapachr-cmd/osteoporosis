@@ -119,6 +119,19 @@
       primary.append(node("span","doctor-obligation-patient",item.patient_name));
     const secondary=node("span","doctor-obligation-meta");
     secondary.append(node("span","",label(item)+" · "+statuses[item.status]));
+    const mail=Array.isArray(item.mail_followthrough)?
+      item.mail_followthrough.find(m=>m&&typeof m.item_id==="string"&&
+        /^[1-9][0-9]{0,18}-[1-9][0-9]{0,18}$/.test(m.item_id)):null;
+    if(mail){
+      const progress=mail.source_valid===false?"Η πηγή άλλαξε — επανέλεγχος":
+        mail.callback_complete?"Ο κύκλος email/επικοινωνίας καταγράφηκε":
+        mail.contact_status==="notified"?"Ενημερώθηκε · εκκρεμεί επικοινωνία":
+        mail.contact_status==="attempted"?"Έγινε προσπάθεια επικοινωνίας":
+        mail.review_status==="reviewed_notify"?"Εξετάστηκε · χρειάζεται ενημέρωση":
+        mail.review_status==="reviewed_no_contact"?"Εξετάστηκε · χωρίς ενημέρωση":
+        "Συνδέθηκε email με αυτή την εκκρεμότητα";
+      secondary.append(node("span","doctor-obligation-mail-progress","iCloud · "+progress));
+    }
     if(iso(item.review_date)){
       secondary.append(node("span","doctor-obligation-date","Προθεσμία: "+dateText(item.review_date)));
       const group=dateClass(item,cyprusToday());
@@ -136,6 +149,12 @@
       }else showTask(item,false,row);
     });
     entry.append(row);
+    if(mail && window.CockpitSynthetic!==true){
+      const mailButton=makeButton(entry,"Άνοιγμα συνδεδεμένου email",()=>{
+        window.CockpitOpenIcloudMail?.(mail.item_id);
+      },"doctor-obligation-mail");
+      mailButton.setAttribute("aria-label","Άνοιγμα συνδεδεμένου email της υποχρέωσης");
+    }
     if(window.CockpitSynthetic!==true && isWritable(item)){
       const edit=makeButton(entry,"✎ Επεξεργασία",()=>showTask(item,true,edit),
         "doctor-obligation-edit");
