@@ -276,12 +276,16 @@ def _uid_next(mail) -> int:
     return int(raw)
 
 
-def _search_window(mail, alias: str, low: int, high: int) -> list[int]:
+def _search_window(mail, alias: str, low: int, high: int, *, unseen_only: bool = False) -> list[int]:
     """Bound the IMAP server's response before it returns any UIDs."""
     quoted = '"' + alias + '"'
     try:
+        # IMAP SEARCH combines criteria with AND: UID range + UNSEEN + (TO or CC).
+        # READ-ONLY EXAMINE and BODY.PEEK never set the server's Seen flag.
         status, data = mail.uid(
-            "SEARCH", None, "UID", f"{low}:{high}", "OR", "TO", quoted, "CC", quoted
+            "SEARCH", None, "UID", f"{low}:{high}",
+            *(("UNSEEN",) if unseen_only else ()),
+            "OR", "TO", quoted, "CC", quoted
         )
     except Exception:
         raise _StageFailure("IMAP_SEARCH_FAILED") from None
@@ -303,7 +307,7 @@ def _search_window(mail, alias: str, low: int, high: int) -> list[int]:
     return sorted(set(result), reverse=True)
 
 
-def _list_items(mail, validity: str, alias: str, limit: int, cursor: str | None = None):
+def _list_items(mail, validity: str, alias: str, limit: int, cursor: str | None = None, *, unseen_only: bool = False):
     last_uid = _uid_next(mail) - 1
     if cursor is not None:
         match = _ITEM_RE.fullmatch(cursor)
@@ -323,7 +327,7 @@ def _list_items(mail, validity: str, alias: str, limit: int, cursor: str | None 
     windows = 0
     while high > 0 and windows < _MAX_WINDOWS and headers_checked < _MAX_CANDIDATES:
         low = max(1, high - _UID_WINDOW + 1)
-        found = _search_window(mail, alias, low, high)
+        found = _search_window(mail, alias, low, high, unseen_only=unseen_only)
         windows += 1
         exhausted_early = False
         for uid in found:
@@ -340,6 +344,11 @@ def _list_items(mail, validity: str, alias: str, limit: int, cursor: str | None 
             if len(result) >= limit or headers_checked >= _MAX_CANDIDATES:
                 exhausted_early = True
                 break
+        # A page is capped at exactly its requested limit. Previously the inner
+        # loop broke but the outer window scan continued, causing >4 peek items
+        # (PEEK_ITEMS) or >25 full-view items, then false client failure.
+        if len(result) >= limit or headers_checked >= _MAX_CANDIDATES:
+            break
         if not exhausted_early:
             high = low - 1
 
@@ -510,7 +519,9 @@ def build_icloud_mail_router() -> APIRouter:
         _no_store(response)
         return {
             "source": "icloud_mail", "scope": "recipient_alias_inbox_only",
-            **_read(lambda mail, validity, alias: _list_items(mail, validity, alias, 4)),
+            "filter": "unseen",
+            **_read(lambda mail, validity, alias: _list_items(
+                mail, validity, alias, 4, unseen_only=True)),
         }
 
     @router.get("")
@@ -522,6 +533,7 @@ def build_icloud_mail_router() -> APIRouter:
         _no_store(response)
         return {
             "source": "icloud_mail", "scope": "recipient_alias_inbox_only",
+            "filter": "all",
             **_read(lambda mail, validity, alias: _list_items(mail, validity, alias, limit, cursor)),
         }
 
