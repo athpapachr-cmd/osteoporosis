@@ -235,7 +235,7 @@ def test_actor_guards_refuse_real_roles_extra_attributes_and_unproven_contact(se
     with pytest.raises(CycleForbidden):
         apply(store, case, DOCTOR, "identity_verified", 52,
               evidence="name_match", evidence_ref="synthetic-name-only")
-    with pytest.raises(CycleConflict):
+    with pytest.raises(CycleForbidden):
         apply(store, case, STAFF, "review_no_contact", 53,
               part="report", source_version="r1")
     with pytest.raises(CycleForbidden):
