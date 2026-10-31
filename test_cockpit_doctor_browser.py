@@ -675,11 +675,15 @@ def exercise_icloud_secretary_session_isolation(page, auth):
     expect(page.locator("#doctorInboxBadge")).to_be_hidden()
     page.keyboard.press("Escape")  # Close the sticky key panel before clicking ✉.
 
+    # Manual icon access must verify a real server-side staff session, not the
+    # cached CockpitStaffRole='secretary' hint.
+    staff_before = auth["staff_checks"]
     # Manual icon access stays PHI-free without treating a valid staff cookie
     # as revoked. Focus/visibility cannot re-enable the background poll.
     page.locator("#doctorInboxButton").click()
     peek = page.locator("#doctorPopoverContent")
     expect(peek).to_contain_text("Η σύνδεση γραμματείας παραμένει ενεργή")
+    assert auth["staff_checks"] > staff_before, "Secretary status requires a fresh server probe"
     assert "PRIVATE-SYNTHETIC-UNREAD-SENTINEL" not in peek.inner_text()
     page.evaluate("window.dispatchEvent(new Event('focus'))")
     page.wait_for_timeout(80)
@@ -727,6 +731,54 @@ def exercise_icloud_secretary_session_isolation(page, auth):
     page.unroute("**/clinical/icloud-mail?*", denied_full)
     page.unroute("**/clinical/icloud-mail", denied_full)
 
+    # Staff verification failure is UNKNOWN, not proof that an active staff
+    # session is still valid, and not a reason to log out a legitimate secretary.
+    def staff_unavailable(route):
+        route.abort("failed")
+    page.route("**/clinical/staff-session", staff_unavailable)
+    page.locator("#doctorInboxButton").click()
+    expect(page.locator("#doctorPopoverContent")).to_contain_text("STAFF_SESSION_UNVERIFIED")
+    expect(page.locator("#doctorPopoverContent")).not_to_contain_text(
+        "Η σύνδεση γραμματείας παραμένει ενεργή")
+    assert page.evaluate("window.__secretaryIcloudAuthLoss") == 0
+    assert attempts["peek"] == 0
+    page.locator("#doctorInboxButton").click()
+    page.evaluate("window.location.hash='#icloud-mail'")
+    expect(page.locator("#doctorIcloudInboxState")).to_contain_text("STAFF_SESSION_UNVERIFIED")
+    assert page.evaluate("window.__secretaryIcloudAuthLoss") == 0
+    page.locator("#doctorIcloudInboxBack").click()
+    page.unroute("**/clinical/staff-session", staff_unavailable)
+
+    # P2-02: another tab expires/rotates the real staff cookie while this tab
+    # retains a stale local "secretary" role. Delay the probe and prove that
+    # neither the peek nor the full viewer claims the session is still active.
+    auth["authenticated"] = False
+    page.evaluate("window.CockpitStaffRole='secretary'")
+    held = []
+    def expired_staff(route):
+        held.append(route)
+    page.route("**/clinical/staff-session", expired_staff)
+    page.locator("#doctorInboxButton").click()
+    expect(page.locator("#doctorPopoverContent")).to_contain_text("Έλεγχος συνεδρίας")
+    expect(page.locator("#doctorPopoverContent")).not_to_contain_text(
+        "Η σύνδεση γραμματείας παραμένει ενεργή")
+    assert held, "Expired secretary status must trigger real server verification"
+    held.pop(0).fulfill(status=401, json={"detail": "Staff session expired"})
+    expect(page.locator("#ceGlobalAccessPanel")).to_be_visible()
+    assert page.evaluate("window.__secretaryIcloudAuthLoss") >= 1
+    expect(page.locator("#doctorInboxBadge")).to_be_hidden()
+    assert attempts["peek"] == 0
+    page.keyboard.press("Escape")
+    page.unroute("**/clinical/staff-session", expired_staff)
+
+    # The full-inbox bookmark is likewise fail-closed on expired staff role.
+    page.evaluate("window.CockpitStaffRole='secretary'; window.location.hash='#icloud-mail'")
+    expect(page.locator("#doctorIcloudInboxView")).to_be_hidden()
+    expect(page.locator("#ceGlobalAccessPanel")).to_be_visible()
+    assert page.evaluate("window.__secretaryIcloudAuthLoss") >= 2
+    assert full_attempts["count"] == 1
+    page.keyboard.press("Escape")
+
     # The same original login can re-authorize clinician reads without a new
     # staff mechanism or shared Clinical Key changes.
     if page.locator("#ceGlobalAccessPanel").is_hidden():
@@ -736,7 +788,7 @@ def exercise_icloud_secretary_session_isolation(page, auth):
     expect(page.locator("#ceGlobalAuthStatus")).to_contain_text("Συνδέθηκες")
     assert auth["staff_role"] == "clinician"
     assert page.evaluate("window.CockpitStaffRole") == "clinician"
-    assert page.evaluate("window.__secretaryIcloudAuthLoss") == 0
+    assert page.evaluate("window.__secretaryIcloudAuthLoss") >= 2
     page.keyboard.press("Escape")
 
 
@@ -820,7 +872,8 @@ def exercise_icloud_peek_200_client_truth(page):
 def browser_suite(width, screenshot_name):
     errors = []
     outbound = []
-    auth = {"authenticated": False, "staff_role": None, "linked": False, "confirmations": 0}
+    auth = {"authenticated": False, "staff_role": None, "staff_checks": 0,
+            "linked": False, "confirmations": 0}
     call_source = {"status": 200, "handled": False, "write_status": 200}
     notion_source = {"writes": 0}
     rf_bridge = {"linked": False, "exact_reads": 0}
@@ -936,6 +989,7 @@ def browser_suite(width, screenshot_name):
                       "start_at": "2026-10-11T07:30:00Z"},
                 } if auth["authenticated"] else {"detail": "Unauthorized"})
             if url.endswith("/clinical/staff-session"):
+                auth["staff_checks"] += 1
                 return route.fulfill(status=200 if auth["authenticated"] else 401,
                     json=({"staff_role": auth["staff_role"],
                            "principal_id": "clinic-" + auth["staff_role"]}
