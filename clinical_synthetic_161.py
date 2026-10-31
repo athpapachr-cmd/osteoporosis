@@ -205,8 +205,9 @@ def build_synthetic_161_router(engine):
                 raise HTTPException(409, "Signed synthetic Pending source unavailable")
             return pending.id, source.id
 
-    router.include_router(build_synthetic_followthrough_router(
-        require_test_access, verified_fixture_pending))
+    followthrough_router, followthrough = build_synthetic_followthrough_router(
+        require_test_access, verified_fixture_pending)
+    router.include_router(followthrough_router)
 
 
     def booking(db, uid):
