@@ -297,6 +297,167 @@
       }else sourceError(error, $("doctorIcloudInboxState"));
     }
   }
+  async function renderMailActions(id,ticket,selection,item,details) {
+    // The clinician is the only current Cockpit user. The existing Clinical
+    // Key protects actions; we never impersonate a secretary or send messages.
+    const stillCurrent=()=>current(ticket)&&selection===state.selection&&state.id===id;
+    const panel=el("section","doctor-icloud-workflow");
+    let status=el("p","clinical-inbox-note","Φόρτωση ενεργειών μηνύματος…");
+    status.setAttribute("role","status");
+    panel.append(status);details.append(panel);
+    const url="/clinical/icloud-actions/items/"+encodeURIComponent(id);
+    let record=null,busy=false;
+    const control=(label,handler)=>{
+      const b=el("button","doctor-command-button",label);b.type="button";
+      b.addEventListener("click",handler);return b;
+    };
+    const request=async(action,extra={})=>{
+      if(!stillCurrent()||busy||!record)return;
+      busy=true;status.textContent="Αποθήκευση ενέργειας…";
+      try{
+        const res=await fetch(url,{
+          method:"POST",credentials:"same-origin",cache:"no-store",
+          headers:{"Content-Type":"application/json","Accept":"application/json"},
+          body:JSON.stringify({action,expected_version:record.version,
+            request_id:crypto.randomUUID(),...extra})
+        });
+        if(!stillCurrent())return;
+        if(!res.ok){const err=Error("Mail decision unavailable");err.status=res.status;throw err;}
+        record=await res.json();record.source_valid=true;
+        if(!stillCurrent())return;
+        // The source and visit may have changed; the server rechecks both.
+        paint();
+      }catch(err){
+        if(stillCurrent())status.textContent=err.status===409?
+          "Η υποχρέωση ή το μήνυμα άλλαξε. Επίλεξέ το ξανά πριν από άλλη ενέργεια.":
+          err.status===403?"Η ενέργεια απαιτεί έγκυρη κλινική πρόσβαση.":
+          "Η ενέργεια δεν αποθηκεύτηκε. Δεν θεωρείται ολοκληρωμένη.";
+      }finally{busy=false;}
+    };
+    const candidateList=async(query,holder)=>{
+      holder.replaceChildren(el("p","clinical-inbox-note","Αναζήτηση στους υπάρχοντες φακέλους και ραντεβού…"));
+      try{
+        const params=new URLSearchParams();if(query)params.set("q",query);
+        const response=await fetch(url+"/candidates?"+params.toString(),{
+          credentials:"same-origin",cache:"no-store",
+          headers:{"Accept":"application/json"}
+        });
+        if(!stillCurrent())return;
+        if(!response.ok)throw Error("Candidate search unavailable");
+        const data=await response.json();
+        if(!data||data.item_id!==id||!Array.isArray(data.items)||data.items.length>10)
+          throw Error("Candidate contract invalid");
+        holder.replaceChildren();
+        if(!data.items.length)
+          holder.append(el("p","clinical-inbox-note","Δεν βρέθηκε αντίστοιχη επίσκεψη. Γράψε ονοματεπώνυμο για αναζήτηση."));
+        for(const candidate of data.items){
+          if(!candidate||typeof candidate.name!=="string"||typeof candidate.id!=="string"||
+             !["patient","appointment"].includes(candidate.kind))continue;
+          const entry=el("div","doctor-icloud-candidate");
+          entry.append(el("p","clinical-inbox-note",
+            candidate.name+(candidate.phone?" · "+candidate.phone:"")));
+          entry.append(control(candidate.kind==="patient"?
+            "Σύνδεση με φάκελο":"Σύνδεση με αυτό το ραντεβού",
+            ()=>request("link",candidate.kind==="patient"?
+              {patient_id:candidate.id}:{booking_id:candidate.id})));
+          if(candidate.kind==="patient"&&Array.isArray(candidate.pending)){
+            for(const p of candidate.pending.slice(0,8)){
+              if(typeof p.id==="string"&&typeof p.label==="string")
+                entry.append(control("Με εκκρεμότητα · "+p.label,
+                  ()=>request("link",{patient_id:candidate.id,pending_id:p.id})));
+            }
+          }
+          holder.append(entry);
+        }
+      }catch(_){
+        if(stillCurrent())holder.replaceChildren(el("p","clinical-inbox-warning",
+          "Η αναζήτηση δεν ολοκληρώθηκε. Δεν έγινε σύνδεση με ασθενή."));
+      }
+    };
+    function paint(){
+      if(!stillCurrent()||!record)return;
+      panel.replaceChildren();
+      const heading=el("h4","","Ενέργειες για αυτό το email");
+      panel.append(heading);
+      if(record.source_valid===false||record.review_status==="source_invalidated"){
+        panel.append(el("p","clinical-inbox-warning",
+          "Η προηγούμενη σύνδεση με την επίσκεψη δεν ισχύει πλέον. Δεν επιτρέπονται νέες κλινικές ενέργειες."));
+        return;
+      }
+      const row=el("div","clinical-inbox-actions");
+      row.append(el("p","clinical-inbox-note","Χαρακτήρισε το email (αποθηκεύεται):"));
+      for(const [key,label] of [
+        ["clinical","Κλινικό"],["administrative","Διοικητικό"],
+        ["other","Δεν αφορά ασθενή"],["review","Χωρίς χαρακτηρισμό"]
+      ]){
+        const b=control(label,()=>request("classify",{category:key}));
+        b.setAttribute("aria-pressed",String(record.category===key));
+        row.append(b);
+      }
+      panel.append(row);
+      panel.append(el("p","clinical-inbox-note",
+        "Κατάσταση: "+(record.review_status==="not_reviewed"?
+          "Δεν έχει καταγραφεί ιατρική αξιολόγηση":
+          record.review_status==="reviewed_no_contact"?"Εξετάστηκε · δεν απαιτείται επικοινωνία":
+          "Εξετάστηκε · απαιτείται επικοινωνία")));
+      if(record.patient_id||record.booking_id){
+        panel.append(el("p","clinical-inbox-note",
+          record.pending_id?"Συνδέθηκε με την υπάρχουσα κλινική εκκρεμότητα.":
+          record.patient_id?"Συνδέθηκε με τον επιλεγμένο φάκελο.":
+          "Συνδέθηκε με ραντεβού χωρίς δημιουργία ψεύτικου φακέλου."));
+      }
+      if(record.review_status==="not_reviewed"){
+        const linking=el("div","doctor-icloud-linking");
+        const field=el("input","","");field.type="search";
+        field.placeholder="Αναζήτηση ονοματεπωνύμου (χωρίς αριθμό παραπεμπτικού)";
+        field.autocomplete="off";field.maxLength=140;
+        field.setAttribute("aria-label","Αναζήτηση ονοματεπωνύμου");
+        const results=el("div","doctor-icloud-candidates");
+        linking.append(field,control("Βρες επίσκεψη",()=>candidateList(field.value.trim(),results)),results);
+        if(record.patient_id||record.booking_id)
+          linking.append(control("Αποσύνδεση",()=>request("unlink")));
+        panel.append(linking);
+        // Suggest existing exact full-name matches in subject once. Never
+        // auto-link on sender, phone, name or calendar data alone.
+        void candidateList("",results);
+        if((record.patient_id||record.booking_id)&&record.category==="clinical"){
+          const decisions=el("div","clinical-inbox-actions");
+          decisions.append(
+            control("Είδα · Δεν χρειάζεται επικοινωνία",()=>request("review_no_contact")),
+            control("Είδα · Ενημέρωση ασθενούς",()=>request("review_notify"))
+          );
+          panel.append(decisions);
+        }
+      }else if(record.review_status==="reviewed_notify"){
+        const contact=el("div","clinical-inbox-actions");
+        if(["to_contact","attempted"].includes(record.contact_status)){
+          contact.append(control("Προσπάθεια επικοινωνίας",()=>request("contact_attempt")),
+            control("Ο ασθενής ενημερώθηκε",()=>request("patient_notified")));
+        }else if(record.contact_status==="notified"&&!record.callback_complete){
+          contact.append(control("Ολοκληρώθηκε η επικοινωνία με ιατρό",
+            ()=>request("callback_complete")));
+        }else if(record.callback_complete){
+          contact.append(el("p","clinical-inbox-note","Ο κύκλος επικοινωνίας ολοκληρώθηκε."));
+        }
+        panel.append(contact);
+      }
+      const outcome=el("p","clinical-inbox-note","");
+      outcome.setAttribute("role","status");
+      panel.append(outcome);status=outcome;
+    }
+    try{
+      const response=await fetch(url,{credentials:"same-origin",cache:"no-store",
+        headers:{"Accept":"application/json"}});
+      if(!stillCurrent())return;
+      if(!response.ok){const err=Error("Mail actions unavailable");err.status=response.status;throw err;}
+      record=await response.json();
+      if(stillCurrent())paint();
+    }catch(err){
+      if(stillCurrent())status.textContent=err.status===503?
+        "Η αποθήκευση χαρακτηρισμού δεν είναι διαθέσιμη. Το email και τα συνημμένα εξακολουθούν να προβάλλονται.":
+        "Δεν φορτώθηκαν οι ενέργειες αυτού του email.";
+    }
+  }
   async function select(id) {
     if (!state.active || !/^[1-9][0-9]{0,18}-[1-9][0-9]{0,18}$/.test(id))return;
     if(secretaryIcloudSession() && !(await guardSecretarySession()))return;
@@ -343,6 +504,7 @@
           details.append(link);
         }
       }
+      void renderMailActions(id,ticket,selected,data.item,details);
     } catch (error) {
       if (!current(ticket) || selected !== state.selection) return;
       if(error?.status===401||error?.status===403){
