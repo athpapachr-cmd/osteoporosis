@@ -13,6 +13,7 @@
     INBOX_SELECT_FAILED: "Απέτυχε το στάδιο ανοίγματος του INBOX. Δεν έχει επιβεβαιωθεί αν ο server αρνήθηκε το αίτημα ή διακόπηκε η επικοινωνία.",
     UIDVALIDITY_OR_UIDNEXT_FAILED: "Δεν επιστράφηκαν έγκυρα UID στοιχεία θυρίδας.",
     IMAP_SEARCH_FAILED: "Απέτυχε η περιορισμένη IMAP αναζήτηση.",
+    IMAP_FLAGS_FETCH_FAILED: "Απέτυχε η ανάγνωση της κατάστασης αναγνωσμένου/μη αναγνωσμένου στο IMAP.",
     IMAP_HEADER_FETCH_FAILED: "Απέτυχε η ανάγνωση κεφαλίδων IMAP.",
     IMAP_MESSAGE_FETCH_FAILED: "Απέτυχε η ανάγνωση επιλεγμένου μηνύματος.",
     IMAP_UNEXPECTED_FAILURE: "Απρόβλεπτη τεχνική αποτυχία της πηγής IMAP."
@@ -56,6 +57,11 @@
     return node;
   };
   const current = ticket => state.active && !view.hidden && state.epoch === ticket;
+  function emptySelection() {
+    if (!state.active || view.hidden) return;
+    $("doctorIcloudInboxDetails").replaceChildren(el("p", "clinical-inbox-empty-detail",
+      "Επίλεξε ένα μήνυμα από τη λίστα για να δεις το περιεχόμενό του. Η προβολή δεν αλλάζει την κατάστασή του στο iCloud."));
+  }
   function clear(purgeCache=false) {
     state.epoch++;
     state.selection++;
@@ -233,7 +239,7 @@
     state.controller?.abort();
     state.id = null;state.items = [];
     $("doctorIcloudInboxRows").replaceChildren();
-    $("doctorIcloudInboxDetails").replaceChildren();
+    emptySelection();
     const controller = new AbortController();
     state.controller = controller;
     $("doctorIcloudInboxState").textContent = "Ανάγνωση προστατευμένων εισερχομένων iCloud…";
@@ -334,6 +340,7 @@
   function open(id=null) {
     state.active = true;
     view.hidden = false;
+    emptySelection();
     if(secretaryIcloudSession()){
       void (async()=>{
         if(await guardSecretarySession())open(id);
