@@ -83,10 +83,15 @@ class SyntheticSignedPendingBinding:
                 with clinical_engine.connect() as conn:
                     db = conn.scalar(text("SELECT current_database()"))
                     who = conn.scalar(text("SELECT current_user"))
-                    host = str(conn.scalar(text("SELECT inet_server_addr()")))
+                    # Docker publishes PostgreSQL to client localhost but
+                    # PostgreSQL sees its container-bridge IP, not 127.0.0.1.
+                    # The URL guard above verifies the only permitted client
+                    # host/port, while these server facts verify fixture DB,
+                    # role and PostgreSQL major version independently.
+                    server_version = int(conn.scalar(text("SHOW server_version_num")))
                     if (db != "synthetic_followthrough_ci"
                             or who != "postgres"
-                            or host != "127.0.0.1"):
+                            or not (170000 <= server_version < 180000)):
                         raise CycleForbidden("Unqualified synthetic PostgreSQL target")
             except CycleForbidden:
                 raise
