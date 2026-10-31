@@ -27,6 +27,13 @@ assert.match(shell, /CockpitIcloudStageMessage/);
 assert.match(shell, /PEEK_SOURCE|PEEK_ITEMS|PEEK_COVERAGE|PEEK_CURSOR|PEEK_ITEM_FIELDS/);
 assert.match(shell, /PEEK_JSON|PEEK_RENDER|PEEK_NETWORK/);
 assert.match(shell, /unreadPeek/);
+assert.match(shell, /verifiedUnreadPanelTicket/);
+assert.match(shell, /Έλεγχος κλινικής πρόσβασης στα μη αναγνωσμένα/);
+assert.match(shell, /verifiedUnreadPanelTicket!==state\.request/);
+assert.match(shell, /status\.status===401\|\|status\.status===403/);
+assert.match(shell, /clearUnreadPeek\(\); \/\/ Includes the dot/);
+assert.match(shell, /\[PEEK_AUTH_CHECK\]/);
+
 assert.match(shell, /if\(syntheticInbox\(\)\)return;/);
 assert.match(shell, /if\(syntheticInbox\(\)\)\{openPanel\("inbox",buttons\.inbox\);return;\}/);
 assert.match(shell, /ICLOUD_PEEK_TTL_MS = 5 \* 60 \* 1000/);
