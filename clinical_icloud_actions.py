@@ -39,6 +39,7 @@ _ACTIONS = frozenset((
     "reopen_review",
 ))
 _ACTIVE = frozenset(("open", "awaiting_patient", "awaiting_result"))
+_SOURCE_STATES = _ACTIVE | frozenset(("resolved",))  # Completed Pending retains historical identity.
 _DIGITS = re.compile(r"\D")
 _PHONE_CANDIDATE = re.compile(r"\+?\d[\d\s()\-]{6,22}\d")
 _NAME_KEYS = ("full_name", "fullName", "name", "ονοματεπώνυμο", "ονοματεπωνυμο")
@@ -211,7 +212,7 @@ def _source_valid(db: Session, row: MailDecisionORM, *, lock: bool = False) -> b
             if (not pending or not encounter or
                     pending.source_encounter_id != encounter.id):
                 return False
-        if pending.patient_id != row.patient_id or pending.status not in _ACTIVE:
+        if pending.patient_id != row.patient_id or pending.status not in _SOURCE_STATES:
             return False
         if (not encounter or encounter.patient_id != row.patient_id
                 or encounter.status not in ("completed", "amended")):
