@@ -6,6 +6,7 @@ remains recoverable in the full All inbox, including administrative mail.
 """
 from __future__ import annotations
 
+import os
 import re
 import unicodedata
 from email.utils import getaddresses
@@ -27,7 +28,7 @@ ADMIN_SUBJECT = (
 ADMIN_SENDERS = (
     "cal.com", "calendly.com", "stripe.com", "paypal.com",
     "payout", "billing@", "accounts@", "invoices@",
-    "pastides", "παστιδ",  # Practice-specific rental/administrative correspondence.
+    "landlord", "rental", "ενοικ",  # Never commit personal contact names here.
 )
 ADMIN_EVENT_WORDS = (
     "booking confirmation", "event confirmation", "evrychou between",
@@ -58,9 +59,17 @@ def suggest_category(message) -> str:
     subject = fold(message.get("Subject", ""))
     display, address = _sender(message)
     sender = display + " " + address
+    # Clinic-specific names/domains are held privately in server env, never
+    # exposed through the repository or HTTP responses. This merely changes
+    # display grouping; it never authorizes patient matching or disclosures.
+    private_hints = os.getenv("ICLOUD_TRIAGE_ADMIN_HINTS", "")[:512]
+    private_tokens = tuple(
+        folded for raw in private_hints.split(",")[:12]
+        if (folded := fold(raw)) and len(folded) >= 4
+    )
 
     # Practice-specific false positives must not dominate the clinical queue.
-    if (any(token in sender for token in ADMIN_SENDERS)
+    if (any(token in sender for token in (*ADMIN_SENDERS, *private_tokens))
             or any(token in subject for token in ADMIN_SUBJECT)
             or any(token in subject for token in ADMIN_EVENT_WORDS)):
         return "administrative"
