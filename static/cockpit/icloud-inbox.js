@@ -48,6 +48,7 @@
       "Δεν εμφανίζονται email ασθενών.";
   }
   const state = {active:false, epoch:0, selection:0, id:null, items:[], controller:null,
+    view:"clinical",
     pages:[null], pageIndex:0, nextCursor:null, skipped:0, coverageComplete:false,
     latest:null, latestAt:0};
   const el = (tag, cls, value) => {
@@ -84,7 +85,8 @@
   }
   const validItem = row => row && /^[1-9][0-9]{0,18}-[1-9][0-9]{0,18}$/.test(row.id) &&
     typeof row.subject === "string" && typeof row.from === "string" &&
-    typeof row.date === "string" && ["clinical","review"].includes(row.category);
+    typeof row.date === "string" &&
+    ["clinical","review","administrative","other"].includes(row.category);
   async function api(path, signal) {
     const response = await fetch("/clinical/icloud-mail" + path, {
       credentials:"same-origin", cache:"no-store", signal,
@@ -168,7 +170,8 @@
   }
   function listContractCode(data) {
     if(data?.source!=="icloud_mail"||
-       data.scope!=="recipient_alias_inbox_only"||data.filter!=="all")return "LIST_SOURCE";
+       data.scope!=="recipient_alias_inbox_only"||data.filter!=="all"||
+       (data.view!==undefined&&data.view!==state.view))return "LIST_SOURCE";
     if(!Array.isArray(data.items))return "LIST_ITEMS_MISSING";
     if(data.items.length>25)return "LIST_ITEMS_LIMIT";
     if(data.items.some(item=>!validItem(item)))return "LIST_ITEM_FIELDS";
@@ -180,8 +183,19 @@
        typeof data.coverage_complete!=="boolean")return "LIST_COVERAGE";
     return null;
   }
+  const categoryName = Object.freeze({
+    clinical:"Κλινικό", administrative:"Διοικητικό",
+    other:"Άλλο", review:"Χρειάζεται χαρακτηρισμό"
+  });
   function rowTitle(item) {
-    return item.category === "review" ? "Για έλεγχο · " + item.subject : item.subject;
+    return categoryName[item.category] + " · " + item.subject;
+  }
+  function updateViews() {
+    document.querySelectorAll("[data-icloud-view]").forEach(button => {
+      const chosen=button.dataset.icloudView===state.view;
+      button.setAttribute("aria-pressed",String(chosen));
+      button.classList.toggle("selected",chosen);
+    });
   }
   function rows() {
     const root = $("doctorIcloudInboxRows");
@@ -227,7 +241,8 @@
     if (controls.children.length) root.append(controls);
     $("doctorIcloudInboxShown").textContent =
       "Σελίδα " + (state.pageIndex + 1) + " · " + state.items.length +
-      " μηνύματα προς το alias · πιθανώς κλινικά / για έλεγχο";
+      " μηνύματα · " + (state.view==="clinical"?"Κλινικά / αταξινόμητα":
+      state.view==="administrative"?"Διοικητικά / λοιπά":"Όλα προς το email του ιατρείου");
   }
   async function load(focusId) {
     if (!state.active)return;
@@ -245,7 +260,9 @@
     $("doctorIcloudInboxState").textContent = "Ανάγνωση προστατευμένων εισερχομένων iCloud…";
     let sourceReturned=false;
     try {
-      const data = await api(cursor ? "?cursor=" + encodeURIComponent(cursor) : "", controller.signal);
+      const params=new URLSearchParams({view:state.view});
+      if(cursor)params.set("cursor",cursor);
+      const data = await api("?" + params.toString(), controller.signal);
       sourceReturned=true;
       if (!current(ticket)) return;
       const invalid=listContractCode(data);
@@ -256,7 +273,7 @@
       state.skipped = data.skipped_count;
       state.coverageComplete = data.coverage_complete;
       $("doctorIcloudInboxState").textContent =
-        "Μόνο ανάγνωση · δεν αλλάζει η κατάσταση των email και δεν γίνεται σύνδεση με ασθενή.";
+        "Οι κατηγορίες είναι προτάσεις ταξινόμησης, όχι ιατρική αξιολόγηση ή σύνδεση με φάκελο.";
       rows();
       if (focusId && /^[1-9][0-9]{0,18}-[1-9][0-9]{0,18}$/.test(focusId)) select(focusId);
     } catch (error) {
@@ -337,9 +354,12 @@
       sourceError(error, details.appendChild(el("p", "clinical-inbox-warning")));
     }
   }
-  function open(id=null) {
+  function open(id=null, initialView="clinical") {
     state.active = true;
     view.hidden = false;
+    if(["clinical","administrative","all"].includes(initialView))
+      state.view=initialView;
+    updateViews();
     emptySelection();
     if(secretaryIcloudSession()){
       void (async()=>{
@@ -397,6 +417,17 @@
       });
     }else load(id);
   }
+  document.querySelectorAll("[data-icloud-view]").forEach(button => {
+    button.addEventListener("click",()=>{
+      if(!state.active)return;
+      const value=button.dataset.icloudView;
+      if(!["clinical","administrative","all"].includes(value))return;
+      state.view=value;updateViews();
+      state.pages=[null];state.pageIndex=0;state.nextCursor=null;
+      state.latest=null;state.latestAt=0;
+      load();
+    });
+  });
   $("doctorIcloudInboxReload").addEventListener("click", () => {
     state.pages = [null];state.pageIndex = 0;load();
   });
