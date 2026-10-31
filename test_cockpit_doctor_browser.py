@@ -548,6 +548,12 @@ def exercise_icloud_mail_peek(page, width):
     assert details.text_content() == "", "Clinical mail retained in closed DOM"
     page.evaluate("window.location.hash = '#icloud-mail'")
     expect(page.locator("#doctorIcloudInboxView")).to_be_visible()
+    expect(page.locator("#doctorIcloudInboxDetails")).to_contain_text(
+        "Επίλεξε ένα μήνυμα από τη λίστα")
+    detail_position = page.evaluate("""() => getComputedStyle(
+        document.querySelector('#doctorIcloudInboxView .clinical-inbox-detail')
+    ).position""")
+    assert detail_position == ("sticky" if width > 790 else "static")
     page.locator("#doctorIcloudInboxBack").click()
     expect(page.locator("#doctorIcloudInboxView")).to_be_hidden()
     assert page.evaluate("window.location.hash") != "#icloud-mail"
