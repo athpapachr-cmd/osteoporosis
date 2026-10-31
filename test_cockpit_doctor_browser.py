@@ -543,6 +543,18 @@ def exercise_icloud_mail_peek(page, width):
     page.locator("#doctorIcloudInboxBack").click()
     expect(page.locator("#doctorIcloudInboxView")).to_be_hidden()
     assert page.evaluate("window.location.hash") != "#icloud-mail"
+
+    # A previously cached PHI-bearing archive must not bypass a lost Clinical
+    # Key session. Reopening checks /clinical/status before rendering subjects.
+    def expired_status(route):
+        route.fulfill(status=401, json={"detail": "Clinical sign-in required"})
+    page.route("**/clinical/status", expired_status)
+    page.evaluate("window.location.hash = '#icloud-mail'")
+    expect(page.locator("#doctorIcloudInboxView")).to_be_hidden()
+    assert page.locator("#doctorIcloudInboxRows").inner_text() == ""
+    assert "Fictional sender" not in page.locator("#doctorIcloudInboxRows").inner_text()
+    page.unroute("**/clinical/status", expired_status)
+
     page.unroute("**/clinical/icloud-mail/items/765-4", item)
     page.unroute("**/clinical/icloud-mail?*", full)
     page.unroute("**/clinical/icloud-mail", full)
