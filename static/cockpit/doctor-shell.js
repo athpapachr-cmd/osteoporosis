@@ -835,6 +835,9 @@
     input.addEventListener("input",draw);draw();input.focus();
   }
   function showIcloudInbox(itemId=null){
+    // The synthetic Clinical Inbox can never navigate into real iCloud data,
+    // including through the global #icloud-mail bookmark/shortcut.
+    if(syntheticInbox()){openPanel("inbox",buttons.inbox);return;}
     if(!window.CockpitIcloudInbox)return;
     if(typeof window.CockpitStoredChart?.canLeave==="function" &&
        !window.CockpitStoredChart.canLeave())return;
