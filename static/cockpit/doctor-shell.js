@@ -381,7 +381,8 @@
     if(!force && unreadPeek.checkedAt &&
        Date.now()-unreadPeek.checkedAt<ICLOUD_PEEK_TTL_MS)return null;
     const generation=unreadPeek.generation;
-    const controller=new AbortController();
+    const controller=typeof AbortController==="function" ? new AbortController() :
+      {signal:{aborted:false},abort(){this.signal.aborted=true;}};
     unreadPeek.controller=controller;
     const pending=(async()=>{
       let err=null;
@@ -429,7 +430,7 @@
   function maybeRefreshUnread(force=false){
     if(unreadPeek.authorized && !document.hidden)void fetchUnreadPeek(force);
   }
-  function inbox() {
+  async function inbox() {
     ++state.request;
     if(!syntheticInbox()){
       displayUnreadPeek(); // Instant last known list; never re-fetch on each click.
