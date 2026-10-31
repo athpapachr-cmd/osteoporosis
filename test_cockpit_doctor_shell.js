@@ -324,6 +324,7 @@ function findAction(label,node=$('doctorPopoverContent')){
  assert.ok($("doctorPopoverContent").children.some(x=>x.textContent?.includes("PEEK_NETWORK")), "browser fetch failure cannot masquerade as disconnected iCloud");
  const incomingRows=$("doctorPopoverContent").children.length;
  windowHandlers.get("cockpit:clinical-updates-changed")();
+ await tick();await tick(); // Protected status revalidation is asynchronous.
  assert.equal($("doctorPopoverContent").children.length,incomingRows,"refresh replaces rather than repeats incoming state");
  assert.equal(pendingReads,0);
  $("doctorInboxButton").fire("click");
