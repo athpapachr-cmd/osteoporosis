@@ -38,6 +38,7 @@ _ACTIONS = frozenset((
 ))
 _ACTIVE = frozenset(("open", "awaiting_patient", "awaiting_result"))
 _DIGITS = re.compile(r"\D")
+_PHONE_CANDIDATE = re.compile(r"\+?\d[\d\s()\-]{6,22}\d")
 _NAME_KEYS = ("full_name", "fullName", "name", "ονοματεπώνυμο", "ονοματεπωνυμο")
 
 
@@ -229,7 +230,18 @@ def _candidate_rows(engine: Engine, source: dict, q: str) -> list[dict]:
     if not q and not (source.get("subject") or source.get("from")):
         return []
     matches = []
-    haystack = str(source.get("subject") or "") + " " + str(source.get("from") or "")
+    haystack = " ".join(str(source.get(k) or "") for k in ("subject", "from", "text"))
+    observed_phones = {
+        _phone(candidate) for candidate in _PHONE_CANDIDATE.findall(haystack)
+        if len(_phone(candidate)) >= 8
+    }
+    def evidence(name, phone):
+        if not _matches(name, "", haystack):
+            return "doctor_search"
+        normalized = _phone(phone)
+        if len(normalized) >= 8 and normalized[-8:] in {p[-8:] for p in observed_phones}:
+            return "name_phone"
+        return "name_only"
     with Session(engine) as db:
         for patient in db.scalars(select(PatientORM).order_by(PatientORM.patient_id).limit(5000)):
             data = patient.demographics_json if isinstance(patient.demographics_json, dict) else {}
@@ -244,6 +256,7 @@ def _candidate_rows(engine: Engine, source: dict, q: str) -> list[dict]:
             matches.append({
                 "kind": "patient", "id": patient.patient_id, "name": name[:140],
                 "phone": str(data.get("phone") or "")[:40],
+                "evidence": evidence(name, str(data.get("phone") or "")),
                 "pending": [{"id": p.id, "label": p.description[:150]}
                             for p in pendings],
             })
@@ -259,11 +272,13 @@ def _candidate_rows(engine: Engine, source: dict, q: str) -> list[dict]:
                     "kind": "appointment", "id": booking.id,
                     "name": booking.patient_display_name[:140],
                     "phone": (booking.phone_e164 or "")[:40],
+                    "evidence": evidence(booking.patient_display_name, booking.phone_e164 or ""),
                     "pending": [],
                 })
                 if len(matches) >= 10:
                     break
-    return matches
+    order = {"name_phone": 0, "name_only": 1, "doctor_search": 2}
+    return sorted(matches, key=lambda x: order.get(x["evidence"], 3))[:10]
 
 
 def stored_mail_categories(engine: Engine, validity: str,
@@ -330,7 +345,7 @@ def build_icloud_actions_router(engine: Engine) -> APIRouter:
                    q: str = Query(default="", max_length=140)):
         response.headers["Cache-Control"] = "private, no-store"
         ready()
-        source = _qualify(item_id)
+        source = _qualify(item_id, include_body=True)
         if q and len(q.strip()) < 3:
             raise HTTPException(422, "Enter at least three name characters")
         return {"item_id": item_id, "items": _candidate_rows(engine, source, q)}
