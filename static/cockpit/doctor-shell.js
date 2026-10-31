@@ -467,8 +467,10 @@
             return;
           }
           if(role==="clinician"){
-            if(activePeek("inbox",deniedTicket))content.replaceChildren(
-              text("Δεν επαληθεύτηκε πρόσβαση στα iCloud email [PEEK_AUTH_DENIED]."));
+            // Even a valid staff-clinician role cannot override a denied
+            // clinician-only iCloud read. Preserve the prior fail-closed UX.
+            window.dispatchEvent(new Event("clinical:unauthenticated"));
+            window.dispatchEvent(new Event("clinical:request-login"));
             return;
           }
           window.dispatchEvent(new Event("clinical:unauthenticated"));
@@ -543,8 +545,8 @@
           }
           if(role==="unknown"){staffStatusUnavailable();return;}
           if(role==="clinician"){
-            content.replaceChildren(text("Δεν επαληθεύτηκε πρόσβαση στα iCloud email "+
-              "[PEEK_AUTH_DENIED]."));
+            window.dispatchEvent(new Event("clinical:unauthenticated"));
+            window.dispatchEvent(new Event("clinical:request-login"));
             return;
           }
           window.dispatchEvent(new Event("clinical:unauthenticated"));
