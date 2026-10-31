@@ -100,7 +100,8 @@ def _configured() -> tuple[dict[str, IndividualPrincipal], str]:
             record["credential_sha256"], record["revision"], record["active"]
         )
         if (not isinstance(principal_id, str) or not _ID.fullmatch(principal_id)
-                or role not in _ROLES or not isinstance(digest, str)
+                or not isinstance(role, str) or role not in _ROLES
+                or not isinstance(digest, str)
                 or not _HEX64.fullmatch(digest)
                 or not isinstance(revision, str) or not _REV.fullmatch(revision)
                 or type(active) is not bool
