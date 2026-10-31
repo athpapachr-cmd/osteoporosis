@@ -233,3 +233,58 @@ def test_pg_guard_rejects_remote_or_non_disposable_database():
             SyntheticSignedPendingBinding(engine)
     finally:
         engine.dispose()
+
+
+def test_pg_atomic_signed_source_guard_rechecks_inside_durable_transaction(single_db):
+    seed_source(single_db)
+    bridge, store = owner(single_db)
+    original = bridge.qualify_in_transaction
+    seen = []
+
+    def invalidate_while_registering(db, visit_ref, pending_ref):
+        # Simulate a source amendment/cancellation after the earlier
+        # preliminary qualified resolve(), before durable event creation.
+        assert db.get_bind() is single_db
+        pending = db.get(ClinicalPendingORM, PENDING)
+        pending.status = "cancelled"
+        db.flush()
+        seen.append("rechecked-inside-transaction")
+        return original(db, visit_ref, pending_ref)
+
+    bridge.qualify_in_transaction = invalidate_while_registering
+    with pytest.raises(CycleForbidden):
+        register(bridge, store)
+    assert seen == ["rechecked-inside-transaction"]
+    with Session(single_db) as db:
+        assert db.get(ClinicalPendingORM, PENDING).status == "awaiting_result"
+        assert db.scalar(select(func.count()).select_from(VisitObligationFixture)) == 0
+        assert db.scalar(select(func.count()).select_from(ObligationEventFixture)) == 0
+
+
+def test_pg_signed_qualification_cannot_be_moved_to_another_patient(single_db):
+    seed_source(single_db)
+    bridge, store = owner(single_db)
+    first = register(bridge, store)
+    with Session(single_db) as db, db.begin():
+        pending = db.get(ClinicalPendingORM, PENDING)
+        pending.patient_id = "synthetic-cross-patient-identifier"
+    with pytest.raises(CycleForbidden):
+        bridge.project_pending(
+            store, DOCTOR, patient_id=PATIENT,
+            pending_id=PENDING, encounter_id=VISIT,
+        )
+    assert store.view(first["case_id"], DOCTOR)["pending_ref"] == "synthetic-" + PENDING
+
+
+def test_pg_transactional_qualification_for_provisional_visit_is_rejected(single_db):
+    bridge, store = owner(single_db)
+    with pytest.raises(CycleForbidden):
+        store.register(
+            DOCTOR,
+            visit_ref="synthetic-pg-provisional-source",
+            request_ref="synthetic-pg-test-request",
+            mode="provisional_visit", required=("labs",),
+            transactional_qualification=lambda db, v, p: True,
+        )
+    with Session(single_db) as db:
+        assert db.scalar(select(func.count()).select_from(VisitObligationFixture)) == 0
