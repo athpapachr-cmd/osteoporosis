@@ -219,7 +219,7 @@ def test_cookie_tampering_and_role_swapping_are_denied(setup):
         authentic[:-1] + ("0" if authentic[-1] != "0" else "1"),
         "v2." + "synthetic_fake_doctor" + "." + ".".join(authentic.split(".")[2:]),
         "v2.malformed",
-        authentic.replace(".v2.", ".r3."),
+        "v3." + authentic.split(".", 1)[1],
     )
     for forged in tokens:
         c.cookies.set(COOKIE_V2, forged, path="/clinical")
@@ -260,6 +260,8 @@ def test_disabled_flag_and_http_never_allow_session(setup):
     [{"principal_id": "x"}],
     [{"principal_id": ["unhashable"], "role": "clinician",
       "credential_sha256": "0" * 64, "revision": "v1", "active": True}],
+    [{"principal_id": "synthetic_test01", "role": ["malformed"],
+      "credential_sha256": "0" * 64, "revision": "v1", "active": True}],
 ])
 def test_malformed_registry_fails_closed_without_runtime_500(setup, broken):
     app, doctor, secretary, _, monkeypatch = setup
@@ -291,3 +293,14 @@ def test_logout_clears_only_individual_session_and_existing_logout_also_clears(s
     assert login(c, doctor).status_code == 200
     assert c.post("/clinical/logout").status_code == 200
     assert c.get("/clinical/v2-test-clinician").status_code == 401
+
+
+def test_v2_is_disabled_by_default_without_environment_opt_in(setup):
+    app, doctor, secretary, _, monkeypatch = setup
+    monkeypatch.delenv("COCKPIT_INDIVIDUAL_STAFF_V2_ENABLED", raising=False)
+    client = TestClient(app, base_url="https://testserver")
+    assert login(client, doctor).status_code == 503
+    assert client.get("/clinical/v2-test-any").status_code == 503
+    # Existing shared Clinical Key login remains unchanged when V2 is OFF.
+    assert client.post("/clinical/login", json={"key": CLINICAL_KEY}).status_code == 200
+    assert client.get("/clinical/v2-test-legacy-header").json()["has_broad_clinical_key"]
