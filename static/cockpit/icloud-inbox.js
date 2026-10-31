@@ -311,6 +311,18 @@
       const b=el("button","doctor-command-button",label);b.type="button";
       b.addEventListener("click",handler);return b;
     };
+    const newRequestId=()=>{
+      if(typeof crypto.randomUUID==="function")return crypto.randomUUID();
+      // Web Crypto getRandomValues works in isolated about:blank tests as well
+      // as HTTPS; never use Math.random for a clinical idempotency identity.
+      if(typeof crypto.getRandomValues!=="function")
+        throw Error("Cryptographic source unavailable");
+      const bits=new Uint8Array(16);crypto.getRandomValues(bits);
+      bits[6]=(bits[6]&15)|64;bits[8]=(bits[8]&63)|128;
+      const hex=[...bits].map(n=>n.toString(16).padStart(2,"0")).join("");
+      return [hex.slice(0,8),hex.slice(8,12),hex.slice(12,16),
+        hex.slice(16,20),hex.slice(20)].join("-");
+    };
     const request=async(action,extra={})=>{
       if(!stillCurrent()||busy||!record)return;
       busy=true;status.textContent="Αποθήκευση ενέργειας…";
@@ -319,7 +331,7 @@
           method:"POST",credentials:"same-origin",cache:"no-store",
           headers:{"Content-Type":"application/json","Accept":"application/json"},
           body:JSON.stringify({action,expected_version:record.version,
-            request_id:crypto.randomUUID(),...extra})
+            request_id:newRequestId(),...extra})
         });
         if(!stillCurrent())return;
         if(!res.ok){const err=Error("Mail decision unavailable");err.status=res.status;throw err;}
