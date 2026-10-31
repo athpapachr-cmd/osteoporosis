@@ -536,6 +536,24 @@ def exercise_icloud_mail_peek(page, width):
     page.unroute("**/clinical/icloud-mail/peek", peek)
 
 
+
+def exercise_icloud_stage_failure(page):
+    """Protected browser reports a fixed stage; never sends provider data."""
+    def staged_failure(route):
+        assert route.request.method == "GET"
+        assert not any(k.lower() == "x-clinical-key" for k in route.request.headers)
+        route.fulfill(status=503, json={"detail": {"code": "IMAP_AUTH_FAILED"}})
+
+    page.route("**/clinical/icloud-mail/peek", staged_failure)
+    page.locator("#doctorInboxButton").click()
+    popup = page.locator("#doctorPopoverContent")
+    expect(popup).to_contain_text("IMAP_AUTH_FAILED")
+    expect(popup).to_contain_text("Ο IMAP server απέρριψε")
+    assert popup.locator("svg, img").count() == 0
+    page.locator("#doctorInboxButton").click()
+    page.unroute("**/clinical/icloud-mail/peek", staged_failure)
+
+
 def browser_suite(width, screenshot_name):
     errors = []
     outbound = []
@@ -837,6 +855,7 @@ def browser_suite(width, screenshot_name):
             assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1")
             # Actual Chromium: hidden registry and Dia details are removed on auth loss.
             exercise_icloud_mail_peek(page, width)
+            exercise_icloud_stage_failure(page)
             exercise_reception_call_peek(page, width, call_source)
             assert_delayed_recent_purged_after_logout(page)
             page.evaluate("""() => {
@@ -933,6 +952,7 @@ def browser_suite(width, screenshot_name):
             expect(page.locator("#visitBriefOverlay")).to_be_hidden()
         assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1"), "horizontal overflow"
         exercise_icloud_mail_peek(page, width)
+        exercise_icloud_stage_failure(page)
         exercise_reception_call_peek(page, width, call_source)
         assert_delayed_recent_purged_after_logout(page)
         page.evaluate("window.dispatchEvent(new Event('clinical:authenticated'))")
