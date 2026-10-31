@@ -85,7 +85,10 @@ class SyntheticSignedPendingBinding:
                 or pending.status not in _ACTIVE):
             raise CycleForbidden("Visit, identity or obligation changed")
 
-        source = (encounter.payload_json or {}).get("_visit_capture_v1")
+        payload = encounter.payload_json
+        if not isinstance(payload, dict):
+            raise CycleForbidden("Malformed signed visit payload")
+        source = payload.get("_visit_capture_v1")
         if not isinstance(source, dict) or source.get("signed") is not True:
             raise CycleForbidden("No signed Visit Capture source")
         signed_at = source.get("signed_at")
@@ -100,6 +103,8 @@ class SyntheticSignedPendingBinding:
         candidate = source.get("candidate")
         if (not isinstance(ids, list) or not isinstance(candidate, dict)
                 or not isinstance(candidate.get("pending"), list)
+                or any(not isinstance(x, str) or not _NATIVE.fullmatch(x)
+                       for x in ids)
                 or len(ids) != len(candidate["pending"]) or len(ids) != len(set(ids))
                 or pending.id not in ids):
             raise CycleForbidden("Pending not independently bound to signed visit")
