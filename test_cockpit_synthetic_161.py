@@ -610,16 +610,16 @@ def test_followthrough_synthetic_browser_one_calm_card(setup):
                 expect(page.locator("#syntheticFollowthroughDemo")).to_be_visible()
                 expect(page.locator(".synthetic-cycle-card")).to_have_count(2)
 
-                page.get_by_role("button", name="Δοκιμή παραλαβής · γνωμάτευση").click()
-                page.get_by_role("button", name="Είδα τη γνωμάτευση — ενημέρωση ασθενούς").click()
-                page.get_by_role("button", name="Δοκιμή παραλαβής · εικόνες MRI").click()
-                page.get_by_role("button", name="Είδα εικόνες MRI — χωρίς επικοινωνία").click()
-                page.get_by_role("button", name="Γραμματεία · ο ασθενής ενημερώθηκε").click()
-                page.get_by_role("button", name="Έγινε η επικοινωνία με τον ιατρό").click()
+                if width == 1280:
+                    page.get_by_role("button", name="Δοκιμή παραλαβής · γνωμάτευση").click()
+                    page.get_by_role("button", name="Είδα τη γνωμάτευση — ενημέρωση ασθενούς").click()
+                    page.get_by_role("button", name="Δοκιμή παραλαβής · εικόνες MRI").click()
+                    page.get_by_role("button", name="Είδα εικόνες MRI — χωρίς επικοινωνία").click()
+                    page.get_by_role("button", name="Γραμματεία · ο ασθενής ενημερώθηκε").click()
+                    page.get_by_role("button", name="Έγινε η επικοινωνία με τον ιατρό").click()
+                    page.get_by_role("button", name="Δοκιμή παραλαβής · αναλύσεις").click()
+                    page.get_by_role("button", name="Είδα αναλύσεις — χωρίς επικοινωνία").click()
                 expect(page.locator(".synthetic-cycle-card").first).to_contain_text("Ολοκληρώθηκε")
-
-                page.get_by_role("button", name="Δοκιμή παραλαβής · αναλύσεις").click()
-                page.get_by_role("button", name="Είδα αναλύσεις — χωρίς επικοινωνία").click()
                 expect(page.locator(".synthetic-cycle-card").nth(1)).to_contain_text("Ολοκληρώθηκε")
                 assert page.evaluate(
                     "document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1"
