@@ -991,6 +991,9 @@
       window.history?.replaceState?.(null,"","/static/cockpit/#icloud-mail");
     window.CockpitIcloudInbox.open(itemId,viewMode);
   }
+  // Existing signed-Pending list may return to the same protected iCloud
+  // message; it cannot confer a new identity or bypass Clinical Key.
+  window.CockpitOpenIcloudMail=(itemId)=>showIcloudInbox(itemId,"all");
   function showClinicalInbox(itemId=null){
     // Normal live Cockpit retains the honest unconnected source placeholder.
     if(window.CockpitSynthetic!==true ||
