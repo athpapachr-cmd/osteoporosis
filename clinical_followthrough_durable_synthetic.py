@@ -319,9 +319,18 @@ class DurableSyntheticFollowthrough:
                 )
                 if changed.rowcount != 1:
                     raise CycleConflict("Concurrent obligation update")
-                if action == "received" and db.get(SourceClaimFixture, attrs["source_ref"]) is None:
-                    db.add(SourceClaimFixture(source_ref=attrs["source_ref"],
-                                              obligation_id=case_id, part=attrs["part"]))
+                if action == "received":
+                    # Re-check after taking the write/CAS lock. Another
+                    # transaction could have claimed the UID after the earlier
+                    # read but before this row update. Seeing an existing claim
+                    # must NEVER mean silently accepting it for another case.
+                    committed_claim = db.get(SourceClaimFixture, attrs["source_ref"])
+                    if committed_claim is None:
+                        db.add(SourceClaimFixture(source_ref=attrs["source_ref"],
+                                                  obligation_id=case_id, part=attrs["part"]))
+                    elif (committed_claim.obligation_id != case_id
+                          or committed_claim.part != attrs["part"]):
+                        raise CycleConflict("Source claimed by another visit")
                 event = dict(work.events[-1])
                 db.add(ObligationEventFixture(
                     id=str(uuid4()), obligation_id=case_id,
