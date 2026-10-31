@@ -275,6 +275,35 @@ def test_post_signature_reassignment_blocks_future_projection(setup):
     assert store.view(case["case_id"], DOCTOR)["pending_ref"] == "synthetic-" + PENDING
 
 
+def test_source_amendment_revokes_preexisting_staff_instruction_without_losing_audit(setup):
+    clinical, durable, binding, store = setup
+    case = enroll(binding, store)["case_id"]
+    act(store, case, SOURCE, "received", 90, part="report",
+        source_ref="synthetic-signed-staff-report",
+        source_version="revision-01", proof="qualified_order")
+    act(store, case, DOCTOR, "identity_verified", 91,
+        evidence="qualified_referral", evidence_ref="synthetic-signed-staff-referral")
+    act(store, case, DOCTOR, "review_notify", 92,
+        part="report", source_version="revision-01")
+    assert store.secretary_view(case, SECRETARY)["status"] == "to_notify"
+    before = store.history(case, DOCTOR)
+    with Session(clinical) as db, db.begin():
+        encounter = db.get(EncounterORM, VISIT)
+        payload = dict(encounter.payload_json)
+        signed = dict(payload["_visit_capture_v1"])
+        signed["pending_ids"] = []
+        signed["candidate"] = {"pending": []}
+        payload["_visit_capture_v1"] = signed
+        encounter.payload_json = payload
+    with pytest.raises(CycleForbidden):
+        store.secretary_view(case, SECRETARY)
+    with pytest.raises(CycleForbidden):
+        act(store, case, SECRETARY, "patient_notified", 93)
+    assert store.history(case, DOCTOR) == before
+    with Session(durable) as db:
+        assert db.scalar(select(func.count()).select_from(ObligationEventFixture)) == 3
+
+
 def test_wrong_verifier_cannot_bypass_synthetic_existing_pending(setup):
     _clinical, durable, binding, store = setup
     impostor = DurableSyntheticFollowthrough(

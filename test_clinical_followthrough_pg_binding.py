@@ -185,6 +185,31 @@ def test_pg_signed_pending_revocation_blocks_future_visit_projection(single_db):
     assert store.view(record["case_id"], DOCTOR)["stage"] == "awaiting_result"
 
 
+def test_pg_revoked_source_blocks_already_issued_secretary_instruction(single_db):
+    seed_source(single_db)
+    bridge, store = owner(single_db)
+    case_id = register(bridge, store)["case_id"]
+    act(store, case_id, SOURCE, "received", 51, part="report",
+        source_ref="synthetic-pg-revoked-staff-mail",
+        source_version="revision-01", proof="qualified_order")
+    act(store, case_id, DOCTOR, "identity_verified", 52,
+        evidence="qualified_referral", evidence_ref="synthetic-pg-staff-contact-proof")
+    act(store, case_id, DOCTOR, "review_notify", 53,
+        part="report", source_version="revision-01")
+    assert store.secretary_view(case_id, SECRETARY)["status"] == "to_notify"
+    before = store.history(case_id, DOCTOR)
+    with Session(single_db) as db, db.begin():
+        db.get(ClinicalPendingORM, PENDING).status = "cancelled"
+    with pytest.raises(CycleForbidden):
+        store.secretary_view(case_id, SECRETARY)
+    with pytest.raises(CycleForbidden):
+        act(store, case_id, SECRETARY, "patient_notified", 54)
+    assert store.history(case_id, DOCTOR) == before
+    assert store.view(case_id, DOCTOR)["version"] == 3
+    with Session(single_db) as db:
+        assert db.scalar(select(func.count()).select_from(ObligationEventFixture)) == 3
+
+
 def test_pg_source_signature_or_pending_membership_cannot_be_faked(single_db):
     seed_source(single_db)
     bridge, store = owner(single_db)

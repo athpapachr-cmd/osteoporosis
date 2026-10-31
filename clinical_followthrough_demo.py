@@ -45,10 +45,35 @@ def build_synthetic_followthrough_router(require_test_access, verified_fixture_p
         except (CycleConflict, CycleNotFound) as err:
             raise HTTPException(409, str(err)) from None
 
+    def qualified_case(case):
+        """The exact signed source must remain eligible after preparation."""
+        if case["mode"] != "signed_pending":
+            return
+        pending_id, encounter_id = verified_fixture_pending()
+        if (pending_id, encounter_id) != (case["pending_ref"], case["visit_ref"]):
+            raise CycleForbidden("Signed Pending no longer matches this visit")
+
+    def guarded(case_id, operation):
+        def check_then_act():
+            with ledger.lock:
+                qualified_case(ledger.view(case_id))
+                return operation()
+        return invoke(check_then_act)
+
     def state():
         cases = []
-        for case in tuple(ledger.works):
-            cases.append(ledger.view(case))
+        for case_id in tuple(ledger.works):
+            case = ledger.view(case_id)
+            if case["mode"] == "signed_pending":
+                try:
+                    qualified_case(case)
+                except (HTTPException, CycleForbidden):
+                    # Read-only invalidation projection. Preserve the event audit.
+                    case.update(source_valid=False, stage="source_invalidated",
+                                complete=False)
+                else:
+                    case["source_valid"] = True
+            cases.append(case)
         return {"mode": "synthetic_only", "live_provider_connected": False,
                 "real_messages_used": False, "cases": cases}
 
@@ -83,7 +108,7 @@ def build_synthetic_followthrough_router(require_test_access, verified_fixture_p
     def secretary(case_id: str, actor=Depends(require_test_access)):
         # This is a synthetic, explicitly labelled role *simulation*, NOT a
         # production staff endpoint or proof of actual staff authentication.
-        return invoke(lambda: ledger.secretary_view(case_id, SECRETARY))
+        return guarded(case_id, lambda: ledger.secretary_view(case_id, SECRETARY))
 
     @router.post("/simulate-arrival")
     def simulate_arrival(req: SyntheticAction, actor=Depends(require_test_access)):
@@ -97,7 +122,7 @@ def build_synthetic_followthrough_router(require_test_access, verified_fixture_p
                               idempotency_key=req.idempotency_key,
                               part=req.part, source_ref=evidence[0],
                               source_version=evidence[1], proof="qualified_order")
-        return invoke(action)
+        return guarded(req.case_id, action)
 
     @router.post("/doctor-review")
     def doctor_review(req: SyntheticAction, actor=Depends(require_test_access)):
@@ -115,7 +140,7 @@ def build_synthetic_followthrough_router(require_test_access, verified_fixture_p
                 idempotency_key=req.idempotency_key, part=req.part,
                 source_version=material["source_version"],
             )
-        return invoke(action)
+        return guarded(req.case_id, action)
 
     @router.post("/secretary-result")
     def secretary_result(req: SyntheticAction, actor=Depends(require_test_access)):
@@ -128,11 +153,11 @@ def build_synthetic_followthrough_router(require_test_access, verified_fixture_p
                 expected_version=req.expected_version,
                 idempotency_key=req.idempotency_key,
             )
-        return invoke(action)
+        return guarded(req.case_id, action)
 
     @router.post("/doctor-callback")
     def doctor_callback(req: SyntheticAction, actor=Depends(require_test_access)):
-        return invoke(lambda: ledger.act(
+        return guarded(req.case_id, lambda: ledger.act(
             req.case_id, DOCTOR, action="callback_complete",
             expected_version=req.expected_version,
             idempotency_key=req.idempotency_key,

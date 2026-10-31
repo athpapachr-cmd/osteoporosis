@@ -205,7 +205,7 @@ class DurableSyntheticFollowthrough:
         self.engine = engine
         self.qualified_signed_pending = qualified_signed_pending
 
-    def _check_signed_source(self, db: Session, row: VisitObligationFixture) -> None:
+    def _check_signed_source(self, db: Session, row) -> None:
         """Fail closed before events if the signed source changed.
 
         In one PostgreSQL database the binding locks Encounter -> Pending ->
@@ -295,10 +295,32 @@ class DurableSyntheticFollowthrough:
             row, work = _load(db, case_id)
             return [dict(e) for e in work.events]
 
+    def _locked_authorized_work(self, db: Session, case_id: str):
+        """Take signed-source locks before durable obligation, even for staff reads.
+
+        Identity columns are read without an ORM entity, avoiding SQLAlchemy's
+        stale identity-map state during a later SELECT FOR UPDATE.
+        """
+        source_key = db.execute(
+            select(VisitObligationFixture.mode,
+                   VisitObligationFixture.visit_ref,
+                   VisitObligationFixture.pending_ref)
+            .where(VisitObligationFixture.id == case_id)
+        ).one_or_none()
+        if source_key is None:
+            raise CycleNotFound("Unknown synthetic obligation")
+        self._check_signed_source(db, source_key)
+        row, work = _load(db, case_id, lock=True)
+        if (row.mode, row.visit_ref, row.pending_ref) != tuple(source_key):
+            raise CycleConflict("Durable obligation source changed")
+        return row, work
+
     def secretary_view(self, case_id: str, actor: Actor) -> dict:
         _actor(actor, "secretary")
-        with Session(self.engine) as db:
-            row, work = _load(db, case_id)
+        with Session(self.engine) as db, db.begin():
+            # Recheck within this read transaction. A revoked source may retain
+            # historical events, but must not expose a live staff instruction.
+            row, work = self._locked_authorized_work(db, case_id)
             ledger = SyntheticCycleLedger()
             ledger.works[case_id] = work
             return ledger.secretary_view(case_id, actor)
@@ -313,22 +335,7 @@ class DurableSyntheticFollowthrough:
             raise CycleConflict("Invalid expected version")
         try:
             with Session(self.engine) as db, db.begin():
-                # Read immutable source identity as columns, not an ORM entity:
-                # loading an entity before SELECT FOR UPDATE can leave a stale
-                # identity-map row/version during concurrent PostgreSQL polls.
-                # Lock the signed source first, then the durable CAS row.
-                source_key = db.execute(
-                    select(VisitObligationFixture.mode,
-                           VisitObligationFixture.visit_ref,
-                           VisitObligationFixture.pending_ref)
-                    .where(VisitObligationFixture.id == case_id)
-                ).one_or_none()
-                if source_key is None:
-                    raise CycleNotFound("Unknown synthetic obligation")
-                self._check_signed_source(db, source_key)
-                row, work = _load(db, case_id, lock=True)
-                if (row.mode, row.visit_ref, row.pending_ref) != tuple(source_key):
-                    raise CycleConflict("Durable obligation source changed")
+                row, work = self._locked_authorized_work(db, case_id)
                 previous = db.scalar(select(ObligationEventFixture).where(
                     ObligationEventFixture.obligation_id == case_id,
                     ObligationEventFixture.actor_id == actor.principal,

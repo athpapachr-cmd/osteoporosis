@@ -192,33 +192,47 @@ def build_synthetic_161_router(engine):
     router.include_router(build_synthetic_attention_router(
         attention, require_test_access, verify_synthetic_patient, synthetic_patients))
 
+    active_pending_states = frozenset(("open", "awaiting_patient", "awaiting_result"))
+
+    def signed_fixture_eligible(pending, db):
+        """Current signed-source gate shared by the demo and UI projections."""
+        if not pending or pending.status not in active_pending_states:
+            return False
+        source = db.get(EncounterORM, pending.source_encounter_id)
+        patient = db.get(PatientORM, pending.patient_id)
+        if (not source or not patient or not isinstance(patient.demographics_json, dict)
+                or patient.demographics_json.get("synthetic_scenario") != SCENARIO
+                or source.patient_id != pending.patient_id
+                or source.status not in ("completed", "amended")
+                or not isinstance(source.payload_json, dict)):
+            return False
+        signed = source.payload_json.get("_visit_capture_v1")
+        if (not isinstance(signed, dict) or signed.get("signed") is not True
+                or signed.get("synthetic_scenario") != SCENARIO
+                or signed.get("pending_ids") != [pending.id]):
+            return False
+        candidate = signed.get("candidate")
+        entries = candidate.get("pending") if isinstance(candidate, dict) else None
+        if (not isinstance(entries, list) or len(entries) != 1
+                or not isinstance(entries[0], dict)
+                or entries[0].get("item_type") != pending.item_type):
+            return False
+        try:
+            if not isinstance(signed.get("signed_at"), str):
+                return False
+            datetime.fromisoformat(signed["signed_at"])
+        except (TypeError, ValueError):
+            return False
+        return True
+
     def verified_fixture_pending():
         with Session(engine) as db:
             patient_id = SYNTHETIC_161_PATIENT_IDS[0]
             _test_patient(db, patient_id)
             pending = db.get(ClinicalPendingORM, patient_id + "-pending")
-            source = db.get(EncounterORM, pending.source_encounter_id) if pending else None
-            signed = (source.payload_json or {}).get("_visit_capture_v1", {}) if source else {}
-            candidate = signed.get("candidate") if isinstance(signed, dict) else None
-            entries = candidate.get("pending") if isinstance(candidate, dict) else None
-            ids = signed.get("pending_ids") if isinstance(signed, dict) else None
-            if (not pending or pending.patient_id != patient_id
-                    or pending.status not in ("open", "awaiting_patient", "awaiting_result")
-                    or not source or source.patient_id != patient_id
-                    or pending.source_encounter_id != source.id
-                    or source.status != "completed"
-                    or not isinstance(signed, dict) or signed.get("signed") is not True
-                    or signed.get("synthetic_scenario") != SCENARIO
-                    or not isinstance(ids, list) or ids != [pending.id]
-                    or not isinstance(entries, list) or len(entries) != 1
-                    or not isinstance(entries[0], dict)
-                    or entries[0].get("item_type") != pending.item_type):
+            if not signed_fixture_eligible(pending, db):
                 raise HTTPException(409, "Signed synthetic Pending source unavailable")
-            try:
-                datetime.fromisoformat(signed["signed_at"])
-            except (KeyError, TypeError, ValueError):
-                raise HTTPException(409, "Invalid signed synthetic visit date") from None
-            return pending.id, source.id
+            return pending.id, pending.source_encounter_id
 
     followthrough_router, followthrough = build_synthetic_followthrough_router(
         require_test_access, verified_fixture_pending)
@@ -231,7 +245,10 @@ def build_synthetic_161_router(engine):
         with followthrough.lock:
             for case_id, work in followthrough.works.items():
                 if work.pending_ref == row.id:
-                    projected["followthrough"] = followthrough.view(case_id)
+                    projected["followthrough"] = {
+                        **followthrough.view(case_id),
+                        "source_valid": signed_fixture_eligible(row, db),
+                    }
                     break
         return projected
 
@@ -383,8 +400,10 @@ def build_synthetic_161_router(engine):
                                   "patient_name": patient.demographics_json["full_name"]})
             items.sort(key=lambda p: (p["updated_at"], p["pending_id"]), reverse=True)
             return {"items": items, "open_count": sum(
-                    (not p.get("followthrough", {}).get("complete", False))
-                    and p["status"] in ("open", "awaiting_patient", "awaiting_result")
+                    p["status"] in active_pending_states and (
+                        not p.get("followthrough", {}).get("complete", False)
+                        or p.get("followthrough", {}).get("source_valid") is False
+                    )
                     for p in items)}
 
     @router.get("/patient/{patient_id}/chart", dependencies=protected)

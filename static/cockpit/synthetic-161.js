@@ -40,16 +40,28 @@
     awaiting_callback:"Αναμένει επικοινωνία με ιατρό",
     complete:"Ολοκληρώθηκε"
   };
-  function pendingStatus(item){
-    return item.followthrough ?
-      (followthroughStages[item.followthrough.stage]||"Χρειάζεται έλεγχος") :
-      item.status==="resolved"?"Παραλήφθηκε" :
-      item.status==="cancelled"?"Ακυρώθηκε":"Αναμένεται από τον ασθενή";
+  const activePendingStates=new Set(["open","awaiting_patient","awaiting_result"]);
+  function pendingPresentation(item){
+    const cycle=item.followthrough;
+    // The signed Pending owns cancellation/resolution. Event progress cannot
+    // continue displaying a stale instruction after its original source closed.
+    if(item.status==="cancelled") return {label:"Ακυρώθηκε",open:false};
+    if(item.status==="resolved") return {
+      label:cycle&&!cycle.complete?"Έκλεισε στην επίσκεψη · χρειάζεται επανέλεγχο":
+        cycle?"Ολοκληρώθηκε":"Παραλήφθηκε",open:false
+    };
+    if(!activePendingStates.has(item.status))
+      return {label:"Χρειάζεται έλεγχος της υποχρέωσης",open:false};
+    if(cycle?.source_valid===false)
+      return {label:"Αλλαγή στην υπογεγραμμένη επίσκεψη · χρειάζεται επανέλεγχο",open:true};
+    return {
+      label:cycle?(followthroughStages[cycle.stage]||"Χρειάζεται έλεγχος"):
+        "Αναμένεται από τον ασθενή",
+      open:!cycle?.complete
+    };
   }
-  function pendingOpen(item){
-    return !item.followthrough?.complete &&
-      item.status!=="resolved" && item.status!=="cancelled";
-  }
+  const pendingStatus=item=>pendingPresentation(item).label;
+  const pendingOpen=item=>pendingPresentation(item).open;
   function facts(parent, label, values){
     if(!values?.length)return;
     text(parent,"h4",label);
