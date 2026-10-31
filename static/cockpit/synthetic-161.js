@@ -56,7 +56,17 @@
         const row=text(target,"button","");row.type="button";row.className="doctor-action-row";
         const copy=text(row,"span","");text(copy,"strong",item.patient_name);
         text(copy,"small",item.description);
-        text(copy,"small",(item.status==="resolved"?"Παραλήφθηκε":"Αναμένεται από τον ασθενή")+" · "+date(item.updated_at,true));
+        const cycle=item.followthrough;
+        const label=cycle?({
+          awaiting_result:"Αναμένεται εξέταση",
+          partially_received:"Παραλήφθηκε μέρος εξετάσεων",
+          awaiting_doctor_review:"Αναμένει αξιολόγηση ιατρού",
+          awaiting_secretary:"Αναμένει ενημέρωση γραμματείας",
+          awaiting_callback:"Αναμένεται επικοινωνία με ιατρό",
+          complete:"Ολοκληρώθηκε"
+        }[cycle.stage]||"Χρειάζεται έλεγχος"):
+          item.status==="resolved"?"Παραλήφθηκε":"Αναμένεται από τον ασθενή";
+        text(copy,"small",label+" · "+date(item.updated_at,true));
         text(copy,"small","Από την επίσκεψη "+date(item.source_date));
         text(row,"span","›");
         row.addEventListener("click",()=>{close();open(item.patient_id);});
