@@ -649,6 +649,58 @@ def exercise_cached_unread_requires_fresh_clinical_key(page):
     page.unroute("**/clinical/icloud-mail/peek", peek)
 
 
+def exercise_icloud_secretary_session_isolation(page, auth):
+    """A successful existing secretary login must not become iCloud logout."""
+    attempts = {"peek": 0}
+    def forbidden_peek(route):
+        attempts["peek"] += 1
+        route.fulfill(status=401, json={"detail": "Clinician access required"})
+
+    page.route("**/clinical/icloud-mail/peek", forbidden_peek)
+    page.evaluate("""() => {
+        window.__secretaryIcloudAuthLoss = 0;
+        window.addEventListener('clinical:unauthenticated',
+            () => { window.__secretaryIcloudAuthLoss++; });
+    }""")
+    # Use the real shared-nav login form, not a hand-dispatched auth event.
+    page.locator("#ceGlobalKey").click()
+    key = page.locator("#ceGlobalKeyInput")
+    key.fill("synthetic-secretary-key")
+    page.locator("#ceGlobalLoginForm button[type=submit]").click()
+    expect(page.locator("#ceGlobalAuthStatus")).to_contain_text("Συνδέθηκες ως γραμματεία")
+    assert auth["staff_role"] == "secretary"
+    assert page.evaluate("window.CockpitStaffRole") == "secretary"
+    page.wait_for_timeout(80)
+    assert attempts["peek"] == 0, "Secretary login triggered an unauthorized iCloud IMAP peek"
+    expect(page.locator("#doctorInboxBadge")).to_be_hidden()
+
+    # Manual icon access stays PHI-free without treating a valid staff cookie
+    # as revoked. Focus/visibility cannot re-enable the background poll.
+    page.locator("#doctorInboxButton").click()
+    peek = page.locator("#doctorPopoverContent")
+    expect(peek).to_contain_text("Η σύνδεση γραμματείας παραμένει ενεργή")
+    assert "PRIVATE-SYNTHETIC-UNREAD-SENTINEL" not in peek.inner_text()
+    page.evaluate("window.dispatchEvent(new Event('focus'))")
+    page.wait_for_timeout(80)
+    assert attempts["peek"] == 0
+    assert page.evaluate("window.CockpitStaffRole") == "secretary"
+    assert page.evaluate("window.__secretaryIcloudAuthLoss") == 0
+    page.locator("#doctorInboxButton").click()
+    page.unroute("**/clinical/icloud-mail/peek", forbidden_peek)
+
+    # The same original login can re-authorize clinician reads without a new
+    # staff mechanism or shared Clinical Key changes.
+    if page.locator("#ceGlobalAccessPanel").is_hidden():
+        page.locator("#ceGlobalKey").click()
+    key.fill("synthetic-key")
+    page.locator("#ceGlobalLoginForm button[type=submit]").click()
+    expect(page.locator("#ceGlobalAuthStatus")).to_contain_text("Συνδέθηκες")
+    assert auth["staff_role"] == "clinician"
+    assert page.evaluate("window.CockpitStaffRole") == "clinician"
+    assert page.evaluate("window.__secretaryIcloudAuthLoss") == 0
+    page.keyboard.press("Escape")
+
+
 def exercise_icloud_stage_failure(page):
     """Show only the failed IMAP stage, never an unverified cause."""
     cases = (
@@ -729,7 +781,7 @@ def exercise_icloud_peek_200_client_truth(page):
 def browser_suite(width, screenshot_name):
     errors = []
     outbound = []
-    auth = {"authenticated": False, "linked": False, "confirmations": 0}
+    auth = {"authenticated": False, "staff_role": None, "linked": False, "confirmations": 0}
     call_source = {"status": 200, "handled": False, "write_status": 200}
     notion_source = {"writes": 0}
     rf_bridge = {"linked": False, "exact_reads": 0}
@@ -741,8 +793,9 @@ def browser_suite(width, screenshot_name):
         def handle(route):
             url = route.request.url
             if url.endswith("/clinical/status"):
-                return route.fulfill(status=200 if auth["authenticated"] else 401,
-                                     json={"authenticated": auth["authenticated"]})
+                clinician = auth["authenticated"] and auth["staff_role"] != "secretary"
+                return route.fulfill(status=200 if clinician else 401,
+                                     json={"authenticated": clinician})
             if url.endswith("/clinical/reception-calls/peek"):
                 assert route.request.method == "GET"
                 assert not any(k.lower() == "x-clinical-key" for k in route.request.headers)
@@ -821,9 +874,12 @@ def browser_suite(width, screenshot_name):
             if url.endswith("/clinical/login"):
                 assert route.request.method == "POST"
                 assert route.request.post_data_json is not None
-                if route.request.post_data_json.get("key") == "synthetic-key":
+                if route.request.post_data_json.get("key") in ("synthetic-key", "synthetic-secretary-key"):
+                    role = ("secretary" if route.request.post_data_json["key"] == "synthetic-secretary-key"
+                            else "clinician")
                     auth["authenticated"] = True
-                    return route.fulfill(status=200, json={"authenticated": True, "staff_role": "clinician"})
+                    auth["staff_role"] = role
+                    return route.fulfill(status=200, json={"authenticated": True, "staff_role": role})
                 return route.fulfill(status=401, json={"detail": "Unauthorized"})
             if "/clinical/calendar/cockpit-context" in url:
                 return route.fulfill(json=CONTEXT)
@@ -842,7 +898,8 @@ def browser_suite(width, screenshot_name):
                 } if auth["authenticated"] else {"detail": "Unauthorized"})
             if url.endswith("/clinical/staff-session"):
                 return route.fulfill(status=200 if auth["authenticated"] else 401,
-                    json=({"staff_role": "clinician", "principal_id": "clinic-clinician"}
+                    json=({"staff_role": auth["staff_role"],
+                           "principal_id": "clinic-" + auth["staff_role"]}
                           if auth["authenticated"] else {"detail": "Unauthorized"}))
             if url.endswith("/clinical/calendar/visit-brief/patient-search"):
                 assert route.request.method == "POST"
@@ -1031,6 +1088,7 @@ def browser_suite(width, screenshot_name):
             exercise_cached_unread_requires_fresh_clinical_key(page)
             exercise_icloud_stage_failure(page)
             exercise_icloud_peek_200_client_truth(page)
+            exercise_icloud_secretary_session_isolation(page, auth)
             exercise_reception_call_peek(page, width, call_source)
             assert_delayed_recent_purged_after_logout(page)
             page.evaluate("""() => {
@@ -1130,6 +1188,7 @@ def browser_suite(width, screenshot_name):
         exercise_cached_unread_requires_fresh_clinical_key(page)
         exercise_icloud_stage_failure(page)
         exercise_icloud_peek_200_client_truth(page)
+        exercise_icloud_secretary_session_isolation(page, auth)
         exercise_reception_call_peek(page, width, call_source)
         assert_delayed_recent_purged_after_logout(page)
         page.evaluate("window.dispatchEvent(new Event('clinical:authenticated'))")

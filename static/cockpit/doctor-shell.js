@@ -185,6 +185,9 @@
   // actions remain explicit, and every read is scoped to the active popover.
   const syntheticInbox=()=>window.CockpitSynthetic===true &&
     window.CockpitClinicalBase==="/clinical/synthetic-161";
+  // A secretary login is authenticated staff, not iCloud clinician authority.
+  // This is a presentation/refresh guard; the server still authorizes every read.
+  const secretaryIcloudSession=()=>window.CockpitStaffRole==="secretary";
   const activePeek=(kind,ticket)=>state.panel===kind &&
     !popover.hidden && state.request===ticket;
 
@@ -347,7 +350,7 @@
     }
   }
   function displayUnreadPeek() {
-    if(verifiedUnreadPanelTicket!==state.request ||
+    if(secretaryIcloudSession() || verifiedUnreadPanelTicket!==state.request ||
        !activePeek("inbox",state.request))return;
     content.replaceChildren();
     const data=unreadPeek.data;
@@ -384,6 +387,7 @@
     content.append(text("Όλα τα email: Συντομεύσεις → Εισερχόμενα ασθενών."));
   }
   function fetchUnreadPeek(force=false, manual=false) {
+    if(secretaryIcloudSession())return null;
     if(!manual && (!unreadPeek.authorized || document.hidden))return null;
     if(unreadPeek.pending)return unreadPeek.pending;
     if(!force && unreadPeek.checkedAt &&
@@ -412,12 +416,14 @@
         const code=icloudPeekContractCode(data);
         if(code)throw {clientCode:code};
         if(unreadPeek.generation!==generation)return;
+        if(secretaryIcloudSession()){clearUnreadPeek();return;}
         unreadPeek.data=data;unreadPeek.updatedAt=Date.now();unreadPeek.error=null;
         if(typeof window.dispatchEvent==="function")
           window.dispatchEvent(new Event("cockpit:icloud-peek-refreshed"));
       }catch(error){
         if(unreadPeek.generation!==generation)return;
         if(controller.signal.aborted)return;
+        if(secretaryIcloudSession()){clearUnreadPeek();return;}
         unreadPeek.error={
           status:Number.isInteger(error?.status)?error.status:0,
           code:typeof error?.code==="string"?error.code:null,
@@ -429,6 +435,7 @@
         }
       }finally{
         if(unreadPeek.generation!==generation)return;
+        if(secretaryIcloudSession()){clearUnreadPeek();return;}
         unreadPeek.checkedAt=Date.now();
         unreadPeek.pending=null;unreadPeek.controller=null;
         updateUnreadBadge();
@@ -441,8 +448,13 @@
   function maybeRefreshUnread(force=false){
     // Synthetic-161 and real provider paths must never cross, including
     // during successful synthetic Clinical Key/status bootstrapping.
-    if(syntheticInbox())return;
+    if(syntheticInbox() || secretaryIcloudSession())return;
     if(unreadPeek.authorized && !document.hidden)void fetchUnreadPeek(force);
+  }
+  function secretaryIcloudNotice(){
+    content.replaceChildren();
+    content.append(text(
+      "Τα iCloud email απαιτούν σύνδεση ιατρού. Η σύνδεση γραμματείας παραμένει ενεργή."));
   }
   async function inbox() {
     const ticket=++state.request;
@@ -451,6 +463,11 @@
       // Revalidate the existing same-origin Clinical Key before rendering it.
       // This is a lightweight /clinical/status GET, NOT an Apple IMAP fetch.
       verifiedUnreadPanelTicket=null;
+      if(secretaryIcloudSession()){
+        clearUnreadPeek();
+        secretaryIcloudNotice();
+        return;
+      }
       const generation=unreadPeek.generation;
       content.replaceChildren();
       content.append(text("Έλεγχος κλινικής πρόσβασης στα μη αναγνωσμένα…"));
@@ -463,6 +480,10 @@
            unreadPeek.generation!==generation)return;
         if(status.status===401||status.status===403){
           clearUnreadPeek(); // Includes the dot and all sender/subject memory.
+          if(secretaryIcloudSession()){
+            secretaryIcloudNotice();
+            return;
+          }
           window.dispatchEvent(new Event("clinical:unauthenticated"));
           window.dispatchEvent(new Event("clinical:request-login"));
           return;
@@ -472,6 +493,11 @@
           content.append(text(
             "Δεν επιβεβαιώθηκε η κλινική σύνδεση [PEEK_AUTH_CHECK]. "+
             "Δεν εμφανίζονται αποθηκευμένα email."));
+          return;
+        }
+        if(secretaryIcloudSession()){
+          clearUnreadPeek();
+          secretaryIcloudNotice();
           return;
         }
         unreadPeek.authorized=true;
@@ -1147,7 +1173,13 @@
   document.addEventListener("visibilitychange",()=>maybeRefreshUnread());
   window.addEventListener("focus",()=>maybeRefreshUnread());
   window.addEventListener("clinical:authenticated",()=>{
-    clearUnreadPeek();unreadPeek.authorized=true;
+    clearUnreadPeek();
+    if(secretaryIcloudSession()){
+      if(state.panel==="inbox"&&!popover.hidden&&!syntheticInbox())
+        secretaryIcloudNotice();
+      return;
+    }
+    unreadPeek.authorized=true;
     if(state.panel==="inbox"&&!popover.hidden&&!syntheticInbox())void inbox();
     maybeRefreshUnread(true);
   });
