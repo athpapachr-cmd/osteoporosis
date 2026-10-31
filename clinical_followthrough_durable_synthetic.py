@@ -313,13 +313,22 @@ class DurableSyntheticFollowthrough:
             raise CycleConflict("Invalid expected version")
         try:
             with Session(self.engine) as db, db.begin():
-                # Establish case identity without taking its durable row lock:
-                # signed-source locks must be acquired first.
-                source_row = db.get(VisitObligationFixture, case_id)
-                if source_row is None:
+                # Read immutable source identity as columns, not an ORM entity:
+                # loading an entity before SELECT FOR UPDATE can leave a stale
+                # identity-map row/version during concurrent PostgreSQL polls.
+                # Lock the signed source first, then the durable CAS row.
+                source_key = db.execute(
+                    select(VisitObligationFixture.mode,
+                           VisitObligationFixture.visit_ref,
+                           VisitObligationFixture.pending_ref)
+                    .where(VisitObligationFixture.id == case_id)
+                ).one_or_none()
+                if source_key is None:
                     raise CycleNotFound("Unknown synthetic obligation")
-                self._check_signed_source(db, source_row)
+                self._check_signed_source(db, source_key)
                 row, work = _load(db, case_id, lock=True)
+                if (row.mode, row.visit_ref, row.pending_ref) != tuple(source_key):
+                    raise CycleConflict("Durable obligation source changed")
                 previous = db.scalar(select(ObligationEventFixture).where(
                     ObligationEventFixture.obligation_id == case_id,
                     ObligationEventFixture.actor_id == actor.principal,
