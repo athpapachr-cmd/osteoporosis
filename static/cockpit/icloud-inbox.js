@@ -4,6 +4,23 @@
   const $ = id => document.getElementById(id);
   const view = $("doctorIcloudInboxView");
   if (!view) return;
+  // Only enumerated, PHI-free diagnostic codes can appear in the clinician UI.
+  const stageText = Object.freeze({
+    CONFIG_DISABLED: "Η ανάγνωση iCloud είναι απενεργοποιημένη.",
+    CONFIG_MISSING: "Λείπει υποχρεωτική ρύθμιση iCloud στον server.",
+    TLS_CONNECTION_FAILED: "Απέτυχε η ασφαλής σύνδεση TLS με τον IMAP server.",
+    IMAP_AUTH_FAILED: "Ο IMAP server απέρριψε τη σύνδεση με τα Apple credentials.",
+    INBOX_SELECT_FAILED: "Ο IMAP server δεν επέτρεψε άνοιγμα του INBOX.",
+    UIDVALIDITY_OR_UIDNEXT_FAILED: "Δεν επιστράφηκαν έγκυρα UID στοιχεία θυρίδας.",
+    IMAP_SEARCH_FAILED: "Απέτυχε η περιορισμένη IMAP αναζήτηση.",
+    IMAP_HEADER_FETCH_FAILED: "Απέτυχε η ανάγνωση κεφαλίδων IMAP.",
+    IMAP_MESSAGE_FETCH_FAILED: "Απέτυχε η ανάγνωση επιλεγμένου μηνύματος.",
+    IMAP_UNEXPECTED_FAILURE: "Απρόβλεπτη τεχνική αποτυχία της πηγής IMAP."
+  });
+  const stageLabel = code => typeof code === "string" &&
+    Object.prototype.hasOwnProperty.call(stageText, code)
+      ? stageText[code] + " [" + code + "]" : null;
+  window.CockpitIcloudStageMessage = stageLabel;
   const state = {active:false, epoch:0, selection:0, id:null, items:[], controller:null,
     pages:[null], pageIndex:0, nextCursor:null, skipped:0, coverageComplete:false};
   const el = (tag, cls, value) => {
@@ -43,12 +60,21 @@
     if (!response.ok) {
       const error = new Error("Mail source unavailable");
       error.status = response.status;
+      if (response.status === 503) {
+        try {
+          const failure = await response.json();
+          error.code = failure?.detail?.code;
+        } catch (_) { /* Unknown response: retain generic failure. */ }
+      }
       throw error;
     }
     return response.json();
   }
   function sourceError(error, target) {
-    target.textContent = (error.status === 401 || error.status === 403)
+    const diagnosed = error.status === 503 && stageLabel(error.code);
+    target.textContent = diagnosed
+      ? "iCloud Mail: " + diagnosed + " Δεν γνωρίζουμε αν υπάρχουν νέα μηνύματα."
+      : (error.status === 401 || error.status === 403)
       ? "Απαιτείται κλινική σύνδεση. Δεν εμφανίζονται μηνύματα."
       : error.status === 413
         ? "Το email υπερβαίνει το όριο ασφαλούς προβολής. Δες τα πλήρη συνημμένα στο αρχικό μήνυμα στο iCloud Mail."
