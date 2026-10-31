@@ -129,8 +129,9 @@
         }else if(role==="unknown"){
           staffStatusUnavailable();
         }else if(role==="clinician"){
-          $("doctorIcloudInboxState").textContent=
-            "Δεν επαληθεύτηκε πρόσβαση στα iCloud email [LIST_AUTH_DENIED].";
+          // Staff clinician status does not override clinician-only iCloud 401.
+          window.dispatchEvent(new Event("clinical:unauthenticated"));
+          window.dispatchEvent(new Event("clinical:request-login"));
         }else{
           window.dispatchEvent(new Event("clinical:unauthenticated"));
           window.dispatchEvent(new Event("clinical:request-login"));
