@@ -1,0 +1,66 @@
+name: Cockpit iCloud clinician actions - disposable PostgreSQL 17
+
+on:
+  push:
+    paths:
+      - "clinical_icloud_actions.py"
+      - "clinical_icloud_triage_rules.py"
+      - "clinical_icloud_mail.py"
+      - "test_clinical_icloud_actions_postgres.py"
+      - ".github/workflows/cockpit-icloud-actions-postgres.yml"
+  pull_request:
+    paths:
+      - "clinical_icloud_actions.py"
+      - "clinical_icloud_triage_rules.py"
+      - "clinical_icloud_mail.py"
+      - "test_clinical_icloud_actions_postgres.py"
+      - ".github/workflows/cockpit-icloud-actions-postgres.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  iCloud-pg17:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: synthetic-ci-only
+          POSTGRES_DB: synthetic_icloud_actions_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d synthetic_icloud_actions_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      ICLOUD_PILOT_PG_TEST: "local-postgres17"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install current application requirements
+        run: python -m pip install -r requirements.txt pytest
+      - name: Verify compiled clinician action and synthetic-only fixture
+        run: python -m py_compile clinical_icloud_mail.py clinical_icloud_actions.py clinical_icloud_triage_rules.py test_clinical_icloud_actions_postgres.py
+      - name: Run real PostgreSQL 17 table, transaction, idempotency and callback tests
+        run: pytest -q test_clinical_icloud_actions_postgres.py
+      - name: No real provider, credentials or patients in test
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          code=Path("test_clinical_icloud_actions_postgres.py").read_text()
+          assert "127.0.0.1:5432/synthetic_icloud_actions_ci" in code
+          assert "ICLOUD_PILOT_PG_TEST" in code
+          assert "DATABASE_URL" not in code
+          assert "imap.mail.me.com" not in code
+          PY
+      - name: Diff hygiene
+        run: git diff --check HEAD^ HEAD
