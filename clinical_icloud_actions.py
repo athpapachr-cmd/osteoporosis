@@ -119,6 +119,17 @@ def _qualify(item_id: str, *, include_body: bool = False) -> dict:
             raise HTTPException(404, "Message outside practice mailbox")
         if include_body:
             result["text"] = _body(message)[:7000]
+            # File NAMES only, not attachment bytes: radiology frequently
+            # sends pictures without a Subject or body naming the patient.
+            # Use these as untrusted matching HINTS, never as identity proof.
+            names=[]
+            for part in list(message.walk())[:80]:
+                filename=part.get_filename()
+                if isinstance(filename,str) and filename.strip():
+                    names.append(filename[:180])
+                if len(names)>=40:
+                    break
+            result["filename_hints"] = " ".join(names)[:4000]
         return result
 
     return _read(verify)
@@ -219,7 +230,11 @@ def _matches(name: str, search: str, source: str) -> bool:
     if search:
         terms = fold(search).split()
         return bool(terms) and all(term in candidate for term in terms)
-    return candidate in fold(source)
+    # Two or more full-name words must be present, even if a provider sends
+    # surname-first filenames. Single-name hints are not linked automatically.
+    observed = fold(source)
+    return all(re.search(r"(?<!\w)"+re.escape(word)+r"(?!\w)",observed)
+               for word in words)
 
 
 def _phone(value: str) -> str:
@@ -230,7 +245,7 @@ def _candidate_rows(engine: Engine, source: dict, q: str) -> list[dict]:
     if not q and not (source.get("subject") or source.get("from")):
         return []
     matches = []
-    haystack = " ".join(str(source.get(k) or "") for k in ("subject", "from", "text"))
+    haystack = " ".join(str(source.get(k) or "") for k in ("subject", "from", "text", "filename_hints"))
     observed_phones = {
         _phone(candidate) for candidate in _PHONE_CANDIDATE.findall(haystack)
         if len(_phone(candidate)) >= 8
@@ -243,7 +258,7 @@ def _candidate_rows(engine: Engine, source: dict, q: str) -> list[dict]:
             return "name_phone"
         return "name_only"
     with Session(engine) as db:
-        for patient in db.scalars(select(PatientORM).order_by(PatientORM.patient_id).limit(5000)):
+        for patient in db.scalars(select(PatientORM).order_by(PatientORM.patient_id)).yield_per(300):
             data = patient.demographics_json if isinstance(patient.demographics_json, dict) else {}
             name = next((data[k] for k in _NAME_KEYS if isinstance(data.get(k), str)
                          and data[k].strip()), "")
@@ -265,7 +280,7 @@ def _candidate_rows(engine: Engine, source: dict, q: str) -> list[dict]:
         if len(matches) < 10:
             for booking in db.scalars(select(ClinicalAppointmentORM)
                     .where(ClinicalAppointmentORM.status != "cancelled")
-                    .order_by(ClinicalAppointmentORM.start_at.desc()).limit(1500)):
+                    .order_by(ClinicalAppointmentORM.start_at.desc())).yield_per(300):
                 if not _matches(booking.patient_display_name, q, haystack):
                     continue
                 matches.append({
