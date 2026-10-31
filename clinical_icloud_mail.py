@@ -340,7 +340,7 @@ def _uid_is_unseen(mail, uid: str) -> bool:
     return verified
 
 
-def _list_items(mail, validity: str, alias: str, limit: int, cursor: str | None = None, *, unseen_only: bool = False, view: str = "clinical"):
+def _list_items(mail, validity: str, alias: str, limit: int, cursor: str | None = None, *, unseen_only: bool = False, view: str = "clinical", override_lookup=None):
     last_uid = _uid_next(mail) - 1
     if cursor is not None:
         match = _ITEM_RE.fullmatch(cursor)
@@ -361,6 +361,7 @@ def _list_items(mail, validity: str, alias: str, limit: int, cursor: str | None 
     while high > 0 and windows < _MAX_WINDOWS and headers_checked < _MAX_CANDIDATES:
         low = max(1, high - _UID_WINDOW + 1)
         found = _search_window(mail, alias, low, high)
+        overrides = override_lookup(validity, found) if override_lookup else {}
         windows += 1
         exhausted_early = False
         for uid in found:
@@ -373,9 +374,12 @@ def _list_items(mail, validity: str, alias: str, limit: int, cursor: str | None 
                     item = None
                 else:
                     header, _ = _fetch_headers(mail, str(uid))
-                    item = _summary(str(uid), validity, header, alias, include_nonclinical=view != "clinical")
-                    if item is not None and view == "administrative" and item["category"] not in ("administrative", "other"):
-                        item = None
+                    item = _summary(str(uid), validity, header, alias, include_nonclinical=True)
+                    if item is not None:
+                        item["category"] = overrides.get(item["id"], item["category"])
+                        if (view == "clinical" and item["category"] not in ("clinical", "review")
+                                or view == "administrative" and item["category"] not in ("administrative", "other")):
+                            item = None
             except (_BadMessage, ValueError, TypeError, UnicodeError):
                 skipped += 1
                 item = None
@@ -548,7 +552,16 @@ def _read(operation):
         raise HTTPException(503, {"code": "IMAP_UNEXPECTED_FAILURE"}) from None
 
 
-def build_icloud_mail_router() -> APIRouter:
+def build_icloud_mail_router(engine=None) -> APIRouter:
+    # The signed Clinical Key remains the ONLY current clinician authority.
+    # Optional private decision metadata can affect display grouping, not mail
+    # bytes, server-side flags or actual clinical patient association.
+    def overrides(validity, uids):
+        if engine is None:
+            return {}
+        from clinical_icloud_actions import stored_mail_categories
+        return stored_mail_categories(engine, validity, uids)
+
     router = APIRouter(
         prefix="/clinical/icloud-mail", tags=["clinical-icloud-mail"],
         dependencies=[Depends(_require_clinical_key)],
@@ -561,7 +574,7 @@ def build_icloud_mail_router() -> APIRouter:
             "source": "icloud_mail", "scope": "recipient_alias_inbox_only",
             "filter": "unseen",
             **_read(lambda mail, validity, alias: _list_items(
-                mail, validity, alias, 4, unseen_only=True)),
+                mail, validity, alias, 4, unseen_only=True, override_lookup=overrides)),
         }
 
     @router.get("")
@@ -575,7 +588,7 @@ def build_icloud_mail_router() -> APIRouter:
         return {
             "source": "icloud_mail", "scope": "recipient_alias_inbox_only",
             "filter": "all", "view": view,
-            **_read(lambda mail, validity, alias: _list_items(mail, validity, alias, limit, cursor, view=view)),
+            **_read(lambda mail, validity, alias: _list_items(mail, validity, alias, limit, cursor, view=view, override_lookup=overrides)),
         }
 
     @router.get("/items/{item_id}")
