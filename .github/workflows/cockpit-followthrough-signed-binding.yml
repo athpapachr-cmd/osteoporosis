@@ -47,9 +47,16 @@ jobs:
           assert "clinical_followthrough_durable_synthetic" not in app
           assert "clinical_followthrough_signed_pending_synthetic" not in Path("clinical_synthetic_161.py").read_text()
           assert "create_all(" not in code
+          import re
           for forbidden in ("imaplib", "httpx.", "requests.", "send_sms", "send_email",
-                            "DATABASE_URL", "ICLOUD_CLINICAL_APP_PASSWORD", "insert(", "update("):
+                            "DATABASE_URL", "ICLOUD_CLINICAL_APP_PASSWORD"):
               assert forbidden not in code, forbidden
+          # SELECT ... FOR UPDATE is a row-locking READ, not a SQL UPDATE.
+          # Match actual SQL write constructors rather than a substring of
+          # with_for_update(), otherwise the safety gate false-positives.
+          assert not re.search(r"\b(?:insert|update|delete)\s*\(", code)
+          assert "db.add(" not in code
+          assert "db.commit(" not in code
           assert "pending_ids" in code and "synthetic_scenario" in code
           PY
       - name: Diff hygiene
