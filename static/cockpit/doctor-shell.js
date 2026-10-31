@@ -405,6 +405,7 @@
         if(code)throw {clientCode:code};
         if(unreadPeek.generation!==generation)return;
         unreadPeek.data=data;unreadPeek.updatedAt=Date.now();unreadPeek.error=null;
+        window.dispatchEvent(new Event("cockpit:icloud-peek-refreshed"));
       }catch(error){
         if(unreadPeek.generation!==generation)return;
         if(controller.signal.aborted)return;
