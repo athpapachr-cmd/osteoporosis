@@ -15,7 +15,7 @@ from clinical_icloud_actions import (
     MailDecisionORM, MailDecisionEventORM, MailDecisionBase,
     build_icloud_actions_router,
 )
-from clinical_data import ClinicalBase, PatientORM, EncounterORM, ClinicalPendingORM
+from clinical_data import ClinicalBase, PatientORM, EncounterORM, ClinicalPendingORM, build_clinical_router
 from clinical_calendar import CalendarBase, ClinicalAppointmentORM
 from test_clinical_icloud_mail import FakeMail, mail
 
@@ -91,8 +91,9 @@ def scenario(monkeypatch):
             comment="",status="scheduled",updated_at=NOW,
         ))
     app=FastAPI()
-    app.include_router(imap.build_icloud_mail_router())
+    app.include_router(imap.build_icloud_mail_router(engine))
     app.include_router(build_icloud_actions_router(engine))
+    app.include_router(build_clinical_router(engine))
     with TestClient(app, base_url="https://testserver") as client:
         yield client,mailbox,engine
     engine.dispose()
@@ -143,6 +144,10 @@ def test_full_one_doctor_mri_followthrough_does_not_resolve_original_pending(sce
     assert r.status_code==200,r.text
     assert r.json()["patient_id"]==PATIENT and r.json()["pending_id"]==PENDING
     assert r.json()["version"]==1
+    chart=get(client,"/clinical/clinical-updates?scope=real&active_only=true")
+    assert chart.status_code==200,chart.text
+    linked=[x for x in chart.json()["items"] if x["pending_id"]==PENDING]
+    assert len(linked)==1 and linked[0]["mail_followthrough"][0]["item_id"]=="765-10"
     r=post(client,"765-10","review_notify",1)
     assert r.status_code==200 and r.json()["contact_status"]=="to_contact"
     r=post(client,"765-10","contact_attempt",2)
@@ -175,6 +180,11 @@ def test_manual_admin_classification_persists_and_does_not_create_patient(scenar
     r=post(client,"765-11","classify",0,category="other")
     assert r.status_code==200 and r.json()["category"]=="other"
     assert get(client,endpoint("765-11")).json()["category"]=="other"
+    assert "765-11" not in {
+        x["id"] for x in get(client,"/clinical/icloud-mail?view=clinical").json()["items"]
+    }
+    assert any(x["id"]=="765-11" and x["category"]=="other"
+               for x in get(client,"/clinical/icloud-mail?view=all").json()["items"])
     with Session(engine) as db:
         item=db.scalar(select(MailDecisionORM).where(MailDecisionORM.message_ref=="765-11"))
         assert item is not None and item.patient_id is None
