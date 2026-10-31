@@ -37,7 +37,7 @@ def test_calendar_payout_invoice_and_rent_are_administrative():
 
 
 def test_practice_only_sender_rules_are_private_and_reversible(monkeypatch):
-    fake_person = "synthetic-rental-contact"
+    fake_person = "synthetic-private-person"
     candidate = message("Καλησπέρα", fake_person + "@example.invalid")
     assert suggest_category(candidate) == "review"
     monkeypatch.setenv("ICLOUD_TRIAGE_ADMIN_HINTS", fake_person)
