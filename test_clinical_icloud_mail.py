@@ -875,7 +875,7 @@ def test_distinct_clinical_admin_and_all_alias_views_without_mail_writes(client)
     )
     admin = get(http, "?view=administrative")
     assert admin.status_code == 200
-    assert {x["id"] for x in admin.json()["items"]} == {"765-5","765-6","765-9"}
+    assert {x["id"] for x in admin.json()["items"]} == {"765-2","765-5","765-6","765-9"}
     assert get(http, "/items/765-5").status_code == 200
     assert get(http, "/items/765-6").status_code == 200
     assert not any(op in ("STORE","EXPUNGE") for op,_args in fake.operations)
