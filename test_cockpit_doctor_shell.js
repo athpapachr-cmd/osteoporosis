@@ -75,6 +75,12 @@ const mockAppointments=[
 ];
 async function fakeFetch(url,opts){
  calls.push({url,method:opts.method||"GET",options:opts});
+ if(url==="/clinical/status"){
+   assert.equal(opts.credentials,"same-origin");
+   assert.equal(opts.cache,"no-store");
+   return {ok:authenticated,status:authenticated?200:401,
+     json:async()=>({protected:authenticated})};
+ }
  if(url==="/clinical/clinic-utilities/rf/api/outcomes/search"){
    assert.equal(opts.method,"POST","RF endpoint is read-intent POST only");
    assert.deepEqual(JSON.parse(opts.body),{query:"",scope:"all",page:1});
