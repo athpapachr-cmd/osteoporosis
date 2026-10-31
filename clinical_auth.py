@@ -9,6 +9,7 @@ from clinical_staff_auth import (
     STAFF_COOKIE, STAFF_LIFETIME, issue_staff_cookie,
     match_staff_key, require_staff_actor, require_staff_clinician, staff_enabled,
 )
+from clinical_individual_staff_v2 import COOKIE_V2, build_individual_staff_v2_router
 from pydantic import BaseModel, Field
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
@@ -35,9 +36,13 @@ class ClinicalCookieMiddleware(BaseHTTPMiddleware):
         if path.startswith("/clinical/") and path not in {"/clinical/login", "/clinical/logout"}:
             expected = _expected_key()
             cookie = request.cookies.get(COOKIE_NAME, "")
-            staff_cookie_present = bool(request.cookies.get(STAFF_COOKIE))
+            # An individual V2 cookie is never silently downgraded to a
+            # legacy or role-wide clinician session, even if expired or forged.
+            v2_cookie_present = COOKIE_V2 in request.cookies
+            staff_cookie_present = (v2_cookie_present
+                                    or STAFF_COOKIE in request.cookies)
             staff_clinician = False
-            if staff_cookie_present and staff_enabled():
+            if not v2_cookie_present and STAFF_COOKIE in request.cookies and staff_enabled():
                 try:
                     require_staff_clinician(request)
                     staff_clinician = True
@@ -72,6 +77,7 @@ def build_auth_router() -> APIRouter:
                 httponly=True, secure=True, samesite="strict",
                 path="/clinical", max_age=STAFF_LIFETIME,
             )
+            response.delete_cookie(COOKIE_V2, path="/clinical")
             # Staff-clinician uses this versioned session for *all* protected
             # clinical endpoints, instead of receiving an unrevocable legacy cookie.
             # The original Clinical Key remains supported for legacy-only access.
@@ -82,6 +88,7 @@ def build_auth_router() -> APIRouter:
         else:
             # A shared Clinical Key is not an attributable staff principal.
             response.delete_cookie(STAFF_COOKIE, path="/clinical")
+        response.delete_cookie(COOKIE_V2, path="/clinical")
         response.set_cookie(
             key=COOKIE_NAME,
             value=_session_token(expected),
@@ -104,6 +111,8 @@ def build_auth_router() -> APIRouter:
     def logout(response: Response):
         response.delete_cookie(COOKIE_NAME, path="/")
         response.delete_cookie(STAFF_COOKIE, path="/clinical")
+        response.delete_cookie(COOKIE_V2, path="/clinical")
         return {"authenticated": False}
 
+    router.include_router(build_individual_staff_v2_router())
     return router
