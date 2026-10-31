@@ -364,3 +364,16 @@ def test_cancelled_pending_allows_doctor_to_correct_mail_link(scenario):
     assert correction.json()["source_valid"] is True
     assert correction.json()["pending_id"] is None
     assert post(client, "765-10", "link", 2, patient_id=PATIENT).status_code == 200
+
+
+def test_resolved_signed_pending_remains_historical_email_source(scenario):
+    client, _, engine = scenario
+    assert post(client, "765-10", "link", 0, patient_id=PATIENT, pending_id=PENDING).status_code == 200
+    assert post(client, "765-10", "review_notify", 1).status_code == 200
+    with Session(engine) as db, db.begin():
+        db.get(ClinicalPendingORM, PENDING).status = "resolved"
+    current = get(client, endpoint())
+    assert current.status_code == 200
+    assert current.json()["source_valid"] is True
+    assert current.json()["review_status"] == "reviewed_notify"
+    assert post(client, "765-10", "patient_notified", 2).status_code == 200
