@@ -332,3 +332,22 @@ def test_unsigned_membership_fails_closed_while_chart_link_stays_usable(scenario
     result = post(client, "765-10", "link", 0, patient_id=PATIENT)
     assert result.status_code == 200
     assert result.json()["pending_id"] is None
+
+
+def test_doctor_can_correct_review_without_erasing_original_contact_history(scenario):
+    client, _, engine = scenario
+    assert post(client, "765-10", "link", 0, patient_id=PATIENT, pending_id=PENDING).status_code == 200
+    assert post(client, "765-10", "review_notify", 1).status_code == 200
+    assert post(client, "765-10", "patient_notified", 2).status_code == 200
+    corrected = post(client, "765-10", "reopen_review", 3)
+    assert corrected.status_code == 200
+    assert corrected.json()["review_status"] == "not_reviewed"
+    assert corrected.json()["contact_status"] == "not_requested"
+    assert corrected.json()["callback_complete"] is False
+    assert post(client, "765-10", "callback_complete", 4).status_code == 409
+    assert post(client, "765-10", "review_no_contact", 4).status_code == 200
+    with Session(engine) as db:
+        history = db.scalars(select(MailDecisionEventORM).order_by(MailDecisionEventORM.version)).all()
+        assert [e.action for e in history] == [
+            "link", "review_notify", "patient_notified", "reopen_review", "review_no_contact"
+        ]
