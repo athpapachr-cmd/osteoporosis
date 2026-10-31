@@ -34,7 +34,9 @@ assert.match(shell, /status\.status===401\|\|status\.status===403/);
 assert.match(shell, /clearUnreadPeek\(\); \/\/ Includes the dot/);
 assert.match(shell, /\[PEEK_AUTH_CHECK\]/);
 
-assert.match(shell, /if\(syntheticInbox\(\)\)return;/);
+assert.match(shell, /if\(syntheticInbox\(\) \|\| secretaryIcloudSession\(\)\)return;/);
+assert.match(shell, /if\(secretaryIcloudSession\(\)\)return null;/);
+assert.match(shell, /Η σύνδεση γραμματείας παραμένει ενεργή/);
 assert.match(shell, /if\(syntheticInbox\(\)\)\{openPanel\("inbox",buttons\.inbox\);return;\}/);
 assert.match(shell, /ICLOUD_PEEK_TTL_MS = 5 \* 60 \* 1000/);
 assert.match(shell, /data\.filter!=="unseen"/);
