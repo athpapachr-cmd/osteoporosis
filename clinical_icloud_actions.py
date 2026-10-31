@@ -36,6 +36,7 @@ _CATEGORIES = frozenset(("clinical", "administrative", "other", "review"))
 _ACTIONS = frozenset((
     "classify", "link", "unlink", "review_no_contact", "review_notify",
     "contact_attempt", "patient_notified", "callback_complete",
+    "reopen_review",
 ))
 _ACTIVE = frozenset(("open", "awaiting_patient", "awaiting_result"))
 _DIGITS = re.compile(r"\D")
@@ -450,9 +451,13 @@ def build_icloud_actions_router(engine: Engine) -> APIRouter:
                     db.flush()
                 if row.version != change.expected_version:
                     raise HTTPException(409, "Mail status changed; refresh")
-                if not _source_valid(db, row):
-                    raise HTTPException(409, "Previous patient/visit binding is no longer valid")
                 choice = change.action
+                source_valid = _source_valid(db, row)
+                # Never strand the doctor with an invalidated visit link.
+                # Unlink/reclassification/review correction are permitted
+                # even after the original signed Pending was cancelled.
+                if not source_valid and choice not in ("unlink", "classify", "reopen_review"):
+                    raise HTTPException(409, "Previous patient/visit binding is no longer valid")
                 if choice == "classify":
                     if change.category not in _CATEGORIES:
                         raise HTTPException(422, "Choose a known mail category")
@@ -474,10 +479,19 @@ def build_icloud_actions_router(engine: Engine) -> APIRouter:
                     appointment = db.get(ClinicalAppointmentORM, change.booking_id) if change.booking_id else None
                     row.booking_evidence = _booking_evidence(appointment) if appointment else None
                 elif choice == "unlink":
-                    if row.review_status != "not_reviewed":
-                        raise HTTPException(409, "Reviewed email cannot lose its visit identity")
+                    # A wrong or cancelled association must be correctable.
+                    # This does NOT erase historical review/contact events.
                     row.patient_id = row.pending_id = row.booking_id = None
                     row.booking_evidence = None
+                    row.review_status = "not_reviewed"
+                    row.contact_status = "not_requested"
+                    row.callback_complete = 0
+                elif choice == "reopen_review":
+                    if row.review_status == "not_reviewed":
+                        raise HTTPException(409, "Email is not marked reviewed")
+                    row.review_status = "not_reviewed"
+                    row.contact_status = "not_requested"
+                    row.callback_complete = 0
                 elif choice in ("review_no_contact", "review_notify"):
                     if not (row.patient_id or row.booking_id) or row.review_status != "not_reviewed":
                         raise HTTPException(409, "Select and validate the actual visit first")
