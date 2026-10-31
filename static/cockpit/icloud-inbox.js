@@ -369,7 +369,7 @@
       const controller=new AbortController();
       state.controller=controller;
       $("doctorIcloudInboxRows").replaceChildren();
-      $("doctorIcloudInboxDetails").replaceChildren();
+      emptySelection();
       $("doctorIcloudInboxState").textContent="Έλεγχος κλινικής πρόσβασης…";
       fetch("/clinical/status",{
         credentials:"same-origin",cache:"no-store",signal:controller.signal
