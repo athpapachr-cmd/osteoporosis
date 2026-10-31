@@ -67,13 +67,16 @@ def _configured() -> tuple[dict[str, IndividualPrincipal], str]:
         raise HTTPException(503, "Individual staff identity is disabled")
     secret = os.getenv("COCKPIT_INDIVIDUAL_STAFF_V2_SESSION_SECRET", "")
     raw = os.getenv("COCKPIT_INDIVIDUAL_STAFF_V2_ACTORS_JSON", "")
-    if len(secret) < 32 or len(raw) < 2 or len(raw) > _MAX_JSON_CHARS:
+    if (not 32 <= len(secret) <= 256
+            or not secret.isascii()
+            or re.fullmatch(r"[A-Za-z0-9_-]{32,256}", secret) is None
+            or len(raw) < 2 or len(raw) > _MAX_JSON_CHARS):
         raise HTTPException(503, "Individual staff identity not configured")
     # Credentials/session secret must not be identical to any legacy shared key.
     for legacy in ("CLINICAL_DATA_KEY", "COCKPIT_STAFF_CLINICIAN_KEY",
                    "COCKPIT_STAFF_SECRETARY_KEY", "COCKPIT_STAFF_SESSION_SECRET"):
         shared = os.getenv(legacy, "")
-        if shared and hmac.compare_digest(secret, shared):
+        if shared and hmac.compare_digest(secret.encode("utf-8"), shared.encode("utf-8")):
             raise HTTPException(503, "Individual staff signing secret not independent")
     try:
         records = json.loads(raw)
