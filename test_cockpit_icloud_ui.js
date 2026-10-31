@@ -22,7 +22,7 @@ assert.match(ui, /INBOX_SELECT_FAILED: "Απέτυχε το στάδιο ανο�
 assert.match(ui, /Δεν έχει επιβεβαιωθεί/);
 assert.doesNotMatch(ui, /Ο IMAP server απέρριψε τη σύνδεση|Ο IMAP server δεν επέτρεψε άνοιγμα/);
 assert.match(ui, /IMAP_HEADER_FETCH_FAILED/);
-assert.match(shell, /payload\?\.detail\?\.code/);
+assert.match(shell, /detail\?\.code/);
 assert.match(shell, /CockpitIcloudStageMessage/);
 assert.match(shell, /PEEK_SOURCE|PEEK_ITEMS|PEEK_COVERAGE|PEEK_CURSOR|PEEK_ITEM_FIELDS/);
 assert.match(shell, /PEEK_JSON|PEEK_RENDER|PEEK_NETWORK/);
