@@ -280,10 +280,28 @@
     }
   }
 
+  // Static, PHI-free validation codes only. Never log or display source data
+  // when the protected endpoint returned HTTP 200 but the client cannot render.
+  function icloudPeekContractCode(data) {
+    if(data?.source!=="icloud_mail"||data.scope!=="recipient_alias_inbox_only")
+      return "PEEK_SOURCE";
+    if(!Array.isArray(data.items)||data.items.length>4)return "PEEK_ITEMS";
+    if(!Number.isInteger(data.skipped_count)||data.skipped_count<0||
+       typeof data.coverage_complete!=="boolean")return "PEEK_COVERAGE";
+    if(!(data.next_cursor===null||
+         (typeof data.next_cursor==="string"&&
+          /^[1-9][0-9]{0,18}-[1-9][0-9]{0,18}$/.test(data.next_cursor))))
+      return "PEEK_CURSOR";
+    if(data.items.some(x=>!x||typeof x.id!=="string"||
+       typeof x.subject!=="string"||typeof x.from!=="string"||
+       !["clinical","review"].includes(x.category)))return "PEEK_ITEM_FIELDS";
+    return null;
+  }
   async function inbox() {
     const ticket=++state.request;
     content.replaceChildren();
     if(!syntheticInbox()){
+      let sourceResponded=false;
       content.append(text("Φόρτωση εισερχομένων iCloud προς το ιατρείο…"));
       try{
         const response=await fetch("/clinical/icloud-mail/peek",{
@@ -297,18 +315,16 @@
           }
           throw e;
         }
-        const data=await response.json();
+        sourceResponded=true;
+        let data;
+        try{data=await response.json();}
+        catch(_){const e=new Error("Invalid protected JSON");e.clientCode="PEEK_JSON";throw e;}
         if(!activePeek("inbox",ticket))return;
-        if(data?.source!=="icloud_mail"||data.scope!=="recipient_alias_inbox_only"||
-          !Array.isArray(data.items)||data.items.length>4||
-          !Number.isInteger(data.skipped_count)||data.skipped_count<0||
-          typeof data.coverage_complete!=="boolean"||
-          !(data.next_cursor===null||
-            (typeof data.next_cursor==="string" &&
-             /^[1-9][0-9]{0,18}-[1-9][0-9]{0,18}$/.test(data.next_cursor)))||
-          data.items.some(x=>!x||typeof x.id!=="string"||
-            typeof x.subject!=="string"||typeof x.from!=="string"||
-            !["clinical","review"].includes(x.category)))throw Error("Invalid iCloud source");
+        const shapeCode=icloudPeekContractCode(data);
+        if(shapeCode){
+          const e=new Error("Invalid protected iCloud contract");
+          e.clientCode=shapeCode;throw e;
+        }
         content.replaceChildren();
         content.append(text("iCloud · μόνο μηνύματα προς το alias ιατρείου. Δεν έχει γίνει κλινική ταυτοποίηση."));
         if(!data.coverage_complete)content.append(text(
@@ -328,15 +344,33 @@
       }catch(error){
         if(!activePeek("inbox",ticket))return;
         content.replaceChildren();
-        const diagnostic=error.status===503 && window.CockpitIcloudStageMessage?.(error.code);
-        content.append(text(error.status===401||error.status===403?
-          "Απαιτείται κλινική σύνδεση. Δεν εμφανίζονται μηνύματα.":
-          diagnostic?
-          "iCloud Mail: "+diagnostic+" Δεν γνωρίζουμε αν υπάρχουν νέα μηνύματα.":
-          "Δεν έχει συνδεθεί ακόμη το iCloud Mail ή η πηγή δεν είναι διαθέσιμη. Δεν γνωρίζουμε αν υπάρχουν νέα μηνύματα."));
-        if(error.status===401||error.status===403)
+        if(error.status===401||error.status===403){
+          content.append(text("Απαιτείται κλινική σύνδεση. Δεν εμφανίζονται μηνύματα."));
           content.append(action("Σύνδεση","Clinical Key",
             ()=>window.dispatchEvent(new Event("clinical:request-login"))));
+        }else if(sourceResponded){
+          const known=["PEEK_SOURCE","PEEK_ITEMS","PEEK_COVERAGE","PEEK_CURSOR",
+            "PEEK_ITEM_FIELDS","PEEK_JSON"];
+          const code=known.includes(error.clientCode)?error.clientCode:"PEEK_RENDER";
+          content.append(text("Το iCloud απάντησε επιτυχώς (HTTP 200), αλλά το Cockpit "+
+            "δεν μπόρεσε να εμφανίσει την απάντηση. ["+code+"] "+
+            "Αυτό ΔΕΝ σημαίνει ότι το γραμματοκιβώτιο είναι άδειο."));
+          content.append(action("Άνοιγμα πλήρων εισερχομένων",
+            "Ίδια προστατευμένη σύνδεση · μόνο ανάγνωση",
+            ()=>showIcloudInbox()));
+        }else if(error.status===503){
+          const diagnostic=window.CockpitIcloudStageMessage?.(error.code);
+          content.append(text(diagnostic?
+            "iCloud Mail: "+diagnostic+" Δεν γνωρίζουμε αν υπάρχουν νέα μηνύματα.":
+            "Η πηγή iCloud δεν είναι διαθέσιμη αυτή τη στιγμή [PEEK_SOURCE_503]. "+
+            "Δεν γνωρίζουμε αν υπάρχουν νέα μηνύματα."));
+        }else{
+          content.append(text(error.status?
+            "Το αίτημα iCloud απέτυχε στον server [PEEK_HTTP_ERROR]. "+
+            "Δεν γνωρίζουμε αν υπάρχουν νέα μηνύματα.":
+            "Το αίτημα iCloud δεν ολοκληρώθηκε στον browser [PEEK_NETWORK]. "+
+            "Δεν γνωρίζουμε αν υπάρχουν νέα μηνύματα."));
+        }
       }
       return;
     }

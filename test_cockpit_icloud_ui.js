@@ -24,6 +24,11 @@ assert.doesNotMatch(ui, /Ο IMAP server απέρριψε τη σύνδεση|Ο 
 assert.match(ui, /IMAP_HEADER_FETCH_FAILED/);
 assert.match(shell, /payload\?\.detail\?\.code/);
 assert.match(shell, /CockpitIcloudStageMessage/);
+assert.match(shell, /PEEK_SOURCE|PEEK_ITEMS|PEEK_COVERAGE|PEEK_CURSOR|PEEK_ITEM_FIELDS/);
+assert.match(shell, /PEEK_JSON|PEEK_RENDER|PEEK_NETWORK/);
+assert.match(shell, /sourceResponded=true/);
+assert.match(html, /doctor-shell\.js\?v=icloud-peek-200-truth-20261031/);
+assert.doesNotMatch(shell, /console\.error\(error\)|localStorage|sessionStorage/);
 assert.match(ui, /Παλαιότερα/);
 assert.match(ui, /δεν έχουν ελεγχθεί για κακόβουλα/);
 assert.doesNotMatch(ui, /ασφαλής λήψη/);

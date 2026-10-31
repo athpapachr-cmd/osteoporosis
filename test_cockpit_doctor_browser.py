@@ -562,6 +562,54 @@ def exercise_icloud_stage_failure(page):
         page.unroute("**/clinical/icloud-mail/peek", staged_failure)
 
 
+
+
+def exercise_icloud_peek_200_client_truth(page):
+    """HTTP 200 cannot be mislabeled as disconnected iCloud. No PHI in diagnostics."""
+    cases = [
+        ("PEEK_COVERAGE", {"source": "icloud_mail", "scope": "recipient_alias_inbox_only",
+                           "items": [], "next_cursor": "765-2",
+                           "skipped_count": "not-an-integer", "coverage_complete": False}),
+        ("PEEK_CURSOR", {"source": "icloud_mail", "scope": "recipient_alias_inbox_only",
+                         "items": [], "next_cursor": "invalid-cursor",
+                         "skipped_count": 0, "coverage_complete": False}),
+    ]
+    for code, data in cases:
+        def reply(route):
+            assert route.request.method == "GET"
+            assert not any(k.lower() == "x-clinical-key" for k in route.request.headers)
+            route.fulfill(status=200, json=data)
+
+        page.route("**/clinical/icloud-mail/peek", reply)
+        page.locator("#doctorInboxButton").click()
+        peek = page.locator("#doctorPopoverContent")
+        expect(peek).to_contain_text("HTTP 200")
+        expect(peek).to_contain_text(code)
+        expect(peek).not_to_contain_text("Δεν έχει συνδεθεί ακόμη")
+        expect(peek.get_by_role("button", name="Άνοιγμα πλήρων εισερχομένων")).to_be_visible()
+        assert peek.locator("svg, img").count() == 0
+        page.locator("#doctorInboxButton").click()
+        page.unroute("**/clinical/icloud-mail/peek", reply)
+
+    def broken_json(route):
+        route.fulfill(status=200, content_type="application/json", body="{broken")
+    page.route("**/clinical/icloud-mail/peek", broken_json)
+    page.locator("#doctorInboxButton").click()
+    expect(page.locator("#doctorPopoverContent")).to_contain_text("PEEK_JSON")
+    page.locator("#doctorInboxButton").click()
+    page.unroute("**/clinical/icloud-mail/peek", broken_json)
+
+    def offline(route):
+        route.abort("failed")
+    page.route("**/clinical/icloud-mail/peek", offline)
+    page.locator("#doctorInboxButton").click()
+    peek = page.locator("#doctorPopoverContent")
+    expect(peek).to_contain_text("PEEK_NETWORK")
+    expect(peek).not_to_contain_text("HTTP 200")
+    page.locator("#doctorInboxButton").click()
+    page.unroute("**/clinical/icloud-mail/peek", offline)
+
+
 def browser_suite(width, screenshot_name):
     errors = []
     outbound = []
@@ -864,6 +912,7 @@ def browser_suite(width, screenshot_name):
             # Actual Chromium: hidden registry and Dia details are removed on auth loss.
             exercise_icloud_mail_peek(page, width)
             exercise_icloud_stage_failure(page)
+            exercise_icloud_peek_200_client_truth(page)
             exercise_reception_call_peek(page, width, call_source)
             assert_delayed_recent_purged_after_logout(page)
             page.evaluate("""() => {
@@ -912,7 +961,7 @@ def browser_suite(width, screenshot_name):
         page.locator("#visitBackHome").click()
 
         page.locator("#doctorInboxButton").click()
-        expect(page.locator("#doctorPopoverContent")).to_contain_text("Δεν έχει συνδεθεί ακόμη")
+        expect(page.locator("#doctorPopoverContent")).to_contain_text("PEEK_NETWORK")
         expect(page.locator("#doctorInboxBadge")).to_be_hidden()
         page.locator("#doctorInboxButton").click()
 
@@ -961,6 +1010,7 @@ def browser_suite(width, screenshot_name):
         assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1"), "horizontal overflow"
         exercise_icloud_mail_peek(page, width)
         exercise_icloud_stage_failure(page)
+        exercise_icloud_peek_200_client_truth(page)
         exercise_reception_call_peek(page, width, call_source)
         assert_delayed_recent_purged_after_logout(page)
         page.evaluate("window.dispatchEvent(new Event('clinical:authenticated'))")

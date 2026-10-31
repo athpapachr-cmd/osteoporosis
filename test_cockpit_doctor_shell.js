@@ -315,7 +315,7 @@ function findAction(label,node=$('doctorPopoverContent')){
  $("doctorInboxButton").fire("click");await tick();await tick();
  assert.equal(pendingReads,0,"stored obligations cannot substitute for incoming source updates");
  assert.equal($("doctorInboxBadge").hidden,true);
- assert.ok($("doctorPopoverContent").children.some(x=>x.textContent?.includes("Δεν έχει συνδεθεί")));
+ assert.ok($("doctorPopoverContent").children.some(x=>x.textContent?.includes("PEEK_NETWORK")), "browser fetch failure cannot masquerade as disconnected iCloud");
  const incomingRows=$("doctorPopoverContent").children.length;
  windowHandlers.get("cockpit:clinical-updates-changed")();
  assert.equal($("doctorPopoverContent").children.length,incomingRows,"refresh replaces rather than repeats incoming state");
