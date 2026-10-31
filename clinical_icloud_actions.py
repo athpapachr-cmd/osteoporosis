@@ -153,13 +153,14 @@ def _origin(request: Request) -> None:
         raise HTTPException(403, "Same-origin clinical action required")
 
 
-def _projection(row: MailDecisionORM | None, item_id: str, suggested: str) -> dict:
+def _projection(row: MailDecisionORM | None, item_id: str,
+                suggested: str, *, source_valid: bool = True) -> dict:
     if row is None:
         return {
             "item_id": item_id, "version": 0, "category": suggested,
             "patient_id": None, "pending_id": None, "booking_id": None,
             "review_status": "not_reviewed", "contact_status": "not_requested",
-            "callback_complete": False,
+            "callback_complete": False, "source_valid": source_valid,
         }
     return {
         "item_id": item_id, "version": row.version, "category": row.category,
@@ -167,6 +168,7 @@ def _projection(row: MailDecisionORM | None, item_id: str, suggested: str) -> di
         "booking_id": row.booking_id,
         "review_status": row.review_status, "contact_status": row.contact_status,
         "callback_complete": row.callback_complete == 1,
+        "source_valid": source_valid,
     }
 
 
@@ -396,8 +398,10 @@ def build_icloud_actions_router(engine: Engine) -> APIRouter:
         key = _key(item_id)
         with Session(engine) as db:
             row = db.get(MailDecisionORM, key)
-            result = _projection(row, item_id, source["category"])
-            result["source_valid"] = row is None or _source_valid(db, row)
+            result = _projection(
+                row, item_id, source["category"],
+                source_valid=(row is None or _source_valid(db, row))
+            )
             if not result["source_valid"]:
                 result["review_status"] = "source_invalidated"
                 result["callback_complete"] = False
@@ -437,7 +441,8 @@ def build_icloud_actions_router(engine: Engine) -> APIRouter:
                 if previous is not None:
                     if previous.value_hash != digest:
                         raise HTTPException(409, "Conflicting mail action replay")
-                    return _projection(row, item_id, source["category"])
+                    return _projection(row, item_id, source["category"],
+                                       source_valid=_source_valid(db, row))
                 if row is None:
                     if change.expected_version != 0:
                         raise HTTPException(409, "Mail status changed; refresh")
@@ -524,7 +529,8 @@ def build_icloud_actions_router(engine: Engine) -> APIRouter:
                     value_hash=digest, decision_json=audit, created_at=now,
                 ))
                 db.flush()
-                return _projection(row, item_id, source["category"])
+                return _projection(row, item_id, source["category"],
+                                   source_valid=_source_valid(db, row))
         except IntegrityError:
             raise HTTPException(409, "Concurrent mail action; refresh") from None
 
