@@ -180,6 +180,20 @@ def _source_valid(db: Session, row: MailDecisionORM) -> bool:
         signed = payload.get("_visit_capture_v1", {}) if isinstance(payload, dict) else {}
         if not isinstance(signed, dict) or not signed.get("signed"):
             return False
+        ids = signed.get("pending_ids")
+        if isinstance(ids, list) and row.pending_id not in ids:
+            return False
+        candidate = signed.get("candidate")
+        if isinstance(ids, list) and isinstance(candidate, dict):
+            pending_items = candidate.get("pending")
+            if (not isinstance(pending_items, list) or
+                    len(pending_items) != len(ids)):
+                return False
+            index = ids.index(row.pending_id)
+            requested = pending_items[index]
+            if (not isinstance(requested, dict) or
+                    requested.get("item_type") != pending.item_type):
+                return False
     if row.patient_id and db.get(PatientORM, row.patient_id) is None:
         return False
     if row.booking_id:
@@ -218,6 +232,9 @@ def _validate_link(db: Session, patient_id: str | None,
                 or source.status not in ("completed", "amended")
                 or not isinstance(signed, dict) or not signed.get("signed")):
             raise HTTPException(409, "No current signed Pending source")
+        ids = signed.get("pending_ids")
+        if isinstance(ids, list) and pending_id not in ids:
+            raise HTTPException(409, "Pending not in current signed visit")
 
 
 def _digest(data: Action) -> str:
@@ -411,6 +428,13 @@ def build_icloud_actions_router(engine: Engine) -> APIRouter:
                 if choice == "classify":
                     if change.category not in _CATEGORIES:
                         raise HTTPException(422, "Choose a known mail category")
+                    if change.category != row.category:
+                        # New classification invalidates any older medical
+                        # review/contact assertion until clinician re-attests
+                        # the same selected source explicitly.
+                        row.review_status = "not_reviewed"
+                        row.contact_status = "not_requested"
+                        row.callback_complete = 0
                     row.category = change.category
                 elif choice == "link":
                     if row.review_status != "not_reviewed":
