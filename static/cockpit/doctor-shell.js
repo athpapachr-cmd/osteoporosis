@@ -419,6 +419,7 @@
         };
         if(unreadPeek.error.status===401||unreadPeek.error.status===403){
           window.dispatchEvent(new Event("clinical:unauthenticated"));
+          window.dispatchEvent(new Event("clinical:request-login"));
         }
       }finally{
         if(unreadPeek.generation!==generation)return;
@@ -1030,7 +1031,7 @@
   if (typeof window !== "undefined" && typeof window.addEventListener === "function") window.addEventListener("clinical:authenticated", () => {
     if(state.panel === "day") loadDay();
     if(state.panel === "tasks") tasks();
-    if(state.panel === "inbox") inbox();
+    if(state.panel === "inbox" && syntheticInbox()) inbox();
     if(state.panel === "calls") callPeek();
     if(state.panel === "notion") notionTasks();
     loadRfAttention();
@@ -1102,7 +1103,9 @@
   document.addEventListener("visibilitychange",()=>maybeRefreshUnread());
   window.addEventListener("focus",()=>maybeRefreshUnread());
   window.addEventListener("clinical:authenticated",()=>{
-    clearUnreadPeek();unreadPeek.authorized=true;maybeRefreshUnread(true);
+    clearUnreadPeek();unreadPeek.authorized=true;
+    if(state.panel==="inbox"&&!popover.hidden&&!syntheticInbox())displayUnreadPeek();
+    maybeRefreshUnread(true);
   });
   window.addEventListener("clinical:unauthenticated",clearUnreadPeek);
   const bootstrapGeneration=unreadPeek.generation;
