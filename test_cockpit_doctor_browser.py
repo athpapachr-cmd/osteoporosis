@@ -575,6 +575,81 @@ def exercise_icloud_mail_peek(page, width):
 
 
 
+
+def exercise_cached_unread_requires_fresh_clinical_key(page):
+    """An external logout/rotation must never expose cached iCloud subjects."""
+    synthetic_subject = "PRIVATE-SYNTHETIC-UNREAD-SENTINEL"
+    synthetic_from = "PRIVATE-SYNTHETIC-SENDER"
+    payload = {
+        "source": "icloud_mail", "scope": "recipient_alias_inbox_only",
+        "filter": "unseen", "next_cursor": None,
+        "skipped_count": 0, "coverage_complete": True,
+        "items": [{
+            "id": "765-21", "subject": synthetic_subject,
+            "from": synthetic_from, "date": "2026-10-31T10:00:00Z",
+            "category": "clinical"
+        }]
+    }
+    peek_reads = {"count": 0}
+    def peek(route):
+        peek_reads["count"] += 1
+        assert route.request.method == "GET"
+        route.fulfill(status=200, json=payload)
+
+    page.route("**/clinical/icloud-mail/peek", peek)
+    # A fresh login supplies authority to prefetch, using only synthetic
+    # routes; the source returns a genuine UNSEEN shape, without real mail.
+    page.evaluate("window.dispatchEvent(new Event('clinical:authenticated'))")
+    page.locator("#doctorInboxButton").click()
+    popup = page.locator("#doctorPopoverContent")
+    popup.get_by_role("button", name="Ανανέωση τώρα").click()
+    expect(popup).to_contain_text(synthetic_subject)
+    expect(page.locator("#doctorInboxBadge")).to_be_visible()
+    page.locator("#doctorInboxButton").click()
+    reads_after_load = peek_reads["count"]
+
+    verified = {"count": 0}
+    def valid_status(route):
+        assert route.request.method == "GET"
+        assert "cookie" in {key.lower() for key in route.request.headers}
+        verified["count"] += 1
+        route.fulfill(status=200, json={"protected": True})
+
+    page.route("**/clinical/status", valid_status)
+    page.locator("#doctorInboxButton").click()
+    expect(popup).to_contain_text(synthetic_subject)
+    assert verified["count"] >= 1, "Cached preview requires protected status"
+    assert peek_reads["count"] == reads_after_load, "Status check must not re-read Apple IMAP"
+    page.locator("#doctorInboxButton").click()
+    page.unroute("**/clinical/status", valid_status)
+
+    # Simulate key revocation in another tab. Delay /status to ensure the
+    # snapshot remains hidden during the check, not just after HTTP 401.
+    pending = []
+    def delayed_rejected_status(route):
+        if not pending:
+            pending.append(route)
+        else:
+            route.fulfill(status=401, json={"detail": "Session no longer valid"})
+    page.route("**/clinical/status", delayed_rejected_status)
+    page.locator("#doctorInboxButton").click()
+    expect(popup).to_contain_text("Έλεγχος κλινικής πρόσβασης")
+    expect(popup).not_to_contain_text(synthetic_subject)
+    expect(popup).not_to_contain_text(synthetic_from)
+    assert pending, "Expected protected status validation before cached render"
+    pending[0].fulfill(status=401, json={"detail": "Session no longer valid"})
+    expect(page.locator("#doctorInboxBadge")).to_be_hidden()
+    expect(page.locator("#doctorPopover")).to_be_hidden()
+    assert synthetic_subject not in popup.inner_text()
+    assert synthetic_from not in popup.inner_text()
+    assert peek_reads["count"] == reads_after_load
+    expect(page.locator("#ceGlobalAccessPanel")).to_be_visible()
+    page.keyboard.press("Escape")
+    page.unroute("**/clinical/status", delayed_rejected_status)
+    page.unroute("**/clinical/icloud-mail/peek", peek)
+    page.evaluate("window.dispatchEvent(new Event('clinical:authenticated'))")
+
+
 def exercise_icloud_stage_failure(page):
     """Show only the failed IMAP stage, never an unverified cause."""
     cases = (
@@ -954,6 +1029,7 @@ def browser_suite(width, screenshot_name):
             assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1")
             # Actual Chromium: hidden registry and Dia details are removed on auth loss.
             exercise_icloud_mail_peek(page, width)
+            exercise_cached_unread_requires_fresh_clinical_key(page)
             exercise_icloud_stage_failure(page)
             exercise_icloud_peek_200_client_truth(page)
             exercise_reception_call_peek(page, width, call_source)
@@ -1052,6 +1128,7 @@ def browser_suite(width, screenshot_name):
             expect(page.locator("#visitBriefOverlay")).to_be_hidden()
         assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1"), "horizontal overflow"
         exercise_icloud_mail_peek(page, width)
+        exercise_cached_unread_requires_fresh_clinical_key(page)
         exercise_icloud_stage_failure(page)
         exercise_icloud_peek_200_client_truth(page)
         exercise_reception_call_peek(page, width, call_source)
