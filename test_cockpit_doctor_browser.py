@@ -912,7 +912,7 @@ def browser_suite(width, screenshot_name):
             # Actual Chromium: hidden registry and Dia details are removed on auth loss.
             exercise_icloud_mail_peek(page, width)
             exercise_icloud_stage_failure(page)
-        exercise_icloud_peek_200_client_truth(page)
+            exercise_icloud_peek_200_client_truth(page)
             exercise_reception_call_peek(page, width, call_source)
             assert_delayed_recent_purged_after_logout(page)
             page.evaluate("""() => {
