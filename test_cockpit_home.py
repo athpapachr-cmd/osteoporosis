@@ -193,7 +193,8 @@ def test_clinician_home_v4_preserves_existing_tools_without_legacy_blocks_under_
     assert "Μη αναγνωσμένα στο iCloud" in shell
     assert "PEEK_ITEMS_LIMIT" in shell
     assert "PEEK_SOURCE_503" in shell
-    assert 'doctorInboxBadge").hidden=true' in shell
+    assert "badge.hidden=!hasUnread" in shell
+    assert "unreadPeek.data?.items?.length" in shell
     assert "last-minute" not in shell
     assert ".doctor-popover" in css and "doctor-rail-open" in css
     assert "max-width:990px" in css or "max-width:990px" in css.replace(" ", "")
