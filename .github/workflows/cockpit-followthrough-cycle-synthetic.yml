@@ -1,0 +1,64 @@
+name: Clinical Follow-through One Cycle (synthetic-only)
+
+on:
+  push:
+    paths:
+      - "clinical_followthrough_cycle.py"
+      - "clinical_followthrough_demo.py"
+      - "clinical_synthetic_161.py"
+      - "test_clinical_followthrough_cycle.py"
+      - "test_cockpit_synthetic_161.py"
+      - "static/cockpit/followthrough-synthetic.js"
+      - "static/cockpit/followthrough-synthetic.css"
+      - "static/cockpit/synthetic-161.js"
+      - ".github/workflows/cockpit-followthrough-cycle-synthetic.yml"
+      - "cockpit/followthrough/**"
+  pull_request:
+    paths:
+      - "clinical_followthrough_cycle.py"
+      - "clinical_followthrough_demo.py"
+      - "clinical_synthetic_161.py"
+      - "test_clinical_followthrough_cycle.py"
+      - "test_cockpit_synthetic_161.py"
+      - "static/cockpit/followthrough-synthetic.js"
+      - "static/cockpit/followthrough-synthetic.css"
+      - "static/cockpit/synthetic-161.js"
+      - ".github/workflows/cockpit-followthrough-cycle-synthetic.yml"
+      - "cockpit/followthrough/**"
+
+permissions:
+  contents: read
+
+jobs:
+  one-cycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install isolated offline test dependencies
+        run: python -m pip install pytest
+      - name: Compile source and deterministic checks
+        run: |
+          python -m py_compile clinical_followthrough_cycle.py clinical_followthrough_demo.py clinical_synthetic_161.py test_clinical_followthrough_cycle.py
+          node --check static/cockpit/followthrough-synthetic.js
+          node --check static/cockpit/synthetic-161.js
+      - name: Synthetic signed-visit and no-chart full cycle
+        run: pytest -q test_clinical_followthrough_cycle.py
+      - name: Refuse production integration in this first slice
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          source = Path("clinical_followthrough_cycle.py").read_text()
+          main = Path("main.py").read_text()
+          assert "clinical_followthrough_cycle" not in main
+          for forbidden in ("imaplib", "requests.", "httpx.", "send_sms", "send_email", "create_all(", "DATABASE_URL", "localStorage"):
+              assert forbidden not in source, forbidden
+          assert "SyntheticCycleLedger" in source
+          PY
+      - name: Diff hygiene
+        run: git diff --check HEAD^ HEAD

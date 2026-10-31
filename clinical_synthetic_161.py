@@ -24,6 +24,7 @@ from clinical_data import (
 )
 from clinical_staff_auth import StaffActor
 from clinical_attention_phase_a import SyntheticAttentionStore, build_synthetic_attention_router
+from clinical_followthrough_demo import build_synthetic_followthrough_router
 from clinical_visit_brief import (attach_visit_brief_routes, BookingIntent,
                                   _minimal_brief, _booking_card, _record_access, VisitBriefStaffAuditORM)
 
@@ -190,6 +191,35 @@ def build_synthetic_161_router(engine):
     router.include_router(build_synthetic_attention_router(
         attention, require_test_access, verify_synthetic_patient, synthetic_patients))
 
+    def verified_fixture_pending():
+        with Session(engine) as db:
+            patient_id = SYNTHETIC_161_PATIENT_IDS[0]
+            _test_patient(db, patient_id)
+            pending = db.get(ClinicalPendingORM, patient_id + "-pending")
+            source = db.get(EncounterORM, pending.source_encounter_id) if pending else None
+            signed = (source.payload_json or {}).get("_visit_capture_v1", {}) if source else {}
+            if (not pending or pending.patient_id != patient_id
+                    or not source or source.patient_id != patient_id
+                    or source.status != "completed" or not signed.get("signed")
+                    or signed.get("synthetic_scenario") != SCENARIO):
+                raise HTTPException(409, "Signed synthetic Pending source unavailable")
+            return pending.id, source.id
+
+    followthrough_router, followthrough = build_synthetic_followthrough_router(
+        require_test_access, verified_fixture_pending)
+    router.include_router(followthrough_router)
+
+    def project_pending(row, db):
+        # One UI obligation: signed Pending remains unmodified. The source-
+        # versioned result/communication events provide its live projection.
+        projected = _pending_view(row, db)
+        with followthrough.lock:
+            for case_id, work in followthrough.works.items():
+                if work.pending_ref == row.id:
+                    projected["followthrough"] = followthrough.view(case_id)
+                    break
+        return projected
+
 
     def booking(db, uid):
         if uid not in BOOKINGS:
@@ -214,7 +244,7 @@ def build_synthetic_161_router(engine):
     @router.get("/", response_class=HTMLResponse, include_in_schema=False)
     def shell():
         text = (ROOT / "static/cockpit/index.html").read_text()
-        text = text.replace("<head>", '<head><script>window.CockpitClinicalBase="' + PREFIX +
+        text = text.replace("<head>", '<head><link rel="stylesheet" href="/static/cockpit/followthrough-synthetic.css?v=20261031-one-cycle" /><script>window.CockpitClinicalBase="' + PREFIX +
                             '";window.CockpitSynthetic=true;</script>')
         text = text.replace('<div id="doctorMainView">', '''
         <section class="clinical-identity-note" aria-label="Δοκιμή #161">
@@ -222,12 +252,13 @@ def build_synthetic_161_router(engine):
           <p>Σενάριο 17/10/2026 · Επίλεξε ραντεβού για την προετοιμασία της επίσκεψης.</p>
           <button id="synthetic161Prepare" type="button">Προετοιμασία δοκιμής #161</button>
           <span id="synthetic161Status" role="status"></span>
+          <section id="syntheticFollowthroughDemo" aria-label="Πλήρης κύκλος εξέτασης · συνθετική δοκιμή" hidden></section>
           <a href="/static/cockpit/">Επιστροφή στο Cockpit</a>
         </section><div id="doctorMainView">''')
         text = text.replace("Έλεγξα ανεξάρτητα τα στοιχεία αυτού του προσώπου στον προστατευμένο φάκελο. Το όνομα ή το UID του ραντεβού δεν αρκούν.",
                             "Έλεγξα το όνομα και την ημερομηνία γέννησης του επιλεγμένου δοκιμαστικού ασθενούς. Αυτή είναι μόνο δοκιμαστική επιβεβαίωση.")
         text = text.replace('<p class="clinical-muted">Πλήρης κλινική σύνοψη και προηγούμενο σχέδιο εμφανίζονται μόνο μετά από επιβεβαιωμένη σύνδεση με τον προστατευμένο φάκελο.</p>', "")
-        text = text.replace("</body>", '<script src="/static/cockpit/synthetic-161.js"></script></body>')
+        text = text.replace("</body>", '<script src="/static/cockpit/synthetic-161.js"></script><script src="/static/cockpit/followthrough-synthetic.js"></script></body>')
         return HTMLResponse(text, headers={"Cache-Control": "no-store"})
 
     @router.post("/prepare", dependencies=protected)
@@ -246,7 +277,15 @@ def build_synthetic_161_router(engine):
             patient = _test_patient(db, patient_id)
             brief = _minimal_brief(db, patient_id, actual)
             brief["clinical_attention"] = attention.brief(patient_id)
-            brief["pending"] = [_pending_view(p, db) for p in db.scalars(
+            # Presentation only: cycle events do NOT mutate signed visit narrative.
+            brief["followthrough"] = [
+                followthrough.view(case_id)
+                for case_id, work in followthrough.works.items()
+                if work.pending_ref == patient_id + "-pending"
+                and work.visit_ref in {visit_id for visit_id in
+                                       [patient_id + "-visit-10", patient_id + "-visit-30"]}
+            ]
+            brief["pending"] = [project_pending(p, db) for p in db.scalars(
                 select(ClinicalPendingORM).where(ClinicalPendingORM.patient_id == patient_id, ClinicalPendingORM.status != "deleted"))]
             _record_access(db, actor, req.booking_uid, "synthetic_brief_read", "allowed", patient_id)
             db.commit()
@@ -258,6 +297,9 @@ def build_synthetic_161_router(engine):
                        actor=Depends(require_test_access)):
         with Session(engine) as db:
             _test_patient(db, patient_id)
+            with followthrough.lock:
+                if any(w.pending_ref == pending_id for w in followthrough.works.values()):
+                    raise HTTPException(409, "Use the unified synthetic follow-through action")
             row = db.get(ClinicalPendingORM, pending_id)
             if (pending_id != patient_id + "-pending" or not row or row.patient_id != patient_id
                     or row.source_encounter_id != patient_id + "-visit-10"):
@@ -276,7 +318,7 @@ def build_synthetic_161_router(engine):
                            "synthetic_pending_" + req.status, "allowed", patient_id)
             db.commit()
             db.refresh(row)
-            return _pending_view(row, db)
+            return project_pending(row, db)
 
     @router.get("/staff-session", dependencies=protected)
     def test_session():
@@ -322,11 +364,13 @@ def build_synthetic_161_router(engine):
                 patient = _test_patient(db, patient_id)
                 for pending in db.scalars(select(ClinicalPendingORM).where(
                         ClinicalPendingORM.patient_id == patient_id, ClinicalPendingORM.status != "deleted")):
-                    items.append({**_pending_view(pending, db), "patient_id": patient_id,
+                    items.append({**project_pending(pending, db), "patient_id": patient_id,
                                   "patient_name": patient.demographics_json["full_name"]})
             items.sort(key=lambda p: (p["updated_at"], p["pending_id"]), reverse=True)
-            return {"items": items, "open_count": sum(p["status"] in
-                    ("open", "awaiting_patient", "awaiting_result") for p in items)}
+            return {"items": items, "open_count": sum(
+                    (not p.get("followthrough", {}).get("complete", False))
+                    and p["status"] in ("open", "awaiting_patient", "awaiting_result")
+                    for p in items)}
 
     @router.get("/patient/{patient_id}/chart", dependencies=protected)
     def chart(patient_id: str):
@@ -345,9 +389,15 @@ def build_synthetic_161_router(engine):
                 history.append({"encounter_id": row.id, "date": row.encounter_date,
                                 "snapshot": snapshot, "brief": brief, "detail": detail,
                                 "clinical": candidate.model_dump(mode="json")})
+            pending_ids = {p.id for p in pending}
             return {"patient_id": patient_id, "demographics": patient.demographics_json,
                     "visits": history, "pending": [
-                        _pending_view(p, db) for p in pending]}
+                        project_pending(p, db) for p in pending],
+                    "followthrough": [
+                        followthrough.view(case_id)
+                        for case_id, work in followthrough.works.items()
+                        if work.pending_ref in pending_ids
+                    ]}
 
     scoped = APIRouter(prefix="/calendar")
     attach_visit_brief_routes(
