@@ -254,6 +254,20 @@
   function open(id=null) {
     state.active = true;
     view.hidden = false;
+    // Open an unread peek selection directly. The full archive may place
+    // this UID many pages later; never depend on fetching page one first.
+    if(typeof id==="string" && /^[1-9][0-9]{0,18}-[1-9][0-9]{0,18}$/.test(id)){
+      state.epoch++;state.selection++;
+      state.controller?.abort();state.controller=new AbortController();
+      state.id=null;state.items=[];state.pages=[null];state.pageIndex=0;
+      $("doctorIcloudInboxRows").replaceChildren();
+      $("doctorIcloudInboxDetails").replaceChildren();
+      $("doctorIcloudInboxShown").textContent="";
+      $("doctorIcloudInboxState").textContent=
+        "Απευθείας προβολή επιλεγμένου email · μόνο ανάγνωση.";
+      select(id);
+      return;
+    }
     if(state.latest && Date.now()-state.latestAt < 5*60*1000){
       const data=state.latest;
       state.pages=[null];state.pageIndex=0;
