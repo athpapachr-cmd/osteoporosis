@@ -138,4 +138,4 @@ def build_synthetic_followthrough_router(require_test_access, verified_fixture_p
             idempotency_key=req.idempotency_key,
         ))
 
-    return router
+    return router, ledger
