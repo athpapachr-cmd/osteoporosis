@@ -469,6 +469,8 @@ def exercise_reception_call_peek(page, width, call_source):
 
 def exercise_icloud_mail_peek(page, width):
     """Real Chromium, provider-shaped but fictional alias mail; no external access."""
+    mail_ui_errors = []
+    page.on("pageerror", lambda error: mail_ui_errors.append(str(error)))
     payload = {"source": "icloud_mail", "scope": "recipient_alias_inbox_only", "filter": "unseen",
         "next_cursor": "765-2", "skipped_count": 1, "coverage_complete": False,
         "items": [
@@ -511,6 +513,8 @@ def exercise_icloud_mail_peek(page, width):
     assert content.locator("svg, img").count() == 0
     content.locator("button.doctor-action-row").first.click()
     expect(page.locator("#doctorIcloudInboxView")).to_be_visible()
+    assert not mail_ui_errors, "Unexpected iCloud JS navigation error: " + str(mail_ui_errors)
+    expect(page.locator("#doctorIcloudInboxState")).to_contain_text("Απευθείας")
     details = page.locator("#doctorIcloudInboxDetails")
     expect(details).to_contain_text("<img src=x onerror=alert(1)>")
     assert details.locator("svg, img").count() == 0
