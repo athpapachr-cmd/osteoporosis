@@ -22,7 +22,8 @@
       ? stageText[code] + " [" + code + "]" : null;
   window.CockpitIcloudStageMessage = stageLabel;
   const state = {active:false, epoch:0, selection:0, id:null, items:[], controller:null,
-    pages:[null], pageIndex:0, nextCursor:null, skipped:0, coverageComplete:false};
+    pages:[null], pageIndex:0, nextCursor:null, skipped:0, coverageComplete:false,
+    latest:null, latestAt:0};
   const el = (tag, cls, value) => {
     const node = document.createElement(tag);
     if (cls) node.className = cls;
@@ -30,7 +31,7 @@
     return node;
   };
   const current = ticket => state.active && !view.hidden && state.epoch === ticket;
-  function clear() {
+  function clear(purgeCache=false) {
     state.epoch++;
     state.selection++;
     state.controller?.abort();
@@ -43,9 +44,10 @@
     $("doctorIcloudInboxDetails").replaceChildren();
     $("doctorIcloudInboxState").textContent = "";
     $("doctorIcloudInboxShown").textContent = "";
+    if(purgeCache){state.latest=null;state.latestAt=0;}
   }
-  function close() {
-    clear();
+  function close(purgeCache=false) {
+    clear(purgeCache === true);
     state.active = false;
     view.hidden = true;
   }
@@ -68,23 +70,45 @@
       }
       throw error;
     }
-    return response.json();
+    try{return await response.json();}
+    catch(_){const err=new Error("Invalid protected JSON");err.clientCode="LIST_JSON";throw err;}
   }
   function sourceError(error, target) {
     const diagnosed = error.status === 503 && stageLabel(error.code);
+    const clientCode = ["LIST_JSON","LIST_SOURCE","LIST_ITEMS_MISSING",
+      "LIST_ITEMS_LIMIT","LIST_ITEM_FIELDS","LIST_CURSOR","LIST_COVERAGE",
+      "LIST_RENDER"].includes(error.clientCode)?error.clientCode:null;
     target.textContent = diagnosed
       ? "iCloud Mail: " + diagnosed + " Δεν γνωρίζουμε αν υπάρχουν νέα μηνύματα."
       : (error.status === 401 || error.status === 403)
       ? "Απαιτείται κλινική σύνδεση. Δεν εμφανίζονται μηνύματα."
+      : clientCode
+      ? "Το iCloud απάντησε, αλλά η πλήρης προβολή δεν μπόρεσε να επεξεργαστεί την απάντηση. ["+clientCode+"]"
       : error.status === 413
         ? "Το email υπερβαίνει το όριο ασφαλούς προβολής. Δες τα πλήρη συνημμένα στο αρχικό μήνυμα στο iCloud Mail."
         : error.status === 409
         ? "Η θυρίδα iCloud άλλαξε. Ανανέωσε από την αρχή για έγκυρη συνέχεια."
-        : "Δεν έχει συνδεθεί ακόμη το iCloud Mail ή η πηγή δεν είναι διαθέσιμη. Δεν γνωρίζουμε αν υπάρχουν νέα μηνύματα.";
+        : error.status
+        ? "Η πηγή iCloud επέστρεψε σφάλμα HTTP ["+((error.status===503)?"LIST_SOURCE_503":"LIST_HTTP_ERROR")+"]."
+        : "Δεν ολοκληρώθηκε η ανάγνωση στον browser [LIST_NETWORK].";
     if (error.status === 401 || error.status === 403) {
       window.dispatchEvent(new Event("clinical:unauthenticated"));
       window.dispatchEvent(new Event("clinical:request-login"));
     }
+  }
+  function listContractCode(data) {
+    if(data?.source!=="icloud_mail"||
+       data.scope!=="recipient_alias_inbox_only"||data.filter!=="all")return "LIST_SOURCE";
+    if(!Array.isArray(data.items))return "LIST_ITEMS_MISSING";
+    if(data.items.length>25)return "LIST_ITEMS_LIMIT";
+    if(data.items.some(item=>!validItem(item)))return "LIST_ITEM_FIELDS";
+    if(!(data.next_cursor===null||
+         (typeof data.next_cursor==="string"&&
+          /^[1-9][0-9]{0,18}-[1-9][0-9]{0,18}$/.test(data.next_cursor))))
+      return "LIST_CURSOR";
+    if(!Number.isInteger(data.skipped_count)||data.skipped_count<0||
+       typeof data.coverage_complete!=="boolean")return "LIST_COVERAGE";
+    return null;
   }
   function rowTitle(item) {
     return item.category === "review" ? "Για έλεγχο · " + item.subject : item.subject;
@@ -150,16 +174,9 @@
     try {
       const data = await api(cursor ? "?cursor=" + encodeURIComponent(cursor) : "", controller.signal);
       if (!current(ticket)) return;
-      if (data?.source !== "icloud_mail" ||
-          data.scope !== "recipient_alias_inbox_only" ||
-          !Array.isArray(data.items) || data.items.length > 25 ||
-          data.items.some(item => !validItem(item)) ||
-          !(data.next_cursor === null ||
-            (typeof data.next_cursor === "string" &&
-             /^[1-9][0-9]{0,18}-[1-9][0-9]{0,18}$/.test(data.next_cursor))) ||
-          !Number.isInteger(data.skipped_count) || data.skipped_count < 0 ||
-          typeof data.coverage_complete !== "boolean")
-        throw Error("Invalid iCloud source");
+      const invalid=listContractCode(data);
+      if(invalid){const err=new Error("Invalid list contract");err.clientCode=invalid;throw err;}
+      if(cursor===null){state.latest=data;state.latestAt=Date.now();}
       state.items = data.items;
       state.nextCursor = data.next_cursor;
       state.skipped = data.skipped_count;
@@ -167,15 +184,22 @@
       $("doctorIcloudInboxState").textContent =
         "Μόνο ανάγνωση · δεν αλλάζει η κατάσταση των email και δεν γίνεται σύνδεση με ασθενή.";
       rows();
-      if (focusId && data.items.some(i => i.id === focusId)) select(focusId);
+      if (focusId && /^[1-9][0-9]{0,18}-[1-9][0-9]{0,18}$/.test(focusId)) select(focusId);
     } catch (error) {
       if (!current(ticket)) return;
       clear();
-      sourceError(error, $("doctorIcloudInboxState"));
+      if(cursor===null && state.latest){
+        const data=state.latest;
+        state.items=data.items;state.nextCursor=data.next_cursor;
+        state.skipped=data.skipped_count;state.coverageComplete=data.coverage_complete;
+        rows();
+        $("doctorIcloudInboxState").textContent=
+          "Η ανανέωση απέτυχε. Εμφανίζεται παλαιότερη επιβεβαιωμένη λίστα (όχι τρέχουσα).";
+      }else sourceError(error, $("doctorIcloudInboxState"));
     }
   }
   async function select(id) {
-    if (!state.active || !state.items.some(i => i.id === id)) return;
+    if (!state.active || !/^[1-9][0-9]{0,18}-[1-9][0-9]{0,18}$/.test(id)) return;
     const ticket = state.epoch;
     const selected = ++state.selection;
     state.id = id;
@@ -227,12 +251,25 @@
   function open(id=null) {
     state.active = true;
     view.hidden = false;
-    load(id);
+    if(state.latest && Date.now()-state.latestAt < 5*60*1000){
+      const data=state.latest;
+      state.pages=[null];state.pageIndex=0;
+      state.items=data.items;state.nextCursor=data.next_cursor;
+      state.skipped=data.skipped_count;state.coverageComplete=data.coverage_complete;
+      $("doctorIcloudInboxState").textContent=
+        "Μόνο ανάγνωση · τελευταία ενημέρωση "+
+        new Date(state.latestAt).toLocaleTimeString("el-CY",{hour:"2-digit",minute:"2-digit"});
+      rows();
+      if(id)select(id);
+    }else load(id);
   }
   $("doctorIcloudInboxReload").addEventListener("click", () => {
     state.pages = [null];state.pageIndex = 0;load();
   });
-  window.addEventListener("clinical:unauthenticated", close);
-  window.addEventListener("clinical:authenticated", close);
+  window.addEventListener("clinical:unauthenticated", ()=>close(true));
+  window.addEventListener("clinical:authenticated", ()=>close(true));
+  window.addEventListener("cockpit:icloud-peek-refreshed",()=>{
+    if(state.active&&!view.hidden&&state.pageIndex===0)load();
+  });
   window.CockpitIcloudInbox = {open,close};
 })();
