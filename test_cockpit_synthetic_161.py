@@ -603,7 +603,11 @@ def test_followthrough_synthetic_browser_one_calm_card(setup):
                 errors = []
                 page.on("pageerror", lambda err: errors.append(str(err)))
                 page.goto(f"http://127.0.0.1:{port}" + PREFIX + "/")
+                # Optional demo's anonymous bootstrap must NEVER steal
+                # login focus or open the shared Clinical Key panel.
+                expect(page.locator("#ceGlobalAccessPanel")).to_be_hidden()
                 page.locator("#ceGlobalKey").click()
+                expect(page.locator("#ceGlobalAccessPanel")).to_be_visible()
                 page.locator("#ceGlobalKeyInput").fill(KEY)
                 page.locator("#ceGlobalLoginForm button[type=submit]").click()
                 page.locator("#synthetic161Prepare").click()
