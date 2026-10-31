@@ -161,11 +161,32 @@ def attach_cp1(router, engine, protected, context_for, ensure_patient):
         signed=(source.payload_json or {}).get("_visit_capture_v1",{})
         original=source_item(source,p.id)
         excerpt=original.get('source_excerpt') if original else None
+        # One ORIGINAL Pending task. The physician's associated iCloud result
+        # events project here, never create a second clinical obligation or
+        # rewrite the signed encounter. Missing optional mail storage does not
+        # break the existing chart.
+        mail_progress=[]
+        try:
+            from clinical_icloud_actions import MailDecisionORM
+            from sqlalchemy.exc import SQLAlchemyError
+            rows=db.scalars(select(MailDecisionORM).where(
+                MailDecisionORM.pending_id==p.id,
+                MailDecisionORM.patient_id==p.patient_id
+            ).order_by(MailDecisionORM.updated_at.desc()).limit(5)).all()
+            mail_progress=[{
+                "item_id":m.message_ref,"review_status":m.review_status,
+                "contact_status":m.contact_status,
+                "callback_complete":bool(m.callback_complete),
+                "source_valid":p.status in ("open","awaiting_patient","awaiting_result"),
+            } for m in rows]
+        except SQLAlchemyError:
+            pass
         return {**value,"source_date":source.encounter_date,"source_excerpt":excerpt,
             "checkpoints":project_checkpoint(db,p) if ready else None,
             "checkpoint_storage_ready":ready,
             "lifecycle":project_lifecycle(db,p) if ready else None,
-            "checkpoint_write_allowed":ready and can_write(request,db.get(PatientORM,p.patient_id))}
+            "checkpoint_write_allowed":ready and can_write(request,db.get(PatientORM,p.patient_id)),
+            "mail_followthrough":mail_progress}
 
     @router.get("/patient/{patient_id}/chart",dependencies=protected)
     def chart(patient_id: str,response: Response,request: Request):
