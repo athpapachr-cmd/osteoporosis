@@ -510,7 +510,7 @@ def exercise_icloud_mail_peek(page, width):
     content = page.locator("#doctorPopoverContent")
     content.get_by_role("button", name="Ανανέωση τώρα").click()
     expect(content).to_contain_text("<svg onload=alert(1)>")
-    expect(content).to_contain_text("Για έλεγχο")
+    expect(content).to_contain_text("Χρειάζεται χαρακτηρισμό")
     expect(content).to_contain_text("Μερική κάλυψη")
     assert content.locator("svg, img").count() == 0
     observed = peek_requests["count"]
