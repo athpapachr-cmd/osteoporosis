@@ -355,7 +355,9 @@
              !["patient","appointment"].includes(candidate.kind))continue;
           const entry=el("div","doctor-icloud-candidate");
           entry.append(el("p","clinical-inbox-note",
-            candidate.name+(candidate.phone?" · "+candidate.phone:"")));
+            candidate.name+(candidate.phone?" · "+candidate.phone:"")+
+            (candidate.evidence==="name_phone"?" · Όνομα και τηλέφωνο συμφωνούν":
+             candidate.evidence==="name_only"?" · Συμφωνεί όνομα":" · Εύρεση από αναζήτηση")));
           entry.append(control(candidate.kind==="patient"?
             "Σύνδεση με φάκελο":"Σύνδεση με αυτό το ραντεβού",
             ()=>request("link",candidate.kind==="patient"?
