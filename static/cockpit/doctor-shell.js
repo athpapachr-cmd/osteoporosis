@@ -841,7 +841,11 @@
     $("doctorLibraryView").hidden=true;
     $("doctorMainView").hidden=true;
     $("doctorIcloudInboxView").hidden=false;
-    if(window.location?.hash!=="#icloud-mail")
+    // An isolated synthetic Chromium harness uses about:blank (null origin),
+    // where History.replaceState with an application path is forbidden.
+    if(window.location?.origin && window.location.origin!=="null" &&
+       window.location.pathname?.startsWith("/static/cockpit/") &&
+       window.location.hash!=="#icloud-mail")
       window.history?.replaceState?.(null,"","/static/cockpit/#icloud-mail");
     window.CockpitIcloudInbox.open(itemId);
   }
@@ -917,8 +921,12 @@
     $("doctorObligationsView").hidden=true;
     $("doctorLibraryView").hidden=true;
     $("doctorMainView").hidden=false;
-    if(window.location?.hash==="#icloud-mail")
-      window.history?.replaceState?.(null,"","/static/cockpit/");
+    if(window.location?.hash==="#icloud-mail"){
+      if(window.location.origin!=="null" &&
+         window.location.pathname?.startsWith("/static/cockpit/"))
+        window.history?.replaceState?.(null,"","/static/cockpit/");
+      else window.location.hash="";
+    }
     $("doctorActionsButton").focus();
   }
   const rfCounterNames = [
