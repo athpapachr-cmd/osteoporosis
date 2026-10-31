@@ -50,19 +50,17 @@ class FakeMail:
         self.operations.append((operation, args))
         if operation == "SEARCH":
             assert args[:2] == (None, "UID")
-            criteria = args[3:]
-            unseen_only = criteria[:1] == ("UNSEEN",)
-            if unseen_only:
-                criteria = criteria[1:]
-            assert criteria == ("OR", "TO", '"' + ALIAS + '"',
-                               "CC", '"' + ALIAS + '"')
+            assert args[3:] == ("OR", "TO", '"' + ALIAS + '"',
+                                "CC", '"' + ALIAS + '"')
             low, high = map(int, args[2].split(":"))
             assert 1 <= low <= high and high - low < ic._UID_WINDOW
-            uids = [int(uid) for uid in self.rows if low <= int(uid) <= high
-                    and (not unseen_only or uid not in self.seen)]
+            uids = [int(uid) for uid in self.rows if low <= int(uid) <= high]
             return "OK", [b" ".join(str(uid).encode() for uid in sorted(uids))]
         if operation == "FETCH":
             uid, spec = args
+            if spec == "(UID FLAGS)":
+                flag = b"\\Seen" if uid in self.seen else b""
+                return "OK", [b"1 (UID " + uid.encode() + b" FLAGS (" + flag + b"))"]
             row = self.rows.get(uid)
             if row is None:
                 return "OK", [None]
@@ -133,7 +131,8 @@ def test_alias_only_bulk_excluded_and_review_bucket(client):
     assert "private@icloud.com" not in response.text
     assert "unsubscribe" not in response.text
     assert all(op in ("SEARCH", "FETCH") for op, args in source.operations)
-    assert all("BODY.PEEK" in args[-1] for op, args in source.operations if op == "FETCH")
+    assert all(args[-1] == "(UID FLAGS)" or "BODY.PEEK" in args[-1]
+               for op, args in source.operations if op == "FETCH")
     assert "synthetic-only-password" not in response.text
 
 
@@ -147,7 +146,9 @@ def test_icloud_peek_is_unseen_only_and_never_mutates_seen_flags(client):
     assert [(item["id"], item["category"]) for item in payload["items"]] == [
         ("765-3", "review")
     ]
-    assert all("UNSEEN" in args for op, args in fake.operations if op == "SEARCH")
+    assert all("UNSEEN" not in args for op, args in fake.operations if op == "SEARCH")
+    assert any(op == "FETCH" and args[-1] == "(UID FLAGS)"
+               for op, args in fake.operations)
     assert not any(op in ("STORE", "EXPUNGE") for op, args in fake.operations)
     fake.operations.clear()
     full = get(http, "")
@@ -659,6 +660,61 @@ def test_spoofed_pdf_mime_does_not_become_downloadable(client):
     assert get(http, "/items/765-4/attachments/1").status_code == 404
 
 
+@pytest.mark.parametrize("forged", [
+    [b"1 (UID 999 FLAGS ())"],  # Unrelated unsolicited UID.
+    [b"1 (UID 4 FLAGS ())", b"1 (UID 4 FLAGS (\\Seen))"],  # Duplicate UID.
+    [b"1 (UID 4 FLAGS () FLAGS (\\Seen))"],  # Conflicting flag attributes.
+    [b"1 (UID 4 RFC822.SIZE 120)"],  # Missing FLAGS.
+])
+def test_unread_flags_fail_closed_for_ambiguous_or_foreign_uids(client, forged):
+    http, fake = client
+    fake.rows = {"4": mail(subject="MRI report")}
+    original = fake.uid
+
+    def invalid_flags(operation, *args):
+        if operation == "FETCH" and args[-1] == "(UID FLAGS)":
+            return "OK", forged
+        return original(operation, *args)
+
+    fake.uid = invalid_flags
+    response = get(http, "/peek")
+    assert response.status_code == 200
+    assert response.json()["items"] == []
+    assert response.json()["skipped_count"] == 1
+    assert response.json()["coverage_complete"] is False
+
+
+def test_unread_flags_fetch_denial_is_stage_only_503(client):
+    http, fake = client
+    original = fake.uid
+
+    def denied_flags(operation, *args):
+        if operation == "FETCH" and args[-1] == "(UID FLAGS)":
+            return "NO", [b"private synthetic backend message"]
+        return original(operation, *args)
+
+    fake.uid = denied_flags
+    response = get(http, "/peek")
+    assert response.status_code == 503
+    assert response.json() == {"detail": {"code": "IMAP_FLAGS_FETCH_FAILED"}}
+    assert "private synthetic" not in response.text
+
+
+def test_unread_seen_dominated_scan_stays_bounded_to_eighty_flags(client):
+    http, fake = client
+    fake.rows = {str(i): mail(subject=f"MRI result {i}") for i in range(1, 201)}
+    fake.seen = set(fake.rows)
+    response = get(http, "/peek")
+    assert response.status_code == 200
+    assert response.json()["items"] == []
+    assert response.json()["coverage_complete"] is False
+    assert response.json()["next_cursor"] is not None
+    flags = [args for operation, args in fake.operations
+             if operation == "FETCH" and args[-1] == "(UID FLAGS)"]
+    assert len(flags) == ic._MAX_CANDIDATES
+    assert all(op not in ("STORE", "EXPUNGE") for op, _ in fake.operations)
+
+
 # Diagnostic failures are synthetic, stage-only, and never read real provider mail.
 @pytest.mark.parametrize("phase,expected_code,endpoint", [
     ("connect", "TLS_CONNECTION_FAILED", "/peek"),
@@ -730,6 +786,8 @@ def test_fixed_imap_stage_codes_hide_provider_errors(monkeypatch, caplog, phase,
             assert method == "FETCH"
             uid, spec = args
             assert uid == "1"
+            if spec == "(UID FLAGS)":
+                return "OK", [b"1 (UID 1 FLAGS ())"]
             if "HEADER" in spec:
                 if phase == "headers":
                     return "NO", [b"synthetic-secret-password"]
