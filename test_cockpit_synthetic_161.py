@@ -499,3 +499,134 @@ def test_browser_eligible_patient_lookup_401_is_current_session_only(setup):
     finally:
         server.should_exit = True
         thread.join(timeout=5)
+
+
+def test_followthrough_synthetic_full_result_review_secretary_and_closure(setup):
+    """Original signed Pending, and no-chart visit, share one event semantics."""
+    app, _engine = setup
+    anonymous = TestClient(app, base_url="https://testserver")
+    assert anonymous.get(PREFIX + "/followthrough").status_code == 401
+    assert anonymous.post(PREFIX + "/followthrough/prepare").status_code == 401
+
+    c = login(app)
+    before = c.post(PREFIX + "/followthrough/prepare")
+    assert before.status_code == 409, before.text
+    assert c.post(PREFIX + "/prepare").status_code == 200
+    ready = c.post(PREFIX + "/followthrough/prepare")
+    assert ready.status_code == 200, ready.text
+    payload = ready.json()
+    assert payload["mode"] == "synthetic_only"
+    assert payload["live_provider_connected"] is False
+    assert payload["real_messages_used"] is False
+    assert len(payload["cases"]) == 2
+
+    signed = next(x for x in payload["cases"] if x["mode"] == "signed_pending")
+    provisional = next(x for x in payload["cases"] if x["mode"] == "provisional_visit")
+    assert signed["pending_ref"] == SYNTHETIC_161_PATIENT_IDS[0] + "-pending"
+    assert signed["verified_contact"] is True
+    assert provisional["pending_ref"] is None
+    assert provisional["verified_contact"] is False
+    ref = signed["case_id"]
+    route = PREFIX + "/followthrough"
+
+    def apply(path, case, serial, **attrs):
+        current = c.get(route).json()["cases"]
+        version = next(x["version"] for x in current if x["case_id"] == case)
+        response = c.post(route + path, json={
+            "case_id": case, "expected_version": version,
+            "idempotency_key": f"synthetic-cycle-api-{serial:04}",
+            **attrs
+        })
+        assert response.status_code == 200, response.text
+        return response.json()
+
+    assert apply("/simulate-arrival", ref, 1, part="report")["stage"] == "partially_received"
+    reviewed = apply("/doctor-review", ref, 2, part="report", choice="notify")
+    assert reviewed["reviewed"]["report"] == "revision-01"
+    secretary = c.get(route + "/secretary/" + ref)
+    assert secretary.status_code == 200
+    assert "source_ref" not in secretary.text
+    assert "report" not in secretary.text
+    assert secretary.json()["status"] == "to_notify"
+
+    signed_chart = c.get(PREFIX + "/patient/" + SYNTHETIC_161_PATIENT_IDS[0] + "/chart")
+    assert signed_chart.status_code == 200, signed_chart.text
+    assert signed_chart.json()["followthrough"][0]["case_id"] == ref
+    assert signed_chart.json()["followthrough"][0]["reviewed"]["report"] == "revision-01"
+    before_visits = signed_chart.json()["visits"]
+
+    assert apply("/simulate-arrival", ref, 3, part="images")["stage"] == "awaiting_doctor_review"
+    assert apply("/doctor-review", ref, 4, part="images", choice="no_contact")["stage"] == "awaiting_secretary"
+    contacted = apply("/secretary-result", ref, 5, choice="attempted")
+    assert contacted["contact_status"] == "attempted"
+    informed = apply("/secretary-result", ref, 6, choice="notified")
+    assert informed["stage"] == "awaiting_callback" and not informed["complete"]
+    closed = apply("/doctor-callback", ref, 7)
+    assert closed["stage"] == "complete"
+
+    after_chart = c.get(PREFIX + "/patient/" + SYNTHETIC_161_PATIENT_IDS[0] + "/chart").json()
+    assert after_chart["visits"] == before_visits, "Signed medical narrative never rewritten"
+    assert after_chart["followthrough"][0]["stage"] == "complete"
+
+    other = provisional["case_id"]
+    assert apply("/simulate-arrival", other, 8, part="labs")["stage"] == "awaiting_doctor_review"
+    completed = apply("/doctor-review", other, 9, part="labs", choice="no_contact")
+    assert completed["complete"] and completed["pending_ref"] is None
+    assert c.get(route + "/secretary/" + other).status_code == 403
+    assert c.post(route + "/followthrough/prepare").status_code == 404
+
+
+def test_followthrough_synthetic_browser_one_calm_card(setup):
+    """Synthetic-only real Chromium: doctor, staff simulation and no-chart case."""
+    import shutil
+    import socket
+    import threading
+    import uvicorn
+    from playwright.sync_api import sync_playwright, expect
+
+    app, _engine = setup
+    sock = socket.socket()
+    sock.bind(("127.0.0.1", 0))
+    port = sock.getsockname()[1]
+    server = uvicorn.Server(uvicorn.Config(app, log_level="error"))
+    thread = threading.Thread(target=server.run, kwargs={"sockets": [sock]}, daemon=True)
+    thread.start()
+    try:
+        with sync_playwright() as pw:
+            for width in (1280, 680, 390):
+                browser = pw.chromium.launch(
+                    executable_path=shutil.which("google-chrome") or shutil.which("chromium")
+                )
+                ctx = browser.new_context(viewport={"width": width, "height": 900})
+                page = ctx.new_page()
+                page.set_default_timeout(12000)
+                errors = []
+                page.on("pageerror", lambda err: errors.append(str(err)))
+                page.goto(f"http://127.0.0.1:{port}" + PREFIX + "/")
+                page.locator("#ceGlobalKey").click()
+                page.locator("#ceGlobalKeyInput").fill(KEY)
+                page.locator("#ceGlobalLoginForm button[type=submit]").click()
+                page.locator("#synthetic161Prepare").click()
+                expect(page.locator("#syntheticFollowthroughDemo")).to_be_visible()
+                expect(page.locator(".synthetic-cycle-card")).to_have_count(2)
+
+                page.get_by_role("button", name="Δοκιμή παραλαβής · γνωμάτευση").click()
+                page.get_by_role("button", name="Είδα τη γνωμάτευση — ενημέρωση ασθενούς").click()
+                page.get_by_role("button", name="Δοκιμή παραλαβής · εικόνες MRI").click()
+                page.get_by_role("button", name="Είδα εικόνες MRI — χωρίς επικοινωνία").click()
+                page.get_by_role("button", name="Γραμματεία · ο ασθενής ενημερώθηκε").click()
+                page.get_by_role("button", name="Έγινε η επικοινωνία με τον ιατρό").click()
+                expect(page.locator(".synthetic-cycle-card").first).to_contain_text("Ολοκληρώθηκε")
+
+                page.get_by_role("button", name="Δοκιμή παραλαβής · αναλύσεις").click()
+                page.get_by_role("button", name="Είδα αναλύσεις — χωρίς επικοινωνία").click()
+                expect(page.locator(".synthetic-cycle-card").nth(1)).to_contain_text("Ολοκληρώθηκε")
+                assert page.evaluate(
+                    "document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1"
+                ), f"Horizontal overflow at {width}"
+                assert errors == [], errors
+                ctx.close()
+                browser.close()
+    finally:
+        server.should_exit = True
+        thread.join(timeout=5)
