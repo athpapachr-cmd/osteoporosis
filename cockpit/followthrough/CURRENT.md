@@ -23,12 +23,24 @@ clinical_followthrough_cycle.py. It explicitly models:
 - Role-separated doctor/secretary/internal-source actions, optimistic version
   checking, actor-scoped idempotency and append-only audit fields.
 
-This is the **first executable domain slice**, not merely another specification.
-It is not yet a persistence implementation, production endpoint, live inbox
-integration, signed-visit write, patient identity authority, receptionist action
-or UI. No clinical PHI, patient names, contact details or Apple credentials
-exist in the fixtures. This explicit limitation avoids implying that a synthetic
-PASS is clinical acceptance.
+This is the **first executable and interactively testable synthetic cycle**,
+not merely another specification. The new clinical_followthrough_demo.py is
+mounted ONLY under the already protected /clinical/synthetic-161 test router;
+a scoped synthetic-only one-card UI in followthrough-synthetic.js/.css shows
+two cases and their real backend-driven event progression. The signed synthetic
+Pending's visit/chart, Visit Brief and global obligations receive the same
+versioned follow-through projection; the legacy Pending completion button is
+suppressed for that test case to avoid contradictory actions. The signed visit
+narrative itself remains untouched.
+
+IMPORTANT: the synthetic ledger is in-process **memory-only**, and its demo
+"doctor", "secretary" and "source" roles are server-side simulations behind
+the pre-existing TEST Clinical Key, NOT production staff role grants. This is
+NOT persistent across worker restart, a production endpoint, real inbox/mail
+integration, GESY identity, independently qualified contact, actual secretary
+action or medical chart write. No clinical PHI, real patient names, contact
+details, Apple secrets or provider mail exist in the tests. Real data requires
+a separate reviewed durable owner and authenticated per-role adapter.
 
 ## Next bounded technical slices (not implemented yet)
 
@@ -37,13 +49,14 @@ PASS is clinical acceptance.
    safely linked, otherwise one provisional visit obligation with a reconciliation
    key. Adopt durable reviewed schema and actor-scoped event audit with no startup
    DDL and no real patient data until permitted.
-2. Within existing Cockpit Obligations + Visit Brief, one quiet card with one
-   dominant next clinician action; separate narrow secretary task projection.
+2. Promote the synthetic one-card flow into a reviewed, protected production
+   Cockpit Obligations/Visit Brief surface, with a real least-privilege
+   secretary task projection and no double confirmation.
    Must handle no patient chart without fabricated EncounterORM.
 3. Qualify incoming iCloud message identity; only exact verified referral/order
    evidence may link automatically. An uncertain result stays unmatched. The
    top ✉ transport repair remains separate DRAFT PR #265.
-4. Full synthetic end-to-end source→visit→doctor→secretary→callback evidence,
+4. Extend full synthetic end-to-end source→visit→doctor→secretary→callback evidence,
    exact-head CI and independent security review. Only after product acceptance:
    guarded production DB migration/rollout with explicit approval, no remote
    Apple mailbox writes or auto-communication.
