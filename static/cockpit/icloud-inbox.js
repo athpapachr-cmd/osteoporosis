@@ -421,7 +421,8 @@
         panel.append(linking);
         // Suggest existing exact full-name matches in subject once. Never
         // auto-link on sender, phone, name or calendar data alone.
-        void candidateList("",results);
+        if(record.category==="clinical"||record.category==="review")
+          void candidateList("",results);
         if((record.patient_id||record.booking_id)&&record.category==="clinical"){
           const decisions=el("div","clinical-inbox-actions");
           decisions.append(
