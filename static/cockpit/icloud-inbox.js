@@ -223,7 +223,9 @@
       " μηνύματα προς το alias · πιθανώς κλινικά / για έλεγχο";
   }
   async function load(focusId) {
-    if (!state.active || !(await guardSecretarySession())) return;
+    if (!state.active)return;
+    if(secretaryIcloudSession() && !(await guardSecretarySession()))return;
+    if(!state.active||view.hidden)return; // Closed while role verification ran.
     const cursor = state.pages[state.pageIndex];
     const ticket = ++state.epoch;
     ++state.selection;
@@ -272,8 +274,9 @@
     }
   }
   async function select(id) {
-    if (!state.active || !/^[1-9][0-9]{0,18}-[1-9][0-9]{0,18}$/.test(id) ||
-        !(await guardSecretarySession())) return;
+    if (!state.active || !/^[1-9][0-9]{0,18}-[1-9][0-9]{0,18}$/.test(id))return;
+    if(secretaryIcloudSession() && !(await guardSecretarySession()))return;
+    if(!state.active||view.hidden)return; // Never fetch after closing.
     const ticket = state.epoch;
     const selected = ++state.selection;
     state.id = id;
