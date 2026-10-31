@@ -233,7 +233,7 @@ def build_synthetic_161_router(engine):
     @router.get("/", response_class=HTMLResponse, include_in_schema=False)
     def shell():
         text = (ROOT / "static/cockpit/index.html").read_text()
-        text = text.replace("<head>", '<head><script>window.CockpitClinicalBase="' + PREFIX +
+        text = text.replace("<head>", '<head><link rel="stylesheet" href="/static/cockpit/followthrough-synthetic.css?v=20261031-one-cycle" /><script>window.CockpitClinicalBase="' + PREFIX +
                             '";window.CockpitSynthetic=true;</script>')
         text = text.replace('<div id="doctorMainView">', '''
         <section class="clinical-identity-note" aria-label="Δοκιμή #161">
