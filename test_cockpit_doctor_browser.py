@@ -961,7 +961,7 @@ def browser_suite(width, screenshot_name):
         page.locator("#visitBackHome").click()
 
         page.locator("#doctorInboxButton").click()
-        expect(page.locator("#doctorPopoverContent")).to_contain_text("Δεν έχει συνδεθεί ακόμη")
+        expect(page.locator("#doctorPopoverContent")).to_contain_text("PEEK_NETWORK")
         expect(page.locator("#doctorInboxBadge")).to_be_hidden()
         page.locator("#doctorInboxButton").click()
 
