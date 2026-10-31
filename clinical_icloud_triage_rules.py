@@ -25,8 +25,8 @@ ADMIN_SUBJECT = (
     "αποδειξη πληρωμ", "εμβασμα", "καταβολη", "ενοικιο", "μισθωμα",
     "rental", "rent payment", "tax", "λογαριασμοσ", "παραστατικο",
 )
+ADMIN_SERVICE_DOMAINS = ("cal.com", "calendly.com", "stripe.com", "paypal.com")
 ADMIN_SENDERS = (
-    "cal.com", "calendly.com", "stripe.com", "paypal.com",
     "payout", "billing@", "accounts@", "invoices@",
     "landlord", "rental", "ενοικ",  # Never commit personal contact names here.
 )
@@ -64,6 +64,13 @@ def suggest_category(message) -> str:
     subject = fold(message.get("Subject", ""))
     display, address = _sender(message)
     sender = display + " " + address
+    domain = address.rsplit("@", 1)[-1] if "@" in address else ""
+    # A substring test for "cal.com" also matches e.g. "medical.com".
+    # Compare actual sender domains, not arbitrary words in a medical domain.
+    administrative_service = any(
+        domain == host or domain.endswith("." + host)
+        for host in ADMIN_SERVICE_DOMAINS
+    )
     # Clinic-specific names/domains are held privately in server env, never
     # exposed through the repository or HTTP responses. This merely changes
     # display grouping; it never authorizes patient matching or disclosures.
@@ -74,7 +81,8 @@ def suggest_category(message) -> str:
     )
 
     # Practice-specific false positives must not dominate the clinical queue.
-    if (any(token in sender for token in (*ADMIN_SENDERS, *private_tokens))
+    if (administrative_service
+            or any(token in sender for token in (*ADMIN_SENDERS, *private_tokens))
             or any(token in subject for token in ADMIN_SUBJECT)
             or any(token in subject for token in ADMIN_EVENT_WORDS)):
         return "administrative"
