@@ -351,3 +351,16 @@ def test_doctor_can_correct_review_without_erasing_original_contact_history(scen
         assert [e.action for e in history] == [
             "link", "review_notify", "patient_notified", "reopen_review", "review_no_contact"
         ]
+
+
+def test_cancelled_pending_allows_doctor_to_correct_mail_link(scenario):
+    client, _, engine = scenario
+    assert post(client, "765-10", "link", 0, patient_id=PATIENT, pending_id=PENDING).status_code == 200
+    with Session(engine) as db, db.begin():
+        db.get(ClinicalPendingORM, PENDING).status = "cancelled"
+    assert get(client, endpoint()).json()["source_valid"] is False
+    correction = post(client, "765-10", "unlink", 1)
+    assert correction.status_code == 200, correction.text
+    assert correction.json()["source_valid"] is True
+    assert correction.json()["pending_id"] is None
+    assert post(client, "765-10", "link", 2, patient_id=PATIENT).status_code == 200
