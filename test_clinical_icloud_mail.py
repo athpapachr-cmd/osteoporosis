@@ -66,7 +66,7 @@ class FakeMail:
                               b" RFC822.SIZE " + str(len(row)).encode() + b")",
                               header)]
             assert spec == "(BODY.PEEK[])"
-            return "OK", [(b"1 (BODY[])", row)]
+            return "OK", [(b"1 (UID " + uid.encode() + b" BODY[])", row)]
         raise AssertionError("Mutation or unexpected IMAP operation: " + operation)
 
     def response(self, key):
@@ -286,6 +286,271 @@ def test_older_clinical_mail_survives_more_than_80_recent_irrelevant_candidates(
         args[2] for op, args in fake.operations if op == "SEARCH"
     ]
     assert windows == ["1:100", "1:20"]
+
+
+
+def test_imaplib_split_fetch_trailer_does_not_falsely_skip_80_messages(client, monkeypatch):
+    """Real imaplib shape: (metadata, header literal), then standalone SIZE."""
+    http, fake = client
+    fake.rows = {
+        str(i): mail(subject="Weekly offers", newsletter=True)
+        for i in range(1, 101)
+    }
+    fake.rows["5"] = mail(subject="MRI results available")
+    original_uid = fake.uid
+
+    def split_size_trailer(operation, *args):
+        if operation != "FETCH" or "HEADER" not in args[-1]:
+            return original_uid(operation, *args)
+        uid = args[0]
+        fake.operations.append((operation, args))
+        raw = fake.rows[uid]
+        header = raw.split(b"\n\n", 1)[0] + b"\r\n\r\n"
+        prefix = (b"1 (UID " + uid.encode("ascii") +
+                  b" BODY[HEADER.FIELDS (FROM TO CC SUBJECT DATE)]<0> {" +
+                  str(len(header)).encode("ascii") + b"}")
+        return "OK", [(prefix, header),
+                      b" RFC822.SIZE " + str(len(raw)).encode("ascii") + b")"]
+
+    monkeypatch.setattr(fake, "uid", split_size_trailer)
+    first = get(http, "/peek")
+    assert first.status_code == 200
+    assert first.json()["items"] == []
+    assert first.json()["skipped_count"] == 0  # previously 80/80 falsely skipped
+    assert first.json()["next_cursor"] == "765-20"
+    assert first.json()["coverage_complete"] is False
+
+    second = get(http, "/?cursor=" + first.json()["next_cursor"])
+    assert second.status_code == 200
+    assert [(item["id"], item["category"]) for item in second.json()["items"]] == [
+        ("765-5", "clinical")
+    ]
+    assert second.json()["skipped_count"] == 0
+    assert second.json()["coverage_complete"] is True
+    assert not any(
+        operation == "FETCH" and args[-1] == "(BODY.PEEK[])"
+        for operation, args in fake.operations
+    )
+
+
+def test_fetch_size_must_be_in_imap_metadata_not_header_literal(client, monkeypatch):
+    http, fake = client
+    original_uid = fake.uid
+
+    def missing_size(operation, *args):
+        if operation != "FETCH" or args[0] != "4" or "HEADER" not in args[-1]:
+            return original_uid(operation, *args)
+        fake.operations.append((operation, args))
+        header = (b"From: person@example.invalid\r\n"
+                  b"To: practice.alias@icloud.com\r\n"
+                  b"Subject: MRI report RFC822.SIZE 9999\r\n\r\n")
+        return "OK", [(b"1 (UID 4 BODY[HEADER.FIELDS (SUBJECT)] {"
+                       + str(len(header)).encode("ascii") + b"}", header), b")"]
+
+    monkeypatch.setattr(fake, "uid", missing_size)
+    result = get(http, "/peek")
+    assert result.status_code == 200
+    assert result.json()["skipped_count"] == 1
+    assert result.json()["coverage_complete"] is False
+    assert [(item["id"], item["category"]) for item in result.json()["items"]] == [
+        ("765-3", "review")
+    ]  # One bad header cannot hide another clinical candidate.
+
+
+@pytest.mark.parametrize("trailer", [
+    b" RFC822.SIZE 12 RFC822.SIZE 13)",
+    b" RFC822.SIZE 99999999999999999999999999999)",
+    b" RFC822.SIZE x)",
+    b"X" * (ic._MAX_FETCH_METADATA_BYTES + 1),
+])
+def test_ambiguous_oversized_or_missing_fetch_metadata_is_isolated(client, monkeypatch, trailer):
+    http, fake = client
+    original_uid = fake.uid
+
+    def bad_metadata(operation, *args):
+        if operation != "FETCH" or args[0] != "4" or "HEADER" not in args[-1]:
+            return original_uid(operation, *args)
+        fake.operations.append((operation, args))
+        raw = fake.rows["4"]
+        header = raw.split(b"\n\n", 1)[0] + b"\r\n\r\n"
+        prefix = b"1 (UID 4 BODY[HEADER.FIELDS (SUBJECT)] {100}"
+        return "OK", [(prefix, header), trailer]
+
+    monkeypatch.setattr(fake, "uid", bad_metadata)
+    result = get(http, "/peek")
+    assert result.status_code == 200
+    assert result.json()["skipped_count"] == 1
+    assert result.json()["coverage_complete"] is False
+    assert any(item["id"] == "765-3" for item in result.json()["items"])
+    assert not any(item["id"] == "765-4" for item in result.json()["items"])
+
+def test_fetch_size_is_bound_to_requested_uid_not_unsolicited_literal(client, monkeypatch):
+    http, fake = client
+    original_uid = fake.uid
+    wrong_header = mail(subject="Private MRI report", sender="other@example.invalid")
+    wrong_literal = wrong_header.split(b"\n\n", 1)[0] + b"\r\n\r\n"
+
+    def mixed(operation, *args):
+        if operation != "FETCH" or args[0] != "4" or "HEADER" not in args[-1]:
+            return original_uid(operation, *args)
+        fake.operations.append((operation, args))
+        raw = fake.rows["4"]
+        header = raw.split(b"\n\n", 1)[0] + b"\r\n\r\n"
+        return "OK", [
+            (b"5 (UID 99 BODY[HEADER.FIELDS (FROM TO CC SUBJECT)] {100}",
+             wrong_literal),
+            b" RFC822.SIZE 1)",
+            (b"1 (UID 4 BODY[HEADER.FIELDS (FROM TO CC SUBJECT)] {100}", header),
+            b" RFC822.SIZE " + str(len(raw)).encode("ascii") + b")",
+        ]
+
+    monkeypatch.setattr(fake, "uid", mixed)
+    response = get(http, "/peek")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["skipped_count"] == 0
+    matched = next(row for row in payload["items"] if row["id"] == "765-4")
+    assert matched["subject"] == "Αποτελέσματα MRI"
+    assert "Private MRI report" not in response.text
+    assert "other@example.invalid" not in response.text
+
+
+def test_unsolicited_other_uid_size_cannot_replace_missing_requested_size(client, monkeypatch):
+    http, fake = client
+    original_uid = fake.uid
+
+    def missing_target_size(operation, *args):
+        if operation != "FETCH" or args[0] != "4" or "HEADER" not in args[-1]:
+            return original_uid(operation, *args)
+        fake.operations.append((operation, args))
+        raw = fake.rows["4"]
+        header = raw.split(b"\n\n", 1)[0] + b"\r\n\r\n"
+        return "OK", [
+            (b"1 (UID 4 BODY[HEADER.FIELDS (SUBJECT)] {100}", header),
+            b")",
+            (b"2 (UID 99 BODY[HEADER.FIELDS (SUBJECT)] {100}", header),
+            b" RFC822.SIZE " + str(len(raw)).encode("ascii") + b")",
+        ]
+
+    monkeypatch.setattr(fake, "uid", missing_target_size)
+    response = get(http, "/peek")
+    assert response.status_code == 200
+    assert response.json()["skipped_count"] == 1
+    assert all(row["id"] != "765-4" for row in response.json()["items"])
+    assert any(row["id"] == "765-3" for row in response.json()["items"])
+
+
+@pytest.mark.parametrize("metadata", [
+    b"1 (UID 4 X-RFC822.SIZE 123)",
+    b"1 (UID 4 RFC822.SIZE missing)",
+    b"1 (UID 4 RFC822.SIZE 1 RFC822.SIZE 2)",
+    b"1 (UID 4 UID 99 RFC822.SIZE 123)",
+    b"1 (UID 4 RFC822.SIZE 999999999999999999999999999)",
+    b"1 (UID 4 RFC822.SIZE 123a)",
+])
+def test_invalid_metadata_for_requested_uid_is_isolated(client, monkeypatch, metadata):
+    http, fake = client
+    original_uid = fake.uid
+
+    def invalid(operation, *args):
+        if operation != "FETCH" or args[0] != "4" or "HEADER" not in args[-1]:
+            return original_uid(operation, *args)
+        fake.operations.append((operation, args))
+        header = fake.rows["4"].split(b"\n\n", 1)[0] + b"\r\n\r\n"
+        return "OK", [(metadata, header)]
+
+    monkeypatch.setattr(fake, "uid", invalid)
+    response = get(http, "/peek")
+    assert response.status_code == 200
+    assert response.json()["skipped_count"] == 1
+    assert any(row["id"] == "765-3" for row in response.json()["items"])
+    assert all(row["id"] != "765-4" for row in response.json()["items"])
+
+
+def test_uid_and_size_both_in_own_fetch_trailer(client, monkeypatch):
+    http, fake = client
+    original_uid = fake.uid
+
+    def trailer(operation, *args):
+        if operation != "FETCH" or args[0] != "4" or "HEADER" not in args[-1]:
+            return original_uid(operation, *args)
+        fake.operations.append((operation, args))
+        raw = fake.rows["4"]
+        header = raw.split(b"\n\n", 1)[0] + b"\r\n\r\n"
+        return "OK", [
+            (b"1 (BODY[HEADER.FIELDS (FROM TO CC SUBJECT)] {100}", header),
+            b" UID 4 RFC822.SIZE " + str(len(raw)).encode("ascii") + b")",
+        ]
+
+    monkeypatch.setattr(fake, "uid", trailer)
+    response = get(http, "/peek")
+    assert response.status_code == 200
+    assert response.json()["skipped_count"] == 0
+    assert any(row["id"] == "765-4" for row in response.json()["items"])
+
+
+def test_duplicate_literal_for_requested_uid_is_rejected(client, monkeypatch):
+    http, fake = client
+    original_uid = fake.uid
+
+    def duplicate(operation, *args):
+        if operation != "FETCH" or args[0] != "4" or "HEADER" not in args[-1]:
+            return original_uid(operation, *args)
+        fake.operations.append((operation, args))
+        raw = fake.rows["4"]
+        header = raw.split(b"\n\n", 1)[0] + b"\r\n\r\n"
+        return "OK", [
+            (b"1 (UID 4 RFC822.SIZE " + str(len(raw)).encode() + b")", header),
+            (b"1 (UID 4 RFC822.SIZE " + str(len(raw)).encode() + b")", header),
+        ]
+
+    monkeypatch.setattr(fake, "uid", duplicate)
+    response = get(http, "/peek")
+    assert response.status_code == 200
+    assert response.json()["skipped_count"] == 1
+    assert all(row["id"] != "765-4" for row in response.json()["items"])
+
+
+def test_full_body_ignores_unsolicited_different_uid_even_for_matching_alias(client, monkeypatch):
+    http, fake = client
+    original_uid = fake.uid
+    other = mail(subject="MRI report for unrelated patient",
+                 sender="unrelated@example.invalid")
+
+    def mixed_body(operation, *args):
+        if operation != "FETCH" or args[0] != "4" or args[-1] != "(BODY.PEEK[])":
+            return original_uid(operation, *args)
+        fake.operations.append((operation, args))
+        return "OK", [
+            (b"9 (UID 99 BODY[] {400}", other), b")",
+            (b"1 (UID 4 BODY[] {400}", fake.rows["4"]), b")",
+        ]
+
+    monkeypatch.setattr(fake, "uid", mixed_body)
+    response = get(http, "/items/765-4")
+    assert response.status_code == 200
+    assert response.json()["item"]["subject"] == "Αποτελέσματα MRI"
+    assert "MRI report for unrelated patient" not in response.text
+    assert "unrelated@example.invalid" not in response.text
+    assert not any(op in ("STORE", "EXPUNGE") for op, _args in fake.operations)
+
+
+def test_full_body_without_matching_uid_fails_closed(client, monkeypatch):
+    http, fake = client
+    original_uid = fake.uid
+    other = mail(subject="Unrelated patient report")
+
+    def foreign_only(operation, *args):
+        if operation != "FETCH" or args[0] != "4" or args[-1] != "(BODY.PEEK[])":
+            return original_uid(operation, *args)
+        fake.operations.append((operation, args))
+        return "OK", [(b"9 (UID 99 BODY[] {400}", other), b")"]
+
+    monkeypatch.setattr(fake, "uid", foreign_only)
+    response = get(http, "/items/765-4")
+    assert response.status_code == 503
+    assert response.json() == {"detail": {"code": "IMAP_MESSAGE_FETCH_FAILED"}}
+    assert "Unrelated patient report" not in response.text
 
 
 def test_no_false_empty_when_sparse_uid_range_needs_continuation(client):

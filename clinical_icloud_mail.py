@@ -32,6 +32,7 @@ _MAX_WINDOWS = 8
 _MAX_SEARCH_REPLY_BYTES = _UID_WINDOW * 21
 _MAX_MESSAGE_BYTES = 12 * 1024 * 1024
 _MAX_HEADER_BYTES = 64 * 1024
+_MAX_FETCH_METADATA_BYTES = 4096  # Bounded IMAP FETCH response atoms, not header literals
 _HEADER_FETCH = "(BODY.PEEK[HEADER.FIELDS (FROM TO CC SUBJECT DATE LIST-UNSUBSCRIBE PRECEDENCE AUTO-SUBMITTED)]<0.65537> RFC822.SIZE)"
 _MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024
 _CLINICAL_TERMS = (
@@ -157,11 +158,71 @@ def _to_alias(message, alias: str) -> bool:
     return any(address.casefold() == alias for _, address in recipients)
 
 
-def _literal(items) -> bytes:
-    for row in items or []:
-        if isinstance(row, tuple) and len(row) >= 2 and isinstance(row[1], bytes):
-            return row[1]
-    raise _SourceUnavailable()
+# IMAP4.uid("FETCH") may return unsolicited FETCH rows for other UIDs.
+# Match a literal and its own adjacent trailer before using either metadata
+# or message bytes; never combine metadata from different FETCH responses.
+_FETCH_START = re.compile(rb"^[1-9][0-9]{0,18}[ \t]+\(")
+_FETCH_UID_NAME = re.compile(rb"(?:^|[\s(])UID(?=[\s)]|$)", re.I)
+_FETCH_UID_VALUE = re.compile(rb"(?:^|[\s(])UID[ \t]+([1-9][0-9]{0,18})(?=[\s)]|$)", re.I)
+_FETCH_SIZE_NAME = re.compile(rb"(?:^|[\s(])RFC822\.SIZE(?=[\s)]|$)", re.I)
+_FETCH_SIZE_VALUE = re.compile(rb"(?:^|[\s(])RFC822\.SIZE[ \t]+([0-9]{1,20})(?=[\s)]|$)", re.I)
+
+
+def _fetch_literal_for_uid(items, uid: str, *, require_size: bool) -> tuple[bytes, int | None]:
+    """Select one UID-matched FETCH literal, never another message's metadata."""
+    if not isinstance(uid, str) or not re.fullmatch(r"[1-9][0-9]{0,18}", uid):
+        raise _BadMessage()
+    if not isinstance(items, (list, tuple)):
+        raise _BadMessage()
+    requested = uid.encode("ascii")
+    selected = None
+    metadata_bytes = 0
+    index = 0
+    while index < len(items):
+        row = items[index]
+        index += 1
+        if not isinstance(row, tuple):
+            if isinstance(row, bytes):
+                metadata_bytes += len(row)
+            elif row is not None:
+                raise _BadMessage()
+            if metadata_bytes > _MAX_FETCH_METADATA_BYTES:
+                raise _BadMessage()
+            continue
+        if len(row) != 2 or not isinstance(row[0], bytes) or not isinstance(row[1], bytes):
+            raise _BadMessage()
+        prefix, literal = row
+        if not _FETCH_START.match(prefix):
+            raise _BadMessage()
+        trailer = b""
+        # imaplib always emits a standalone trailer after a literal. A
+        # standalone FETCH line ("123 (...)") is another response, not trailer.
+        if index < len(items) and isinstance(items[index], bytes):
+            following = items[index]
+            if not _FETCH_START.match(following):
+                trailer = following
+                index += 1
+        metadata_bytes += len(prefix) + len(trailer)
+        if metadata_bytes > _MAX_FETCH_METADATA_BYTES:
+            raise _BadMessage()
+        metadata = prefix + b" " + trailer
+        uids = _FETCH_UID_VALUE.findall(metadata)
+        if requested not in uids:
+            continue
+        # One exact UID attribute per selected FETCH response; reject multiple
+        # literals for that UID rather than silently choosing the first.
+        if selected is not None or len(_FETCH_UID_NAME.findall(metadata)) != 1 or len(uids) != 1:
+            raise _BadMessage()
+        size = None
+        if require_size:
+            sizes = _FETCH_SIZE_VALUE.findall(metadata)
+            if len(_FETCH_SIZE_NAME.findall(metadata)) != 1 or len(sizes) != 1:
+                raise _BadMessage()
+            size = int(sizes[0])
+        selected = (literal, size)
+    if selected is None:
+        raise _BadMessage()
+    return selected
 
 
 def _fetch_headers(mail, uid: str):
@@ -171,25 +232,16 @@ def _fetch_headers(mail, uid: str):
         raise _StageFailure("IMAP_HEADER_FETCH_FAILED") from None
     if status != "OK":
         raise _StageFailure("IMAP_HEADER_FETCH_FAILED")
-    size_fields = b" ".join(
-        row[0] for row in (items or [])
-        if isinstance(row, tuple) and isinstance(row[0], bytes)
-    )
-    found = re.search(rb"RFC822\.SIZE\s+(\d+)", size_fields, re.I)
-    if not found:
+    header, size = _fetch_literal_for_uid(items, uid, require_size=True)
+    if len(header) > _MAX_HEADER_BYTES:
         raise _BadMessage()
     try:
-        header = _literal(items)
-        if len(header) > _MAX_HEADER_BYTES:
-            raise _BadMessage()
         message = BytesParser(policy=policy.default).parsebytes(
             header, headersonly=True
         )
-    except _BadMessage:
-        raise
-    except (TypeError, ValueError, UnicodeError, _SourceUnavailable):
+    except (TypeError, ValueError, UnicodeError):
         raise _BadMessage() from None
-    return message, int(found.group(1))
+    return message, size
 
 
 def _summary(uid: str, validity: str, message, alias: str):
@@ -318,7 +370,7 @@ def _message(mail, validity: str, alias: str, item_id: str):
         status, data = mail.uid("FETCH", uid, "(BODY.PEEK[])")
         if status != "OK":
             raise _StageFailure("IMAP_MESSAGE_FETCH_FAILED")
-        raw = _literal(data)
+        raw, _unused_size = _fetch_literal_for_uid(data, uid, require_size=False)
     except _StageFailure:
         raise
     except Exception:
