@@ -36,6 +36,8 @@ def build_synthetic_followthrough_router(require_test_access, verified_fixture_p
     """Only under /clinical/synthetic-161, with existing Clinical Key dependency."""
     router = APIRouter(prefix="/followthrough", tags=["synthetic-followthrough"])
     ledger = SyntheticCycleLedger()
+    # In-memory, synthetic-only source snapshot. Never reseal on repeated prepare.
+    original_source_stamps = {}
 
     def invoke(operation):
         try:
@@ -45,10 +47,41 @@ def build_synthetic_followthrough_router(require_test_access, verified_fixture_p
         except (CycleConflict, CycleNotFound) as err:
             raise HTTPException(409, str(err)) from None
 
+    def qualified_case(case):
+        """Do not reuse old doctor instructions after any signed-source change."""
+        if case["mode"] != "signed_pending":
+            return
+        pending_id, encounter_id, fingerprint = verified_fixture_pending()
+        if ((pending_id, encounter_id) != (case["pending_ref"], case["visit_ref"])
+                or original_source_stamps.get(case["case_id"]) != fingerprint):
+            raise CycleConflict("Signed Pending changed; clinician reconciliation required")
+
+    def signed_case_valid(case):
+        try:
+            qualified_case(case)
+        except (HTTPException, CycleForbidden, CycleConflict):
+            return False
+        return True
+
+    def guarded(case_id, operation):
+        def check_then_act():
+            with ledger.lock:
+                qualified_case(ledger.view(case_id))
+                return operation()
+        return invoke(check_then_act)
+
     def state():
         cases = []
-        for case in tuple(ledger.works):
-            cases.append(ledger.view(case))
+        for case_id in tuple(ledger.works):
+            case = ledger.view(case_id)
+            if case["mode"] == "signed_pending":
+                if not signed_case_valid(case):
+                    # Read-only invalidation projection. Preserve the event audit.
+                    case.update(source_valid=False, stage="source_invalidated",
+                                complete=False)
+                else:
+                    case["source_valid"] = True
+            cases.append(case)
         return {"mode": "synthetic_only", "live_provider_connected": False,
                 "real_messages_used": False, "cases": cases}
 
@@ -56,12 +89,14 @@ def build_synthetic_followthrough_router(require_test_access, verified_fixture_p
     def prepare(actor=Depends(require_test_access)):
         # Check actual *synthetic* seeded pending + signed encounter via caller.
         # The API NEVER manufactures a signed clinical encounter or patient.
-        signed_pending_id, encounter_ref = verified_fixture_pending()
+        signed_pending_id, encounter_ref, fingerprint = verified_fixture_pending()
         signed = ledger.register(
             DOCTOR, visit_ref=encounter_ref, request_ref="synthetic-mri-work-01",
             required=("report", "images"), mode="signed_pending",
             pending_ref=signed_pending_id,
         )
+        if original_source_stamps.setdefault(signed["case_id"], fingerprint) != fingerprint:
+            raise HTTPException(409, "Signed Pending changed; clinician reconciliation required")
         if not signed["verified_contact"]:
             ledger.act(signed["case_id"], DOCTOR, action="identity_verified",
                        expected_version=signed["version"],
@@ -83,7 +118,7 @@ def build_synthetic_followthrough_router(require_test_access, verified_fixture_p
     def secretary(case_id: str, actor=Depends(require_test_access)):
         # This is a synthetic, explicitly labelled role *simulation*, NOT a
         # production staff endpoint or proof of actual staff authentication.
-        return invoke(lambda: ledger.secretary_view(case_id, SECRETARY))
+        return guarded(case_id, lambda: ledger.secretary_view(case_id, SECRETARY))
 
     @router.post("/simulate-arrival")
     def simulate_arrival(req: SyntheticAction, actor=Depends(require_test_access)):
@@ -97,7 +132,7 @@ def build_synthetic_followthrough_router(require_test_access, verified_fixture_p
                               idempotency_key=req.idempotency_key,
                               part=req.part, source_ref=evidence[0],
                               source_version=evidence[1], proof="qualified_order")
-        return invoke(action)
+        return guarded(req.case_id, action)
 
     @router.post("/doctor-review")
     def doctor_review(req: SyntheticAction, actor=Depends(require_test_access)):
@@ -115,7 +150,7 @@ def build_synthetic_followthrough_router(require_test_access, verified_fixture_p
                 idempotency_key=req.idempotency_key, part=req.part,
                 source_version=material["source_version"],
             )
-        return invoke(action)
+        return guarded(req.case_id, action)
 
     @router.post("/secretary-result")
     def secretary_result(req: SyntheticAction, actor=Depends(require_test_access)):
@@ -128,14 +163,14 @@ def build_synthetic_followthrough_router(require_test_access, verified_fixture_p
                 expected_version=req.expected_version,
                 idempotency_key=req.idempotency_key,
             )
-        return invoke(action)
+        return guarded(req.case_id, action)
 
     @router.post("/doctor-callback")
     def doctor_callback(req: SyntheticAction, actor=Depends(require_test_access)):
-        return invoke(lambda: ledger.act(
+        return guarded(req.case_id, lambda: ledger.act(
             req.case_id, DOCTOR, action="callback_complete",
             expected_version=req.expected_version,
             idempotency_key=req.idempotency_key,
         ))
 
-    return router, ledger
+    return router, ledger, signed_case_valid

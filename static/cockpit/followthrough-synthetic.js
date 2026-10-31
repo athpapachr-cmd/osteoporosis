@@ -12,7 +12,8 @@
     awaiting_doctor_review: "Αναμένει ιατρικό έλεγχο",
     awaiting_secretary: "Η γραμματέας να ενημερώσει",
     awaiting_callback: "Αναμένει επικοινωνία με ιατρό",
-    complete: "Ολοκληρώθηκε"
+    complete: "Ολοκληρώθηκε",
+    source_invalidated: "Η υποχρέωση άλλαξε στην επίσκεψη · χρειάζεται επανέλεγχο"
   });
   const facets = Object.freeze({
     report: "γνωμάτευση", images: "εικόνες MRI", labs: "αναλύσεις"
@@ -46,6 +47,7 @@
     return response.json();
   }
   function next(caseData) {
+    if(caseData.source_valid===false) return null;
     for (const part of caseData.required) {
       const source = caseData.received[part];
       if (!source) return {

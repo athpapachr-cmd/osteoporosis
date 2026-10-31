@@ -1,4 +1,5 @@
 """Persistent #161 boundary and real shared-backend tests. No external provider."""
+from datetime import datetime
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -48,6 +49,23 @@ def login(app):
     client = TestClient(app, base_url="https://testserver")
     assert client.post("/clinical/login", json={"key":KEY}).status_code == 200
     return client
+
+
+def assert_booking_uses_pending_projection(client, *, stage, source_valid):
+    """The booking brief must repeat the canonical Pending projection, never raw events."""
+    response = client.post(PREFIX + "/open-booking", json={"booking_uid": BOOKINGS[0]})
+    assert response.status_code == 200, response.text
+    brief = response.json()["brief"]
+    assert brief["followthrough"] == [
+        item["followthrough"] for item in brief["pending"]
+        if "followthrough" in item
+    ]
+    assert len(brief["followthrough"]) == 1
+    cycle = brief["followthrough"][0]
+    assert cycle["stage"] == stage
+    assert cycle["source_valid"] is source_valid
+    if not source_valid:
+        assert cycle["complete"] is False
 
 
 def confirm(c, uid=BOOKINGS[1], patient=SYNTHETIC_161_PATIENT_IDS[1], revision=None):
@@ -501,6 +519,180 @@ def test_browser_eligible_patient_lookup_401_is_current_session_only(setup):
         thread.join(timeout=5)
 
 
+def test_followthrough_demo_rejects_closed_or_unbound_signed_pending(setup):
+    app, engine = setup
+    c = login(app)
+    assert c.post(PREFIX + "/prepare").status_code == 200
+    from clinical_data import ClinicalPendingORM
+    patient_id = SYNTHETIC_161_PATIENT_IDS[0]
+    pending_id = patient_id + "-pending"
+    with Session(engine) as db, db.begin():
+        pending = db.get(ClinicalPendingORM, pending_id)
+        pending.status = "resolved"
+    assert c.post(PREFIX + "/followthrough/prepare").status_code == 409
+    with Session(engine) as db, db.begin():
+        pending = db.get(ClinicalPendingORM, pending_id)
+        pending.status = "awaiting_patient"
+        encounter = db.get(EncounterORM, pending.source_encounter_id)
+        payload = dict(encounter.payload_json)
+        signed = dict(payload["_visit_capture_v1"])
+        signed["pending_ids"] = []
+        payload["_visit_capture_v1"] = signed
+        encounter.payload_json = payload
+    assert c.post(PREFIX + "/followthrough/prepare").status_code == 409
+
+
+def test_followthrough_revocation_after_review_blocks_actions_and_clears_live_projection(setup):
+    app, engine = setup
+    c = login(app)
+    assert c.post(PREFIX + "/prepare").status_code == 200
+    ready = c.post(PREFIX + "/followthrough/prepare")
+    assert ready.status_code == 200, ready.text
+    signed = next(x for x in ready.json()["cases"] if x["mode"] == "signed_pending")
+    other = next(x for x in ready.json()["cases"] if x["mode"] == "provisional_visit")
+    case_id = signed["case_id"]
+    route = PREFIX + "/followthrough"
+
+    def action(path, no, **attrs):
+        current = next(x for x in c.get(route).json()["cases"] if x["case_id"] == case_id)
+        return c.post(route + path, json={
+            "case_id": case_id, "expected_version": current["version"],
+            "idempotency_key": f"synthetic-revocation-event-{no:04}",
+            **attrs,
+        })
+
+    assert action("/simulate-arrival", 1, part="report").status_code == 200
+    assert action("/doctor-review", 2, part="report", choice="notify").status_code == 200
+    assert c.get(route + "/secretary/" + case_id).status_code == 200
+    assert_booking_uses_pending_projection(c, stage="partially_received", source_valid=True)
+    original = c.get(PREFIX + "/patient/" + SYNTHETIC_161_PATIENT_IDS[0] + "/chart").json()
+    with Session(engine) as db, db.begin():
+        from clinical_data import ClinicalPendingORM
+        db.get(ClinicalPendingORM, SYNTHETIC_161_PATIENT_IDS[0] + "-pending").status = "cancelled"
+
+    state = next(x for x in c.get(route).json()["cases"] if x["case_id"] == case_id)
+    assert state["source_valid"] is False
+    assert state["stage"] == "source_invalidated" and not state["complete"]
+    assert state["version"] == 3
+    assert_booking_uses_pending_projection(c, stage="source_invalidated", source_valid=False)
+    assert c.get(route + "/secretary/" + case_id).status_code == 409
+    for path, attrs in (
+        ("/simulate-arrival", {"part": "images"}),
+        ("/doctor-review", {"part": "report", "choice": "notify"}),
+        ("/secretary-result", {"choice": "notified"}),
+        ("/doctor-callback", {}),
+    ):
+        assert action(path, 20 + len(path), **attrs).status_code == 409, path
+    after = c.get(PREFIX + "/patient/" + SYNTHETIC_161_PATIENT_IDS[0] + "/chart").json()
+    assert after["visits"] == original["visits"], "Signed narrative must remain unchanged"
+    assert after["pending"][0]["followthrough"]["source_valid"] is False
+    assert after["pending"][0]["followthrough"] == after["followthrough"][0]
+    assert after["followthrough"][0]["stage"] == "source_invalidated"
+    assert after["pending"][0]["status"] == "cancelled"
+    assert c.get(PREFIX + "/clinical-updates").json()["open_count"] == 2
+    assert next(x for x in c.get(route).json()["cases"] if x["case_id"] == case_id)["version"] == 3
+    # The independent no-chart obligation remains actionable.
+    response = c.post(route + "/simulate-arrival", json={
+        "case_id": other["case_id"], "expected_version": other["version"],
+        "idempotency_key": "synthetic-provisional-after-revoke-01",
+        "part": "labs",
+    })
+    assert response.status_code == 200 and response.json()["stage"] == "awaiting_doctor_review"
+
+
+def test_followthrough_cancel_then_reopen_remains_suspended(setup):
+    app, engine = setup
+    c = login(app)
+    assert c.post(PREFIX + "/prepare").status_code == 200
+    ready = c.post(PREFIX + "/followthrough/prepare").json()
+    case_id = next(x["case_id"] for x in ready["cases"] if x["mode"] == "signed_pending")
+    route = PREFIX + "/followthrough"
+    current = next(x for x in c.get(route).json()["cases"] if x["case_id"] == case_id)
+    def action(path, serial, **extra):
+        return c.post(route + path, json={
+            "case_id": case_id, "expected_version": current["version"] + serial - 1,
+            "idempotency_key": f"synthetic-reopen-guard-{serial:04}", **extra,
+        })
+    assert action("/simulate-arrival", 1, part="report").status_code == 200
+    assert action("/doctor-review", 2, part="report", choice="notify").status_code == 200
+    assert c.get(route + "/secretary/" + case_id).status_code == 200
+    patient_id = SYNTHETIC_161_PATIENT_IDS[0]
+    with Session(engine) as db, db.begin():
+        from clinical_data import ClinicalPendingORM
+        row = db.get(ClinicalPendingORM, patient_id + "-pending")
+        row.status = "cancelled"
+        row.updated_at = datetime(2026, 10, 31, 12)
+    assert c.get(route + "/secretary/" + case_id).status_code == 409
+    assert_booking_uses_pending_projection(c, stage="source_invalidated", source_valid=False)
+    with Session(engine) as db, db.begin():
+        row = db.get(ClinicalPendingORM, patient_id + "-pending")
+        row.status = "awaiting_patient"
+        row.updated_at = datetime(2026, 10, 31, 13)
+    reopened = next(x for x in c.get(route).json()["cases"] if x["case_id"] == case_id)
+    assert reopened["source_valid"] is False and reopened["stage"] == "source_invalidated"
+    assert_booking_uses_pending_projection(c, stage="source_invalidated", source_valid=False)
+    assert c.get(route + "/secretary/" + case_id).status_code == 409
+    assert action("/secretary-result", 3, choice="notified").status_code == 409
+    chart = c.get(PREFIX + "/patient/" + patient_id + "/chart").json()
+    assert chart["followthrough"][0] == chart["pending"][0]["followthrough"]
+    assert chart["followthrough"][0]["complete"] is False
+    assert chart["followthrough"][0]["source_valid"] is False
+    assert c.get(PREFIX + "/clinical-updates").json()["open_count"] == 3
+
+
+def test_followthrough_joint_patient_transfer_is_denied(setup):
+    app, engine = setup
+    c = login(app)
+    assert c.post(PREFIX + "/prepare").status_code == 200
+    ready = c.post(PREFIX + "/followthrough/prepare").json()
+    signed = next(x for x in ready["cases"] if x["mode"] == "signed_pending")
+    original, other = SYNTHETIC_161_PATIENT_IDS[:2]
+    with Session(engine) as db, db.begin():
+        from clinical_data import ClinicalPendingORM
+        pending = db.get(ClinicalPendingORM, original + "-pending")
+        visit = db.get(EncounterORM, original + "-visit-10")
+        pending.patient_id = other
+        visit.patient_id = other
+    route = PREFIX + "/followthrough"
+    case_id = signed["case_id"]
+    state = next(x for x in c.get(route).json()["cases"] if x["case_id"] == case_id)
+    assert state["source_valid"] is False
+    assert c.get(route + "/secretary/" + case_id).status_code == 409
+    assert c.post(route + "/doctor-callback", json={
+        "case_id": case_id, "expected_version": state["version"],
+        "idempotency_key": "synthetic-reassigned-patient-01",
+    }).status_code == 409
+
+
+def test_followthrough_amended_signed_membership_requires_reconciliation(setup):
+    app, engine = setup
+    c = login(app)
+    assert c.post(PREFIX + "/prepare").status_code == 200
+    ready = c.post(PREFIX + "/followthrough/prepare").json()
+    case_id = next(x["case_id"] for x in ready["cases"] if x["mode"] == "signed_pending")
+    with Session(engine) as db, db.begin():
+        patient_id = SYNTHETIC_161_PATIENT_IDS[0]
+        visit = db.get(EncounterORM, patient_id + "-visit-10")
+        payload = dict(visit.payload_json)
+        signed = dict(payload["_visit_capture_v1"])
+        signed["pending_ids"] = []
+        signed["candidate"] = {**signed["candidate"], "pending": []}
+        payload["_visit_capture_v1"] = signed
+        visit.payload_json = payload
+        visit.status = "amended"
+    state = next(x for x in c.get(PREFIX + "/followthrough").json()["cases"] if x["case_id"] == case_id)
+    assert state["source_valid"] is False and state["stage"] == "source_invalidated"
+    assert_booking_uses_pending_projection(c, stage="source_invalidated", source_valid=False)
+    pending = c.get(PREFIX + "/patient/" + SYNTHETIC_161_PATIENT_IDS[0] + "/chart").json()["pending"][0]
+    assert pending["status"] == "awaiting_patient"
+    assert pending["followthrough"]["source_valid"] is False
+    assert c.get(PREFIX + "/clinical-updates").json()["open_count"] == 3
+    assert c.post(PREFIX + "/followthrough/doctor-callback", json={
+        "case_id": case_id, "expected_version": state["version"],
+        "idempotency_key": "synthetic-amended-source-guard-01",
+    }).status_code == 409
+
+
 def test_followthrough_synthetic_full_result_review_secretary_and_closure(setup):
     """Original signed Pending, and no-chart visit, share one event semantics."""
     app, _engine = setup
@@ -576,6 +768,58 @@ def test_followthrough_synthetic_full_result_review_secretary_and_closure(setup)
     assert c.post(route + "/followthrough/prepare").status_code == 404
 
 
+def test_followthrough_revoked_browser_shows_no_stale_task_or_completion(setup):
+    import shutil
+    import socket
+    import threading
+    import uvicorn
+    from playwright.sync_api import sync_playwright, expect
+    from clinical_data import ClinicalPendingORM
+
+    app, engine = setup
+    c = login(app)
+    assert c.post(PREFIX + "/prepare").status_code == 200
+    assert c.post(PREFIX + "/followthrough/prepare").status_code == 200
+    with Session(engine) as db, db.begin():
+        db.get(ClinicalPendingORM, SYNTHETIC_161_PATIENT_IDS[0] + "-pending").status = "cancelled"
+
+    sock = socket.socket()
+    sock.bind(("127.0.0.1", 0))
+    port = sock.getsockname()[1]
+    server = uvicorn.Server(uvicorn.Config(app, log_level="error"))
+    thread = threading.Thread(target=server.run, kwargs={"sockets": [sock]}, daemon=True)
+    thread.start()
+    try:
+        with sync_playwright() as pw:
+            browser = pw.chromium.launch(
+                executable_path=shutil.which("google-chrome") or shutil.which("chromium"))
+            ctx = browser.new_context(viewport={"width": 1280, "height": 900})
+            page = ctx.new_page()
+            page.set_default_timeout(12000)
+            page.goto(f"http://127.0.0.1:{port}" + PREFIX + "/")
+            page.locator("#ceGlobalKey").click()
+            page.locator("#ceGlobalKeyInput").fill(KEY)
+            page.locator("#ceGlobalLoginForm button[type=submit]").click()
+            expect(page.locator("#syntheticFollowthroughDemo")).to_be_visible()
+            expect(page.locator(".synthetic-cycle-card").first).to_contain_text(
+                "Η υποχρέωση άλλαξε στην επίσκεψη")
+            expect(page.locator(".synthetic-cycle-card").first.locator(".synthetic-cycle-action")).to_have_count(0)
+            # Provisional visit remains actionable with revoked signed source.
+            expect(page.locator(".synthetic-cycle-card").nth(1).locator(".synthetic-cycle-action")).to_have_count(1)
+            page.evaluate("(patientId) => window.CockpitStoredChart.open(patientId)",
+                          SYNTHETIC_161_PATIENT_IDS[0])
+            expect(page.locator("#synthetic161Chart .patient-obligation-origin")).to_contain_text(
+                "Τρέχουσα κατάσταση: Ακυρώθηκε")
+            expect(page.locator("#synthetic161Chart")).to_contain_text("0 ανοικτές")
+            assert page.evaluate(
+                "document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1")
+            ctx.close()
+            browser.close()
+    finally:
+        server.should_exit = True
+        thread.join(timeout=5)
+
+
 def test_followthrough_synthetic_browser_one_calm_card(setup):
     """Synthetic-only real Chromium: doctor, staff simulation and no-chart case."""
     import shutil
@@ -625,6 +869,16 @@ def test_followthrough_synthetic_browser_one_calm_card(setup):
                     page.get_by_role("button", name="Είδα αναλύσεις — χωρίς επικοινωνία").click()
                 expect(page.locator(".synthetic-cycle-card").first).to_contain_text("Ολοκληρώθηκε")
                 expect(page.locator(".synthetic-cycle-card").nth(1)).to_contain_text("Ολοκληρώθηκε")
+                if width == 1280:
+                    # Same event-derived status in signed visit and open count.
+                    page.evaluate(
+                        "(patientId) => window.CockpitStoredChart.open(patientId)",
+                        SYNTHETIC_161_PATIENT_IDS[0],
+                    )
+                    expect(page.locator("#synthetic161Chart .patient-obligation-origin")).to_contain_text(
+                        "Τρέχουσα κατάσταση: Ολοκληρώθηκε"
+                    )
+                    expect(page.locator("#synthetic161Chart")).to_contain_text("0 ανοικτές")
                 assert page.evaluate(
                     "document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1"
                 ), f"Horizontal overflow at {width}"
