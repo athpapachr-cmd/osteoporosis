@@ -409,7 +409,7 @@ def _message(mail, validity: str, alias: str, item_id: str):
     uid = match.group(2)
     try:
         header, size = _fetch_headers(mail, uid)
-        if not _summary(uid, validity, header, alias):
+        if not _summary(uid, validity, header, alias, include_nonclinical=True):
             raise HTTPException(404, "Mail item not found")
     except _BadMessage:
         raise HTTPException(422, "Mail item cannot be safely read") from None
@@ -427,7 +427,7 @@ def _message(mail, validity: str, alias: str, item_id: str):
     if len(raw) > _MAX_MESSAGE_BYTES:
         raise HTTPException(413, "Mail item exceeds safe size limit")
     message = BytesParser(policy=policy.default).parsebytes(raw)
-    if not _summary(uid, validity, message, alias):
+    if not _summary(uid, validity, message, alias, include_nonclinical=True):
         raise HTTPException(404, "Mail item not found")
     return message
 
