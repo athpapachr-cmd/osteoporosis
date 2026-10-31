@@ -221,6 +221,24 @@ class SyntheticCycleLedger:
                     if event["fingerprint"] != payload:
                         raise CycleConflict("Idempotency key reused with different action")
                     return self._current(work)
+            if action == "received":
+                # Repeated provider polling is an idempotent no-op even when
+                # the source retried with an old observed work version.
+                part, source_ref, source_version = (
+                    attrs.get("part"), attrs.get("source_ref"), attrs.get("source_version")
+                )
+                proof = attrs.get("proof")
+                if not ((actor.role == "source" and proof == "qualified_order")
+                        or (actor.role == "clinician" and proof == "clinician_verified")):
+                    raise CycleForbidden("Unqualified source cannot be linked by name")
+                owner = self.by_source.get(source_ref)
+                if owner and owner != (case_id, part):
+                    raise CycleConflict("Source already belongs to another obligation")
+                existing = self._current(work)["received"].get(part)
+                if existing and existing == {
+                    "source_ref": source_ref, "source_version": source_version
+                }:
+                    return self._current(work)
             if type(expected_version) is not int or work.version != expected_version:
                 raise CycleConflict("Stale state; refresh before acting")
 
