@@ -1,5 +1,6 @@
 """Real Chromium smoke with invented records; no production, Gmail or patient access."""
 from pathlib import Path
+import json
 import shutil
 from urllib.parse import urlparse,parse_qs
 from datetime import datetime, timedelta, timezone
@@ -502,6 +503,47 @@ def exercise_icloud_mail_peek(page, width):
         route.fulfill(json={**payload, "filter": "all"})
     def item(route):
         route.fulfill(json=detail)
+    # The real selected message must offer WORKING protected actions, not
+    # merely show the phrase "Για έλεγχο" with no way to classify or link.
+    action_state = {"item_id":"765-4","version":0,"category":"clinical",
+        "patient_id":None,"pending_id":None,"booking_id":None,
+        "review_status":"not_reviewed","contact_status":"not_requested",
+        "callback_complete":False,"source_valid":True}
+    performed=[]
+    def clinician_action(route):
+        if route.request.method == "GET":
+            return route.fulfill(json=action_state)
+        assert route.request.method == "POST"
+        assert not any(k.lower()=="x-clinical-key" for k in route.request.headers)
+        body=json.loads(route.request.post_data)
+        assert body["expected_version"] == action_state["version"]
+        performed.append(body["action"])
+        if body["action"]=="link":
+            action_state["patient_id"]=body.get("patient_id")
+            action_state["pending_id"]=body.get("pending_id")
+        elif body["action"]=="review_notify":
+            action_state["review_status"]="reviewed_notify"
+            action_state["contact_status"]="to_contact"
+        elif body["action"]=="patient_notified":
+            action_state["contact_status"]="notified"
+        elif body["action"]=="callback_complete":
+            action_state["callback_complete"]=True
+        elif body["action"]=="reopen_review":
+            action_state["review_status"]="not_reviewed"
+            action_state["contact_status"]="not_requested"
+            action_state["callback_complete"]=False
+        action_state["version"]+=1
+        route.fulfill(json=action_state)
+    def candidates(route):
+        assert route.request.method=="GET"
+        route.fulfill(json={"item_id":"765-4","items":[{
+            "kind":"patient","id":"SYN-MAIL-PATIENT",
+            "name":"Συνθετικός Ασθενής Ελέγχου","phone":"+35799000001",
+            "evidence":"name_phone","pending":[{"id":"SYN-MAIL-PENDING",
+                                                   "label":"Συνθετική MRI"}]
+        }]})
+    page.route("**/clinical/icloud-actions/items/765-4", clinician_action)
+    page.route("**/clinical/icloud-actions/items/765-4/candidates?*", candidates)
     page.route("**/clinical/icloud-mail/peek", peek)
     page.route("**/clinical/icloud-mail", full)
     page.route("**/clinical/icloud-mail?*", full)
