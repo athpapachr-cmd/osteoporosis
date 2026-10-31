@@ -77,7 +77,7 @@
     const diagnosed = error.status === 503 && stageLabel(error.code);
     const clientCode = ["LIST_JSON","LIST_SOURCE","LIST_ITEMS_MISSING",
       "LIST_ITEMS_LIMIT","LIST_ITEM_FIELDS","LIST_CURSOR","LIST_COVERAGE",
-      "LIST_RENDER"].includes(error.clientCode)?error.clientCode:null;
+      "LIST_RENDER","LIST_AUTH_CHECK"].includes(error.clientCode)?error.clientCode:null;
     target.textContent = diagnosed
       ? "iCloud Mail: " + diagnosed + " Δεν γνωρίζουμε αν υπάρχουν νέα μηνύματα."
       : (error.status === 401 || error.status === 403)
@@ -190,6 +190,13 @@
     } catch (error) {
       if (!current(ticket)) return;
       if(sourceReturned&&!error.status&&!error.clientCode)error.clientCode="LIST_RENDER";
+      // Authentication loss is never a transient source error: do not revive
+      // protected email subjects/senders from a cached list after 401/403.
+      if(error?.status===401||error?.status===403){
+        clear(true);
+        sourceError(error, $("doctorIcloudInboxState"));
+        return;
+      }
       clear();
       if(cursor===null && state.latest){
         const data=state.latest;
@@ -269,15 +276,39 @@
       return;
     }
     if(state.latest && Date.now()-state.latestAt < 5*60*1000){
-      const data=state.latest;
-      state.pages=[null];state.pageIndex=0;
-      state.items=data.items;state.nextCursor=data.next_cursor;
-      state.skipped=data.skipped_count;state.coverageComplete=data.coverage_complete;
-      $("doctorIcloudInboxState").textContent=
-        "Μόνο ανάγνωση · τελευταία ενημέρωση "+
-        new Date(state.latestAt).toLocaleTimeString("el-CY",{hour:"2-digit",minute:"2-digit"});
-      rows();
-      if(id)select(id);
+      // A cached header list must not bypass session expiry. Validate the
+      // same-origin Clinical Key cookie before resurfacing cached PHI.
+      const ticket=++state.epoch;
+      state.controller?.abort();
+      const controller=new AbortController();
+      state.controller=controller;
+      $("doctorIcloudInboxRows").replaceChildren();
+      $("doctorIcloudInboxDetails").replaceChildren();
+      $("doctorIcloudInboxState").textContent="Έλεγχος κλινικής πρόσβασης…";
+      fetch("/clinical/status",{
+        credentials:"same-origin",cache:"no-store",signal:controller.signal
+      }).then(response=>{
+        if(!current(ticket))return;
+        if(!response.ok){
+          clear(true);
+          sourceError({status:response.status},$("doctorIcloudInboxState"));
+          return;
+        }
+        const data=state.latest;
+        if(!data)return;
+        state.pages=[null];state.pageIndex=0;
+        state.items=data.items;state.nextCursor=data.next_cursor;
+        state.skipped=data.skipped_count;state.coverageComplete=data.coverage_complete;
+        $("doctorIcloudInboxState").textContent=
+          "Μόνο ανάγνωση · τελευταία ενημέρωση "+
+          new Date(state.latestAt).toLocaleTimeString("el-CY",
+            {hour:"2-digit",minute:"2-digit"});
+        rows();
+      }).catch(()=>{
+        if(!current(ticket)||controller.signal.aborted)return;
+        clear();
+        sourceError({clientCode:"LIST_AUTH_CHECK"},$("doctorIcloudInboxState"));
+      });
     }else load(id);
   }
   $("doctorIcloudInboxReload").addEventListener("click", () => {
