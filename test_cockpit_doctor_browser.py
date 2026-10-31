@@ -543,7 +543,7 @@ def exercise_icloud_mail_peek(page, width):
                                                    "label":"Συνθετική MRI"}]
         }]})
     page.route("**/clinical/icloud-actions/items/765-4", clinician_action)
-    page.route("**/clinical/icloud-actions/items/765-4/candidates?*", candidates)
+    page.route("**/clinical/icloud-actions/items/765-4/candidates*", candidates)
     page.route("**/clinical/icloud-mail/peek", peek)
     page.route("**/clinical/icloud-mail", full)
     page.route("**/clinical/icloud-mail?*", full)
@@ -573,6 +573,21 @@ def exercise_icloud_mail_peek(page, width):
     expect(details).to_contain_text("δεν έχουν ελεγχθεί για κακόβουλα")
     assert details.locator("a.doctor-icloud-attachment").first.get_attribute("href").endswith(
         "/clinical/icloud-mail/items/765-4/attachments/2")
+    # A real selected mail must support clinician review through actual
+    # click handlers, with no extra account, no GESY referral and no auto-send.
+    expect(details).to_contain_text("Ενέργειες για αυτό το email")
+    details.get_by_role("button",name="Με εκκρεμότητα · Συνθετική MRI").click()
+    expect(details).to_contain_text("Συνδέθηκε με την υπάρχουσα κλινική εκκρεμότητα.")
+    details.get_by_role("button",name="Είδα · Ενημέρωση ασθενούς").click()
+    expect(details).to_contain_text("Εξετάστηκε · απαιτείται επικοινωνία")
+    details.get_by_role("button",name="Ο ασθενής ενημερώθηκε").click()
+    assert action_state["callback_complete"] is False
+    details.get_by_role("button",name="Ολοκληρώθηκε η επικοινωνία με ιατρό").click()
+    expect(details).to_contain_text("Ο κύκλος επικοινωνίας ολοκληρώθηκε.")
+    details.get_by_role("button",name="Διόρθωση αξιολόγησης").click()
+    expect(details).to_contain_text("Δεν έχει καταγραφεί ιατρική αξιολόγηση")
+    assert performed==["link","review_notify","patient_notified",
+                       "callback_complete","reopen_review"]
     assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1")
     # Peek selection loads its exact protected UID first; the archive is
     # separate and appears only when explicitly refreshed or opened by route.
@@ -627,6 +642,8 @@ def exercise_icloud_mail_peek(page, width):
     expect(page.locator("#ceGlobalAccessPanel")).to_be_hidden()
     page.unroute("**/clinical/status", expired_status)
 
+    page.unroute("**/clinical/icloud-actions/items/765-4/candidates*", candidates)
+    page.unroute("**/clinical/icloud-actions/items/765-4", clinician_action)
     page.unroute("**/clinical/icloud-mail/items/765-4", item)
     page.unroute("**/clinical/icloud-mail?*", full)
     page.unroute("**/clinical/icloud-mail", full)
