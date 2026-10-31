@@ -21,10 +21,30 @@
     Object.prototype.hasOwnProperty.call(stageText, code)
       ? stageText[code] + " [" + code + "]" : null;
   window.CockpitIcloudStageMessage = stageLabel;
+  // Local role is a UX hint for blocking iCloud reads, not proof of a live
+  // secretary session. Only the protected staff endpoint confirms that claim.
   const secretaryIcloudSession=()=>window.CockpitStaffRole==="secretary";
+  async function verifiedStaffRole(){
+    try{
+      const response=await fetch("/clinical/staff-session",{
+        credentials:"same-origin",cache:"no-store",
+        headers:{"Accept":"application/json"}
+      });
+      if(response.status===401||response.status===403)return "invalid";
+      if(!response.ok)return "unknown";
+      const actor=await response.json();
+      return actor?.staff_role==="secretary"||actor?.staff_role==="clinician"
+        ?actor.staff_role:"unknown";
+    }catch(_){return "unknown";}
+  }
   function secretaryIcloudNotice(){
     $("doctorIcloudInboxState").textContent=
       "Τα iCloud email απαιτούν σύνδεση ιατρού. Η σύνδεση γραμματείας παραμένει ενεργή.";
+  }
+  function staffStatusUnavailable(){
+    $("doctorIcloudInboxState").textContent=
+      "Δεν επιβεβαιώθηκε η συνεδρία προσωπικού [STAFF_SESSION_UNVERIFIED]. "+
+      "Δεν εμφανίζονται email ασθενών.";
   }
   const state = {active:false, epoch:0, selection:0, id:null, items:[], controller:null,
     pages:[null], pageIndex:0, nextCursor:null, skipped:0, coverageComplete:false,
@@ -101,29 +121,43 @@
       // including when shared-nav has not yet resolved the staff role.
       const ticket=state.epoch;
       void (async()=>{
-        let secretary=secretaryIcloudSession();
-        if(!secretary){
-          try{
-            const response=await fetch("/clinical/staff-session",{
-              credentials:"same-origin",cache:"no-store",
-              headers:{"Accept":"application/json"}
-            });
-            if(response.ok){
-              const actor=await response.json();
-              secretary=actor?.staff_role==="secretary";
-            }
-          }catch(_){}
-        }
+        const role=await verifiedStaffRole();
         if(!current(ticket))return;
-        if(secretary){
+        if(role==="secretary"){
           window.CockpitStaffRole="secretary";
           secretaryIcloudNotice();
-          return;
+        }else if(role==="unknown"){
+          staffStatusUnavailable();
+        }else if(role==="clinician"){
+          $("doctorIcloudInboxState").textContent=
+            "Δεν επαληθεύτηκε πρόσβαση στα iCloud email [LIST_AUTH_DENIED].";
+        }else{
+          window.dispatchEvent(new Event("clinical:unauthenticated"));
+          window.dispatchEvent(new Event("clinical:request-login"));
         }
-        window.dispatchEvent(new Event("clinical:unauthenticated"));
-        window.dispatchEvent(new Event("clinical:request-login"));
       })();
     }
+  }
+  // If the browser remembers secretary, fail closed before checking the
+  // actual cookie. A stale or unavailable staff session must never be
+  // described as active; no provider request is sent while this check runs.
+  async function guardSecretarySession(){
+    if(!secretaryIcloudSession())return true;
+    clear(true); // Purge any prior clinician's subject/body first.
+    const ticket=state.epoch;
+    $("doctorIcloudInboxState").textContent="Έλεγχος συνεδρίας προσωπικού…";
+    const role=await verifiedStaffRole();
+    if(!current(ticket))return false;
+    if(role==="secretary"){secretaryIcloudNotice();return false;}
+    if(role==="unknown"){staffStatusUnavailable();return false;}
+    if(role==="invalid"){
+      window.dispatchEvent(new Event("clinical:unauthenticated"));
+      window.dispatchEvent(new Event("clinical:request-login"));
+      return false;
+    }
+    // An explicit verified clinician login may replace a stale UI hint.
+    window.CockpitStaffRole="clinician";
+    return true;
   }
   function listContractCode(data) {
     if(data?.source!=="icloud_mail"||
@@ -189,12 +223,7 @@
       " μηνύματα προς το alias · πιθανώς κλινικά / για έλεγχο";
   }
   async function load(focusId) {
-    if (!state.active) return;
-    if(secretaryIcloudSession()){
-      clear(true);
-      secretaryIcloudNotice();
-      return;
-    }
+    if (!state.active || !(await guardSecretarySession())) return;
     const cursor = state.pages[state.pageIndex];
     const ticket = ++state.epoch;
     ++state.selection;
@@ -243,12 +272,8 @@
     }
   }
   async function select(id) {
-    if (!state.active || !/^[1-9][0-9]{0,18}-[1-9][0-9]{0,18}$/.test(id)) return;
-    if(secretaryIcloudSession()){
-      clear(true);
-      secretaryIcloudNotice();
-      return;
-    }
+    if (!state.active || !/^[1-9][0-9]{0,18}-[1-9][0-9]{0,18}$/.test(id) ||
+        !(await guardSecretarySession())) return;
     const ticket = state.epoch;
     const selected = ++state.selection;
     state.id = id;
@@ -306,8 +331,9 @@
     state.active = true;
     view.hidden = false;
     if(secretaryIcloudSession()){
-      clear(true);
-      secretaryIcloudNotice();
+      void (async()=>{
+        if(await guardSecretarySession())open(id);
+      })();
       return;
     }
     // Open an unread peek selection directly. The full archive may place
