@@ -5,11 +5,13 @@ on:
     paths:
       - "clinical_followthrough_signed_pending_synthetic.py"
       - "test_clinical_followthrough_signed_pending_synthetic.py"
+      - "test_clinical_followthrough_postgres.py"
       - ".github/workflows/cockpit-followthrough-signed-binding.yml"
   pull_request:
     paths:
       - "clinical_followthrough_signed_pending_synthetic.py"
       - "test_clinical_followthrough_signed_pending_synthetic.py"
+      - "test_clinical_followthrough_postgres.py"
       - ".github/workflows/cockpit-followthrough-signed-binding.yml"
 
 permissions:
@@ -47,6 +49,54 @@ jobs:
                             "DATABASE_URL", "ICLOUD_CLINICAL_APP_PASSWORD", "insert(", "update("):
               assert forbidden not in code, forbidden
           assert "pending_ids" in code and "synthetic_scenario" in code
+          PY
+      - name: Diff hygiene
+        run: git diff --check HEAD^ HEAD
+
+
+  durable-postgres17:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_DB: synthetic_followthrough_ci
+          POSTGRES_PASSWORD: synthetic-ci-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d synthetic_followthrough_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      FOLLOWTHROUGH_PG_SYNTHETIC: "ci-postgres17"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install disposable PostgreSQL-only dependencies
+        run: python -m pip install "psycopg[binary]>=3.1" "SQLAlchemy>=2.0" pytest
+      - name: Syntax
+        run: python -m py_compile test_clinical_followthrough_postgres.py clinical_followthrough_durable_synthetic.py
+      - name: Real PostgreSQL 17 transaction concurrency and source-ownership tests
+        run: pytest -q test_clinical_followthrough_postgres.py
+      - name: Production OFF and localhost-only contract
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          source = Path("test_clinical_followthrough_postgres.py").read_text()
+          actual = Path("main.py").read_text()
+          assert "127.0.0.1:5432/synthetic_followthrough_ci" in source
+          assert "FOLLOWTHROUGH_PG_SYNTHETIC" in source
+          assert "clinical_followthrough_durable_synthetic" not in actual
+          assert "clinical_followthrough_signed_pending_synthetic" not in actual
+          assert "DATABASE_URL" not in source
           PY
       - name: Diff hygiene
         run: git diff --check HEAD^ HEAD
