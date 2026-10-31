@@ -266,6 +266,14 @@ def build_synthetic_161_router(engine):
             patient = _test_patient(db, patient_id)
             brief = _minimal_brief(db, patient_id, actual)
             brief["clinical_attention"] = attention.brief(patient_id)
+            # Presentation only: cycle events do NOT mutate signed visit narrative.
+            brief["followthrough"] = [
+                followthrough.view(case_id)
+                for case_id, work in followthrough.works.items()
+                if work.pending_ref == patient_id + "-pending"
+                and work.visit_ref in {visit_id for visit_id in
+                                       [patient_id + "-visit-10", patient_id + "-visit-30"]}
+            ]
             brief["pending"] = [_pending_view(p, db) for p in db.scalars(
                 select(ClinicalPendingORM).where(ClinicalPendingORM.patient_id == patient_id, ClinicalPendingORM.status != "deleted"))]
             _record_access(db, actor, req.booking_uid, "synthetic_brief_read", "allowed", patient_id)
@@ -365,9 +373,15 @@ def build_synthetic_161_router(engine):
                 history.append({"encounter_id": row.id, "date": row.encounter_date,
                                 "snapshot": snapshot, "brief": brief, "detail": detail,
                                 "clinical": candidate.model_dump(mode="json")})
+            pending_ids = {p.id for p in pending}
             return {"patient_id": patient_id, "demographics": patient.demographics_json,
                     "visits": history, "pending": [
-                        _pending_view(p, db) for p in pending]}
+                        _pending_view(p, db) for p in pending],
+                    "followthrough": [
+                        followthrough.view(case_id)
+                        for case_id, work in followthrough.works.items()
+                        if work.pending_ref in pending_ids
+                    ]}
 
     scoped = APIRouter(prefix="/calendar")
     attach_visit_brief_routes(
