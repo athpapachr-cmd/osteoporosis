@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import json
 import logging
 import re
 from datetime import datetime, timezone
@@ -54,6 +55,7 @@ class MailDecisionORM(MailDecisionBase):
     patient_id = Column(String(120), nullable=True, index=True)
     pending_id = Column(String(120), nullable=True, index=True)
     booking_id = Column(String(160), nullable=True)
+    booking_evidence = Column(String(64), nullable=True)
     version = Column(Integer, nullable=False, default=0)
     review_status = Column(String(32), nullable=False, default="not_reviewed")
     contact_status = Column(String(32), nullable=False, default="not_requested")
@@ -167,6 +169,23 @@ def _projection(row: MailDecisionORM | None, item_id: str, suggested: str) -> di
     }
 
 
+def _booking_evidence(booking: ClinicalAppointmentORM) -> str:
+    """Opaque snapshot of an existing booking's identifying facts only.
+
+    No sender/body/telephone text is copied to the audit event or response.
+    A reassignment/reschedule must not keep previously reviewed email attached.
+    """
+    fields = (
+        booking.source, booking.source_appointment_id, booking.id,
+        booking.start_at.isoformat() if booking.start_at else "",
+        fold(booking.patient_display_name), _phone(booking.phone_e164),
+        booking.linked_patient_id or "",
+    )
+    return hashlib.sha256(
+        json.dumps(fields, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+
+
 def _source_valid(db: Session, row: MailDecisionORM) -> bool:
     if row.pending_id:
         pending = db.get(ClinicalPendingORM, row.pending_id)
@@ -195,7 +214,10 @@ def _source_valid(db: Session, row: MailDecisionORM) -> bool:
         return False
     if row.booking_id:
         booking = db.get(ClinicalAppointmentORM, row.booking_id)
-        if not booking or not booking.patient_display_name.strip():
+        if (not booking or booking.status in ("cancelled", "deleted")
+                or not booking.patient_display_name.strip()
+                or not row.booking_evidence
+                or not hmac.compare_digest(row.booking_evidence, _booking_evidence(booking))):
             return False
         if booking.linked_patient_id and row.patient_id and booking.linked_patient_id != row.patient_id:
             return False
@@ -214,8 +236,9 @@ def _validate_link(db: Session, patient_id: str | None,
             raise HTTPException(404, "Patient not found")
     if booking_id:
         booking = db.get(ClinicalAppointmentORM, booking_id)
-        if not booking or not booking.patient_display_name.strip():
-            raise HTTPException(404, "Appointment not found")
+        if (not booking or booking.status in ("cancelled", "deleted")
+                or not booking.patient_display_name.strip()):
+            raise HTTPException(404, "Current appointment not found")
         if patient_id and booking.linked_patient_id and booking.linked_patient_id != patient_id:
             raise HTTPException(409, "Existing appointment belongs to another chart")
     if pending_id:
@@ -448,10 +471,13 @@ def build_icloud_actions_router(engine: Engine) -> APIRouter:
                     row.patient_id, row.pending_id, row.booking_id = (
                         change.patient_id, change.pending_id, change.booking_id
                     )
+                    appointment = db.get(ClinicalAppointmentORM, change.booking_id) if change.booking_id else None
+                    row.booking_evidence = _booking_evidence(appointment) if appointment else None
                 elif choice == "unlink":
                     if row.review_status != "not_reviewed":
                         raise HTTPException(409, "Reviewed email cannot lose its visit identity")
                     row.patient_id = row.pending_id = row.booking_id = None
+                    row.booking_evidence = None
                 elif choice in ("review_no_contact", "review_notify"):
                     if not (row.patient_id or row.booking_id) or row.review_status != "not_reviewed":
                         raise HTTPException(409, "Select and validate the actual visit first")
