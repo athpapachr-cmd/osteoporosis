@@ -432,6 +432,9 @@
     return pending;
   }
   function maybeRefreshUnread(force=false){
+    // Synthetic-161 and real provider paths must never cross, including
+    // during successful synthetic Clinical Key/status bootstrapping.
+    if(syntheticInbox())return;
     if(unreadPeek.authorized && !document.hidden)void fetchUnreadPeek(force);
   }
   async function inbox() {
