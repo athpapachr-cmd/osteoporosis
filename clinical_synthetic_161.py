@@ -209,6 +209,17 @@ def build_synthetic_161_router(engine):
         require_test_access, verified_fixture_pending)
     router.include_router(followthrough_router)
 
+    def project_pending(row, db):
+        # One UI obligation: signed Pending remains unmodified. The source-
+        # versioned result/communication events provide its live projection.
+        projected = _pending_view(row, db)
+        with followthrough.lock:
+            for case_id, work in followthrough.works.items():
+                if work.pending_ref == row.id:
+                    projected["followthrough"] = followthrough.view(case_id)
+                    break
+        return projected
+
 
     def booking(db, uid):
         if uid not in BOOKINGS:
@@ -274,7 +285,7 @@ def build_synthetic_161_router(engine):
                 and work.visit_ref in {visit_id for visit_id in
                                        [patient_id + "-visit-10", patient_id + "-visit-30"]}
             ]
-            brief["pending"] = [_pending_view(p, db) for p in db.scalars(
+            brief["pending"] = [project_pending(p, db) for p in db.scalars(
                 select(ClinicalPendingORM).where(ClinicalPendingORM.patient_id == patient_id, ClinicalPendingORM.status != "deleted"))]
             _record_access(db, actor, req.booking_uid, "synthetic_brief_read", "allowed", patient_id)
             db.commit()
@@ -286,6 +297,9 @@ def build_synthetic_161_router(engine):
                        actor=Depends(require_test_access)):
         with Session(engine) as db:
             _test_patient(db, patient_id)
+            with followthrough.lock:
+                if any(w.pending_ref == pending_id for w in followthrough.works.values()):
+                    raise HTTPException(409, "Use the unified synthetic follow-through action")
             row = db.get(ClinicalPendingORM, pending_id)
             if (pending_id != patient_id + "-pending" or not row or row.patient_id != patient_id
                     or row.source_encounter_id != patient_id + "-visit-10"):
@@ -304,7 +318,7 @@ def build_synthetic_161_router(engine):
                            "synthetic_pending_" + req.status, "allowed", patient_id)
             db.commit()
             db.refresh(row)
-            return _pending_view(row, db)
+            return project_pending(row, db)
 
     @router.get("/staff-session", dependencies=protected)
     def test_session():
@@ -350,11 +364,13 @@ def build_synthetic_161_router(engine):
                 patient = _test_patient(db, patient_id)
                 for pending in db.scalars(select(ClinicalPendingORM).where(
                         ClinicalPendingORM.patient_id == patient_id, ClinicalPendingORM.status != "deleted")):
-                    items.append({**_pending_view(pending, db), "patient_id": patient_id,
+                    items.append({**project_pending(pending, db), "patient_id": patient_id,
                                   "patient_name": patient.demographics_json["full_name"]})
             items.sort(key=lambda p: (p["updated_at"], p["pending_id"]), reverse=True)
-            return {"items": items, "open_count": sum(p["status"] in
-                    ("open", "awaiting_patient", "awaiting_result") for p in items)}
+            return {"items": items, "open_count": sum(
+                    (not p.get("followthrough", {}).get("complete", False))
+                    and p["status"] in ("open", "awaiting_patient", "awaiting_result")
+                    for p in items)}
 
     @router.get("/patient/{patient_id}/chart", dependencies=protected)
     def chart(patient_id: str):
@@ -376,7 +392,7 @@ def build_synthetic_161_router(engine):
             pending_ids = {p.id for p in pending}
             return {"patient_id": patient_id, "demographics": patient.demographics_json,
                     "visits": history, "pending": [
-                        _pending_view(p, db) for p in pending],
+                        project_pending(p, db) for p in pending],
                     "followthrough": [
                         followthrough.view(case_id)
                         for case_id, work in followthrough.works.items()
