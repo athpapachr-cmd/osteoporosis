@@ -16,6 +16,7 @@ from fastapi import HTTPException
 from starlette.requests import Request
 
 STAFF_COOKIE = "cockpit_staff_session"
+STAFF_V2_COOKIE = "cockpit_individual_staff_v2"
 STAFF_LIFETIME = 3600
 ROLES = ("clinician", "secretary")
 
@@ -78,6 +79,10 @@ def issue_staff_cookie(actor: StaffActor) -> str:
 
 
 def require_staff_actor(request: Request) -> StaffActor:
+    # Never downgrade individual V2 sessions to role-wide V1 even if an old
+    # V1 cookie survives in the browser after a login/logout race.
+    if STAFF_V2_COOKIE in request.cookies:
+        raise HTTPException(401, "Role-wide staff session not valid with individual identity")
     _, _, secret = _staff_settings()
     token = request.cookies.get(STAFF_COOKIE, "")
     parts = token.split(".")
