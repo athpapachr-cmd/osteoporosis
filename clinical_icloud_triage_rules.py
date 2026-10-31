@@ -34,6 +34,11 @@ ADMIN_EVENT_WORDS = (
     "booking confirmation", "event confirmation", "evrychou between",
     "limassol between", "appointment scheduled", "meeting between",
 )
+CLINICAL_SENDER_HINTS = (
+    "radiology", "radiolog", "ακτινολογ", "diagnostic",
+    "διαγνωστικ", "medical center", "hospital", "clinic lab",
+    "laboratory", "microbiolog", "μικροβιολογ", "mripaphos",
+)
 BULK_INDICATORS = {"bulk", "list", "junk"}
 
 
@@ -76,7 +81,11 @@ def suggest_category(message) -> str:
 
     # A sender display name can be spoofed. This is only a routing hint,
     # NEVER patient identity evidence, clinical review or trusted provider.
-    if any(token in subject or token in sender for token in CLINICAL_WORDS):
+    # A generic sender such as "patient@example.invalid" is not a
+    # clinical provider. Only strongly clinical sender descriptors qualify;
+    # broad words such as "patient" are subject-only hints.
+    if (any(token in subject for token in CLINICAL_WORDS)
+            or any(token in sender for token in CLINICAL_SENDER_HINTS)):
         return "clinical"
 
     auto = fold(message.get("Auto-Submitted", ""))
