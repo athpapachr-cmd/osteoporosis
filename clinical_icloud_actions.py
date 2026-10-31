@@ -189,12 +189,30 @@ def _booking_evidence(booking: ClinicalAppointmentORM) -> str:
     ).hexdigest()
 
 
-def _source_valid(db: Session, row: MailDecisionORM) -> bool:
+def _source_valid(db: Session, row: MailDecisionORM, *, lock: bool = False) -> bool:
     if row.pending_id:
         pending = db.get(ClinicalPendingORM, row.pending_id)
-        if not pending or pending.patient_id != row.patient_id or pending.status not in _ACTIVE:
+        if not pending:
             return False
-        encounter = db.get(EncounterORM, pending.source_encounter_id)
+        # For writes, use encounter -> pending lock ordering already used by
+        # the signed visit amendment lifecycle. Do not allow a concurrently
+        # cancelled or reassigned source to authorize a new clinical action.
+        encounter = (db.scalar(
+            select(EncounterORM).where(
+                EncounterORM.id == pending.source_encounter_id
+            ).with_for_update()
+        ) if lock else db.get(EncounterORM, pending.source_encounter_id))
+        if lock:
+            pending = db.scalar(
+                select(ClinicalPendingORM).where(
+                    ClinicalPendingORM.id == row.pending_id
+                ).with_for_update().execution_options(populate_existing=True)
+            )
+            if (not pending or not encounter or
+                    pending.source_encounter_id != encounter.id):
+                return False
+        if pending.patient_id != row.patient_id or pending.status not in _ACTIVE:
+            return False
         if (not encounter or encounter.patient_id != row.patient_id
                 or encounter.status not in ("completed", "amended")):
             return False
@@ -216,7 +234,9 @@ def _source_valid(db: Session, row: MailDecisionORM) -> bool:
     if row.patient_id and db.get(PatientORM, row.patient_id) is None:
         return False
     if row.booking_id:
-        booking = db.get(ClinicalAppointmentORM, row.booking_id)
+        booking = (db.scalar(select(ClinicalAppointmentORM).where(
+            ClinicalAppointmentORM.id == row.booking_id
+        ).with_for_update()) if lock else db.get(ClinicalAppointmentORM, row.booking_id))
         if (not booking or booking.status in ("cancelled", "deleted")
                 or not booking.patient_display_name.strip()
                 or not row.booking_evidence
@@ -457,7 +477,7 @@ def build_icloud_actions_router(engine: Engine) -> APIRouter:
                 if row.version != change.expected_version:
                     raise HTTPException(409, "Mail status changed; refresh")
                 choice = change.action
-                source_valid = _source_valid(db, row)
+                source_valid = _source_valid(db, row, lock=True)
                 # Never strand the doctor with an invalidated visit link.
                 # Unlink/reclassification/review correction are permitted
                 # even after the original signed Pending was cancelled.
@@ -515,6 +535,9 @@ def build_icloud_actions_router(engine: Engine) -> APIRouter:
                             or row.callback_complete):
                         raise HTTPException(409, "Patient notification or callback is not complete")
                     row.callback_complete = 1
+                if (choice not in ("unlink", "classify", "reopen_review")
+                        and not _source_valid(db, row, lock=True)):
+                    raise HTTPException(409, "Linked visit was modified during this action")
                 row.version += 1
                 row.updated_at = now
                 audit = ({"category": row.category} if choice == "classify" else
