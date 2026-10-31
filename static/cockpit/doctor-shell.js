@@ -352,8 +352,10 @@
         {hour:"2-digit",minute:"2-digit"});
       content.append(text("Μη αναγνωσμένα στο iCloud · ενημέρωση "+checked+
         (outdated?" · απαιτείται ανανέωση":"")));
-      if(unreadPeek.error)content.append(text(
-        "Η τελευταία ανανέωση απέτυχε. Εμφανίζεται η προηγούμενη λίστα, όχι επιβεβαιωμένη τρέχουσα κατάσταση."));
+      if(unreadPeek.error){
+        content.append(text("Η τελευταία ανανέωση απέτυχε. Προβάλλεται παλαιότερη λίστα."));
+        displayUnreadError(unreadPeek.error);
+      }
       if(!data.coverage_complete)content.append(text(
         "Μερική κάλυψη: "+(data.skipped_count?
         data.skipped_count+" μηνύματα δεν ελέγχθηκαν. ":"")+
@@ -437,7 +439,8 @@
     if(!syntheticInbox()){
       displayUnreadPeek(); // Instant last known list; never re-fetch on each click.
       // An uncached first visit can use the already-authorized browser cookie.
-      if(!unreadPeek.authorized)void fetchUnreadPeek(false,true);
+      if(!unreadPeek.authorized || (!unreadPeek.data && unreadPeek.error))
+        void fetchUnreadPeek(true,true);
       else maybeRefreshUnread();
       return;
     }
