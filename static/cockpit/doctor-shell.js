@@ -283,6 +283,9 @@
   // Clinician-session, volatile unread-summary cache. No local/session storage,
   // Postgres, cross-principal data, raw IMAP, or background fetch without auth.
   const ICLOUD_PEEK_TTL_MS = 5 * 60 * 1000;
+  // Only the currently open inbox popover may render its verified cache.
+  // A background IMAP response cannot bypass a pending Clinical Key check.
+  let verifiedUnreadPanelTicket = null;
   const unreadPeek = {
     authorized:false, generation:0, data:null, updatedAt:0, checkedAt:0,
     error:null, pending:null, controller:null
@@ -313,6 +316,7 @@
       "Υπάρχουν μη αναγνωσμένα κλινικά email":"Μη αναγνωσμένα κλινικά email");
   }
   function clearUnreadPeek() {
+    verifiedUnreadPanelTicket=null;
     unreadPeek.generation++;
     unreadPeek.controller?.abort();
     unreadPeek.authorized=false;unreadPeek.pending=null;unreadPeek.controller=null;
@@ -343,6 +347,8 @@
     }
   }
   function displayUnreadPeek() {
+    if(verifiedUnreadPanelTicket!==state.request ||
+       !activePeek("inbox",state.request))return;
     content.replaceChildren();
     const data=unreadPeek.data;
     const outdated=unreadPeek.updatedAt &&
@@ -439,16 +445,51 @@
     if(unreadPeek.authorized && !document.hidden)void fetchUnreadPeek(force);
   }
   async function inbox() {
-    ++state.request;
+    const ticket=++state.request;
     if(!syntheticInbox()){
-      displayUnreadPeek(); // Instant last known list; never re-fetch on each click.
-      // An uncached first visit can use the already-authorized browser cookie.
-      if(!unreadPeek.authorized || (!unreadPeek.data && unreadPeek.error))
-        void fetchUnreadPeek(true,true);
-      else maybeRefreshUnread();
+      // P1-01: even a fresh in-memory email snapshot is protected PHI.
+      // Revalidate the existing same-origin Clinical Key before rendering it.
+      // This is a lightweight /clinical/status GET, NOT an Apple IMAP fetch.
+      verifiedUnreadPanelTicket=null;
+      const generation=unreadPeek.generation;
+      content.replaceChildren();
+      content.append(text("Έλεγχος κλινικής πρόσβασης στα μη αναγνωσμένα…"));
+      try{
+        const status=await fetch("/clinical/status",{
+          credentials:"same-origin",cache:"no-store",
+          headers:{"Accept":"application/json"}
+        });
+        if(!activePeek("inbox",ticket) ||
+           unreadPeek.generation!==generation)return;
+        if(status.status===401||status.status===403){
+          clearUnreadPeek(); // Includes the dot and all sender/subject memory.
+          window.dispatchEvent(new Event("clinical:unauthenticated"));
+          window.dispatchEvent(new Event("clinical:request-login"));
+          return;
+        }
+        if(!status.ok){
+          content.replaceChildren();
+          content.append(text(
+            "Δεν επιβεβαιώθηκε η κλινική σύνδεση [PEEK_AUTH_CHECK]. "+
+            "Δεν εμφανίζονται αποθηκευμένα email."));
+          return;
+        }
+        unreadPeek.authorized=true;
+        verifiedUnreadPanelTicket=ticket;
+        displayUnreadPeek();
+        if(!unreadPeek.data && unreadPeek.error)
+          void fetchUnreadPeek(true,true);
+        else maybeRefreshUnread();
+      }catch(_){
+        if(!activePeek("inbox",ticket) ||
+           unreadPeek.generation!==generation)return;
+        content.replaceChildren();
+        content.append(text(
+          "Δεν ήταν δυνατό να επαληθευτεί η κλινική σύνδεση "+
+          "[PEEK_AUTH_CHECK]. Δεν εμφανίζονται αποθηκευμένα email."));
+      }
       return;
     }
-    const ticket=state.request;
     content.replaceChildren();
     content.append(text("Φόρτωση συνθετικών εισερχομένων…"));
     try{
@@ -1107,7 +1148,7 @@
   window.addEventListener("focus",()=>maybeRefreshUnread());
   window.addEventListener("clinical:authenticated",()=>{
     clearUnreadPeek();unreadPeek.authorized=true;
-    if(state.panel==="inbox"&&!popover.hidden&&!syntheticInbox())displayUnreadPeek();
+    if(state.panel==="inbox"&&!popover.hidden&&!syntheticInbox())void inbox();
     maybeRefreshUnread(true);
   });
   window.addEventListener("clinical:unauthenticated",clearUnreadPeek);
