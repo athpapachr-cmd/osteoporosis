@@ -251,8 +251,8 @@ def _matches(name: str, search: str, source: str) -> bool:
         return bool(terms) and all(term in candidate for term in terms)
     # Two or more full-name words must be present, even if a provider sends
     # surname-first filenames. Single-name hints are not linked automatically.
-    observed = fold(source)
-    return all(re.search(r"(?<!\w)"+re.escape(word)+r"(?!\w)",observed)
+    observed = re.sub(r"[_./\\-]+", " ", fold(source))
+    return all(re.search(r"(?<!\w)"+re.escape(word)+r"(?:\d{1,3})?(?!\w)",observed)
                for word in words)
 
 
