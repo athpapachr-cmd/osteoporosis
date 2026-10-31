@@ -33,7 +33,7 @@ assert.match(shell, /PEEK_ITEMS_LIMIT/);
 assert.match(ui, /data\.filter!=="all"/);
 assert.match(ui, /LIST_ITEMS_LIMIT/);
 assert.match(html, /icloud-unread-inbox-20261031/);
-assert.match(html, /doctor-shell\.js\?v=icloud-peek-200-truth-20261031/);
+assert.match(html, /doctor-shell\.js\?v=icloud-unread-inbox-20261031/);
 assert.doesNotMatch(shell, /console\.error\(error\)|localStorage|sessionStorage/);
 assert.match(ui, /Παλαιότερα/);
 assert.match(ui, /δεν έχουν ελεγχθεί για κακόβουλα/);
