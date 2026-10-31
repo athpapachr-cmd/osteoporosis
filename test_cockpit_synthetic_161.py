@@ -1,4 +1,5 @@
 """Persistent #161 boundary and real shared-backend tests. No external provider."""
+from datetime import datetime
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
