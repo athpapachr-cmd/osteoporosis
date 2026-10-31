@@ -1,0 +1,50 @@
+name: Follow-through durable synthetic event store
+
+on:
+  push:
+    paths:
+      - "clinical_followthrough_durable_synthetic.py"
+      - "test_clinical_followthrough_durable_synthetic.py"
+      - ".github/workflows/cockpit-followthrough-durable-synthetic.yml"
+  pull_request:
+    paths:
+      - "clinical_followthrough_durable_synthetic.py"
+      - "test_clinical_followthrough_durable_synthetic.py"
+      - ".github/workflows/cockpit-followthrough-durable-synthetic.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  durable-one-loop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install isolated offline test dependencies
+        run: python -m pip install pytest sqlalchemy
+      - name: Source syntax
+        run: python -m py_compile clinical_followthrough_cycle.py clinical_followthrough_durable_synthetic.py test_clinical_followthrough_durable_synthetic.py
+      - name: Test domain semantics and file-backed durable state
+        run: pytest -q test_clinical_followthrough_cycle.py test_clinical_followthrough_durable_synthetic.py
+      - name: Verify production and provider boundaries
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          source = Path("clinical_followthrough_durable_synthetic.py").read_text()
+          main = Path("main.py").read_text()
+          assert "clinical_followthrough_durable_synthetic" not in main
+          assert ".metadata.create_all(" not in source
+          assert "DROP TABLE" not in source
+          for forbidden in ("imaplib", "requests.", "httpx.", "send_sms", "send_email", "CLINICAL_DATA_KEY",
+                            "ICLOUD_CLINICAL_APP_PASSWORD", "DATABASE_URL", "PatientORM", "EncounterORM"):
+              assert forbidden not in source, forbidden
+          assert "qualified_signed_pending" in source
+          PY
+      - name: Diff hygiene
+        run: git diff --check HEAD^ HEAD
