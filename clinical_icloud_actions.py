@@ -19,7 +19,7 @@ from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, UniqueConstraint, select
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, JSON, String, UniqueConstraint, select
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import DeclarativeBase, Session
@@ -74,6 +74,8 @@ class MailDecisionEventORM(MailDecisionBase):
     action = Column(String(32), nullable=False)
     actor = Column(String(48), nullable=False)
     value_hash = Column(String(64), nullable=False)
+    # Bounded structured actor decision, never user-entered email text/phone.
+    decision_json = Column(JSON, nullable=False, default=dict)
     created_at = Column(DateTime, nullable=False)
 
 
@@ -441,10 +443,16 @@ def build_icloud_actions_router(engine: Engine) -> APIRouter:
                     row.callback_complete = 1
                 row.version += 1
                 row.updated_at = now
+                audit = ({"category": row.category} if choice == "classify" else
+                         {"patient_id": row.patient_id, "pending_id": row.pending_id,
+                          "booking_id": row.booking_id} if choice in ("link", "unlink") else
+                         {"review_status": row.review_status,
+                          "contact_status": row.contact_status,
+                          "callback_complete": bool(row.callback_complete)})
                 db.add(MailDecisionEventORM(
                     id=str(uuid4()), source_key=key, request_id=change.request_id,
                     version=row.version, action=choice, actor="solo_clinician",
-                    value_hash=digest, created_at=now,
+                    value_hash=digest, decision_json=audit, created_at=now,
                 ))
                 db.flush()
                 return _projection(row, item_id, source["category"])
