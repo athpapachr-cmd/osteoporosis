@@ -6,15 +6,17 @@ Unlike name/UID similarity, membership in an immutable signed Visit Capture's
 pending_ids is required before the same pending can enter follow-through.
 
 It is NOT mounted from main.py, not a production identity/actor authority, and
-not a real mail matching or secretary communication service.
+not a real mail matching or secretary communication service. PostgreSQL is
+permitted only for an explicitly identified, local disposable CI database.
 """
 from __future__ import annotations
 
+import os
 import re
 from dataclasses import dataclass
 from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
@@ -67,8 +69,30 @@ class SyntheticSignedPendingBinding:
     """
 
     def __init__(self, clinical_engine: Engine):
-        # Hard reject production PostgreSQL and implicit clinical DB access.
-        if clinical_engine.dialect.name != "sqlite":
+        # The only PostgreSQL escape is an isolated, local GitHub Actions DB.
+        # Never permit the production database host, name or account.
+        if clinical_engine.dialect.name == "postgresql":
+            url = clinical_engine.url
+            if (os.getenv("FOLLOWTHROUGH_PG_SYNTHETIC") != "ci-postgres17"
+                    or url.host != "127.0.0.1"
+                    or url.port != 5432
+                    or url.database != "synthetic_followthrough_ci"
+                    or url.username != "postgres"):
+                raise CycleForbidden("Only localhost disposable synthetic PostgreSQL")
+            try:
+                with clinical_engine.connect() as conn:
+                    db = conn.scalar(text("SELECT current_database()"))
+                    who = conn.scalar(text("SELECT current_user"))
+                    host = str(conn.scalar(text("SELECT inet_server_addr()")))
+                    if (db != "synthetic_followthrough_ci"
+                            or who != "postgres"
+                            or host != "127.0.0.1"):
+                        raise CycleForbidden("Unqualified synthetic PostgreSQL target")
+            except CycleForbidden:
+                raise
+            except Exception:
+                raise CycleForbidden("Synthetic PostgreSQL target unavailable") from None
+        elif clinical_engine.dialect.name != "sqlite":
             raise CycleForbidden("Fixture-only SQLite clinical storage")
         self.engine = clinical_engine
 
