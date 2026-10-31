@@ -341,8 +341,11 @@ def test_spoofed_pdf_mime_does_not_become_downloadable(client):
 # Diagnostic failures are synthetic, stage-only, and never read real provider mail.
 @pytest.mark.parametrize("phase,expected_code,endpoint", [
     ("connect", "TLS_CONNECTION_FAILED", "/peek"),
+    ("connect_timeout", "TLS_CONNECTION_FAILED", "/peek"),
     ("auth", "IMAP_AUTH_FAILED", "/peek"),
+    ("auth_timeout", "IMAP_AUTH_FAILED", "/peek"),
     ("select", "INBOX_SELECT_FAILED", "/peek"),
+    ("select_disconnect", "INBOX_SELECT_FAILED", "/peek"),
     ("uidvalidity", "UIDVALIDITY_OR_UIDNEXT_FAILED", "/peek"),
     ("uidnext", "UIDVALIDITY_OR_UIDNEXT_FAILED", "/peek"),
     ("search", "IMAP_SEARCH_FAILED", "/peek"),
@@ -364,6 +367,8 @@ def test_fixed_imap_stage_codes_hide_provider_errors(monkeypatch, caplog, phase,
             actions.append("tls")
             if phase == "connect":
                 raise RuntimeError("synthetic-secret-password patient private provider error")
+            if phase == "connect_timeout":
+                raise TimeoutError("synthetic-secret-password patient private provider error")
 
         def login(self, username, password):
             assert username == "test-primary-username"
@@ -371,6 +376,8 @@ def test_fixed_imap_stage_codes_hide_provider_errors(monkeypatch, caplog, phase,
             actions.append("login")
             if phase == "auth":
                 raise RuntimeError("synthetic-secret-password patient private provider error")
+            if phase == "auth_timeout":
+                raise TimeoutError("synthetic-secret-password patient private provider error")
             return "OK", [b"synthetic logged in"]
 
         def select(self, name, readonly=False):
@@ -378,6 +385,8 @@ def test_fixed_imap_stage_codes_hide_provider_errors(monkeypatch, caplog, phase,
             actions.append("examine")
             if phase == "select":
                 return "NO", [b"synthetic-secret-password"]
+            if phase == "select_disconnect":
+                raise ConnectionError("synthetic-secret-password patient private provider error")
             return "OK", [b"one"]
 
         def response(self, name):
@@ -427,7 +436,7 @@ def test_fixed_imap_stage_codes_hide_provider_errors(monkeypatch, caplog, phase,
                       "patient private provider error", "sample@example.invalid"):
         assert forbidden not in caplog.text
         assert forbidden not in response.text
-    assert "examine" not in actions if phase in ("connect", "auth") else "examine" in actions
+    assert "examine" not in actions if phase in ("connect", "connect_timeout", "auth", "auth_timeout") else "examine" in actions
     assert "STORE" not in actions and "EXPUNGE" not in actions
 
 
