@@ -11,6 +11,8 @@ permitted only for an explicitly identified, local disposable CI database.
 """
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 import re
 from dataclasses import dataclass
@@ -58,6 +60,8 @@ class QualifiedExistingPending:
     pending_ref: str
     request_ref: str
     item_type: str
+    source_patient_ref: str
+    source_fingerprint: str
 
 
 class SyntheticSignedPendingBinding:
@@ -145,6 +149,29 @@ class SyntheticSignedPendingBinding:
             raise CycleForbidden("Signed requested examination does not match Pending")
         return encounter
 
+    @staticmethod
+    def _source_fingerprint(pending: ClinicalPendingORM, encounter: EncounterORM) -> str:
+        """Digest the signed source and ORIGINAL patient/revision, never store PHI.
+
+        updated_at is part of the clinical Pending/Encounter write contract:
+        even if a cancelled Pending is later reopened, its revision changes.
+        """
+        snapshot = {
+            "pending_id": pending.id, "patient_id": pending.patient_id,
+            "encounter_id": encounter.id, "encounter_patient_id": encounter.patient_id,
+            "pending_encounter_id": pending.source_encounter_id,
+            "pending_status": pending.status, "pending_type": pending.item_type,
+            "pending_updated_at": pending.updated_at.isoformat(),
+            "encounter_status": encounter.status,
+            "encounter_updated_at": encounter.updated_at.isoformat(),
+            "signed": encounter.payload_json["_visit_capture_v1"],
+        }
+        encoded = json.dumps(
+            snapshot, sort_keys=True, ensure_ascii=True,
+            separators=(",", ":"), default=str,
+        ).encode("utf-8")
+        return hashlib.sha256(encoded).hexdigest()
+
     def resolve(self, actor: Actor, *, patient_id: str,
                 pending_id: str, encounter_id: str) -> QualifiedExistingPending:
         _qualified_actor(actor)
@@ -163,9 +190,13 @@ class SyntheticSignedPendingBinding:
                 pending_ref=_PREFIX + pending.id,
                 request_ref=_PREFIX + "request-" + pending.id,
                 item_type=pending.item_type,
+                source_patient_ref=_PREFIX + pending.patient_id,
+                source_fingerprint=self._source_fingerprint(pending, encounter),
             )
 
-    def qualify_refs(self, visit_ref: str, pending_ref: str) -> bool:
+    def qualify_refs(self, visit_ref: str, pending_ref: str,
+                     source_patient_ref: str | None = None,
+                     source_fingerprint: str | None = None) -> bool:
         """Read-through eligibility check used by durable register(), not a guess."""
         if (not isinstance(visit_ref, str) or not isinstance(pending_ref, str)
                 or not visit_ref.startswith(_PREFIX)
@@ -179,12 +210,20 @@ class SyntheticSignedPendingBinding:
                 if pending is None:
                     return False
                 encounter = self._signed_membership(db, pending)
-                return encounter.id == encounter_id
-        except (CycleForbidden, ValueError):
+                if encounter.id != encounter_id:
+                    return False
+                if source_patient_ref is not None or source_fingerprint is not None:
+                    return (source_patient_ref == _PREFIX + pending.patient_id
+                            and source_fingerprint == self._source_fingerprint(
+                                pending, encounter))
+                return True
+        except (CycleForbidden, ValueError, TypeError):
             return False
 
     def qualify_in_transaction(self, db: Session, visit_ref: str,
-                               pending_ref: str) -> bool:
+                               pending_ref: str,
+                               source_patient_ref: str | None = None,
+                               source_fingerprint: str | None = None) -> bool:
         """Same-DB, lock-ordered signed source gate for atomic registration.
 
         When the clinical and follow-through tables share PostgreSQL, acquire
@@ -224,7 +263,13 @@ class SyntheticSignedPendingBinding:
                 .where(PatientORM.patient_id == pending.patient_id)
                 .with_for_update()
             )
-            return self._signed_membership(db, pending).id == encounter_id
+            if self._signed_membership(db, pending).id != encounter_id:
+                return False
+            if source_patient_ref is not None or source_fingerprint is not None:
+                return (source_patient_ref == _PREFIX + pending.patient_id
+                        and source_fingerprint == self._source_fingerprint(
+                            pending, encounter))
+            return True
         except (CycleForbidden, ValueError, TypeError):
             return False
 
@@ -254,6 +299,8 @@ class SyntheticSignedPendingBinding:
             actor, visit_ref=qualified.visit_ref,
             request_ref=qualified.request_ref, required=req,
             mode="signed_pending", pending_ref=qualified.pending_ref,
+            source_patient_ref=qualified.source_patient_ref,
+            source_fingerprint=qualified.source_fingerprint,
             transactional_qualification=(
                 self.qualify_in_transaction if same_db else None
             ),

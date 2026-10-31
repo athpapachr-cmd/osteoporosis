@@ -210,6 +210,90 @@ def test_pg_revoked_source_blocks_already_issued_secretary_instruction(single_db
         assert db.scalar(select(func.count()).select_from(ObligationEventFixture)) == 3
 
 
+def test_pg_joint_patient_reassignment_cannot_reuse_signed_instruction(single_db):
+    seed_source(single_db)
+    bridge, store = owner(single_db)
+    case_id = register(bridge, store)["case_id"]
+    act(store, case_id, SOURCE, "received", 71, part="report",
+        source_ref="synthetic-pg-reassigned-staff-report",
+        source_version="revision-01", proof="qualified_order")
+    act(store, case_id, DOCTOR, "identity_verified", 72,
+        evidence="qualified_referral", evidence_ref="synthetic-pg-reassigned-identity")
+    act(store, case_id, DOCTOR, "review_notify", 73,
+        part="report", source_version="revision-01")
+    before = store.history(case_id, DOCTOR)
+    with Session(single_db) as db, db.begin():
+        other = "synthetic-pg-patient-02"
+        db.add(PatientORM(
+            patient_id=other,
+            demographics_json={"synthetic_scenario": SCENARIO, "full_name": "SYNTHETIC OTHER"},
+            created_at=STAMP, updated_at=STAMP,
+        ))
+        db.get(EncounterORM, VISIT).patient_id = other
+        db.get(ClinicalPendingORM, PENDING).patient_id = other
+    # Current Encounter/Pending now agree with each other, but differ from
+    # the immutable patient identity registered with this obligation.
+    with pytest.raises(CycleForbidden):
+        store.secretary_view(case_id, SECRETARY)
+    with pytest.raises(CycleForbidden):
+        act(store, case_id, SECRETARY, "patient_notified", 74)
+    with pytest.raises(CycleConflict):
+        bridge.project_pending(store, DOCTOR, patient_id="synthetic-pg-patient-02",
+                               pending_id=PENDING, encounter_id=VISIT)
+    assert store.history(case_id, DOCTOR) == before
+
+
+def test_pg_reopened_pending_does_not_reactivate_old_staff_instruction(single_db):
+    seed_source(single_db)
+    _bridge, store = owner(single_db)
+    case_id = register(_bridge, store)["case_id"]
+    act(store, case_id, SOURCE, "received", 81, part="report",
+        source_ref="synthetic-pg-reopened-staff-report",
+        source_version="revision-01", proof="qualified_order")
+    act(store, case_id, DOCTOR, "identity_verified", 82,
+        evidence="qualified_referral", evidence_ref="synthetic-pg-reopened-identity")
+    act(store, case_id, DOCTOR, "review_notify", 83,
+        part="report", source_version="revision-01")
+    before = store.history(case_id, DOCTOR)
+    with Session(single_db) as db, db.begin():
+        pending = db.get(ClinicalPendingORM, PENDING)
+        pending.status = "cancelled"
+        pending.updated_at = datetime(2026, 10, 31, 12)
+    with pytest.raises(CycleForbidden):
+        store.secretary_view(case_id, SECRETARY)
+    with Session(single_db) as db, db.begin():
+        pending = db.get(ClinicalPendingORM, PENDING)
+        pending.status = "awaiting_result"
+        pending.updated_at = datetime(2026, 10, 31, 13)
+    assert _bridge.qualify_refs("synthetic-" + VISIT, "synthetic-" + PENDING)
+    with pytest.raises(CycleForbidden):
+        store.secretary_view(case_id, SECRETARY)
+    with pytest.raises(CycleForbidden):
+        act(store, case_id, SECRETARY, "patient_notified", 84)
+    with pytest.raises(CycleConflict):
+        register(_bridge, store)
+    assert store.history(case_id, DOCTOR) == before
+
+
+def test_pg_signed_amendment_with_retained_membership_requires_review(single_db):
+    seed_source(single_db)
+    bridge, store = owner(single_db)
+    case_id = register(bridge, store)["case_id"]
+    with Session(single_db) as db, db.begin():
+        visit = db.get(EncounterORM, VISIT)
+        payload = dict(visit.payload_json)
+        signed = dict(payload["_visit_capture_v1"])
+        signed["synthetic_revision"] = "revised-after-signature"
+        payload["_visit_capture_v1"] = signed
+        visit.payload_json = payload
+        visit.updated_at = datetime(2026, 10, 31, 14)
+    with pytest.raises(CycleForbidden):
+        act(store, case_id, SOURCE, "received", 91, part="report",
+            source_ref="synthetic-pg-post-amendment",
+            source_version="revision-01", proof="qualified_order")
+    assert store.history(case_id, DOCTOR) == []
+
+
 def test_pg_source_signature_or_pending_membership_cannot_be_faked(single_db):
     seed_source(single_db)
     bridge, store = owner(single_db)
@@ -273,7 +357,8 @@ def test_pg_atomic_signed_source_guard_rechecks_inside_durable_transaction(singl
     original = bridge.qualify_in_transaction
     seen = []
 
-    def invalidate_while_registering(db, visit_ref, pending_ref):
+    def invalidate_while_registering(db, visit_ref, pending_ref,
+                                      source_patient_ref, source_fingerprint):
         # Simulate a source amendment/cancellation after the earlier
         # preliminary qualified resolve(), before durable event creation.
         assert db.get_bind() is single_db
@@ -281,7 +366,9 @@ def test_pg_atomic_signed_source_guard_rechecks_inside_durable_transaction(singl
         pending.status = "cancelled"
         db.flush()
         seen.append("rechecked-inside-transaction")
-        return original(db, visit_ref, pending_ref)
+        return original(
+            db, visit_ref, pending_ref, source_patient_ref, source_fingerprint,
+        )
 
     bridge.qualify_in_transaction = invalidate_while_registering
     with pytest.raises(CycleForbidden):

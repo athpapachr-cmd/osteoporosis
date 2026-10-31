@@ -304,6 +304,62 @@ def test_source_amendment_revokes_preexisting_staff_instruction_without_losing_a
         assert db.scalar(select(func.count()).select_from(ObligationEventFixture)) == 3
 
 
+def test_joint_patient_reassignment_denies_signed_secretary_read_sqlite(setup):
+    clinical, _durable, _binding, store = setup
+    case_id = enroll(_binding, store)["case_id"]
+    act(store, case_id, SOURCE, "received", 101, part="report",
+        source_ref="synthetic-sqlite-cross-patient-mail",
+        source_version="revision-01", proof="qualified_order")
+    act(store, case_id, DOCTOR, "identity_verified", 102,
+        evidence="qualified_referral", evidence_ref="synthetic-sqlite-cross-patient-id")
+    act(store, case_id, DOCTOR, "review_notify", 103,
+        part="report", source_version="revision-01")
+    original = store.history(case_id, DOCTOR)
+    with Session(clinical) as db, db.begin():
+        other = "synthetic-patient-02"
+        db.add(PatientORM(
+            patient_id=other,
+            demographics_json={"full_name": "SYNTHETIC OTHER", "synthetic_scenario": SCENARIO},
+            created_at=STAMP, updated_at=STAMP,
+        ))
+        db.get(EncounterORM, VISIT).patient_id = other
+        db.get(ClinicalPendingORM, PENDING).patient_id = other
+    with pytest.raises(CycleForbidden):
+        store.secretary_view(case_id, SECRETARY)
+    with pytest.raises(CycleForbidden):
+        act(store, case_id, SECRETARY, "patient_notified", 104)
+    assert store.history(case_id, DOCTOR) == original
+
+
+def test_reopened_pending_does_not_restore_stale_staff_instruction_sqlite(setup):
+    clinical, _durable, binding, store = setup
+    case_id = enroll(binding, store)["case_id"]
+    act(store, case_id, SOURCE, "received", 111, part="report",
+        source_ref="synthetic-sqlite-reopened-mail",
+        source_version="revision-01", proof="qualified_order")
+    act(store, case_id, DOCTOR, "identity_verified", 112,
+        evidence="qualified_referral", evidence_ref="synthetic-sqlite-reopened-id")
+    act(store, case_id, DOCTOR, "review_notify", 113,
+        part="report", source_version="revision-01")
+    before = store.history(case_id, DOCTOR)
+    with Session(clinical) as db, db.begin():
+        pending = db.get(ClinicalPendingORM, PENDING)
+        pending.status = "cancelled"
+        pending.updated_at = datetime(2026, 10, 2, 9)
+    with pytest.raises(CycleForbidden):
+        store.secretary_view(case_id, SECRETARY)
+    with Session(clinical) as db, db.begin():
+        pending = db.get(ClinicalPendingORM, PENDING)
+        pending.status = "awaiting_result"
+        pending.updated_at = datetime(2026, 10, 2, 10)
+    assert binding.qualify_refs("synthetic-" + VISIT, "synthetic-" + PENDING)
+    with pytest.raises(CycleForbidden):
+        store.secretary_view(case_id, SECRETARY)
+    with pytest.raises(CycleForbidden):
+        act(store, case_id, SECRETARY, "patient_notified", 114)
+    assert store.history(case_id, DOCTOR) == before
+
+
 def test_wrong_verifier_cannot_bypass_synthetic_existing_pending(setup):
     _clinical, durable, binding, store = setup
     impostor = DurableSyntheticFollowthrough(

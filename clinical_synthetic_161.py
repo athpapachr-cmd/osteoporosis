@@ -4,6 +4,8 @@ No provider traffic, user-supplied seed content, new credentials, DDL or clinica
 attestation. Existing Clinical Key grants test access, never an individual identity.
 """
 from datetime import datetime, timedelta, timezone
+import hashlib
+import json
 from pathlib import Path
 import os
 import secrets
@@ -198,6 +200,15 @@ def build_synthetic_161_router(engine):
         """Current signed-source gate shared by the demo and UI projections."""
         if not pending or pending.status not in active_pending_states:
             return False
+        # Synthetic #161 fixture identity is FIXED at seed time; a pair of
+        # jointly reassigned Pending/Encounter rows must never pass as current.
+        expected_patient = next((
+            pid for pid in SYNTHETIC_161_PATIENT_IDS
+            if pending.id == pid + "-pending"
+        ), None)
+        if (expected_patient is None or pending.patient_id != expected_patient
+                or pending.source_encounter_id != expected_patient + "-visit-10"):
+            return False
         source = db.get(EncounterORM, pending.source_encounter_id)
         patient = db.get(PatientORM, pending.patient_id)
         if (not source or not patient or not isinstance(patient.demographics_json, dict)
@@ -232,11 +243,33 @@ def build_synthetic_161_router(engine):
             pending = db.get(ClinicalPendingORM, patient_id + "-pending")
             if not signed_fixture_eligible(pending, db):
                 raise HTTPException(409, "Signed synthetic Pending source unavailable")
-            return pending.id, pending.source_encounter_id
+            source = db.get(EncounterORM, pending.source_encounter_id)
+            snapshot = {
+                "pending_id": pending.id, "patient_id": pending.patient_id,
+                "pending_status": pending.status,
+                "pending_updated_at": pending.updated_at.isoformat(),
+                "encounter_id": source.id, "encounter_patient_id": source.patient_id,
+                "encounter_updated_at": source.updated_at.isoformat(),
+                "signed": source.payload_json["_visit_capture_v1"],
+            }
+            fingerprint = hashlib.sha256(json.dumps(
+                snapshot, sort_keys=True, ensure_ascii=True,
+                separators=(",", ":"), default=str,
+            ).encode("utf-8")).hexdigest()
+            return pending.id, pending.source_encounter_id, fingerprint
 
-    followthrough_router, followthrough = build_synthetic_followthrough_router(
+    followthrough_router, followthrough, signed_case_valid = build_synthetic_followthrough_router(
         require_test_access, verified_fixture_pending)
     router.include_router(followthrough_router)
+
+    def case_projection(case_id, pending, db):
+        """One source-aware state for the original visit and global views."""
+        case = followthrough.view(case_id)
+        valid = signed_case_valid(case) and signed_fixture_eligible(pending, db)
+        return {
+            **case, "source_valid": valid,
+            **({"stage": "source_invalidated", "complete": False} if not valid else {}),
+        }
 
     def project_pending(row, db):
         # One UI obligation: signed Pending remains unmodified. The source-
@@ -245,10 +278,7 @@ def build_synthetic_161_router(engine):
         with followthrough.lock:
             for case_id, work in followthrough.works.items():
                 if work.pending_ref == row.id:
-                    projected["followthrough"] = {
-                        **followthrough.view(case_id),
-                        "source_valid": signed_fixture_eligible(row, db),
-                    }
+                    projected["followthrough"] = case_projection(case_id, row, db)
                     break
         return projected
 
@@ -423,14 +453,14 @@ def build_synthetic_161_router(engine):
                 history.append({"encounter_id": row.id, "date": row.encounter_date,
                                 "snapshot": snapshot, "brief": brief, "detail": detail,
                                 "clinical": candidate.model_dump(mode="json")})
-            pending_ids = {p.id for p in pending}
+            pending_by_id = {p.id: p for p in pending}
             return {"patient_id": patient_id, "demographics": patient.demographics_json,
                     "visits": history, "pending": [
                         project_pending(p, db) for p in pending],
                     "followthrough": [
-                        followthrough.view(case_id)
+                        case_projection(case_id, pending_by_id[work.pending_ref], db)
                         for case_id, work in followthrough.works.items()
-                        if work.pending_ref in pending_ids
+                        if work.pending_ref in pending_by_id
                     ]}
 
     scoped = APIRouter(prefix="/calendar")

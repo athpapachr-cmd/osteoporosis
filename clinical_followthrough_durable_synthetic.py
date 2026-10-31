@@ -69,12 +69,20 @@ class VisitObligationFixture(DurableFixtureBase):
             name="ck_sfo_no_fake_pending",
         ),
         CheckConstraint("version >= 0", name="ck_sfo_revision_nonnegative"),
+        CheckConstraint(
+            "(source_patient_ref IS NULL AND source_fingerprint IS NULL) OR "
+            "(source_patient_ref LIKE 'synthetic-%' AND length(source_fingerprint) = 64)",
+            name="ck_sfo_signed_snapshot_pair",
+        ),
     )
     id = Column(String(36), primary_key=True)
     visit_ref = Column(String(120), nullable=False)
     request_ref = Column(String(120), nullable=False)
     mode = Column(String(24), nullable=False)
     pending_ref = Column(String(120), nullable=True)
+    # Only synthetic opaque identity + one-way digest; no clinical contents.
+    source_patient_ref = Column(String(120), nullable=True)
+    source_fingerprint = Column(String(64), nullable=True)
     required_parts = Column(JSON, nullable=False)
     verified_contact = Column(Boolean, nullable=False, default=False)
     version = Column(Integer, nullable=False, default=0)
@@ -217,9 +225,22 @@ class DurableSyntheticFollowthrough:
         verifier = self.qualified_signed_pending
         binding = getattr(verifier, "__self__", None)
         transactional = getattr(binding, "qualify_in_transaction", None)
-        if (getattr(binding, "engine", None) is self.engine
-                and callable(transactional)):
-            qualified = transactional(db, row.visit_ref, row.pending_ref)
+        if callable(transactional):
+            # B2's qualified bridge must hold the ORIGINAL patient and signed
+            # source revision; checking current mutual consistency is not enough.
+            if not row.source_patient_ref or not row.source_fingerprint:
+                raise CycleForbidden("Missing immutable signed-source snapshot")
+            if getattr(binding, "engine", None) is self.engine:
+                qualified = transactional(
+                    db, row.visit_ref, row.pending_ref,
+                    row.source_patient_ref, row.source_fingerprint,
+                )
+            else:
+                # Separate fixture DBs are read-through only, not atomic.
+                qualified = verifier(
+                    row.visit_ref, row.pending_ref,
+                    row.source_patient_ref, row.source_fingerprint,
+                )
         else:
             qualified = verifier(row.visit_ref, row.pending_ref) if verifier else False
         if qualified is not True:
@@ -228,16 +249,32 @@ class DurableSyntheticFollowthrough:
     def register(self, actor: Actor, *, visit_ref: str, request_ref: str,
                  required: tuple[str, ...], mode: str,
                  pending_ref: str | None = None,
-                 transactional_qualification: Callable[[Session, str, str], bool] | None = None) -> dict:
+                 source_patient_ref: str | None = None,
+                 source_fingerprint: str | None = None,
+                 transactional_qualification: Callable[..., bool] | None = None) -> dict:
         _actor(actor, "clinician")
         _synthetic(visit_ref)
         _synthetic(request_ref)
         if mode == "signed_pending":
             _synthetic(pending_ref)
-            if (self.qualified_signed_pending is None
-                    or self.qualified_signed_pending(visit_ref, pending_ref) is not True):
+            verifier = self.qualified_signed_pending
+            binding = getattr(verifier, "__self__", None)
+            if callable(getattr(binding, "qualify_in_transaction", None)):
+                _synthetic(source_patient_ref)
+                if (not isinstance(source_fingerprint, str)
+                        or re.fullmatch(r"[a-f0-9]{64}", source_fingerprint) is None):
+                    raise CycleForbidden("Missing or invalid signed-source revision")
+                qualified = verifier(
+                    visit_ref, pending_ref, source_patient_ref, source_fingerprint,
+                )
+            else:
+                if source_patient_ref is not None or source_fingerprint is not None:
+                    raise CycleForbidden("Unqualified source snapshot")
+                qualified = verifier(visit_ref, pending_ref) if verifier else False
+            if qualified is not True:
                 raise CycleForbidden("Verified signed Pending source required")
-        elif mode != "provisional_visit" or pending_ref is not None:
+        elif (mode != "provisional_visit" or pending_ref is not None
+              or source_patient_ref is not None or source_fingerprint is not None):
             raise CycleConflict("Cannot manufacture a signed encounter")
         if transactional_qualification is not None and (
             mode != "signed_pending" or not callable(transactional_qualification)
@@ -255,22 +292,29 @@ class DurableSyntheticFollowthrough:
                 # this second check can only tighten, never bypass it.
                 if (mode == "signed_pending" and
                         transactional_qualification is not None and
-                        transactional_qualification(db, visit_ref, pending_ref) is not True):
+                        transactional_qualification(
+                            db, visit_ref, pending_ref,
+                            source_patient_ref, source_fingerprint,
+                        ) is not True):
                     raise CycleForbidden("Signed Pending changed before commit")
                 existing = db.scalar(select(VisitObligationFixture).where(
                     VisitObligationFixture.visit_ref == visit_ref,
                     VisitObligationFixture.request_ref == request_ref,
                 ))
                 if existing:
-                    if (existing.mode, existing.pending_ref, tuple(existing.required_parts)) != (
-                        mode, pending_ref, req
+                    if (existing.mode, existing.pending_ref, tuple(existing.required_parts),
+                            existing.source_patient_ref, existing.source_fingerprint) != (
+                        mode, pending_ref, req, source_patient_ref, source_fingerprint
                     ):
                         raise CycleConflict("Existing visit obligation conflicts with request")
                     row, work = _load(db, existing.id)
                     return SyntheticCycleLedger._current(work)
                 item = VisitObligationFixture(
                     id=str(uuid4()), visit_ref=visit_ref, request_ref=request_ref,
-                    mode=mode, pending_ref=pending_ref, required_parts=list(req),
+                    mode=mode, pending_ref=pending_ref,
+                    source_patient_ref=source_patient_ref,
+                    source_fingerprint=source_fingerprint,
+                    required_parts=list(req),
                     version=0, verified_contact=False,
                     created_at=now, updated_at=now,
                 )
@@ -304,14 +348,17 @@ class DurableSyntheticFollowthrough:
         source_key = db.execute(
             select(VisitObligationFixture.mode,
                    VisitObligationFixture.visit_ref,
-                   VisitObligationFixture.pending_ref)
+                   VisitObligationFixture.pending_ref,
+                   VisitObligationFixture.source_patient_ref,
+                   VisitObligationFixture.source_fingerprint)
             .where(VisitObligationFixture.id == case_id)
         ).one_or_none()
         if source_key is None:
             raise CycleNotFound("Unknown synthetic obligation")
         self._check_signed_source(db, source_key)
         row, work = _load(db, case_id, lock=True)
-        if (row.mode, row.visit_ref, row.pending_ref) != tuple(source_key):
+        if (row.mode, row.visit_ref, row.pending_ref,
+                row.source_patient_ref, row.source_fingerprint) != tuple(source_key):
             raise CycleConflict("Durable obligation source changed")
         return row, work
 

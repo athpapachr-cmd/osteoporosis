@@ -566,6 +566,8 @@ def test_followthrough_revocation_after_review_blocks_actions_and_clears_live_pr
     after = c.get(PREFIX + "/patient/" + SYNTHETIC_161_PATIENT_IDS[0] + "/chart").json()
     assert after["visits"] == original["visits"], "Signed narrative must remain unchanged"
     assert after["pending"][0]["followthrough"]["source_valid"] is False
+    assert after["pending"][0]["followthrough"] == after["followthrough"][0]
+    assert after["followthrough"][0]["stage"] == "source_invalidated"
     assert after["pending"][0]["status"] == "cancelled"
     assert c.get(PREFIX + "/clinical-updates").json()["open_count"] == 2
     assert next(x for x in c.get(route).json()["cases"] if x["case_id"] == case_id)["version"] == 3
@@ -576,6 +578,68 @@ def test_followthrough_revocation_after_review_blocks_actions_and_clears_live_pr
         "part": "labs",
     })
     assert response.status_code == 200 and response.json()["stage"] == "awaiting_doctor_review"
+
+
+def test_followthrough_cancel_then_reopen_remains_suspended(setup):
+    app, engine = setup
+    c = login(app)
+    assert c.post(PREFIX + "/prepare").status_code == 200
+    ready = c.post(PREFIX + "/followthrough/prepare").json()
+    case_id = next(x["case_id"] for x in ready["cases"] if x["mode"] == "signed_pending")
+    route = PREFIX + "/followthrough"
+    current = next(x for x in c.get(route).json()["cases"] if x["case_id"] == case_id)
+    def action(path, serial, **extra):
+        return c.post(route + path, json={
+            "case_id": case_id, "expected_version": current["version"] + serial - 1,
+            "idempotency_key": f"synthetic-reopen-guard-{serial:04}", **extra,
+        })
+    assert action("/simulate-arrival", 1, part="report").status_code == 200
+    assert action("/doctor-review", 2, part="report", choice="notify").status_code == 200
+    assert c.get(route + "/secretary/" + case_id).status_code == 200
+    patient_id = SYNTHETIC_161_PATIENT_IDS[0]
+    with Session(engine) as db, db.begin():
+        from clinical_data import ClinicalPendingORM
+        row = db.get(ClinicalPendingORM, patient_id + "-pending")
+        row.status = "cancelled"
+        row.updated_at = datetime(2026, 10, 31, 12)
+    assert c.get(route + "/secretary/" + case_id).status_code == 409
+    with Session(engine) as db, db.begin():
+        row = db.get(ClinicalPendingORM, patient_id + "-pending")
+        row.status = "awaiting_patient"
+        row.updated_at = datetime(2026, 10, 31, 13)
+    reopened = next(x for x in c.get(route).json()["cases"] if x["case_id"] == case_id)
+    assert reopened["source_valid"] is False and reopened["stage"] == "source_invalidated"
+    assert c.get(route + "/secretary/" + case_id).status_code == 409
+    assert action("/secretary-result", 3, choice="notified").status_code == 409
+    chart = c.get(PREFIX + "/patient/" + patient_id + "/chart").json()
+    assert chart["followthrough"][0] == chart["pending"][0]["followthrough"]
+    assert chart["followthrough"][0]["complete"] is False
+    assert chart["followthrough"][0]["source_valid"] is False
+    assert c.get(PREFIX + "/clinical-updates").json()["open_count"] == 3
+
+
+def test_followthrough_joint_patient_transfer_is_denied(setup):
+    app, engine = setup
+    c = login(app)
+    assert c.post(PREFIX + "/prepare").status_code == 200
+    ready = c.post(PREFIX + "/followthrough/prepare").json()
+    signed = next(x for x in ready["cases"] if x["mode"] == "signed_pending")
+    original, other = SYNTHETIC_161_PATIENT_IDS[:2]
+    with Session(engine) as db, db.begin():
+        from clinical_data import ClinicalPendingORM
+        pending = db.get(ClinicalPendingORM, original + "-pending")
+        visit = db.get(EncounterORM, original + "-visit-10")
+        pending.patient_id = other
+        visit.patient_id = other
+    route = PREFIX + "/followthrough"
+    case_id = signed["case_id"]
+    state = next(x for x in c.get(route).json()["cases"] if x["case_id"] == case_id)
+    assert state["source_valid"] is False
+    assert c.get(route + "/secretary/" + case_id).status_code == 409
+    assert c.post(route + "/doctor-callback", json={
+        "case_id": case_id, "expected_version": state["version"],
+        "idempotency_key": "synthetic-reassigned-patient-01",
+    }).status_code == 409
 
 
 def test_followthrough_amended_signed_membership_requires_reconciliation(setup):
