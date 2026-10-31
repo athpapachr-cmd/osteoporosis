@@ -243,7 +243,7 @@ def test_generated_medical_notification_is_not_silently_dropped(client):
     fake.rows["2"] = mail(subject="Laboratory results available", newsletter=True)
     response = get(http, "/peek")
     assert response.status_code == 200
-    assert ("765-2", "review") in [
+    assert ("765-2", "clinical") in [
         (row["id"], row["category"]) for row in response.json()["items"]
     ]
 
@@ -851,3 +851,33 @@ def test_unexpected_imap_exception_has_static_fallback(client, monkeypatch, capl
     assert "icloud_mail_diagnostic code=IMAP_UNEXPECTED_FAILURE" in caplog.text
     assert "synthetic-secret-password" not in caplog.text
     assert "private patient subject" not in response.text
+
+
+def test_distinct_clinical_admin_and_all_alias_views_without_mail_writes(client):
+    http, fake = client
+    # Entirely invented domains/people; no real patient identifiers.
+    fake.rows["5"] = mail(subject="Booking confirmation", sender="robot@cal.com")
+    fake.rows["6"] = mail(subject="Payout receipt received", sender="billing@example.invalid")
+    fake.rows["7"] = mail(subject="", sender="Radiology Unit <radiology@example.invalid>")
+    fake.rows["8"] = mail(subject="MRI files via transfer", sender="noreply@wetransfer.com", newsletter=True)
+    fake.rows["9"] = mail(subject="Hello", sender="newsletters@example.invalid", newsletter=True)
+    clinical = get(http, "?view=clinical")
+    assert clinical.status_code == 200
+    assert clinical.json()["view"] == "clinical"
+    clinical_ids = {item["id"] for item in clinical.json()["items"]}
+    assert {"765-7", "765-8"}.issubset(clinical_ids)
+    assert {"765-5", "765-6", "765-9"}.isdisjoint(clinical_ids)
+    all_messages = get(http, "?view=all")
+    assert all_messages.status_code == 200
+    assert all_messages.json()["view"] == "all"
+    assert {"765-5","765-6","765-7","765-8","765-9"}.issubset(
+        {item["id"] for item in all_messages.json()["items"]}
+    )
+    admin = get(http, "?view=administrative")
+    assert admin.status_code == 200
+    assert {x["id"] for x in admin.json()["items"]} == {"765-2","765-5","765-6","765-9"}
+    assert get(http, "/items/765-5").status_code == 200
+    assert get(http, "/items/765-6").status_code == 200
+    assert not any(op in ("STORE","EXPUNGE") for op,_args in fake.operations)
+    assert "private@icloud.com" not in all_messages.text
+    assert get(http, "?view=untrusted").status_code == 422

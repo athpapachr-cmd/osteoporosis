@@ -6,7 +6,11 @@ on:
       - "main.py"
       - "clinical_notion_tasks.py"
       - "clinical_icloud_mail.py"
+      - "clinical_icloud_triage_rules.py"
+      - "clinical_icloud_actions.py"
       - "test_clinical_icloud_mail.py"
+      - "test_clinical_icloud_actions.py"
+      - "test_icloud_triage_rules.py"
       - "test_clinical_notion_tasks.py"
       - "static/cockpit/**"
       - "static/baseline-audit/index.html"
@@ -24,7 +28,11 @@ on:
       - "main.py"
       - "clinical_notion_tasks.py"
       - "clinical_icloud_mail.py"
+      - "clinical_icloud_triage_rules.py"
+      - "clinical_icloud_actions.py"
       - "test_clinical_icloud_mail.py"
+      - "test_clinical_icloud_actions.py"
+      - "test_icloud_triage_rules.py"
       - "test_clinical_notion_tasks.py"
       - "static/cockpit/**"
       - "static/baseline-audit/index.html"
@@ -52,7 +60,7 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r requirements.txt pytest
       - name: Python syntax
-        run: python -m py_compile main.py clinical_reception_calls.py clinical_icloud_mail.py clinical_notion_tasks.py test_clinical_reception_calls.py test_clinical_icloud_mail.py test_clinical_notion_tasks.py test_cockpit_home.py
+        run: python -m py_compile main.py clinical_reception_calls.py clinical_icloud_mail.py clinical_icloud_triage_rules.py clinical_icloud_actions.py clinical_notion_tasks.py test_clinical_reception_calls.py test_clinical_icloud_mail.py test_clinical_icloud_actions.py test_icloud_triage_rules.py test_clinical_notion_tasks.py test_cockpit_home.py
       - name: Browser JavaScript syntax
         run: |
           node --check static/cockpit/app.js
@@ -63,7 +71,7 @@ jobs:
           node --check static/cockpit/shared-nav.js
           node --check static/baseline-audit/g4-workspace-ergonomics.js
       - name: Cockpit Home deterministic tests
-        run: pytest -q test_cockpit_home.py test_clinical_reception_calls.py test_clinical_icloud_mail.py test_clinical_notion_tasks.py
+        run: pytest -q test_cockpit_home.py test_clinical_reception_calls.py test_clinical_icloud_mail.py test_clinical_icloud_actions.py test_icloud_triage_rules.py test_clinical_notion_tasks.py
       - name: Cockpit Doctor Shell synthetic workflow
         run: |
           node test_cockpit_doctor_shell.js

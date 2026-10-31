@@ -1,0 +1,561 @@
+"""One-doctor iCloud message decisions, separate from immutable clinical visit.
+
+A message's email header/UID is checked against the existing alias-scoped IMAP
+reader before any action. The database stores only an opaque account+UID key,
+an optional patient/visit/pending reference, event type and timestamps — never
+the message subject, sender, raw body, downloaded files or patient phone.
+
+This feature uses the *existing* authenticated clinician Clinical Key. No
+staff account or GESY referral number is required for the pilot.
+"""
+from __future__ import annotations
+
+import hashlib
+import hmac
+import json
+import logging
+import re
+from datetime import datetime, timezone
+from uuid import uuid4
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
+from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, JSON, String, UniqueConstraint, select
+from sqlalchemy.engine import Engine
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.orm import DeclarativeBase, Session
+
+from clinical_data import ClinicalPendingORM, EncounterORM, PatientORM
+from clinical_calendar import ClinicalAppointmentORM
+from clinical_icloud_mail import _ITEM_RE, _fetch_headers, _summary, _read, _settings, _message, _body
+from clinical_icloud_triage_rules import fold
+from clinical_reception_calls import _require_clinical_key
+
+_LOG = logging.getLogger(__name__)
+_CATEGORIES = frozenset(("clinical", "administrative", "other", "review"))
+_ACTIONS = frozenset((
+    "classify", "link", "unlink", "review_no_contact", "review_notify",
+    "contact_attempt", "patient_notified", "callback_complete",
+    "reopen_review",
+))
+_ACTIVE = frozenset(("open", "awaiting_patient", "awaiting_result"))
+_SOURCE_STATES = _ACTIVE | frozenset(("resolved",))  # Completed Pending retains historical identity.
+_DIGITS = re.compile(r"\D")
+_PHONE_CANDIDATE = re.compile(r"\+?\d[\d\s()\-]{6,22}\d")
+_NAME_KEYS = ("full_name", "fullName", "name", "ονοματεπώνυμο", "ονοματεπωνυμο")
+
+
+class MailDecisionBase(DeclarativeBase):
+    pass
+
+
+class MailDecisionORM(MailDecisionBase):
+    __tablename__ = "clinical_icloud_message_decisions"
+    source_key = Column(String(64), primary_key=True)
+    message_ref = Column(String(40), nullable=False)
+    category = Column(String(24), nullable=False, default="review")
+    patient_id = Column(String(120), nullable=True, index=True)
+    pending_id = Column(String(120), nullable=True, index=True)
+    booking_id = Column(String(160), nullable=True)
+    booking_evidence = Column(String(64), nullable=True)
+    version = Column(Integer, nullable=False, default=0)
+    review_status = Column(String(32), nullable=False, default="not_reviewed")
+    contact_status = Column(String(32), nullable=False, default="not_requested")
+    callback_complete = Column(Integer, nullable=False, default=0)
+    updated_at = Column(DateTime, nullable=False)
+
+
+class MailDecisionEventORM(MailDecisionBase):
+    __tablename__ = "clinical_icloud_message_action_events"
+    __table_args__ = (
+        UniqueConstraint("source_key", "version", name="uq_icloud_message_action_version"),
+        UniqueConstraint("source_key", "request_id", name="uq_icloud_message_action_request"),
+    )
+    id = Column(String(36), primary_key=True)
+    source_key = Column(String(64), ForeignKey(MailDecisionORM.source_key), nullable=False)
+    version = Column(Integer, nullable=False)
+    request_id = Column(String(36), nullable=False)
+    action = Column(String(32), nullable=False)
+    actor = Column(String(48), nullable=False)
+    value_hash = Column(String(64), nullable=False)
+    # Bounded structured actor decision, never user-entered email text/phone.
+    decision_json = Column(JSON, nullable=False, default=dict)
+    created_at = Column(DateTime, nullable=False)
+
+
+class Action(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    action: str
+    expected_version: int = Field(ge=0)
+    request_id: str = Field(pattern=r"^[a-f0-9-]{36}$")
+    category: str | None = None
+    patient_id: str | None = Field(default=None, max_length=120)
+    pending_id: str | None = Field(default=None, max_length=120)
+    booking_id: str | None = Field(default=None, max_length=160)
+
+
+def _stamp() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+def _key(item_id: str) -> str:
+    matched = _ITEM_RE.fullmatch(item_id)
+    if not matched:
+        raise HTTPException(404, "Unknown message identity")
+    username, _password, alias = _settings()
+    canonical = "\x00".join((username.casefold(), alias, "INBOX", *matched.groups()))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _qualify(item_id: str, *, include_body: bool = False) -> dict:
+    parsed = _ITEM_RE.fullmatch(item_id)
+    if not parsed:
+        raise HTTPException(404, "Unknown message")
+    uidvalidity, uid = parsed.groups()
+
+    def verify(mail, validity, alias):
+        if validity != uidvalidity:
+            raise HTTPException(409, "Mailbox UIDVALIDITY changed")
+        if include_body:
+            message = _message(mail, validity, alias, item_id)
+        else:
+            message, _size = _fetch_headers(mail, uid)
+        result = _summary(uid, validity, message, alias, include_nonclinical=True)
+        if result is None:
+            raise HTTPException(404, "Message outside practice mailbox")
+        if include_body:
+            result["text"] = _body(message)[:7000]
+            # File NAMES only, not attachment bytes: radiology frequently
+            # sends pictures without a Subject or body naming the patient.
+            # Use these as untrusted matching HINTS, never as identity proof.
+            names=[]
+            for part in list(message.walk())[:80]:
+                filename=part.get_filename()
+                if isinstance(filename,str) and filename.strip():
+                    names.append(filename[:180])
+                if len(names)>=40:
+                    break
+            result["filename_hints"] = " ".join(names)[:4000]
+        return result
+
+    return _read(verify)
+
+
+def _origin(request: Request) -> None:
+    origin = request.headers.get("origin", "")
+    host = request.headers.get("host", "")
+    if not host or any(c in host for c in "\r\n\t /"):
+        raise HTTPException(403, "Invalid clinical origin")
+    # Render terminates HTTPS at a reverse proxy. The ASGI request scheme
+    # can reflect the internal HTTP hop; accept only external HTTPS Host
+    # (or exact internal scheme in isolated local tests), never wildcard Origin.
+    allowed = (f"https://{host}", f"{request.url.scheme}://{host}")
+    if not origin or not any(hmac.compare_digest(origin, x) for x in allowed):
+        raise HTTPException(403, "Same-origin clinical action required")
+
+
+def _projection(row: MailDecisionORM | None, item_id: str,
+                suggested: str, *, source_valid: bool = True) -> dict:
+    if row is None:
+        return {
+            "item_id": item_id, "version": 0, "category": suggested,
+            "patient_id": None, "pending_id": None, "booking_id": None,
+            "review_status": "not_reviewed", "contact_status": "not_requested",
+            "callback_complete": False, "source_valid": source_valid,
+        }
+    return {
+        "item_id": item_id, "version": row.version, "category": row.category,
+        "patient_id": row.patient_id, "pending_id": row.pending_id,
+        "booking_id": row.booking_id,
+        "review_status": row.review_status, "contact_status": row.contact_status,
+        "callback_complete": row.callback_complete == 1,
+        "source_valid": source_valid,
+    }
+
+
+def _booking_evidence(booking: ClinicalAppointmentORM) -> str:
+    """Opaque snapshot of an existing booking's identifying facts only.
+
+    No sender/body/telephone text is copied to the audit event or response.
+    A reassignment/reschedule must not keep previously reviewed email attached.
+    """
+    fields = (
+        booking.source, booking.source_appointment_id, booking.id,
+        booking.start_at.isoformat() if booking.start_at else "",
+        fold(booking.patient_display_name), _phone(booking.phone_e164),
+        booking.linked_patient_id or "",
+    )
+    return hashlib.sha256(
+        json.dumps(fields, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+
+
+def _source_valid(db: Session, row: MailDecisionORM, *, lock: bool = False) -> bool:
+    if row.pending_id:
+        pending = db.get(ClinicalPendingORM, row.pending_id)
+        if not pending:
+            return False
+        # For writes, use encounter -> pending lock ordering already used by
+        # the signed visit amendment lifecycle. Do not allow a concurrently
+        # cancelled or reassigned source to authorize a new clinical action.
+        encounter = (db.scalar(
+            select(EncounterORM).where(
+                EncounterORM.id == pending.source_encounter_id
+            ).with_for_update()
+        ) if lock else db.get(EncounterORM, pending.source_encounter_id))
+        if lock:
+            pending = db.scalar(
+                select(ClinicalPendingORM).where(
+                    ClinicalPendingORM.id == row.pending_id
+                ).with_for_update().execution_options(populate_existing=True)
+            )
+            if (not pending or not encounter or
+                    pending.source_encounter_id != encounter.id):
+                return False
+        if pending.patient_id != row.patient_id or pending.status not in _SOURCE_STATES:
+            return False
+        if (not encounter or encounter.patient_id != row.patient_id
+                or encounter.status not in ("completed", "amended")):
+            return False
+        payload = encounter.payload_json
+        signed = payload.get("_visit_capture_v1", {}) if isinstance(payload, dict) else {}
+        if not isinstance(signed, dict) or not signed.get("signed"):
+            return False
+        ids = signed.get("pending_ids")
+        candidate = signed.get("candidate")
+        steps = candidate.get("pending") if isinstance(candidate, dict) else None
+        if (not isinstance(ids, list) or not isinstance(steps, list)
+                or len(ids) != len(steps) or ids.count(row.pending_id) != 1
+                or any(not isinstance(x, str) for x in ids)):
+            return False
+        requested = steps[ids.index(row.pending_id)]
+        if (not isinstance(requested, dict) or
+                requested.get("item_type") != pending.item_type):
+            return False
+    if row.patient_id and db.get(PatientORM, row.patient_id) is None:
+        return False
+    if row.booking_id:
+        booking = (db.scalar(select(ClinicalAppointmentORM).where(
+            ClinicalAppointmentORM.id == row.booking_id
+        ).with_for_update()) if lock else db.get(ClinicalAppointmentORM, row.booking_id))
+        if (not booking or booking.status in ("cancelled", "deleted")
+                or not booking.patient_display_name.strip()
+                or not row.booking_evidence
+                or not hmac.compare_digest(row.booking_evidence, _booking_evidence(booking))):
+            return False
+        if booking.linked_patient_id and row.patient_id and booking.linked_patient_id != row.patient_id:
+            return False
+    return True
+
+
+def _validate_link(db: Session, patient_id: str | None,
+                   pending_id: str | None, booking_id: str | None) -> None:
+    if not patient_id and not booking_id:
+        raise HTTPException(422, "Choose a chart or an existing appointment")
+    if pending_id and not patient_id:
+        raise HTTPException(422, "Pending must belong to a selected chart")
+    if patient_id:
+        patient = db.get(PatientORM, patient_id)
+        if patient is None or patient.patient_id.startswith("cockpit-synthetic-161-"):
+            raise HTTPException(404, "Patient not found")
+    if booking_id:
+        booking = db.get(ClinicalAppointmentORM, booking_id)
+        if (not booking or booking.status in ("cancelled", "deleted")
+                or not booking.patient_display_name.strip()):
+            raise HTTPException(404, "Current appointment not found")
+        if patient_id and booking.linked_patient_id and booking.linked_patient_id != patient_id:
+            raise HTTPException(409, "Existing appointment belongs to another chart")
+    if pending_id:
+        pending = db.get(ClinicalPendingORM, pending_id)
+        if pending is None or pending.patient_id != patient_id or pending.status not in _ACTIVE:
+            raise HTTPException(409, "Pending is not a current obligation for this chart")
+        source = db.get(EncounterORM, pending.source_encounter_id)
+        payload = source.payload_json if source else None
+        signed = payload.get("_visit_capture_v1", {}) if isinstance(payload, dict) else {}
+        if (not source or source.patient_id != patient_id
+                or source.status not in ("completed", "amended")
+                or not isinstance(signed, dict) or not signed.get("signed")):
+            raise HTTPException(409, "No current signed Pending source")
+        ids = signed.get("pending_ids")
+        candidate = signed.get("candidate")
+        steps = candidate.get("pending") if isinstance(candidate, dict) else None
+        if (not isinstance(ids, list) or not isinstance(steps, list)
+                or len(ids) != len(steps) or ids.count(pending_id) != 1
+                or any(not isinstance(x, str) for x in ids)):
+            raise HTTPException(409, "Pending not independently bound to current signed visit")
+        index = ids.index(pending_id)
+        if (not isinstance(steps[index], dict)
+                or steps[index].get("item_type") != pending.item_type):
+            raise HTTPException(409, "Signed requested examination no longer matches Pending")
+
+
+def _digest(data: Action) -> str:
+    return hashlib.sha256(data.model_dump_json(exclude_none=False).encode("utf-8")).hexdigest()
+
+
+def _matches(name: str, search: str, source: str) -> bool:
+    candidate = fold(name)
+    words = candidate.split()
+    if len(words) < 2 or len(candidate) < 6:
+        return False
+    if search:
+        terms = fold(search).split()
+        return bool(terms) and all(term in candidate for term in terms)
+    # Two or more full-name words must be present, even if a provider sends
+    # surname-first filenames. Single-name hints are not linked automatically.
+    observed = re.sub(r"[_./\\-]+", " ", fold(source))
+    return all(re.search(r"(?<!\w)"+re.escape(word)+r"(?:\d{1,3})?(?!\w)",observed)
+               for word in words)
+
+
+def _phone(value: str) -> str:
+    return _DIGITS.sub("", value or "")[-10:]
+
+
+def _candidate_rows(engine: Engine, source: dict, q: str) -> list[dict]:
+    if not q and not (source.get("subject") or source.get("from")):
+        return []
+    matches = []
+    haystack = " ".join(str(source.get(k) or "") for k in ("subject", "from", "text", "filename_hints"))
+    observed_phones = {
+        _phone(candidate) for candidate in _PHONE_CANDIDATE.findall(haystack)
+        if len(_phone(candidate)) >= 8
+    }
+    def evidence(name, phone):
+        if not _matches(name, "", haystack):
+            return "doctor_search"
+        normalized = _phone(phone)
+        if len(normalized) >= 8 and normalized[-8:] in {p[-8:] for p in observed_phones}:
+            return "name_phone"
+        return "name_only"
+    with Session(engine) as db:
+        for patient in db.scalars(select(PatientORM).order_by(PatientORM.patient_id)).yield_per(300):
+            data = patient.demographics_json if isinstance(patient.demographics_json, dict) else {}
+            name = next((data[k] for k in _NAME_KEYS if isinstance(data.get(k), str)
+                         and data[k].strip()), "")
+            if not name or not _matches(name, q, haystack):
+                continue
+            pendings = db.scalars(select(ClinicalPendingORM)
+                .where(ClinicalPendingORM.patient_id == patient.patient_id,
+                       ClinicalPendingORM.status.in_(tuple(_ACTIVE)))
+                .order_by(ClinicalPendingORM.updated_at.desc()).limit(8)).all()
+            matches.append({
+                "kind": "patient", "id": patient.patient_id, "name": name[:140],
+                "phone": str(data.get("phone") or "")[:40],
+                "evidence": evidence(name, str(data.get("phone") or "")),
+                "pending": [{"id": p.id, "label": p.description[:150]}
+                            for p in pendings],
+            })
+            if len(matches) >= 10:
+                break
+        if len(matches) < 10:
+            for booking in db.scalars(select(ClinicalAppointmentORM)
+                    .where(ClinicalAppointmentORM.status != "cancelled")
+                    .order_by(ClinicalAppointmentORM.start_at.desc())).yield_per(300):
+                if not _matches(booking.patient_display_name, q, haystack):
+                    continue
+                matches.append({
+                    "kind": "appointment", "id": booking.id,
+                    "name": booking.patient_display_name[:140],
+                    "phone": (booking.phone_e164 or "")[:40],
+                    "evidence": evidence(booking.patient_display_name, booking.phone_e164 or ""),
+                    "pending": [],
+                })
+                if len(matches) >= 10:
+                    break
+    order = {"name_phone": 0, "name_only": 1, "doctor_search": 2}
+    return sorted(matches, key=lambda x: order.get(x["evidence"], 3))[:10]
+
+
+def stored_mail_categories(engine: Engine, validity: str,
+                           uids: list[int]) -> dict[str, str]:
+    """Load exact opaque-UID clinician overrides for one bounded IMAP window.
+
+    No patient/email body content leaves this function. The account+alias is
+    part of every hashed source key; an unrelated mailbox cannot reuse labels.
+    """
+    if not uids:
+        return {}
+    refs = [f"{validity}-{uid}" for uid in uids[:256]]
+    keys = {_key(ref): ref for ref in refs}
+    try:
+        with Session(engine) as db:
+            rows = db.execute(
+                select(MailDecisionORM.source_key, MailDecisionORM.category)
+                .where(MailDecisionORM.source_key.in_(tuple(keys)))
+            ).all()
+            return {keys[k]: category for k, category in rows
+                    if k in keys and category in _CATEGORIES}
+    except SQLAlchemyError:
+        # No false label and no PHI in logs; the underlying mail remains
+        # visible under All if the optional decision store is unavailable.
+        return {}
+
+
+def build_icloud_actions_router(engine: Engine) -> APIRouter:
+    """Uses existing Clinical Key — there is currently ONE cockpit clinician."""
+    router = APIRouter(
+        prefix="/clinical/icloud-actions", tags=["clinical-icloud-actions"],
+        dependencies=[Depends(_require_clinical_key)],
+    )
+    installed = False
+    try:
+        # Additive, idempotent metadata-only table creation. Failure must NEVER
+        # prevent the existing live Cockpit or read-only iCloud viewer boot.
+        MailDecisionBase.metadata.create_all(engine, checkfirst=True)
+        installed = True
+    except SQLAlchemyError:
+        _LOG.warning("icloud_action_storage_unavailable")  # no PHI/secrets
+
+    def ready():
+        if not installed:
+            raise HTTPException(503, "Mail action storage unavailable")
+
+    @router.get("/items/{item_id}")
+    def read_action(item_id: str, response: Response):
+        response.headers["Cache-Control"] = "private, no-store"
+        ready()
+        source = _qualify(item_id)
+        key = _key(item_id)
+        with Session(engine) as db:
+            row = db.get(MailDecisionORM, key)
+            result = _projection(
+                row, item_id, source["category"],
+                source_valid=(row is None or _source_valid(db, row))
+            )
+            if not result["source_valid"]:
+                result["review_status"] = "source_invalidated"
+                result["callback_complete"] = False
+            return result
+
+    @router.get("/items/{item_id}/candidates")
+    def candidates(item_id: str, response: Response,
+                   q: str = Query(default="", max_length=140)):
+        response.headers["Cache-Control"] = "private, no-store"
+        ready()
+        source = _qualify(item_id, include_body=True)
+        if q and len(q.strip()) < 3:
+            raise HTTPException(422, "Enter at least three name characters")
+        return {"item_id": item_id, "items": _candidate_rows(engine, source, q)}
+
+    @router.post("/items/{item_id}")
+    def action(item_id: str, change: Action, request: Request, response: Response):
+        response.headers["Cache-Control"] = "private, no-store"
+        ready()
+        _origin(request)
+        if change.action not in _ACTIONS:
+            raise HTTPException(422, "Unknown clinical mail action")
+        source = _qualify(item_id)
+        key = _key(item_id)
+        digest = _digest(change)
+        now = _stamp()
+        try:
+            with Session(engine) as db, db.begin():
+                row = db.scalar(
+                    select(MailDecisionORM).where(MailDecisionORM.source_key == key)
+                    .with_for_update()
+                )
+                previous = db.scalar(select(MailDecisionEventORM).where(
+                    MailDecisionEventORM.source_key == key,
+                    MailDecisionEventORM.request_id == change.request_id,
+                ))
+                if previous is not None:
+                    if previous.value_hash != digest:
+                        raise HTTPException(409, "Conflicting mail action replay")
+                    return _projection(row, item_id, source["category"],
+                                       source_valid=_source_valid(db, row))
+                if row is None:
+                    if change.expected_version != 0:
+                        raise HTTPException(409, "Mail status changed; refresh")
+                    row = MailDecisionORM(
+                        source_key=key, message_ref=item_id,
+                        category=source["category"], version=0, updated_at=now,
+                        review_status="not_reviewed", contact_status="not_requested",
+                        callback_complete=0,
+                    )
+                    db.add(row)
+                    db.flush()
+                if row.version != change.expected_version:
+                    raise HTTPException(409, "Mail status changed; refresh")
+                choice = change.action
+                source_valid = _source_valid(db, row, lock=True)
+                # Never strand the doctor with an invalidated visit link.
+                # Unlink/reclassification/review correction are permitted
+                # even after the original signed Pending was cancelled.
+                if not source_valid and choice not in ("unlink", "classify", "reopen_review"):
+                    raise HTTPException(409, "Previous patient/visit binding is no longer valid")
+                if choice == "classify":
+                    if change.category not in _CATEGORIES:
+                        raise HTTPException(422, "Choose a known mail category")
+                    if change.category != row.category:
+                        # New classification invalidates any older medical
+                        # review/contact assertion until clinician re-attests
+                        # the same selected source explicitly.
+                        row.review_status = "not_reviewed"
+                        row.contact_status = "not_requested"
+                        row.callback_complete = 0
+                    row.category = change.category
+                elif choice == "link":
+                    if row.review_status != "not_reviewed":
+                        raise HTTPException(409, "Reopen email before changing its clinical linkage")
+                    _validate_link(db, change.patient_id, change.pending_id, change.booking_id)
+                    row.patient_id, row.pending_id, row.booking_id = (
+                        change.patient_id, change.pending_id, change.booking_id
+                    )
+                    appointment = db.get(ClinicalAppointmentORM, change.booking_id) if change.booking_id else None
+                    row.booking_evidence = _booking_evidence(appointment) if appointment else None
+                elif choice == "unlink":
+                    # A wrong or cancelled association must be correctable.
+                    # This does NOT erase historical review/contact events.
+                    row.patient_id = row.pending_id = row.booking_id = None
+                    row.booking_evidence = None
+                    row.review_status = "not_reviewed"
+                    row.contact_status = "not_requested"
+                    row.callback_complete = 0
+                elif choice == "reopen_review":
+                    if row.review_status == "not_reviewed":
+                        raise HTTPException(409, "Email is not marked reviewed")
+                    row.review_status = "not_reviewed"
+                    row.contact_status = "not_requested"
+                    row.callback_complete = 0
+                elif choice in ("review_no_contact", "review_notify"):
+                    if not (row.patient_id or row.booking_id) or row.review_status != "not_reviewed":
+                        raise HTTPException(409, "Select and validate the actual visit first")
+                    if row.category != "clinical":
+                        raise HTTPException(409, "Only clinical mail may be medically reviewed")
+                    row.review_status = "reviewed_no_contact" if choice == "review_no_contact" else "reviewed_notify"
+                    row.contact_status = "not_requested" if choice == "review_no_contact" else "to_contact"
+                elif choice in ("contact_attempt", "patient_notified"):
+                    if (row.review_status != "reviewed_notify"
+                            or row.contact_status not in ("to_contact", "attempted")):
+                        raise HTTPException(409, "No outstanding doctor-authorized contact task")
+                    row.contact_status = "attempted" if choice == "contact_attempt" else "notified"
+                elif choice == "callback_complete":
+                    if (row.review_status != "reviewed_notify"
+                            or row.contact_status != "notified"
+                            or row.callback_complete):
+                        raise HTTPException(409, "Patient notification or callback is not complete")
+                    row.callback_complete = 1
+                if (choice not in ("unlink", "classify", "reopen_review")
+                        and not _source_valid(db, row, lock=True)):
+                    raise HTTPException(409, "Linked visit was modified during this action")
+                row.version += 1
+                row.updated_at = now
+                audit = ({"category": row.category} if choice == "classify" else
+                         {"patient_id": row.patient_id, "pending_id": row.pending_id,
+                          "booking_id": row.booking_id} if choice in ("link", "unlink") else
+                         {"review_status": row.review_status,
+                          "contact_status": row.contact_status,
+                          "callback_complete": bool(row.callback_complete)})
+                db.add(MailDecisionEventORM(
+                    id=str(uuid4()), source_key=key, request_id=change.request_id,
+                    version=row.version, action=choice, actor="solo_clinician",
+                    value_hash=digest, decision_json=audit, created_at=now,
+                ))
+                db.flush()
+                return _projection(row, item_id, source["category"],
+                                   source_valid=_source_valid(db, row))
+        except IntegrityError:
+            raise HTTPException(409, "Concurrent mail action; refresh") from None
+
+    return router

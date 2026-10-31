@@ -1,5 +1,6 @@
 """Real Chromium smoke with invented records; no production, Gmail or patient access."""
 from pathlib import Path
+import json
 import shutil
 from urllib.parse import urlparse,parse_qs
 from datetime import datetime, timedelta, timezone
@@ -502,6 +503,47 @@ def exercise_icloud_mail_peek(page, width):
         route.fulfill(json={**payload, "filter": "all"})
     def item(route):
         route.fulfill(json=detail)
+    # The real selected message must offer WORKING protected actions, not
+    # merely show the phrase "Για έλεγχο" with no way to classify or link.
+    action_state = {"item_id":"765-4","version":0,"category":"clinical",
+        "patient_id":None,"pending_id":None,"booking_id":None,
+        "review_status":"not_reviewed","contact_status":"not_requested",
+        "callback_complete":False,"source_valid":True}
+    performed=[]
+    def clinician_action(route):
+        if route.request.method == "GET":
+            return route.fulfill(json=action_state)
+        assert route.request.method == "POST"
+        assert not any(k.lower()=="x-clinical-key" for k in route.request.headers)
+        body=json.loads(route.request.post_data)
+        assert body["expected_version"] == action_state["version"]
+        performed.append(body["action"])
+        if body["action"]=="link":
+            action_state["patient_id"]=body.get("patient_id")
+            action_state["pending_id"]=body.get("pending_id")
+        elif body["action"]=="review_notify":
+            action_state["review_status"]="reviewed_notify"
+            action_state["contact_status"]="to_contact"
+        elif body["action"]=="patient_notified":
+            action_state["contact_status"]="notified"
+        elif body["action"]=="callback_complete":
+            action_state["callback_complete"]=True
+        elif body["action"]=="reopen_review":
+            action_state["review_status"]="not_reviewed"
+            action_state["contact_status"]="not_requested"
+            action_state["callback_complete"]=False
+        action_state["version"]+=1
+        route.fulfill(json=action_state)
+    def candidates(route):
+        assert route.request.method=="GET"
+        route.fulfill(json={"item_id":"765-4","items":[{
+            "kind":"patient","id":"SYN-MAIL-PATIENT",
+            "name":"Συνθετικός Ασθενής Ελέγχου","phone":"+35799000001",
+            "evidence":"name_phone","pending":[{"id":"SYN-MAIL-PENDING",
+                                                   "label":"Συνθετική MRI"}]
+        }]})
+    page.route("**/clinical/icloud-actions/items/765-4", clinician_action)
+    page.route("**/clinical/icloud-actions/items/765-4/candidates*", candidates)
     page.route("**/clinical/icloud-mail/peek", peek)
     page.route("**/clinical/icloud-mail", full)
     page.route("**/clinical/icloud-mail?*", full)
@@ -510,7 +552,7 @@ def exercise_icloud_mail_peek(page, width):
     content = page.locator("#doctorPopoverContent")
     content.get_by_role("button", name="Ανανέωση τώρα").click()
     expect(content).to_contain_text("<svg onload=alert(1)>")
-    expect(content).to_contain_text("Για έλεγχο")
+    expect(content).to_contain_text("Χρειάζεται χαρακτηρισμό")
     expect(content).to_contain_text("Μερική κάλυψη")
     assert content.locator("svg, img").count() == 0
     observed = peek_requests["count"]
@@ -531,6 +573,21 @@ def exercise_icloud_mail_peek(page, width):
     expect(details).to_contain_text("δεν έχουν ελεγχθεί για κακόβουλα")
     assert details.locator("a.doctor-icloud-attachment").first.get_attribute("href").endswith(
         "/clinical/icloud-mail/items/765-4/attachments/2")
+    # A real selected mail must support clinician review through actual
+    # click handlers, with no extra account, no GESY referral and no auto-send.
+    expect(details).to_contain_text("Ενέργειες για αυτό το email")
+    details.get_by_role("button",name="Με εκκρεμότητα · Συνθετική MRI").click()
+    expect(details).to_contain_text("Συνδέθηκε με την υπάρχουσα κλινική εκκρεμότητα.")
+    details.get_by_role("button",name="Είδα · Ενημέρωση ασθενούς").click()
+    expect(details).to_contain_text("Εξετάστηκε · απαιτείται επικοινωνία")
+    details.get_by_role("button",name="Ο ασθενής ενημερώθηκε").click()
+    assert action_state["callback_complete"] is False
+    details.get_by_role("button",name="Ολοκληρώθηκε η επικοινωνία με ιατρό").click()
+    expect(details).to_contain_text("Ο κύκλος επικοινωνίας ολοκληρώθηκε.")
+    details.get_by_role("button",name="Διόρθωση αξιολόγησης").click()
+    expect(details).to_contain_text("Δεν έχει καταγραφεί ιατρική αξιολόγηση")
+    assert performed==["link","review_notify","patient_notified",
+                       "callback_complete","reopen_review"]
     assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1")
     # Peek selection loads its exact protected UID first; the archive is
     # separate and appears only when explicitly refreshed or opened by route.
@@ -546,8 +603,19 @@ def exercise_icloud_mail_peek(page, width):
     page.locator("#doctorIcloudInboxBack").click()
     expect(page.locator("#doctorIcloudInboxView")).to_be_hidden()
     assert details.text_content() == "", "Clinical mail retained in closed DOM"
+    # Regression: the old direct ✉ → All email action must coexist with
+    # the global Shortcuts link. Opening the popover is not a dead-end.
+    page.locator("#doctorInboxButton").click()
+    popup=page.locator("#doctorPopoverContent")
+    popup.get_by_role("button",name="Όλα τα email").click()
+    expect(page.locator("#doctorIcloudInboxView")).to_be_visible()
+    expect(page.locator('[data-icloud-view="all"]')).to_have_attribute("aria-pressed","true")
+    page.locator('[data-icloud-view="clinical"]').click()
+    expect(page.locator('[data-icloud-view="clinical"]')).to_have_attribute("aria-pressed","true")
+    page.locator("#doctorIcloudInboxBack").click()
     page.evaluate("window.location.hash = '#icloud-mail'")
     expect(page.locator("#doctorIcloudInboxView")).to_be_visible()
+    expect(page.locator('[data-icloud-view="all"]')).to_have_attribute("aria-pressed","true")
     expect(page.locator("#doctorIcloudInboxDetails")).to_contain_text(
         "Επίλεξε ένα μήνυμα από τη λίστα")
     detail_position = page.evaluate("""() => getComputedStyle(
@@ -574,6 +642,8 @@ def exercise_icloud_mail_peek(page, width):
     expect(page.locator("#ceGlobalAccessPanel")).to_be_hidden()
     page.unroute("**/clinical/status", expired_status)
 
+    page.unroute("**/clinical/icloud-actions/items/765-4/candidates*", candidates)
+    page.unroute("**/clinical/icloud-actions/items/765-4", clinician_action)
     page.unroute("**/clinical/icloud-mail/items/765-4", item)
     page.unroute("**/clinical/icloud-mail?*", full)
     page.unroute("**/clinical/icloud-mail", full)
@@ -851,7 +921,7 @@ def exercise_icloud_peek_200_client_truth(page):
         expect(peek).to_contain_text("HTTP 200")
         expect(peek).to_contain_text(code)
         expect(peek).not_to_contain_text("Δεν έχει συνδεθεί ακόμη")
-        expect(peek).to_contain_text("Όλα τα email: Συντομεύσεις")
+        expect(peek.get_by_role("button", name="Όλα τα email")).to_be_visible()
         assert peek.locator("svg, img").count() == 0
         page.locator("#doctorInboxButton").click()
         page.unroute("**/clinical/icloud-mail/peek", reply)

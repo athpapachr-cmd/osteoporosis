@@ -56,3 +56,31 @@
   #doctorIcloudInboxView .clinical-inbox-detail{position:static;min-height:150px}
   #doctorIcloudInboxView .clinical-inbox-list{padding:12px}
 }
+
+/* Real clinician-only iCloud triage, never another mailbox/task engine. */
+#doctorIcloudInboxView [data-icloud-view][aria-pressed="true"],
+#doctorIcloudInboxView .doctor-icloud-workflow button[aria-pressed="true"]{
+  border-color:#4b8f87;background:#e6f5f1;color:#194a43;font-weight:700;
+}
+#doctorIcloudInboxView .doctor-icloud-workflow{
+  margin-top:20px;padding-top:15px;border-top:1px solid #dce8e8;
+  display:grid;gap:10px;
+}
+#doctorIcloudInboxView .doctor-icloud-workflow h4{margin:0;font-size:16px}
+#doctorIcloudInboxView .doctor-icloud-workflow .clinical-inbox-actions{
+  display:flex;flex-wrap:wrap;align-items:center;gap:7px;
+}
+#doctorIcloudInboxView .doctor-icloud-workflow .clinical-inbox-actions p{width:100%;margin:3px 0}
+#doctorIcloudInboxView .doctor-icloud-linking{display:grid;gap:7px}
+#doctorIcloudInboxView .doctor-icloud-linking input{
+  display:block;width:100%;max-width:100%;box-sizing:border-box;
+  padding:11px 12px;border:1px solid #bfd0d2;border-radius:10px;
+  font:inherit;min-width:0;
+}
+#doctorIcloudInboxView .doctor-icloud-candidates{display:grid;gap:8px}
+#doctorIcloudInboxView .doctor-icloud-candidate{
+  display:flex;flex-wrap:wrap;gap:7px;align-items:center;
+  padding:10px 0;border-bottom:1px solid #edf1f1;
+}
+#doctorIcloudInboxView .doctor-icloud-candidate p{width:100%;margin:2px 0}
+#doctorIcloudInboxView .doctor-icloud-candidate button{white-space:normal;text-align:left}
