@@ -404,7 +404,10 @@
     if(unreadPeek.pending && data) content.append(text("Ανανέωση στο παρασκήνιο…"));
     content.append(action("Ανανέωση τώρα","Μη αναγνωσμένα στο iCloud",
       ()=>{unreadPeek.checkedAt=0;void fetchUnreadPeek(true,true);}));
-    content.append(text("Όλα τα email: Συντομεύσεις → Εισερχόμενα ασθενών."));
+    // Keep BOTH access routes: direct one-tap full archive from ✉ AND
+    // the permanent shortcut. Neither requires repeating Clinical Key login.
+    content.append(action("Όλα τα email", "Άνοιγμα πλήρους iCloud φακέλου",
+      ()=>showIcloudInbox()));
   }
   function fetchUnreadPeek(force=false, manual=false) {
     if(secretaryIcloudSession())return null;
