@@ -611,7 +611,7 @@ def exercise_cached_unread_requires_fresh_clinical_key(page):
     verified = {"count": 0}
     def valid_status(route):
         assert route.request.method == "GET"
-        assert "cookie" in {key.lower() for key in route.request.headers}
+        assert not any(k.lower() == "x-clinical-key" for k in route.request.headers)
         verified["count"] += 1
         route.fulfill(status=200, json={"protected": True})
 
@@ -647,7 +647,6 @@ def exercise_cached_unread_requires_fresh_clinical_key(page):
     page.keyboard.press("Escape")
     page.unroute("**/clinical/status", delayed_rejected_status)
     page.unroute("**/clinical/icloud-mail/peek", peek)
-    page.evaluate("window.dispatchEvent(new Event('clinical:authenticated'))")
 
 
 def exercise_icloud_stage_failure(page):
