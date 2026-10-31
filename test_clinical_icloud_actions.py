@@ -317,3 +317,18 @@ def test_booking_identity_change_invalidates_link(scenario):
         booking.patient_display_name = "New Synthetic Booking Name"
     assert get(client, endpoint("765-12")).json()["source_valid"] is False
     assert post(client, "765-12", "review_no_contact", 1).status_code == 409
+
+
+def test_unsigned_membership_fails_closed_while_chart_link_stays_usable(scenario):
+    client, _, engine = scenario
+    with Session(engine) as db, db.begin():
+        visit = db.get(EncounterORM, VISIT)
+        payload = dict(visit.payload_json)
+        signed = dict(payload["_visit_capture_v1"])
+        signed.pop("pending_ids")
+        payload["_visit_capture_v1"] = signed
+        visit.payload_json = payload
+    assert post(client, "765-10", "link", 0, patient_id=PATIENT, pending_id=PENDING).status_code == 409
+    result = post(client, "765-10", "link", 0, patient_id=PATIENT)
+    assert result.status_code == 200
+    assert result.json()["pending_id"] is None
