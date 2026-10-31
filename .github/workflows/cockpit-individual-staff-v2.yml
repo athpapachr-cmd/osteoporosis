@@ -5,6 +5,7 @@ on:
     paths:
       - "clinical_individual_staff_v2.py"
       - "clinical_auth.py"
+      - "clinical_staff_auth.py"
       - "test_clinical_individual_staff_v2.py"
       - ".github/workflows/cockpit-individual-staff-v2.yml"
       - "cockpit/staff-identity-v2/**"
@@ -12,6 +13,7 @@ on:
     paths:
       - "clinical_individual_staff_v2.py"
       - "clinical_auth.py"
+      - "clinical_staff_auth.py"
       - "test_clinical_individual_staff_v2.py"
       - ".github/workflows/cockpit-individual-staff-v2.yml"
       - "cockpit/staff-identity-v2/**"
