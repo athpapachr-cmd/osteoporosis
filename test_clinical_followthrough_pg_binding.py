@@ -175,6 +175,13 @@ def test_pg_signed_pending_revocation_blocks_future_visit_projection(single_db):
         )
     with pytest.raises(CycleForbidden):
         register(bridge, store)
+    # Cancellation must deny new events, not only the read-only projection.
+    with pytest.raises(CycleForbidden):
+        act(store, record["case_id"], SOURCE, "received", 31,
+            part="report", source_ref="synthetic-pg-cancelled-mail",
+            source_version="revision-01", proof="qualified_order")
+    with Session(single_db) as db:
+        assert db.scalar(select(func.count()).select_from(ObligationEventFixture)) == 0
     assert store.view(record["case_id"], DOCTOR)["stage"] == "awaiting_result"
 
 
@@ -274,6 +281,10 @@ def test_pg_signed_qualification_cannot_be_moved_to_another_patient(single_db):
             pending_id=PENDING, encounter_id=VISIT,
         )
     assert store.view(first["case_id"], DOCTOR)["pending_ref"] == "synthetic-" + PENDING
+    with pytest.raises(CycleForbidden):
+        act(store, first["case_id"], SOURCE, "received", 32,
+            part="report", source_ref="synthetic-pg-cross-patient-mail",
+            source_version="revision-01", proof="qualified_order")
 
 
 def test_pg_transactional_qualification_for_provisional_visit_is_rejected(single_db):

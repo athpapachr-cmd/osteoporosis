@@ -120,6 +120,7 @@ def _prepare(engine):
                         "signed": True, "signed_at": signed_at.isoformat(),
                         "synthetic_scenario": SCENARIO,
                         "candidate": candidate.model_dump(mode="json"),
+                        "pending_ids": ([] if days == 30 else [f"{patient_id}-pending"]),
                         "snapshot": snapshot, "brief": brief, "detail": detail,
                     }}, created_at=signed_at, updated_at=signed_at,
                 ))
@@ -198,11 +199,25 @@ def build_synthetic_161_router(engine):
             pending = db.get(ClinicalPendingORM, patient_id + "-pending")
             source = db.get(EncounterORM, pending.source_encounter_id) if pending else None
             signed = (source.payload_json or {}).get("_visit_capture_v1", {}) if source else {}
+            candidate = signed.get("candidate") if isinstance(signed, dict) else None
+            entries = candidate.get("pending") if isinstance(candidate, dict) else None
+            ids = signed.get("pending_ids") if isinstance(signed, dict) else None
             if (not pending or pending.patient_id != patient_id
+                    or pending.status not in ("open", "awaiting_patient", "awaiting_result")
                     or not source or source.patient_id != patient_id
-                    or source.status != "completed" or not signed.get("signed")
-                    or signed.get("synthetic_scenario") != SCENARIO):
+                    or pending.source_encounter_id != source.id
+                    or source.status != "completed"
+                    or not isinstance(signed, dict) or signed.get("signed") is not True
+                    or signed.get("synthetic_scenario") != SCENARIO
+                    or not isinstance(ids, list) or ids != [pending.id]
+                    or not isinstance(entries, list) or len(entries) != 1
+                    or not isinstance(entries[0], dict)
+                    or entries[0].get("item_type") != pending.item_type):
                 raise HTTPException(409, "Signed synthetic Pending source unavailable")
+            try:
+                datetime.fromisoformat(signed["signed_at"])
+            except (KeyError, TypeError, ValueError):
+                raise HTTPException(409, "Invalid signed synthetic visit date") from None
             return pending.id, source.id
 
     followthrough_router, followthrough = build_synthetic_followthrough_router(

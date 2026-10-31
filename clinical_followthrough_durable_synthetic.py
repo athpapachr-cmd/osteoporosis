@@ -205,6 +205,26 @@ class DurableSyntheticFollowthrough:
         self.engine = engine
         self.qualified_signed_pending = qualified_signed_pending
 
+    def _check_signed_source(self, db: Session, row: VisitObligationFixture) -> None:
+        """Fail closed before events if the signed source changed.
+
+        In one PostgreSQL database the binding locks Encounter -> Pending ->
+        Patient before the durable obligation. Separate fixture databases can
+        only recheck and do not claim atomicity across the two transactions.
+        """
+        if row.mode != "signed_pending":
+            return
+        verifier = self.qualified_signed_pending
+        binding = getattr(verifier, "__self__", None)
+        transactional = getattr(binding, "qualify_in_transaction", None)
+        if (getattr(binding, "engine", None) is self.engine
+                and callable(transactional)):
+            qualified = transactional(db, row.visit_ref, row.pending_ref)
+        else:
+            qualified = verifier(row.visit_ref, row.pending_ref) if verifier else False
+        if qualified is not True:
+            raise CycleForbidden("Signed Pending is no longer qualified for events")
+
     def register(self, actor: Actor, *, visit_ref: str, request_ref: str,
                  required: tuple[str, ...], mode: str,
                  pending_ref: str | None = None,
@@ -293,6 +313,12 @@ class DurableSyntheticFollowthrough:
             raise CycleConflict("Invalid expected version")
         try:
             with Session(self.engine) as db, db.begin():
+                # Establish case identity without taking its durable row lock:
+                # signed-source locks must be acquired first.
+                source_row = db.get(VisitObligationFixture, case_id)
+                if source_row is None:
+                    raise CycleNotFound("Unknown synthetic obligation")
+                self._check_signed_source(db, source_row)
                 row, work = _load(db, case_id, lock=True)
                 previous = db.scalar(select(ObligationEventFixture).where(
                     ObligationEventFixture.obligation_id == case_id,

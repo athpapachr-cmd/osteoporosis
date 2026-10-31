@@ -501,6 +501,29 @@ def test_browser_eligible_patient_lookup_401_is_current_session_only(setup):
         thread.join(timeout=5)
 
 
+def test_followthrough_demo_rejects_closed_or_unbound_signed_pending(setup):
+    app, engine = setup
+    c = login(app)
+    assert c.post(PREFIX + "/prepare").status_code == 200
+    from clinical_data import ClinicalPendingORM
+    patient_id = SYNTHETIC_161_PATIENT_IDS[0]
+    pending_id = patient_id + "-pending"
+    with Session(engine) as db, db.begin():
+        pending = db.get(ClinicalPendingORM, pending_id)
+        pending.status = "resolved"
+    assert c.post(PREFIX + "/followthrough/prepare").status_code == 409
+    with Session(engine) as db, db.begin():
+        pending = db.get(ClinicalPendingORM, pending_id)
+        pending.status = "awaiting_patient"
+        encounter = db.get(EncounterORM, pending.source_encounter_id)
+        payload = dict(encounter.payload_json)
+        signed = dict(payload["_visit_capture_v1"])
+        signed["pending_ids"] = []
+        payload["_visit_capture_v1"] = signed
+        encounter.payload_json = payload
+    assert c.post(PREFIX + "/followthrough/prepare").status_code == 409
+
+
 def test_followthrough_synthetic_full_result_review_secretary_and_closure(setup):
     """Original signed Pending, and no-chart visit, share one event semantics."""
     app, _engine = setup
@@ -625,6 +648,16 @@ def test_followthrough_synthetic_browser_one_calm_card(setup):
                     page.get_by_role("button", name="Είδα αναλύσεις — χωρίς επικοινωνία").click()
                 expect(page.locator(".synthetic-cycle-card").first).to_contain_text("Ολοκληρώθηκε")
                 expect(page.locator(".synthetic-cycle-card").nth(1)).to_contain_text("Ολοκληρώθηκε")
+                if width == 1280:
+                    # Same event-derived status in signed visit and open count.
+                    page.evaluate(
+                        "(patientId) => window.CockpitStoredChart.open(patientId)",
+                        SYNTHETIC_161_PATIENT_IDS[0],
+                    )
+                    expect(page.locator("#synthetic161Chart .patient-obligation-origin")).to_contain_text(
+                        "Τρέχουσα κατάσταση: Ολοκληρώθηκε"
+                    )
+                    expect(page.locator("#synthetic161Chart")).to_contain_text("0 ανοικτές")
                 assert page.evaluate(
                     "document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1"
                 ), f"Horizontal overflow at {width}"

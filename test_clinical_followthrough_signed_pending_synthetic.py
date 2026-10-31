@@ -265,7 +265,13 @@ def test_post_signature_reassignment_blocks_future_projection(setup):
     with pytest.raises(CycleForbidden):
         binding.project_pending(store, DOCTOR, patient_id=PATIENT,
                                 pending_id=PENDING, encounter_id=VISIT)
-    # Evidence remains in the audit store; it is NOT silently moved to another visit.
+    # A source amendment must also reject new events in the durable owner.
+    with pytest.raises(CycleForbidden):
+        act(store, case["case_id"], SOURCE, "received", 44, part="report",
+            source_ref="synthetic-revoked-mail-source",
+            source_version="revision-01", proof="qualified_order")
+    assert store.view(case["case_id"], DOCTOR)["version"] == 0
+    # Evidence remains in audit; it is NOT silently moved to another visit.
     assert store.view(case["case_id"], DOCTOR)["pending_ref"] == "synthetic-" + PENDING
 
 

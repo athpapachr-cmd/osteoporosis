@@ -217,6 +217,13 @@ class SyntheticSignedPendingBinding:
             )
             if pending is None or pending.source_encounter_id != encounter_id:
                 return False
+            # Hold the patient ownership/marker row through this same-DB event.
+            # Lock order: Encounter -> Pending -> Patient -> obligation.
+            db.scalar(
+                select(PatientORM)
+                .where(PatientORM.patient_id == pending.patient_id)
+                .with_for_update()
+            )
             return self._signed_membership(db, pending).id == encounter_id
         except (CycleForbidden, ValueError, TypeError):
             return False

@@ -32,6 +32,24 @@
       ...(time?{hour:"2-digit",minute:"2-digit",hour12:false}:{})}).format(stamp);
   }
   const eventTitle={created:"Δημιουργήθηκε η υποχρέωση",received:"Παραλήφθηκε το CD",reopened:"Η υποχρέωση άνοιξε ξανά"};
+  const followthroughStages={
+    awaiting_result:"Αναμένονται αποτελέσματα",
+    partially_received:"Παραλήφθηκε μέρος των εξετάσεων",
+    awaiting_doctor_review:"Αναμένει αξιολόγηση ιατρού",
+    awaiting_secretary:"Αναμένει ενημέρωση γραμματείας",
+    awaiting_callback:"Αναμένει επικοινωνία με ιατρό",
+    complete:"Ολοκληρώθηκε"
+  };
+  function pendingStatus(item){
+    return item.followthrough ?
+      (followthroughStages[item.followthrough.stage]||"Χρειάζεται έλεγχος") :
+      item.status==="resolved"?"Παραλήφθηκε" :
+      item.status==="cancelled"?"Ακυρώθηκε":"Αναμένεται από τον ασθενή";
+  }
+  function pendingOpen(item){
+    return !item.followthrough?.complete &&
+      item.status!=="resolved" && item.status!=="cancelled";
+  }
   function facts(parent, label, values){
     if(!values?.length)return;
     text(parent,"h4",label);
@@ -56,16 +74,7 @@
         const row=text(target,"button","");row.type="button";row.className="doctor-action-row";
         const copy=text(row,"span","");text(copy,"strong",item.patient_name);
         text(copy,"small",item.description);
-        const cycle=item.followthrough;
-        const label=cycle?({
-          awaiting_result:"Αναμένεται εξέταση",
-          partially_received:"Παραλήφθηκε μέρος εξετάσεων",
-          awaiting_doctor_review:"Αναμένει αξιολόγηση ιατρού",
-          awaiting_secretary:"Αναμένει ενημέρωση γραμματείας",
-          awaiting_callback:"Αναμένεται επικοινωνία με ιατρό",
-          complete:"Ολοκληρώθηκε"
-        }[cycle.stage]||"Χρειάζεται έλεγχος"):
-          item.status==="resolved"?"Παραλήφθηκε":"Αναμένεται από τον ασθενή";
+        const label=pendingStatus(item);
         text(copy,"small",label+" · "+date(item.updated_at,true));
         text(copy,"small","Από την επίσκεψη "+date(item.source_date));
         text(row,"span","›");
@@ -81,15 +90,7 @@
       const copy=text(row,"div","");
       text(copy,"strong",item.description);
       const cycle=item.followthrough;
-      text(copy,"p",cycle ? ({
-        awaiting_result:"Αναμένονται αποτελέσματα",
-        partially_received:"Παραλήφθηκε μέρος των εξετάσεων",
-        awaiting_doctor_review:"Αναμένει αξιολόγηση ιατρού",
-        awaiting_secretary:"Αναμένει ενημέρωση γραμματείας",
-        awaiting_callback:"Αναμένει επικοινωνία με ιατρό",
-        complete:"Ολοκληρώθηκε"
-      }[cycle.stage]||"Χρειάζεται έλεγχος") :
-        item.status==="resolved"?"Παραλήφθηκε":"Αναμένεται από τον ασθενή");
+      text(copy,"p",pendingStatus(item));
       const origin=text(copy,"button","Δημιουργήθηκε στην επίσκεψη · "+date(item.source_date));
       origin.type="button";origin.className="clinical-source-link";
       origin.addEventListener("click",async()=>{
@@ -154,7 +155,7 @@
       facts(overview,"Εκτίμηση",clinical.clinical_impression);
       facts(overview,"Συμφωνημένο σχέδιο",clinical.decisions);
       const obligations=text(grid,"section","");obligations.className="patient-chart-card";
-      const openItems=data.pending.filter(p=>p.status!=="resolved"&&p.status!=="cancelled");
+      const openItems=data.pending.filter(pendingOpen);
       text(obligations,"h3","Υποχρεώσεις · "+openItems.length+(openItems.length===1?" ανοικτή":" ανοικτές"));
       const pendingBox=text(obligations,"div","");
       renderPending(pendingBox,patientId,data.pending);
@@ -200,7 +201,7 @@
           for(const item of originated){
             text(origin,"strong",item.description);
             text(origin,"p","Καταγράφηκε "+date(item.created_at)+" · Ανατέθηκε στον ασθενή");
-            text(origin,"p","Τρέχουσα κατάσταση: "+(item.status==="resolved"?"Παραλήφθηκε":"Αναμένεται από τον ασθενή"));
+            text(origin,"p","Τρέχουσα κατάσταση: "+pendingStatus(item));
           }
         }
         facts(body,"Οδηγίες επανεπικοινωνίας",c.safety_net);
