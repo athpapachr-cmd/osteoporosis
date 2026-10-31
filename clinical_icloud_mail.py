@@ -22,6 +22,7 @@ from html.parser import HTMLParser
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 
 from clinical_reception_calls import _require_clinical_key
+from clinical_icloud_triage_rules import suggest_category
 
 _HOST = "imap.mail.me.com"
 _ALIAS_RE = re.compile(r"^[a-z0-9][a-z0-9._+-]{0,80}@icloud\.com$", re.I)
@@ -137,19 +138,9 @@ def _normalized(value: str) -> str:
     )
 
 
-def _classification(message) -> str | None:
-    subject = _normalized(str(message.get("Subject", "")))
-    clinical_hint = any(term in subject for term in _CLINICAL_TERMS)
-    auto = str(message.get("Auto-Submitted", "")).casefold()
-    bulk = (bool(message.get("List-Unsubscribe"))
-            or str(message.get("Precedence", "")).casefold() in ("bulk", "list", "junk")
-            or (bool(auto) and auto != "no"))
-    # Lab/clinical notifications can be auto-generated and include a
-    # List-Unsubscribe header. Keep plausible clinical mail in the doctor's
-    # review bucket instead of silently losing it.
-    if bulk:
-        return "review" if clinical_hint else None
-    return "clinical" if clinical_hint else "review"
+def _classification(message) -> str:
+    # Header hints only: NOT a patient match or clinical attestation.
+    return suggest_category(message)
 
 
 def _to_alias(message, alias: str) -> bool:
@@ -245,11 +236,11 @@ def _fetch_headers(mail, uid: str):
     return message, size
 
 
-def _summary(uid: str, validity: str, message, alias: str):
+def _summary(uid: str, validity: str, message, alias: str, *, include_nonclinical: bool = False):
     if not _to_alias(message, alias):
         return None
     classification = _classification(message)
-    if classification is None:
+    if not include_nonclinical and classification not in ("clinical", "review"):
         return None
     name, sender = (getaddresses([str(message.get("From", ""))]) or [("", "")])[0]
     try:
@@ -349,7 +340,7 @@ def _uid_is_unseen(mail, uid: str) -> bool:
     return verified
 
 
-def _list_items(mail, validity: str, alias: str, limit: int, cursor: str | None = None, *, unseen_only: bool = False):
+def _list_items(mail, validity: str, alias: str, limit: int, cursor: str | None = None, *, unseen_only: bool = False, view: str = "clinical"):
     last_uid = _uid_next(mail) - 1
     if cursor is not None:
         match = _ITEM_RE.fullmatch(cursor)
@@ -382,7 +373,9 @@ def _list_items(mail, validity: str, alias: str, limit: int, cursor: str | None 
                     item = None
                 else:
                     header, _ = _fetch_headers(mail, str(uid))
-                    item = _summary(str(uid), validity, header, alias)
+                    item = _summary(str(uid), validity, header, alias, include_nonclinical=view != "clinical")
+                    if item is not None and view == "administrative" and item["category"] not in ("administrative", "other"):
+                        item = None
             except (_BadMessage, ValueError, TypeError, UnicodeError):
                 skipped += 1
                 item = None
@@ -576,12 +569,13 @@ def build_icloud_mail_router() -> APIRouter:
         response: Response,
         limit: int = Query(default=20, ge=1, le=25),
         cursor: str | None = Query(default=None, max_length=40),
+        view: str = Query(default="clinical", pattern="^(clinical|all|administrative)$"),
     ):
         _no_store(response)
         return {
             "source": "icloud_mail", "scope": "recipient_alias_inbox_only",
-            "filter": "all",
-            **_read(lambda mail, validity, alias: _list_items(mail, validity, alias, limit, cursor)),
+            "filter": "all", "view": view,
+            **_read(lambda mail, validity, alias: _list_items(mail, validity, alias, limit, cursor, view=view)),
         }
 
     @router.get("/items/{item_id}")
@@ -590,7 +584,7 @@ def build_icloud_mail_router() -> APIRouter:
 
         def result(mail, validity, alias):
             message = _message(mail, validity, alias, item_id)
-            header = _summary(item_id.split("-")[1], validity, message, alias)
+            header = _summary(item_id.split("-")[1], validity, message, alias, include_nonclinical=True)
             available = _attachments(message)
             return {
                 "source": "icloud_mail", "item": {
