@@ -485,9 +485,11 @@ def exercise_icloud_mail_peek(page, width):
         "attachments_unavailable": 1,
         "attachments": [{"index": 2, "name": "image.pdf",
                          "content_type": "application/pdf", "size": 256}]}}
+    peek_requests = {"count": 0}
     def peek(route):
         assert route.request.method == "GET"
         assert not any(k.lower() == "x-clinical-key" for k in route.request.headers)
+        peek_requests["count"] += 1
         route.fulfill(json=payload)
     def full(route):
         if "cursor=765-2" in route.request.url:
@@ -511,6 +513,12 @@ def exercise_icloud_mail_peek(page, width):
     expect(content).to_contain_text("Για έλεγχο")
     expect(content).to_contain_text("Μερική κάλυψη")
     assert content.locator("svg, img").count() == 0
+    observed = peek_requests["count"]
+    page.locator("#doctorInboxButton").click()
+    page.locator("#doctorInboxButton").click()
+    expect(content).to_contain_text("<svg onload=alert(1)>")
+    assert peek_requests["count"] == observed, (
+        "Opening cached unread preview unnecessarily re-fetched provider mail")
     content.locator("button.doctor-action-row").first.click()
     expect(page.locator("#doctorIcloudInboxView")).to_be_visible()
     assert not mail_ui_errors, "Unexpected iCloud JS navigation error: " + str(mail_ui_errors)
