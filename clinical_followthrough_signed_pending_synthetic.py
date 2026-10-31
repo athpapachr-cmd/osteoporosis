@@ -322,6 +322,8 @@ class SyntheticSignedPendingBinding:
                 return None
             if (row.visit_ref != qualified.visit_ref
                     or row.request_ref != qualified.request_ref
-                    or row.mode != "signed_pending"):
+                    or row.mode != "signed_pending"
+                    or row.source_patient_ref != qualified.source_patient_ref
+                    or row.source_fingerprint != qualified.source_fingerprint):
                 raise CycleConflict("Stale or cross-visit durable obligation")
             return store.view(row.id, actor)
