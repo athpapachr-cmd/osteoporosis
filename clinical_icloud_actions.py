@@ -266,6 +266,31 @@ def _candidate_rows(engine: Engine, source: dict, q: str) -> list[dict]:
     return matches
 
 
+def stored_mail_categories(engine: Engine, validity: str,
+                           uids: list[int]) -> dict[str, str]:
+    """Load exact opaque-UID clinician overrides for one bounded IMAP window.
+
+    No patient/email body content leaves this function. The account+alias is
+    part of every hashed source key; an unrelated mailbox cannot reuse labels.
+    """
+    if not uids:
+        return {}
+    refs = [f"{validity}-{uid}" for uid in uids[:256]]
+    keys = {_key(ref): ref for ref in refs}
+    try:
+        with Session(engine) as db:
+            rows = db.execute(
+                select(MailDecisionORM.source_key, MailDecisionORM.category)
+                .where(MailDecisionORM.source_key.in_(tuple(keys)))
+            ).all()
+            return {keys[k]: category for k, category in rows
+                    if k in keys and category in _CATEGORIES}
+    except SQLAlchemyError:
+        # No false label and no PHI in logs; the underlying mail remains
+        # visible under All if the optional decision store is unavailable.
+        return {}
+
+
 def build_icloud_actions_router(engine: Engine) -> APIRouter:
     """Uses existing Clinical Key — there is currently ONE cockpit clinician."""
     router = APIRouter(
