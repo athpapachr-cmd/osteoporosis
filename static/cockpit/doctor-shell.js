@@ -391,7 +391,7 @@
         (data.next_cursor?"Υπάρχουν παλαιότερα μη αναγνωσμένα προς έλεγχο.":
         "Ο έλεγχος δεν είναι επιβεβαιωμένα πλήρης.")));
       for(const item of data.items)content.append(action(
-        (item.category==="review"?"Για έλεγχο · ":"")+item.subject,
+        (item.category==="review"?"Χρειάζεται χαρακτηρισμό · ":"")+item.subject,
         item.from+" · Μη αναγνωσμένο στο iCloud",()=>showIcloudInbox(item.id)));
       if(!data.items.length)content.append(text(data.coverage_complete?
         "Δεν υπάρχουν μη αναγνωσμένα μηνύματα προς το alias στο ελεγμένο INBOX.":
@@ -407,7 +407,7 @@
     // Keep BOTH access routes: direct one-tap full archive from ✉ AND
     // the permanent shortcut. Neither requires repeating Clinical Key login.
     content.append(action("Όλα τα email", "Άνοιγμα πλήρους iCloud φακέλου",
-      ()=>showIcloudInbox()));
+      ()=>showIcloudInbox(null,"all")));
   }
   function fetchUnreadPeek(force=false, manual=false) {
     if(secretaryIcloudSession())return null;
@@ -969,7 +969,7 @@
     };
     input.addEventListener("input",draw);draw();input.focus();
   }
-  function showIcloudInbox(itemId=null){
+  function showIcloudInbox(itemId=null,viewMode="clinical"){
     // The synthetic Clinical Inbox can never navigate into real iCloud data,
     // including through the global #icloud-mail bookmark/shortcut.
     if(syntheticInbox()){openPanel("inbox",buttons.inbox);return;}
@@ -989,7 +989,7 @@
        window.location.pathname?.startsWith("/static/cockpit/") &&
        window.location.hash!=="#icloud-mail")
       window.history?.replaceState?.(null,"","/static/cockpit/#icloud-mail");
-    window.CockpitIcloudInbox.open(itemId);
+    window.CockpitIcloudInbox.open(itemId,viewMode);
   }
   function showClinicalInbox(itemId=null){
     // Normal live Cockpit retains the honest unconnected source placeholder.
