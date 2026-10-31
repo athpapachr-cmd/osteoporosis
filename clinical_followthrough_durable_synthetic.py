@@ -207,7 +207,8 @@ class DurableSyntheticFollowthrough:
 
     def register(self, actor: Actor, *, visit_ref: str, request_ref: str,
                  required: tuple[str, ...], mode: str,
-                 pending_ref: str | None = None) -> dict:
+                 pending_ref: str | None = None,
+                 transactional_qualification: Callable[[Session, str, str], bool] | None = None) -> dict:
         _actor(actor, "clinician")
         _synthetic(visit_ref)
         _synthetic(request_ref)
@@ -218,12 +219,24 @@ class DurableSyntheticFollowthrough:
                 raise CycleForbidden("Verified signed Pending source required")
         elif mode != "provisional_visit" or pending_ref is not None:
             raise CycleConflict("Cannot manufacture a signed encounter")
+        if transactional_qualification is not None and (
+            mode != "signed_pending" or not callable(transactional_qualification)
+        ):
+            raise CycleForbidden("Transactional qualifier requires a signed Pending")
         req = tuple(dict.fromkeys(required))
         if not req or len(req) > 3 or set(req) - PARTS:
             raise CycleConflict("Invalid examination parts")
         now = datetime.now(timezone.utc).replace(tzinfo=None)
         try:
             with Session(self.engine) as db, db.begin():
+                # Revalidate signed visit+Pending in the SAME transaction as
+                # registration when both live in one PostgreSQL database.
+                # The earlier caller-supplied qualifier remains mandatory;
+                # this second check can only tighten, never bypass it.
+                if (mode == "signed_pending" and
+                        transactional_qualification is not None and
+                        transactional_qualification(db, visit_ref, pending_ref) is not True):
+                    raise CycleForbidden("Signed Pending changed before commit")
                 existing = db.scalar(select(VisitObligationFixture).where(
                     VisitObligationFixture.visit_ref == visit_ref,
                     VisitObligationFixture.request_ref == request_ref,
