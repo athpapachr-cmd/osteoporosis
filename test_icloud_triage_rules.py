@@ -57,3 +57,26 @@ def test_sender_and_category_do_not_overwrite_visitor_message():
     before = list(candidate.items())
     assert suggest_category(candidate) == "clinical"
     assert list(candidate.items()) == before
+
+
+def test_medical_domain_cannot_accidentally_match_cal_dot_com():
+    # "medical.com" ends with "cal.com" text, but is NOT a calendar
+    # provider; the earlier substring classifier wrongly hid medical mail.
+    assert suggest_category(message(
+        "MRI radiology results", "radiology@medical.com",
+    )) == "clinical"
+    assert suggest_category(message(
+        "Hello", "office@medical.com",
+    )) == "review"
+    assert suggest_category(message(
+        "Booking confirmation", "hello@sub.cal.com",
+    )) == "administrative"
+
+
+def test_generic_receipt_stays_recoverable_but_not_clinical():
+    assert suggest_category(message(
+        "Your payout receipt", "payroll@example.invalid",
+    )) == "administrative"
+    assert suggest_category(message(
+        "MRI imaging results", "clinic@example.invalid",
+    )) == "clinical"
