@@ -307,3 +307,13 @@ def test_signed_pending_membership_amendment_invalidates_mail_link(scenario):
     assert refreshed.status_code==200
     assert refreshed.json()["source_valid"] is False
     assert post(client,"765-10","review_notify",1).status_code==409
+
+
+def test_booking_identity_change_invalidates_link(scenario):
+    client, _, engine = scenario
+    assert post(client, "765-12", "link", 0, booking_id=BOOKING).status_code == 200
+    with Session(engine) as db, db.begin():
+        booking = db.get(ClinicalAppointmentORM, BOOKING)
+        booking.patient_display_name = "New Synthetic Booking Name"
+    assert get(client, endpoint("765-12")).json()["source_valid"] is False
+    assert post(client, "765-12", "review_no_contact", 1).status_code == 409
