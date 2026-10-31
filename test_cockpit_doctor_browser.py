@@ -469,7 +469,7 @@ def exercise_reception_call_peek(page, width, call_source):
 
 def exercise_icloud_mail_peek(page, width):
     """Real Chromium, provider-shaped but fictional alias mail; no external access."""
-    payload = {"source": "icloud_mail", "scope": "recipient_alias_inbox_only",
+    payload = {"source": "icloud_mail", "scope": "recipient_alias_inbox_only", "filter": "unseen",
         "next_cursor": "765-2", "skipped_count": 1, "coverage_complete": False,
         "items": [
             {"id": "765-4", "subject": "<svg onload=alert(1)> MRI",
@@ -490,12 +490,12 @@ def exercise_icloud_mail_peek(page, width):
     def full(route):
         if "cursor=765-2" in route.request.url:
             return route.fulfill(json={"source": "icloud_mail",
-                "scope": "recipient_alias_inbox_only",
+                "scope": "recipient_alias_inbox_only", "filter": "all",
                 "next_cursor": None, "skipped_count": 0, "coverage_complete": True,
                 "items": [{"id": "765-1", "subject": "Παλαιότερο κλινικό",
                    "from": "Old synthetic", "date": "2026-10-28T09:00:00+00:00",
                    "category": "clinical"}]})
-        route.fulfill(json=payload)
+        route.fulfill(json={**payload, "filter": "all"})
     def item(route):
         route.fulfill(json=detail)
     page.route("**/clinical/icloud-mail/peek", peek)
@@ -530,6 +530,11 @@ def exercise_icloud_mail_peek(page, width):
     page.locator("#doctorIcloudInboxBack").click()
     expect(page.locator("#doctorIcloudInboxView")).to_be_hidden()
     assert details.text_content() == "", "Clinical mail retained in closed DOM"
+    page.evaluate("window.location.hash = '#icloud-mail'")
+    expect(page.locator("#doctorIcloudInboxView")).to_be_visible()
+    page.locator("#doctorIcloudInboxBack").click()
+    expect(page.locator("#doctorIcloudInboxView")).to_be_hidden()
+    assert page.evaluate("window.location.hash") != "#icloud-mail"
     page.unroute("**/clinical/icloud-mail/items/765-4", item)
     page.unroute("**/clinical/icloud-mail?*", full)
     page.unroute("**/clinical/icloud-mail", full)
@@ -567,10 +572,10 @@ def exercise_icloud_stage_failure(page):
 def exercise_icloud_peek_200_client_truth(page):
     """HTTP 200 cannot be mislabeled as disconnected iCloud. No PHI in diagnostics."""
     cases = [
-        ("PEEK_COVERAGE", {"source": "icloud_mail", "scope": "recipient_alias_inbox_only",
+        ("PEEK_COVERAGE", {"source": "icloud_mail", "scope": "recipient_alias_inbox_only", "filter": "unseen",
                            "items": [], "next_cursor": "765-2",
                            "skipped_count": "not-an-integer", "coverage_complete": False}),
-        ("PEEK_CURSOR", {"source": "icloud_mail", "scope": "recipient_alias_inbox_only",
+        ("PEEK_CURSOR", {"source": "icloud_mail", "scope": "recipient_alias_inbox_only", "filter": "unseen",
                          "items": [], "next_cursor": "invalid-cursor",
                          "skipped_count": 0, "coverage_complete": False}),
     ]
