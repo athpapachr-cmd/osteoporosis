@@ -343,7 +343,7 @@ def _uid_is_unseen(mail, uid: str) -> bool:
         flags = _FETCH_FLAGS_VALUE.findall(row)
         if len(flags) != 1 or len(_FETCH_FLAGS_NAME.findall(row)) != 1:
             raise _BadMessage()
-        verified = b"\seen" not in (flag.lower() for flag in flags[0].split())
+        verified = b"\\seen" not in (flag.lower() for flag in flags[0].split())
     if verified is None:
         raise _BadMessage()
     return verified
@@ -379,9 +379,10 @@ def _list_items(mail, validity: str, alias: str, limit: int, cursor: str | None 
                 # At most 80 candidate flag reads per peek, never an unbounded
                 # mailbox-wide UNSEEN query. Each FLAGS response is tied to UID.
                 if unseen_only and not _uid_is_unseen(mail, str(uid)):
-                    continue
-                header, _ = _fetch_headers(mail, str(uid))
-                item = _summary(str(uid), validity, header, alias)
+                    item = None
+                else:
+                    header, _ = _fetch_headers(mail, str(uid))
+                    item = _summary(str(uid), validity, header, alias)
             except (_BadMessage, ValueError, TypeError, UnicodeError):
                 skipped += 1
                 item = None
