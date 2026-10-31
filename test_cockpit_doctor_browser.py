@@ -546,6 +546,16 @@ def exercise_icloud_mail_peek(page, width):
     page.locator("#doctorIcloudInboxBack").click()
     expect(page.locator("#doctorIcloudInboxView")).to_be_hidden()
     assert details.text_content() == "", "Clinical mail retained in closed DOM"
+    # Regression: the old direct ✉ → All email action must coexist with
+    # the global Shortcuts link. Opening the popover is not a dead-end.
+    page.locator("#doctorInboxButton").click()
+    popup=page.locator("#doctorPopoverContent")
+    popup.get_by_role("button",name="Όλα τα email").click()
+    expect(page.locator("#doctorIcloudInboxView")).to_be_visible()
+    expect(page.locator('[data-icloud-view="all"]')).to_have_attribute("aria-pressed","true")
+    page.locator('[data-icloud-view="clinical"]').click()
+    expect(page.locator('[data-icloud-view="clinical"]')).to_have_attribute("aria-pressed","true")
+    page.locator("#doctorIcloudInboxBack").click()
     page.evaluate("window.location.hash = '#icloud-mail'")
     expect(page.locator("#doctorIcloudInboxView")).to_be_visible()
     expect(page.locator("#doctorIcloudInboxDetails")).to_contain_text(
