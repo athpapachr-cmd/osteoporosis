@@ -271,8 +271,7 @@
   });
   window.addEventListener("clinical:unauthenticated", ()=>close(true));
   window.addEventListener("clinical:authenticated", ()=>close(true));
-  window.addEventListener("cockpit:icloud-peek-refreshed",()=>{
-    if(state.active&&!view.hidden&&state.pageIndex===0)load();
-  });
+  // Automatic 5-minute refresh belongs to the unread preview owner.
+  // Never replace an actively opened full-message view on a preview tick.
   window.CockpitIcloudInbox = {open,close};
 })();
