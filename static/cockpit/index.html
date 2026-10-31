@@ -279,7 +279,10 @@ ENCOUNTER DETAIL
         <button id="doctorIcloudInboxBack" class="doctor-command-button" type="button">← Αρχική</button>
       </header>
       <p class="clinical-inbox-banner">Μόνο μηνύματα προς το alias του ιατρείου στον κύριο φάκελο iCloud Mail. Η προβολή δεν είναι πλήρης για κρυφούς παραλήπτες ή άλλους φακέλους. Καμία αυτόματη σύνδεση με ασθενή, αποδοχή αποτελεσμάτων ή αλλαγή κατάστασης email.</p>
-      <div class="clinical-inbox-tools">
+      <div class="clinical-inbox-tools" role="group" aria-label="Προβολή email">
+        <button data-icloud-view="clinical" class="doctor-command-button" type="button" aria-pressed="true">Κλινικά</button>
+        <button data-icloud-view="administrative" class="doctor-command-button" type="button" aria-pressed="false">Διοικητικά</button>
+        <button data-icloud-view="all" class="doctor-command-button" type="button" aria-pressed="false">Όλα τα email</button>
         <button id="doctorIcloudInboxReload" class="doctor-command-button" type="button">Ανανέωση</button>
       </div>
       <p id="doctorIcloudInboxState" role="status" aria-live="polite"></p>
