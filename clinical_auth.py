@@ -9,7 +9,9 @@ from clinical_staff_auth import (
     STAFF_COOKIE, STAFF_LIFETIME, issue_staff_cookie,
     match_staff_key, require_staff_actor, require_staff_clinician, staff_enabled,
 )
-from clinical_individual_staff_v2 import COOKIE_V2, build_individual_staff_v2_router
+from clinical_individual_staff_v2 import (
+    COOKIE_V2, build_individual_staff_v2_router, require_individual_staff,
+)
 from pydantic import BaseModel, Field
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
@@ -104,7 +106,10 @@ def build_auth_router() -> APIRouter:
 
     @router.get("/staff-session")
     def staff_session(request: Request):
-        actor = require_staff_actor(request)
+        # Prefer individually attributable sessions. When a V2 cookie is
+        # present but expired/invalid, never fall back to role-wide V1.
+        actor = (require_individual_staff(request) if COOKIE_V2 in request.cookies
+                 else require_staff_actor(request))
         return {"staff_role": actor.role, "principal_id": actor.principal_id}
 
     @router.post("/logout")
