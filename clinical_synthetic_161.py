@@ -339,16 +339,14 @@ def build_synthetic_161_router(engine):
             patient = _test_patient(db, patient_id)
             brief = _minimal_brief(db, patient_id, actual)
             brief["clinical_attention"] = attention.brief(patient_id)
-            # Presentation only: cycle events do NOT mutate signed visit narrative.
-            brief["followthrough"] = [
-                followthrough.view(case_id)
-                for case_id, work in followthrough.works.items()
-                if work.pending_ref == patient_id + "-pending"
-                and work.visit_ref in {visit_id for visit_id in
-                                       [patient_id + "-visit-10", patient_id + "-visit-30"]}
-            ]
+            # The signed Pending is the single presentation source for both
+            # booking brief and patient chart; never expose a raw, stale cycle.
             brief["pending"] = [project_pending(p, db) for p in db.scalars(
                 select(ClinicalPendingORM).where(ClinicalPendingORM.patient_id == patient_id, ClinicalPendingORM.status != "deleted"))]
+            brief["followthrough"] = [
+                item["followthrough"] for item in brief["pending"]
+                if "followthrough" in item
+            ]
             _record_access(db, actor, req.booking_uid, "synthetic_brief_read", "allowed", patient_id)
             db.commit()
             return {"mode": "synthetic_fixture", "booking": _booking_card(actual),

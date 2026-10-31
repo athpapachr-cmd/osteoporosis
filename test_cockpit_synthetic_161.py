@@ -51,6 +51,23 @@ def login(app):
     return client
 
 
+def assert_booking_uses_pending_projection(client, *, stage, source_valid):
+    """The booking brief must repeat the canonical Pending projection, never raw events."""
+    response = client.post(PREFIX + "/open-booking", json={"booking_uid": BOOKINGS[0]})
+    assert response.status_code == 200, response.text
+    brief = response.json()["brief"]
+    assert brief["followthrough"] == [
+        item["followthrough"] for item in brief["pending"]
+        if "followthrough" in item
+    ]
+    assert len(brief["followthrough"]) == 1
+    cycle = brief["followthrough"][0]
+    assert cycle["stage"] == stage
+    assert cycle["source_valid"] is source_valid
+    if not source_valid:
+        assert cycle["complete"] is False
+
+
 def confirm(c, uid=BOOKINGS[1], patient=SYNTHETIC_161_PATIENT_IDS[1], revision=None):
     read = c.post(PREFIX + "/calendar/visit-brief/read", json={"booking_uid":uid})
     assert read.status_code == 200, read.text
@@ -547,6 +564,7 @@ def test_followthrough_revocation_after_review_blocks_actions_and_clears_live_pr
     assert action("/simulate-arrival", 1, part="report").status_code == 200
     assert action("/doctor-review", 2, part="report", choice="notify").status_code == 200
     assert c.get(route + "/secretary/" + case_id).status_code == 200
+    assert_booking_uses_pending_projection(c, stage="partially_received", source_valid=True)
     original = c.get(PREFIX + "/patient/" + SYNTHETIC_161_PATIENT_IDS[0] + "/chart").json()
     with Session(engine) as db, db.begin():
         from clinical_data import ClinicalPendingORM
@@ -556,6 +574,7 @@ def test_followthrough_revocation_after_review_blocks_actions_and_clears_live_pr
     assert state["source_valid"] is False
     assert state["stage"] == "source_invalidated" and not state["complete"]
     assert state["version"] == 3
+    assert_booking_uses_pending_projection(c, stage="source_invalidated", source_valid=False)
     assert c.get(route + "/secretary/" + case_id).status_code == 409
     for path, attrs in (
         ("/simulate-arrival", {"part": "images"}),
@@ -604,12 +623,14 @@ def test_followthrough_cancel_then_reopen_remains_suspended(setup):
         row.status = "cancelled"
         row.updated_at = datetime(2026, 10, 31, 12)
     assert c.get(route + "/secretary/" + case_id).status_code == 409
+    assert_booking_uses_pending_projection(c, stage="source_invalidated", source_valid=False)
     with Session(engine) as db, db.begin():
         row = db.get(ClinicalPendingORM, patient_id + "-pending")
         row.status = "awaiting_patient"
         row.updated_at = datetime(2026, 10, 31, 13)
     reopened = next(x for x in c.get(route).json()["cases"] if x["case_id"] == case_id)
     assert reopened["source_valid"] is False and reopened["stage"] == "source_invalidated"
+    assert_booking_uses_pending_projection(c, stage="source_invalidated", source_valid=False)
     assert c.get(route + "/secretary/" + case_id).status_code == 409
     assert action("/secretary-result", 3, choice="notified").status_code == 409
     chart = c.get(PREFIX + "/patient/" + patient_id + "/chart").json()
@@ -661,6 +682,7 @@ def test_followthrough_amended_signed_membership_requires_reconciliation(setup):
         visit.status = "amended"
     state = next(x for x in c.get(PREFIX + "/followthrough").json()["cases"] if x["case_id"] == case_id)
     assert state["source_valid"] is False and state["stage"] == "source_invalidated"
+    assert_booking_uses_pending_projection(c, stage="source_invalidated", source_valid=False)
     pending = c.get(PREFIX + "/patient/" + SYNTHETIC_161_PATIENT_IDS[0] + "/chart").json()["pending"][0]
     assert pending["status"] == "awaiting_patient"
     assert pending["followthrough"]["source_valid"] is False
