@@ -561,9 +561,9 @@
           return;
         }
         if(secretaryIcloudSession()){
-          clearUnreadPeek();
-          secretaryIcloudNotice();
-          return;
+          // /clinical/status is clinician-only and succeeded. It overrides an
+          // out-of-date local secretary hint; do NOT claim secretary is active.
+          window.CockpitStaffRole=null;
         }
         unreadPeek.authorized=true;
         verifiedUnreadPanelTicket=ticket;
@@ -1252,6 +1252,8 @@
   fetch("/clinical/status",{credentials:"same-origin",cache:"no-store"})
     .then(r=>{
       if(r.ok&&bootstrapGeneration===unreadPeek.generation){
+        // The server authenticated clinician access; discard a stale staff hint.
+        if(secretaryIcloudSession())window.CockpitStaffRole=null;
         unreadPeek.authorized=true;maybeRefreshUnread(true);
       }
     }).catch(()=>{});
