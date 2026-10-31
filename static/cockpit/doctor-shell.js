@@ -188,19 +188,25 @@
   // A secretary login is authenticated staff, not iCloud clinician authority.
   // This is a presentation/refresh guard; the server still authorizes every read.
   const secretaryIcloudSession=()=>window.CockpitStaffRole==="secretary";
-  // On a clinician-only 401, distinguish a still-valid secretary staff cookie
-  // using the existing read-only endpoint; never infer staff logout from mail.
-  async function hasSecretaryStaffSession(){
-    if(secretaryIcloudSession())return true;
+  // CockpitStaffRole is a UI hint, NEVER proof of an active staff cookie.
+  // Network/service failures are UNKNOWN, not proof of logout or active login.
+  async function verifiedStaffRole(){
     try{
       const response=await fetch("/clinical/staff-session",{
         credentials:"same-origin",cache:"no-store",
         headers:{"Accept":"application/json"}
       });
-      if(!response.ok)return false;
+      if(response.status===401||response.status===403)return "invalid";
+      if(!response.ok)return "unknown";
       const actor=await response.json();
-      return actor?.staff_role==="secretary";
-    }catch(_){return false;}
+      return actor?.staff_role==="secretary"||actor?.staff_role==="clinician"
+        ?actor.staff_role:"unknown";
+    }catch(_){return "unknown";}
+  }
+  function staffStatusUnavailable(){
+    content.replaceChildren();
+    content.append(text("Δεν επιβεβαιώθηκε η συνεδρία προσωπικού "+
+      "[STAFF_SESSION_UNVERIFIED]. Δεν εμφανίζονται email ασθενών."));
   }
   const activePeek=(kind,ticket)=>state.panel===kind &&
     !popover.hidden && state.request===ticket;
@@ -449,11 +455,20 @@
           const deniedTicket=state.request;
           if(state.panel==="inbox"&&!popover.hidden)
             content.replaceChildren(text("Έλεγχος κλινικής πρόσβασης…"));
-          const secretary=await hasSecretaryStaffSession();
+          const role=await verifiedStaffRole();
           if(unreadPeek.generation!==deniedGeneration)return;
-          if(secretary){
+          if(role==="secretary"){
             window.CockpitStaffRole="secretary";
             if(activePeek("inbox",deniedTicket))secretaryIcloudNotice();
+            return;
+          }
+          if(role==="unknown"){
+            if(activePeek("inbox",deniedTicket))staffStatusUnavailable();
+            return;
+          }
+          if(role==="clinician"){
+            if(activePeek("inbox",deniedTicket))content.replaceChildren(
+              text("Δεν επαληθεύτηκε πρόσβαση στα iCloud email [PEEK_AUTH_DENIED]."));
             return;
           }
           window.dispatchEvent(new Event("clinical:unauthenticated"));
@@ -489,10 +504,21 @@
       // Revalidate the existing same-origin Clinical Key before rendering it.
       // This is a lightweight /clinical/status GET, NOT an Apple IMAP fetch.
       verifiedUnreadPanelTicket=null;
+      // A locally remembered role only blocks automatic iCloud polling.
+      // Verify the staff cookie before claiming the secretary is connected.
       if(secretaryIcloudSession()){
         clearUnreadPeek();
-        secretaryIcloudNotice();
-        return;
+        const staffGeneration=unreadPeek.generation;
+        content.replaceChildren();
+        content.append(text("Έλεγχος συνεδρίας προσωπικού…"));
+        const role=await verifiedStaffRole();
+        if(!activePeek("inbox",ticket) ||
+           unreadPeek.generation!==staffGeneration)return;
+        if(role==="secretary"){secretaryIcloudNotice();return;}
+        if(role==="unknown"){staffStatusUnavailable();return;}
+        // A switched clinician or invalid staff cookie must pass the existing
+        // clinician-only status gate; never trust the previous local role.
+        window.CockpitStaffRole=role==="clinician"?"clinician":null;
       }
       const generation=unreadPeek.generation;
       content.replaceChildren();
@@ -507,11 +533,18 @@
         if(status.status===401||status.status===403){
           clearUnreadPeek(); // Includes the dot and all sender/subject memory.
           const deniedGeneration=unreadPeek.generation;
-          const secretary=await hasSecretaryStaffSession();
-          if(unreadPeek.generation!==deniedGeneration)return;
-          if(secretary){
+          const role=await verifiedStaffRole();
+          if(unreadPeek.generation!==deniedGeneration ||
+             !activePeek("inbox",ticket))return;
+          if(role==="secretary"){
             window.CockpitStaffRole="secretary";
-            if(activePeek("inbox",ticket))secretaryIcloudNotice();
+            secretaryIcloudNotice();
+            return;
+          }
+          if(role==="unknown"){staffStatusUnavailable();return;}
+          if(role==="clinician"){
+            content.replaceChildren(text("Δεν επαληθεύτηκε πρόσβαση στα iCloud email "+
+              "[PEEK_AUTH_DENIED]."));
             return;
           }
           window.dispatchEvent(new Event("clinical:unauthenticated"));
@@ -1205,8 +1238,7 @@
   window.addEventListener("clinical:authenticated",()=>{
     clearUnreadPeek();
     if(secretaryIcloudSession()){
-      if(state.panel==="inbox"&&!popover.hidden&&!syntheticInbox())
-        secretaryIcloudNotice();
+      if(state.panel==="inbox"&&!popover.hidden&&!syntheticInbox())void inbox();
       return;
     }
     unreadPeek.authorized=true;
