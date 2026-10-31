@@ -25,7 +25,7 @@
     n.textContent = text;
     return n;
   };
-  async function read(path = "", payload = null) {
+  async function read(path = "", payload = null, interactive = false) {
     const response = await fetch(base + path, {
       method: payload === null ? "GET" : "POST",
       credentials: "same-origin", cache: "no-store",
@@ -34,7 +34,10 @@
       ...(payload === null ? {} : {body: JSON.stringify(payload)})
     });
     if (!response.ok) {
-      if (response.status === 401 || response.status === 403)
+      // Optional synthetic demo must never open/toggle Clinical Key on startup.
+      // The existing shared-nav alone owns login; only a user-triggered action
+      // may request it after a denied POST.
+      if (interactive && (response.status === 401 || response.status === 403))
         window.dispatchEvent(new Event("clinical:request-login"));
       throw Error(response.status === 409 ?
         "Η εκκρεμότητα άλλαξε. Φόρτωσε την τρέχουσα κατάσταση." :
@@ -102,7 +105,7 @@
             case_id: caseData.case_id, expected_version: caseData.version,
             idempotency_key: crypto.randomUUID(),
             part: action.part, choice: action.choice
-          });
+          }, true);
           window.dispatchEvent(new Event("synthetic:followthrough-changed"));
           await reload();
         } catch (error) {
