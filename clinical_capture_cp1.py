@@ -169,17 +169,23 @@ def attach_cp1(router, engine, protected, context_for, ensure_patient):
         try:
             from clinical_icloud_actions import MailDecisionORM
             from sqlalchemy.exc import SQLAlchemyError
-            rows=db.scalars(select(MailDecisionORM).where(
-                MailDecisionORM.pending_id==p.id,
-                MailDecisionORM.patient_id==p.patient_id
-            ).order_by(MailDecisionORM.updated_at.desc()).limit(5)).all()
-            mail_progress=[{
-                "item_id":m.message_ref,"review_status":m.review_status,
-                "contact_status":m.contact_status,
-                "callback_complete":bool(m.callback_complete),
-                "source_valid":p.status in ("open","awaiting_patient","awaiting_result"),
-            } for m in rows]
+            # The iCloud metadata table is optional. In PostgreSQL, an
+            # undefined-table/denied SELECT aborts the enclosing transaction
+            # unless it is rolled back to a SAVEPOINT. Keep the original chart
+            # and checkpoint reads usable while the mail schema is absent.
+            with db.begin_nested():
+                rows=db.scalars(select(MailDecisionORM).where(
+                    MailDecisionORM.pending_id==p.id,
+                    MailDecisionORM.patient_id==p.patient_id
+                ).order_by(MailDecisionORM.updated_at.desc()).limit(5)).all()
+                mail_progress=[{
+                    "item_id":m.message_ref,"review_status":m.review_status,
+                    "contact_status":m.contact_status,
+                    "callback_complete":bool(m.callback_complete),
+                    "source_valid":p.status in ("open","awaiting_patient","awaiting_result"),
+                } for m in rows]
         except SQLAlchemyError:
+            # The optional SAVEPOINT has rolled back, not the clinical read.
             pass
         return {**value,"source_date":source.encounter_date,"source_excerpt":excerpt,
             "checkpoints":project_checkpoint(db,p) if ready else None,
