@@ -1,3 +1,5 @@
+> **2026-11-01 TRIAGE — ONE INDEPENDENT CLOSURE RUNNING:** Target `8c34467681b78a430cdae6742efb013f669e1aae`, original P2-01 cache correction only plus affected cumulative semantics. Same reviewer, no new review chain. No closure PASS or implementation/release authority yet.
+
 > **2026-11-01 TRIAGE CACHE DESIGN CORRECTED / CLOSURE NEXT:** P2-01 corrected at design level with shared scope/epoch/revision qualification and invalidation for inbox+shell caches, delayed-response generations and bounded browser regression. One independent delta+cumulative closure next; no PASS inferred and no implementation/provisioning/release.
 
 > **2026-11-01 ICLOUD TRIAGE — PRE-CODE R2 BLOCK / CACHE CONTRACT CORRECTION:** Exact design `65b665d3eccffc31bd48826a2953fd4d30815930` returned independent BLOCK0:0:1, complete scope. `reviews/ICLOUD_TRIAGE_PREFERENCES_PRECODE_R2_BLOCK_2026-11-01.md` records P2-01: invalidate/qualify BOTH inbox and shell peek projections against preference revisions, including delayed old responses. Smallest design correction then one delta+cumulative closure; no implementation/provisioning/release.

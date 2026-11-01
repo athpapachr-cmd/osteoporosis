@@ -18,3 +18,7 @@ Six finite questions:
 Source inspection only. No implementation, edits, live provider/DB/PHI/config, dependency installation, test reruns, publication, merge or deploy. Existing unrelated canonical/release evidence is reused; inspect directly affected seams only.
 
 Return PASS/BLOCK/PARTIAL, P0:P1:P2, COMPLETE_FOR_DECLARED_SCOPE, per-question disposition and exact design/source evidence. For a material defect state the reachable scenario, violated invariant and smallest correction. Stop once the map is complete or a decisive BLOCK plus affected correction path is established. No review-of-review chain.
+
+## One bounded closure requested after original P2-01
+
+Corrected exact target `8c34467681b78a430cdae6742efb013f669e1aae`; same independent reviewer. Design-only delta adds shared source/preference-revision cache contract, doctor-shell seam and one two-cache/delayed-response browser oracle. Original supported questions reused; closure covers P2-01 plus affected cumulative consumers/degraded state/rollback, no new store/auth/clinical/provider scope. Verdict pending; no implementation or release authority.
