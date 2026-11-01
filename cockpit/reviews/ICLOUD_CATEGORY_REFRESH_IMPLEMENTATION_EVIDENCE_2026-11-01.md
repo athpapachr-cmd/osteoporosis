@@ -24,3 +24,7 @@ Original independent R1 on c5403052317a5c9c653ea70836b3dabbb1b6e5f8 returned BLO
 New real browser regression starts and holds the earlier qualification GET, starts a real committed Save and holds its successful response, verifies DB commit, releases the earlier GET (visible refresh status while controls stay disabled), then releases Save response. Correct confirmation, server category and one-item refresh occur with zero list/peek/IMAP SEARCH. Both DBs and both widths.
 
 Corrected affected cumulative browser suite16 PASS/0 failures/errors/skips in30.42s (original4 + earlier new8 + new race4; executions overlap, not additive totals). JUnit `/tmp/cockpit-pr279-release/refresh-corrected-browser.xml`. Latest triage JS syntax/diff check PASS. Other JS/Node/whole Cockpit browser/backend evidence reused unchanged. Exact corrected candidate requires ONE independent delta+affected cumulative R1 closure next; no PASS/release inferred.
+
+## Independent disposition
+
+ONE delta+affected cumulative R1 closure of corrected code/tests cbb483f4627144d80fb13c78266ebdaf7862e096 returned PASS0:0:0, P2-REFRESH-01 CLOSED, all material findings closed and complete declared scope. Receipt ICLOUD_CATEGORY_REFRESH_R1_CLOSURE_PASS_2026-11-01.md. Review chain closed; no more source/review loop absent new material finding. Subsequent status/receipt changes docs only. Applicable final PR-head CI remains separate; no merge/deploy or production performance claim. Disposable local PostgreSQL stopped after fixture cleanup.
