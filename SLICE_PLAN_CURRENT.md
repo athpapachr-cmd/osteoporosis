@@ -1,3 +1,5 @@
+> **Final-code gate CLOSED 2026-11-01:** independent R2 PASS0:0:0 on substantive `02755139b1f2d307909baf471a58d528a1f06936`; receipt `cockpit/reviews/PENDING_CURRENT_SIGNED_WRITE_POSTCODE_R2_PASS_2026-11-01.md`. DRAFT PR #277 remains unmerged. Check all applicable final-head CI; no merge/deploy without separate explicit authority. This supersedes the pending code-review step below.
+
 > **Implementation candidate tested 2026-11-01:** new targeted SQLite56/PostgreSQL55 PASS plus existing API21/browser7 PASS; one PostgreSQL skip is SQLite-only. Evidence in `cockpit/reviews/PENDING_CURRENT_SIGNED_WRITE_IMPLEMENTATION_EVIDENCE_2026-11-01.md`. Exact-code independent R2 next. No merge/deploy.
 
 > **Implementation authorized 2026-11-01:** existing-owner P2 only, targeted disposable PostgreSQL/SQLite tests and independent final-code review. No merge/deploy. This supersedes older implementation-HOLD wording below. Root CURRENT owns active writer and exact state.
