@@ -36,3 +36,7 @@ Verified primary key(mailbox_key), bounded positive revision CHECK and JSON-obje
 ## Frozen release gate
 
 PR279 marked ready; release authority/provisioning reflected in its body. Fresh exact HEAD9fc712273db157837b5b19344e27add9174b0a14, READY/OPEN/MERGEABLE; all23 check runs SUCCESS after ready/body events. None pending. Next SHA-bound squash merge.
+
+## Merge checkpoint
+
+SHA-bound squash merge succeeded: `445c5ee2f7af8f085a4316c5ddfff5fe96767927`, frozen PR HEAD `9fc712273db157837b5b19344e27add9174b0a14`. All23 final check runs SUCCESS. Native deploy and smoke still pending; no duplicate manual deploy.
