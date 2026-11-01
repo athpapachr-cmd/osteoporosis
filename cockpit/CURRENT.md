@@ -1,3 +1,5 @@
+> **2026-11-01 PR279 — PENDING-SAVE CORRECTION TESTED / CLOSURE NEXT:** Edit locks plus exact submitted-draft guard preserve both message/rule and duplicate-form drafts. Actual delayed-POST browser4 PASS; bounded CP2 early-qualification/retry check and Node PASS. One independent code closure next; no release.
+
 > **2026-11-01 PR279 FINAL-CODE BLOCK / PENDING-SAVE INPUT GUARD:** Independent R2 BLOCK0:0:1 on `9cb58b21296786203a4aa15d11e260ff40659b8c`; [receipt](reviews/ICLOUD_TRIAGE_PREFERENCES_POSTCODE_R2_BLOCK_2026-11-01.md). Correct only pending-save input preservation in both forms and targeted regression, then one closure. Other questions supported; no release.
 
 > **2026-11-01 TRIAGE — DRAFT #279 / FINAL-CODE R2+CI PENDING:** Exact implementation/tests `9cb58b21296786203a4aa15d11e260ff40659b8c`; one independent fidelity review in progress, local evidence passed. [Request](reviews/ICLOUD_TRIAGE_PREFERENCES_POSTCODE_R2_REQUEST_2026-11-01.md). No PASS/CI success inferred; production schema/release remains untouched.

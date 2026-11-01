@@ -70,7 +70,7 @@ def test_visible_sort_rule_undo_and_revision_coherence(server, width, tmp_path):
           const nativeFetch=window.fetch.bind(window);
           window.fetch=async (input,options={})=>{
             const u=new URL(typeof input==='string'?input:input.url,location.href);
-            const label=u.pathname==='/clinical/icloud-mail/peek'?'Peek':u.pathname==='/clinical/icloud-mail'?'List':null;
+            const label=u.pathname==='/clinical/icloud-mail/preferences'&&options.method==='POST'?'Save':u.pathname==='/clinical/icloud-mail/peek'?'Peek':u.pathname==='/clinical/icloud-mail'?'List':null;
             if(label&&window['__hold'+label]){
               window['__hold'+label]=false;
               const response=await nativeFetch(input,{...options,signal:undefined});
@@ -88,7 +88,13 @@ def test_visible_sort_rule_undo_and_revision_coherence(server, width, tmp_path):
         expect(editor.get_by_role("button", name="Αποθήκευση χαρακτηρισμού")).to_be_visible()
         page.screenshot(path=str(tmp_path / "triage-editor.png"),full_page=True)
         editor.get_by_label("Κατηγορία", exact=True).select_option("administrative")
+        page.evaluate("window.__holdSave=true")
         editor.get_by_role("button", name="Αποθήκευση χαρακτηρισμού").click()
+        page.wait_for_function("typeof window.__releaseSave==='function'")
+        expect(editor.get_by_label("Κατηγορία",exact=True)).to_be_disabled()
+        expect(editor.get_by_label("Κανόνας και για επόμενα παρόμοια",exact=True)).to_be_disabled()
+        expect(editor.get_by_role("button",name="Έλεγχος νεότερων επιλογών")).to_be_disabled()
+        page.evaluate("window.__releaseSave(); delete window.__releaseSave")
         expect(page.locator("#doctorIcloudTriageNotice")).to_contain_text("αποθηκεύτηκε")
         page.reload()
         page.evaluate("window.CockpitOpenIcloudMail()")
@@ -137,12 +143,34 @@ def test_visible_sort_rule_undo_and_revision_coherence(server, width, tmp_path):
         form = page.locator(".doctor-icloud-preferences").last
         form.get_by_label("Ακριβής διεύθυνση αποστολέα ή domain").fill("noreply@wetransfer.com")
         form.get_by_label("Λέξεις θέματος, χωρισμένες με κόμμα").fill("αξονικί")
+        page.evaluate("window.__holdSave=true")
         form.get_by_role("button", name="Αποθήκευση κανόνα").click()
+        page.wait_for_function("typeof window.__releaseSave==='function'")
+        expect(form.get_by_label("Λέξεις θέματος, χωρισμένες με κόμμα")).to_be_disabled()
+        expect(form.get_by_label("Ακριβής διεύθυνση αποστολέα ή domain")).to_be_disabled()
+        expect(form.get_by_role("button",name="Έλεγχος νεότερων επιλογών")).to_be_disabled()
+        page.evaluate("window.__releaseSave(); delete window.__releaseSave")
         expect(page.locator("#doctorIcloudTriageNotice")).to_contain_text("αποθηκεύτηκε")
         fake.rows["5"] = mail(subject="Αξονικί δοκιμή.rar", sender="noreply@wetransfer.com")
         page.locator("#doctorIcloudInboxReload").click()
         expect(rows).to_contain_text("Κλινικό · Αξονικί")
         page.locator("#doctorIcloudRules").click()
+        page.get_by_role("button",name="Τροποποίηση / ενεργοποίηση",exact=True).click()
+        page.get_by_role("button",name="Τροποποίηση / ενεργοποίηση",exact=True).click()
+        forms=page.locator("section.doctor-icloud-preferences").filter(has=page.get_by_role("button",name="Αποθήκευση κανόνα",exact=True))
+        first_edit=forms.nth(1); second_edit=forms.nth(2)
+        first_edit.get_by_label("Λέξεις θέματος, χωρισμένες με κόμμα").fill("αξονική")
+        second_edit.get_by_label("Λέξεις θέματος, χωρισμένες με κόμμα").fill("MRI")
+        page.evaluate("window.__holdSave=true")
+        first_edit.get_by_role("button",name="Αποθήκευση κανόνα",exact=True).click()
+        page.wait_for_function("typeof window.__releaseSave==='function'")
+        expect(second_edit.get_by_label("Λέξεις θέματος, χωρισμένες με κόμμα")).to_be_disabled()
+        expect(first_edit.get_by_label("Λέξεις θέματος, χωρισμένες με κόμμα")).to_be_disabled()
+        page.evaluate("window.__releaseSave(); delete window.__releaseSave")
+        expect(page.locator("#doctorIcloudTriageNotice")).to_contain_text("αποθηκεύτηκε")
+        page.locator("#doctorIcloudRules").click()
+        page.get_by_role("button",name="Τροποποίηση / ενεργοποίηση",exact=True).click()
+        expect(page.locator(".doctor-icloud-preferences").last.get_by_label("Λέξεις θέματος, χωρισμένες με κόμμα")).to_have_value("MRI")
         page.get_by_role("button", name="Απενεργοποίηση κανόνα", exact=True).click()
         page.get_by_role("button", name="Επιβεβαίωση απενεργοποίησης", exact=True).click()
         expect(page.locator("#doctorIcloudTriageNotice")).to_contain_text("αποθηκεύτηκε")

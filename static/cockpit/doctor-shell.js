@@ -589,6 +589,7 @@
             if(!activePeek("inbox",ticket))return;
             clearUnreadPeek();content.replaceChildren();
             content.append(text("Οι κατηγορίες δεν επιβεβαιώθηκαν. Δεν προβάλλεται παλιά φιλτραρισμένη λίστα."));
+            content.append(action("Ανανέωση τώρα","Έλεγχος προτιμήσεων",()=>{void inbox();}));
             content.append(action("Όλα τα email","Ανάγνωση χωρίς φιλτράρισμα",()=>showIcloudInbox(null,"all")));
             return;
           }

@@ -24,3 +24,11 @@ Runtime: Python3.12.2, SQLAlchemy2.1.6, SQLite3.54.0, local disposable PostgreSQ
 ## Limits / handback
 
 Implementation and finite local evidence complete. Freeze code and request ONE independent exact-code R2 fidelity review. No independent final-code PASS, live schema/grant readiness, CI PostgreSQL17 success, production usability, merge or deploy claimed by this author evidence. Production preference table remains unprovisioned/unverified. Release must separately verify exact HEAD/all CI, reviewed provisioning and native deploy; clinician use remains its own acceptance.
+
+## Bounded final-code P2-CODE-01 correction
+
+Original independent final-code R2 of `9cb58b21296786203a4aa15d11e260ff40659b8c` returned BLOCK0:0:1: pending Save could clear newer unsaved input. Correction locks all existing preference editor controls (including duplicate rule forms/revision refresh), prevents constructing new editors while Save is pending, and clears a draft only when its exact submitted reference AND values still match. Different pre-existing duplicate-form input is retained and labelled unsaved on reopen. No backend/DB/source/clinical contract changed.
+
+Targeted actual browser closure evidence: **4 PASS** (SQLite/PostgreSQL ×1280/390), `/tmp/cockpit-p2-evidence.CCXSd7/triage-browser-closure.xml`. Delayed preferences POST proves message fields, rule fields and revision refresh disabled; duplicate rule forms lock together and the other unsaved MRI draft survives the earlier form's Save and projection rebuild. Earlier list/peek/epoch/auth/failure cases remain in the same tests. Backend/adjacent source bytes unchanged, so prior evidence reused.
+
+Initial substantive-head CI had28 successful checks and2 duplicate push/PR failures of the same visit-capture job: its isolated CP2 harness omitted the preferences adapter but expected the old later mailbox HTTP error. The test now asserts the correct earlier unknown-preference gate and preserved retry/All controls. Bounded local CP2 browser test1 PASS; Doctor Shell Node PASS. Retry button remains visible on that unknown state. Full corrected-head CI is still separate/pending. Next ONE independent delta plus affected cumulative closure; no PASS inferred from the author's patch.

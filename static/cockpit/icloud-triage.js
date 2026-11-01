@@ -4,6 +4,18 @@
   const endpoint="/clinical/icloud-mail/preferences";
   let observed=null,authGeneration=0;
   const drafts=new Map();
+  let saving=false;
+  function lockEditors(){
+    saving=true;
+    const controls=Array.from(document.querySelectorAll(".doctor-icloud-preferences input,.doctor-icloud-preferences select,.doctor-icloud-preferences button"));
+    const disabled=controls.map(n=>n.disabled);
+    controls.forEach(n=>{n.disabled=true;});
+    return ()=>{controls.forEach((n,i)=>{n.disabled=disabled[i];});saving=false;};
+  }
+  const values=fields=>fields.map(n=>n.type==="checkbox"?n.checked:n.value);
+  function clearSubmitted(key,reference,submitted){
+    if(drafts.get(key)===reference&&JSON.stringify(reference)===JSON.stringify(submitted))drafts.delete(key);
+  }
   const floors=new Map();
   const valid=m=>m&&m.available===true&&/^[a-f0-9]{64}$/.test(m.mailbox_key)&&
     /^[1-9][0-9]{0,18}$/.test(m.uidvalidity)&&Number.isSafeInteger(m.revision)&&m.revision>=0;
@@ -93,6 +105,7 @@
     let prefs;
     try{prefs=await qualify();}catch(error){if(current())box.append(el("p",error.message));return;}
     if(!current())return;
+    if(saving){box.append(el("p","Η αποθήκευση είναι σε εξέλιξη. Περίμενε την επιβεβαίωση."));return;}
     if(!same(prefs.triage,projectionMeta)){invalidate(prefs.triage);return;}
     box.append(el("h4","Χαρακτηρισμός μηνύματος"),el("p",origins[item.category_origin]||"Αυτόματη πρόταση"));
     const choose=category(box,item.category,true);
@@ -102,20 +115,21 @@
     const readRule=criteria(ruleBox);
     useRule.addEventListener("change",()=>{ruleBox.hidden=!useRule.checked;});
     const status=el("p");status.setAttribute("role","status");box.append(status);
-    let pending=null;
+    let pending=null,submittedDraft,submittedFields;
     const fields=Array.from(box.querySelectorAll("input,select"));
     const draft=drafts.get(item.id);
     if(draft){fields.forEach((n,i)=>{if(n.type==="checkbox")n.checked=!!draft[i];else n.value=draft[i];});ruleBox.hidden=!useRule.checked;status.textContent="Οι προηγούμενες επιλογές σου διατηρήθηκαν. Έλεγξέ τες πριν αποθηκεύσεις.";}
     box.addEventListener("input",()=>{pending=null;drafts.set(item.id,fields.map(n=>n.type==="checkbox"?n.checked:n.value));});
     const save=button("Αποθήκευση χαρακτηρισμού",async()=>{
-      if(!current())return;
+      if(!current()||saving)return;
       if(useRule.checked&&choose.value==="automatic"){status.textContent="Επίλεξε κατηγορία για τον κανόνα.";return;}
+      if(!pending){submittedDraft=drafts.get(item.id);submittedFields=values(fields);}
       pending=pending||{kind:"category",operation_id:crypto.randomUUID(),expected_revision:prefs.triage.revision,item_id:item.id,
         category:choose.value==="automatic"?null:choose.value,...(useRule.checked?{rule:readRule(choose.value)}:{})};
-      save.disabled=true;
-      try{const result=await request(pending);drafts.delete(item.id);confirmed(result,"category");}
+      const unlock=lockEditors();
+      try{const result=await request(pending);clearSubmitted(item.id,submittedDraft,submittedFields);confirmed(result,"category");}
       catch(error){if(current())status.textContent=error.message;}
-      finally{save.disabled=false;}
+      finally{unlock();}
     });
     box.append(save,button("Έλεγχος νεότερων επιλογών",async()=>{
       try{const updated=await qualify();if(current()){prefs=updated;pending=null;status.textContent="Φορτώθηκαν οι νεότερες επιλογές. Έλεγξε τα πεδία και επίλεξε ξανά Αποθήκευση.";}}
@@ -128,20 +142,23 @@
     if(!current())return;
     parent.replaceChildren(el("h3","Προσωπικοί κανόνες email"));
     const renderForm=(rule={})=>{
+      if(saving)return;
       const form=el("section");form.className="doctor-icloud-preferences";
       form.append(el("h4",rule.rule_id?"Τροποποίηση κανόνα":"Νέος κανόνας"));
       const readRule=criteria(form,rule);const choose=category(form,rule.category||"clinical");
-      const status=el("p");form.append(status);let pending=null;
+      const status=el("p");form.append(status);let pending=null,submittedDraft,submittedFields;
       const draftKey="rule:"+(rule.rule_id||"new");const fields=Array.from(form.querySelectorAll("input,select"));
       const draft=drafts.get(draftKey);
-      if(draft)fields.forEach((n,i)=>{if(n.type==="checkbox")n.checked=!!draft[i];else n.value=draft[i];});
+      if(draft){fields.forEach((n,i)=>{if(n.type==="checkbox")n.checked=!!draft[i];else n.value=draft[i];});status.textContent="Διατηρήθηκαν μη αποθηκευμένες επιλογές. Έλεγξέ τες πριν από την Αποθήκευση.";}
       form.addEventListener("input",()=>{pending=null;drafts.set(draftKey,fields.map(n=>n.type==="checkbox"?n.checked:n.value));});
       const save=button("Αποθήκευση κανόνα",async()=>{
+        if(saving)return;
+        if(!pending){submittedDraft=drafts.get(draftKey);submittedFields=values(fields);}
         pending=pending||{kind:"rule",operation_id:crypto.randomUUID(),expected_revision:prefs.triage.revision,rule:readRule(choose.value)};
-        save.disabled=true;
-        try{const result=await request(pending);drafts.delete(draftKey);confirmed(result,"rule");}
+        const unlock=lockEditors();
+        try{const result=await request(pending);clearSubmitted(draftKey,submittedDraft,submittedFields);confirmed(result,"rule");}
         catch(error){if(current())status.textContent=error.message;}
-        finally{save.disabled=false;}
+        finally{unlock();}
       });form.append(save,button("Έλεγχος νεότερων επιλογών",async()=>{
         try{const updated=await qualify();if(current()){prefs=updated;pending=null;status.textContent="Ελέγχθηκαν οι νεότερες επιλογές. Επιβεβαίωσε ξανά με Αποθήκευση.";}}
         catch(error){if(current())status.textContent=error.message;}

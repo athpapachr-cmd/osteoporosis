@@ -1,3 +1,5 @@
+> **2026-11-01 TRIAGE P2-CODE-01 CORRECTED / ONE CLOSURE NEXT:** Pending-POST locks/draft identity guard tested4 real synthetic browser cases; no backend/source/clinical scope change. One independent affected closure and exact-head CI next; no provisioning/merge/deploy.
+
 > **2026-11-01 TRIAGE CODE R2 BLOCK0:0:1:** Pending Save may discard later edits in message/rule forms. Smallest guard + delayed-POST test then one independent closure; [receipt](../reviews/ICLOUD_TRIAGE_PREFERENCES_POSTCODE_R2_BLOCK_2026-11-01.md). No provisioning/merge/deploy.
 
 > **2026-11-01 TRIAGE — DRAFT PR #279 / EXACT-CODE REVIEW:** Implementation/tests `9cb58b21296786203a4aa15d11e260ff40659b8c`, local disposable DB/browser PASS; independent final R2+CI pending. No production provisioning, merge/deploy or live clinical/provider action.
