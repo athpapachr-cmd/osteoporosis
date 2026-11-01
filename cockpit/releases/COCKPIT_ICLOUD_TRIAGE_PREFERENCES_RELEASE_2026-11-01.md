@@ -16,3 +16,7 @@ Product Owner approved one operational-preference table in the existing database
 Next: separately confirm a temporary single-address network exception, retaining all existing entries, if the Product Owner chooses this path. Qualify exact DB/schema/role/table absence; then execute the reviewed one-table DDL transaction and only SELECT/INSERT/UPDATE for the existing application role. Verify no schema CREATE/DELETE grant; remove temporary network exception. Reverify exact PR HEAD/all CI, merge once, checkpoint native exact-source deploy and bounded smoke. Production category/rule writes need an approved synthetic source fixture or the clinician's deliberate operation; no automatic experiment on real messages.
 
 Release coordinator owns only the bounded release checkpoints on `docs/icloud-triage-release-20261101`, outside frozen PR279. Runtime/tests unchanged. No merge/deploy claim.
+
+## Temporary network exception
+
+Product Owner explicitly approved a single operator IPv6 /128 entry at action time. Saved in Aiven with a TEMP PR279/removal comment, preserving all three existing allowlist entries. Must remove immediately after provisioning verification or if provisioning cannot complete. This temporary configuration change is distinct from the as-yet unexecuted DDL/merge/deploy.
