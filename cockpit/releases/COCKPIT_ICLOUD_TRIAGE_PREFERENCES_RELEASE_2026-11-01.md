@@ -1,6 +1,6 @@
 # iCloud sorting preferences — authorized release checkpoint
 
-Status: PROVISIONED AND MERGED; exact-source native Render deploy in progress. Production smoke pending. Earlier preflight blockers below are resolved historical checkpoints.
+Status: TECHNICAL RELEASE COMPLETE. Exact source LIVE; bounded read-only API and connected-clinician browser smoke PASS. Earlier preflight/build blockers below are historical and resolved. Production real-message Save/undo acceptance remains untested.
 
 Product Owner approved one operational-preference table in the existing database, PR279 merge, native deploy and no-patient-record-write smoke. Independent design and final-code R2 are closed PASS; no new review chain.
 
@@ -156,3 +156,11 @@ Native deploy terminal LIVE2026-11-01T10:52:49.547728Z (12:52:49 Asia/Nicosia), 
 }
 
 Only operational booleans/counts/hashes retained; all message payloads discarded. Existing Clinical Key used only in memory against its existing application destination; no cookie, key or patient/mail payload persisted. No authenticated POST or clinical mutation. Production Save/undo on actual messages deliberately not tested; successful writes/concurrency were validated in disposable PostgreSQL/SQLite and synthetic browser.
+
+## Browser and final disposition
+
+Actual existing authenticated clinician browser session was inspected through the supported browser-control API, without extracting cookies/keys. This was not a fresh anonymous browser; anonymous protection was tested independently by HTTP requests above. Opened unread peek/full Inbox/empty personal-rule manager; confirmed explicit rule criteria, future-only explanation and four categories. Opened only a non-patient administrative-provider message to inspect the category editor: Clinical/Admin/Other/Unclassified/reset-to-automatic, optional future rule, explicit Save and refresh controls visible before body. No field value changed, no Save/undo/disable pressed, no patient folder or attachment opened.
+
+Desktop1280 and mobile390: no horizontal overflow; browser error log empty. Screenshot artifacts contain only the empty rule form or category controls, with no message/patient payload: `/tmp/cockpit-pr279-release/rules-desktop.jpg`, `/tmp/cockpit-pr279-release/category-mobile.jpg`. Public release-window app ERROR and HTTP5xx filtered logs2026-11-01T10:50:39Z–10:59:30Z returned0/hasMore=false; bounded evidence only.
+
+`PROVISIONED=YES`; `DEPLOYED_EXACT_SOURCE=YES`; `BOUNDED_READ_ONLY_SMOKE=PASS`; `PRODUCTION_REAL_MESSAGE_WRITE_ACCEPTANCE=NOT_TESTED`. No patient/provider/category/rule writes or duplicate deploy. Original network restrictions restored. Technical release complete; independent review chain stays closed. Next clinician deliberate use; actual production Save/undo cannot be claimed from read-only smoke and was validated only synthetically before release. Release coordinator released after final docs-only publication using `[skip render]`.
