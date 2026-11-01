@@ -2,7 +2,7 @@
 from pathlib import Path
 import json
 import shutil
-from urllib.parse import urlparse,parse_qs
+from urllib.parse import urlparse,parse_qs,unquote
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from playwright.sync_api import sync_playwright, expect
@@ -503,47 +503,34 @@ def exercise_icloud_mail_peek(page, width):
         route.fulfill(json={**payload, "filter": "all"})
     def item(route):
         route.fulfill(json=detail)
-    # The real selected message must offer WORKING protected actions, not
-    # merely show the phrase "Για έλεγχο" with no way to classify or link.
-    action_state = {"item_id":"765-4","version":0,"category":"clinical",
-        "patient_id":None,"pending_id":None,"booking_id":None,
-        "review_status":"not_reviewed","contact_status":"not_requested",
-        "callback_complete":False,"source_valid":True}
-    performed=[]
-    def clinician_action(route):
-        if route.request.method == "GET":
-            return route.fulfill(json=action_state)
-        assert route.request.method == "POST"
-        assert not any(k.lower()=="x-clinical-key" for k in route.request.headers)
-        body=json.loads(route.request.post_data)
-        assert body["expected_version"] == action_state["version"]
-        performed.append(body["action"])
-        if body["action"]=="link":
-            action_state["patient_id"]=body.get("patient_id")
-            action_state["pending_id"]=body.get("pending_id")
-        elif body["action"]=="review_notify":
-            action_state["review_status"]="reviewed_notify"
-            action_state["contact_status"]="to_contact"
-        elif body["action"]=="patient_notified":
-            action_state["contact_status"]="notified"
-        elif body["action"]=="callback_complete":
-            action_state["callback_complete"]=True
-        elif body["action"]=="reopen_review":
-            action_state["review_status"]="not_reviewed"
-            action_state["contact_status"]="not_requested"
-            action_state["callback_complete"]=False
-        action_state["version"]+=1
-        route.fulfill(json=action_state)
-    def candidates(route):
+    # The current iCloud uses an EXISTING registry and original Pending.
+    looked_up=[]
+    def patient_registry(route):
         assert route.request.method=="GET"
-        route.fulfill(json={"item_id":"765-4","items":[{
-            "kind":"patient","id":"SYN-MAIL-PATIENT",
-            "name":"Συνθετικός Ασθενής Ελέγχου","phone":"+35799000001",
-            "evidence":"name_phone","pending":[{"id":"SYN-MAIL-PENDING",
-                                                   "label":"Συνθετική MRI"}]
-        }]})
-    page.route("**/clinical/icloud-actions/items/765-4", clinician_action)
-    page.route("**/clinical/icloud-actions/items/765-4/candidates*", candidates)
+        assert not any(k.lower()=="x-clinical-key" for k in route.request.headers)
+        looked_up.append(route.request.url)
+        if "Συνθετικός" in unquote(route.request.url):
+            route.fulfill(json=[{
+                "patient_id":"SYN-MAIL-PATIENT",
+                "demographics":{"full_name":"Συνθετικός Ασθενής Ελέγχου",
+                                "dob":"1970-02-01"}
+            }])
+        else:route.fulfill(json=[])
+    def existing_pending(route):
+        assert route.request.method=="GET"
+        route.fulfill(json=[{
+            "pending_id":"SYN-MAIL-PENDING","patient_id":"SYN-MAIL-PATIENT",
+            "description":"Συνθετική MRI","status":"awaiting_result"
+        }])
+    page.route("**/clinical/patients?query=*", patient_registry)
+    page.route("**/clinical/patient/SYN-MAIL-PATIENT/pending", existing_pending)
+    page.evaluate("""() => {
+      window.__icloudOpenedPending = null;
+      window.__originalIcloudOpenPending = window.CockpitStoredChart.openPending;
+      window.CockpitStoredChart.openPending = (patient,pending) => {
+        window.__icloudOpenedPending = {patient,pending};
+      };
+    }""")
     page.route("**/clinical/icloud-mail/peek", peek)
     page.route("**/clinical/icloud-mail", full)
     page.route("**/clinical/icloud-mail?*", full)
@@ -573,21 +560,29 @@ def exercise_icloud_mail_peek(page, width):
     expect(details).to_contain_text("δεν έχουν ελεγχθεί για κακόβουλα")
     assert details.locator("a.doctor-icloud-attachment").first.get_attribute("href").endswith(
         "/clinical/icloud-mail/items/765-4/attachments/2")
-    # A real selected mail must support clinician review through actual
-    # click handlers, with no extra account, no GESY referral and no auto-send.
-    expect(details).to_contain_text("Ενέργειες για αυτό το email")
-    details.get_by_role("button",name="Με εκκρεμότητα · Συνθετική MRI").click()
-    expect(details).to_contain_text("Συνδέθηκε με την υπάρχουσα κλινική εκκρεμότητα.")
-    details.get_by_role("button",name="Είδα · Ενημέρωση ασθενούς").click()
-    expect(details).to_contain_text("Εξετάστηκε · απαιτείται επικοινωνία")
-    details.get_by_role("button",name="Ο ασθενής ενημερώθηκε").click()
-    assert action_state["callback_complete"] is False
-    details.get_by_role("button",name="Ολοκληρώθηκε η επικοινωνία με ιατρό").click()
-    expect(details).to_contain_text("Ο κύκλος επικοινωνίας ολοκληρώθηκε.")
-    details.get_by_role("button",name="Διόρθωση αξιολόγησης").click()
-    expect(details).to_contain_text("Δεν έχει καταγραφεί ιατρική αξιολόγηση")
-    assert performed==["link","review_notify","patient_notified",
-                       "callback_complete","reopen_review"]
+    # One deliberate patient choice, then one original Pending navigation.
+    # No email association, new patient, automatic medical review or POST.
+    expect(details).to_contain_text("Άνοιγμα υπάρχουσας κλινικής εκκρεμότητας")
+    assert details.get_by_role("button",name="Είδα · Ενημέρωση ασθενούς").count()==0
+    field=details.get_by_role("searchbox",name="Αναζήτηση υπάρχοντος ασθενούς για εκκρεμότητα")
+    field.fill("Μη υπαρκτός")
+    details.get_by_role("button",name="Βρες υπάρχουσα εκκρεμότητα").click()
+    expect(details).to_contain_text("Δεν βρέθηκε υπάρχων φάκελος")
+    assert page.evaluate("window.__icloudOpenedPending") is None
+    field.fill("Συνθετικός")
+    details.get_by_role("button",name="Βρες υπάρχουσα εκκρεμότητα").click()
+    expect(details).to_contain_text("Συνθετικός Ασθενής Ελέγχου")
+    assert details.get_by_role("button",name="Δες εκκρεμότητες").count()==1
+    details.get_by_role("button",name="Δες εκκρεμότητες").click()
+    expect(details).to_contain_text("Συνθετική MRI")
+    details.get_by_role("button",name="Άνοιγμα εκκρεμότητας · Συνθετική MRI").click()
+    expect(page.locator("#doctorIcloudInboxView")).to_be_hidden()
+    assert page.evaluate("window.__icloudOpenedPending")=={
+        "patient":"SYN-MAIL-PATIENT","pending":"SYN-MAIL-PENDING"}
+    assert looked_up and "Συνθετικός" in unquote(looked_up[-1])
+    assert details.text_content()=="", "Closing iCloud must purge protected patient/email DOM"
+    page.evaluate("window.CockpitOpenIcloudMail('765-4')")
+    expect(details).to_contain_text("Άνοιγμα υπάρχουσας κλινικής εκκρεμότητας")
     assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1")
     # Peek selection loads its exact protected UID first; the archive is
     # separate and appears only when explicitly refreshed or opened by route.
@@ -642,8 +637,13 @@ def exercise_icloud_mail_peek(page, width):
     expect(page.locator("#ceGlobalAccessPanel")).to_be_hidden()
     page.unroute("**/clinical/status", expired_status)
 
-    page.unroute("**/clinical/icloud-actions/items/765-4/candidates*", candidates)
-    page.unroute("**/clinical/icloud-actions/items/765-4", clinician_action)
+    page.unroute("**/clinical/patients?query=*", patient_registry)
+    page.unroute("**/clinical/patient/SYN-MAIL-PATIENT/pending", existing_pending)
+    page.evaluate("""() => {
+      window.CockpitStoredChart.openPending = window.__originalIcloudOpenPending;
+      delete window.__originalIcloudOpenPending;
+      delete window.__icloudOpenedPending;
+    }""")
     page.unroute("**/clinical/icloud-mail/items/765-4", item)
     page.unroute("**/clinical/icloud-mail?*", full)
     page.unroute("**/clinical/icloud-mail", full)
