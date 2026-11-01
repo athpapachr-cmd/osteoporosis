@@ -32,3 +32,7 @@ Standalone GRANT SELECT, INSERT, UPDATE applied only to public.icloud_triage_pre
 ## Provisioning and network cleanup complete
 
 Verified primary key(mailbox_key), bounded positive revision CHECK and JSON-object CHECK. Removed only TEMP PR279 IPv6 /128 entry and saved; Aiven visibly shows exactly the three original allowlist entries. No temporary access remains. Four-column table remains empty; no category/rule row or patient record written. Provisioning complete; PR merge/deploy still not executed.
+
+## Frozen release gate
+
+PR279 marked ready; release authority/provisioning reflected in its body. Fresh exact HEAD9fc712273db157837b5b19344e27add9174b0a14, READY/OPEN/MERGEABLE; all23 check runs SUCCESS after ready/body events. None pending. Next SHA-bound squash merge.
