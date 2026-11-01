@@ -48,3 +48,111 @@ Auto-deploy `dep-dbjhivtg1s2s73fvbcg0`, created2026-11-01T10:50:39Z, source `445
 ## Exact-source LIVE
 
 Native deploy terminal LIVE2026-11-01T10:52:49.547728Z (12:52:49 Asia/Nicosia), exact source445c5ee2f7af8f085a4316c5ddfff5fe96767927, deploy dep-dbjhivtg1s2s73fvbcg0. Startup complete; no duplicate deploy. Bounded smoke next.
+
+## Bounded read-only API smoke
+
+{
+  "started_at": "2026-11-01T10:53:43.427827+00:00",
+  "source": "445c5ee2f7af8f085a4316c5ddfff5fe96767927",
+  "assets": [
+    {
+      "path": "/static/cockpit/index.html",
+      "status": 200,
+      "sha256": "f97122fa644173c401961c2a867cd093ea29e3d64d371aa9dfaf5a8f067c419a",
+      "matches_source": true
+    },
+    {
+      "path": "/static/cockpit/icloud-triage.js",
+      "status": 200,
+      "sha256": "5577c2bfa6f9164bdb7dedb7f70643b5bb677b1e7c226588216d274aa68d24c9",
+      "matches_source": true
+    },
+    {
+      "path": "/static/cockpit/icloud-inbox.js",
+      "status": 200,
+      "sha256": "8b0081e8953af814a6710727c705bbe8328c083e209e77ede8084b109b65e201",
+      "matches_source": true
+    },
+    {
+      "path": "/static/cockpit/doctor-shell.js",
+      "status": 200,
+      "sha256": "667e26cb4f8ba5d3779b859907b360f6c8ac2185d049cf76baeacd3d720bb229",
+      "matches_source": true
+    },
+    {
+      "path": "/static/cockpit/patient-chart.js",
+      "status": 200,
+      "sha256": "c3e57b96a6939da8321f21b8ab34380aa0c928116225f1c057012688079cda67",
+      "matches_source": true
+    },
+    {
+      "path": "/static/cockpit/clinical-inbox.css",
+      "status": 200,
+      "sha256": "207eff610373f76fb6df324e06b03274fb3c2be489c4e7e084000e0cf5a52b3c",
+      "matches_source": true
+    }
+  ],
+  "anonymous": [
+    {
+      "path": "/clinical/status",
+      "status": 401
+    },
+    {
+      "path": "/clinical/icloud-mail/preferences",
+      "status": 401
+    },
+    {
+      "path": "/clinical/icloud-mail?view=all&limit=1",
+      "status": 401
+    },
+    {
+      "path": "/clinical/icloud-mail/peek",
+      "status": 401
+    },
+    {
+      "path": "/clinical/patients?query=SYNTHETIC-NO-PHI&limit=1",
+      "status": 401
+    },
+    {
+      "path": "/clinical/patient/SYNTHETIC-NO-PHI/pending?signed_only=true",
+      "status": 401
+    }
+  ],
+  "authenticated_read_only": [
+    {
+      "path": "/clinical/icloud-mail/preferences",
+      "status": 200,
+      "preferences_available": true,
+      "revision": 0,
+      "no_store": true,
+      "same_scope_epoch_revision": true,
+      "rule_count": 0
+    },
+    {
+      "path": "/clinical/icloud-mail?view=all&limit=1",
+      "status": 200,
+      "preferences_available": true,
+      "revision": 0,
+      "no_store": true,
+      "same_scope_epoch_revision": true,
+      "item_count": 1
+    },
+    {
+      "path": "/clinical/icloud-mail/peek",
+      "status": 200,
+      "preferences_available": true,
+      "revision": 0,
+      "no_store": true,
+      "same_scope_epoch_revision": true,
+      "item_count": 0
+    }
+  ],
+  "authenticated_mutation_count": 0,
+  "health": 200,
+  "anonymous_preference_post_denied": true,
+  "old_action_router": 404,
+  "finished_at": "2026-11-01T10:54:13.939505+00:00",
+  "result": "PASS_BOUNDED_READ_ONLY_RELEASE_SMOKE"
+}
+
+Only operational booleans/counts/hashes retained; all message payloads discarded. Existing Clinical Key used only in memory against its existing application destination; no cookie, key or patient/mail payload persisted. No authenticated POST or clinical mutation. Production Save/undo on actual messages deliberately not tested; successful writes/concurrency were validated in disposable PostgreSQL/SQLite and synthetic browser.
