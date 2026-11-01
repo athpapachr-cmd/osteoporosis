@@ -1,3 +1,5 @@
+> **2026-11-01 TRIAGE CORRECTED EXACT CODE UNDER CLOSURE:** `c39f00cece7905f27f4f17bd0a466d673e0721f0`, same independent reviewer; no new review chain or release authority.
+
 > **2026-11-01 TRIAGE P2-CODE-01 CORRECTED / ONE CLOSURE NEXT:** Pending-POST locks/draft identity guard tested4 real synthetic browser cases; no backend/source/clinical scope change. One independent affected closure and exact-head CI next; no provisioning/merge/deploy.
 
 > **2026-11-01 TRIAGE CODE R2 BLOCK0:0:1:** Pending Save may discard later edits in message/rule forms. Smallest guard + delayed-POST test then one independent closure; [receipt](../reviews/ICLOUD_TRIAGE_PREFERENCES_POSTCODE_R2_BLOCK_2026-11-01.md). No provisioning/merge/deploy.

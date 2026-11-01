@@ -1,3 +1,5 @@
+> **2026-11-01 PR279 — ONE FINAL-CODE CLOSURE IN PROGRESS:** Corrected target `c39f00cece7905f27f4f17bd0a466d673e0721f0`; same independent reviewer, finite original finding+affected behavior. CI separate/pending. No release/provisioning.
+
 > **2026-11-01 PR279 — PENDING-SAVE CORRECTION TESTED / CLOSURE NEXT:** Edit locks plus exact submitted-draft guard preserve both message/rule and duplicate-form drafts. Actual delayed-POST browser4 PASS; bounded CP2 early-qualification/retry check and Node PASS. One independent code closure next; no release.
 
 > **2026-11-01 PR279 FINAL-CODE BLOCK / PENDING-SAVE INPUT GUARD:** Independent R2 BLOCK0:0:1 on `9cb58b21296786203a4aa15d11e260ff40659b8c`; [receipt](reviews/ICLOUD_TRIAGE_PREFERENCES_POSTCODE_R2_BLOCK_2026-11-01.md). Correct only pending-save input preservation in both forms and targeted regression, then one closure. Other questions supported; no release.
