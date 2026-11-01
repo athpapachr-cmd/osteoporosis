@@ -24,3 +24,7 @@ Product Owner explicitly approved a single operator IPv6 /128 entry at action ti
 ## Table creation checkpoint
 
 Metadata confirmed osteoporosis/avnadmin/public, table absent, existing cockpit_app, schema USAGE=true/CREATE=false, owner default-table-ACL count0. SQL editor split a DO block at semicolons and rejected it with an unterminated dollar quote; post-error metadata still showed table absent. Executed only the exact reviewed standalone schema-qualified CREATE TABLE. Verification: table exists, owner avnadmin,0rows, app SELECT=false. No clinical table inspected or changed. Grant still pending.
+
+## Minimum grant verification
+
+Standalone GRANT SELECT, INSERT, UPDATE applied only to public.icloud_triage_preferences for existing cockpit_app. Metadata result: SELECT=true, INSERT=true, UPDATE=true, DELETE=false, schema CREATE=false, preference rows0, columns4. No wider grant or clinical change. Temporary operator network exception cleanup is next.
