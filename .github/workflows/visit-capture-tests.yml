@@ -14,6 +14,7 @@ on:
       - "test_clinical_visit_audio.py"
       - "clinical_pending_one_tap.py"
       - "test_cockpit_cp2.py"
+      - "test_pending_signed_write_integrity.py"
       - "test_cockpit_appointment_chart.py"
       - "clinical_visit_brief.py"
       - "test_cockpit_patient_entry.py"
@@ -44,6 +45,7 @@ on:
       - "test_clinical_visit_audio.py"
       - "clinical_pending_one_tap.py"
       - "test_cockpit_cp2.py"
+      - "test_pending_signed_write_integrity.py"
       - "test_cockpit_appointment_chart.py"
       - "clinical_visit_brief.py"
       - "test_cockpit_patient_entry.py"
@@ -65,6 +67,18 @@ on:
 jobs:
   visit-capture:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: p2
+          POSTGRES_PASSWORD: synthetic-p2-only
+          POSTGRES_DB: p2_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U p2 -d p2_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@v4
         with:
@@ -101,5 +115,9 @@ jobs:
           fi
       - name: CP1 natural summary and persistent chart
         run: pytest -q test_purpose_focused_capture.py test_clinical_prepared_note.py test_cockpit_cp1.py test_cockpit_cp2.py test_cockpit_patient_entry.py test_cockpit_appointment_chart.py test_cockpit_visit_amendments.py test_clinical_visit_audio.py
+      - name: Pending signed-source SQLite and PostgreSQL transaction integrity
+        env:
+          P2_TEST_POSTGRES_URL: postgresql+psycopg://p2:synthetic-p2-only@127.0.0.1:5432/p2_test
+        run: pytest -q test_pending_signed_write_integrity.py
       - name: Diff hygiene
         run: git diff --check HEAD^ HEAD
