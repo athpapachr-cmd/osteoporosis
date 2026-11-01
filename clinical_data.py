@@ -1206,7 +1206,10 @@ def build_clinical_router(engine: Engine) -> APIRouter:
         response_model=List[ClinicalPendingRecord],
         dependencies=protected,
     )
-    def list_pending(patient_id: str) -> List[ClinicalPendingRecord]:
+    def list_pending(
+        patient_id: str,
+        signed_only: bool = Query(default=False),
+    ) -> List[ClinicalPendingRecord]:
         with Session(engine) as session:
             ensure_patient(session, patient_id)
             rows = session.execute(
@@ -1214,6 +1217,34 @@ def build_clinical_router(engine: Engine) -> APIRouter:
                 .where(ClinicalPendingORM.patient_id == patient_id, ClinicalPendingORM.status != "deleted")
                 .order_by(ClinicalPendingORM.created_at.desc())
             ).scalars().all()
+            if signed_only:
+                # One iCloud read-only lookup of EXISTING visit obligations.
+                # Leave the historical /pending list unchanged by default.
+                # A live Pending alone does not prove current signed membership:
+                # it may have been cancelled/reassigned in an amendment.
+                def currently_signed(pending: ClinicalPendingORM) -> bool:
+                    if pending.status not in ("open", "awaiting_patient", "awaiting_result"):
+                        return False
+                    encounter = session.get(EncounterORM, pending.source_encounter_id)
+                    if (not encounter or encounter.patient_id != patient_id
+                            or encounter.status not in ("completed", "amended")):
+                        return False
+                    payload = encounter.payload_json
+                    signed = payload.get("_visit_capture_v1") if isinstance(payload, dict) else None
+                    if (not isinstance(signed, dict)
+                            or signed.get("signed") is not True or not signed.get("signed_at")):
+                        return False
+                    ids = signed.get("pending_ids")
+                    candidate = signed.get("candidate")
+                    steps = candidate.get("pending") if isinstance(candidate, dict) else None
+                    if (not isinstance(ids, list) or not isinstance(steps, list)
+                            or len(ids) != len(steps) or ids.count(pending.id) != 1
+                            or any(not isinstance(identifier, str) for identifier in ids)):
+                        return False
+                    item = steps[ids.index(pending.id)]
+                    return isinstance(item, dict) and item.get("item_type") == pending.item_type
+
+                rows = [row for row in rows if currently_signed(row)]
             return [_pending_record(row) for row in rows]
 
     @router.post("/patient/{patient_id}/encounters", response_model=EncounterRecord, dependencies=protected)

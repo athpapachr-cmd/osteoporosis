@@ -147,7 +147,8 @@ def test_full_one_doctor_mri_followthrough_does_not_resolve_original_pending(sce
     chart=get(client,"/clinical/clinical-updates?scope=real&active_only=true")
     assert chart.status_code==200,chart.text
     linked=[x for x in chart.json()["items"] if x["pending_id"]==PENDING]
-    assert len(linked)==1 and linked[0]["mail_followthrough"][0]["item_id"]=="765-10"
+    # Synthetic-only legacy mail decisions cannot become a second live task status.
+    assert len(linked)==1 and linked[0]["mail_followthrough"]==[]
     r=post(client,"765-10","review_notify",1)
     assert r.status_code==200 and r.json()["contact_status"]=="to_contact"
     r=post(client,"765-10","contact_attempt",2)
