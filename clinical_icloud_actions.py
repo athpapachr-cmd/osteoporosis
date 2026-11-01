@@ -404,8 +404,23 @@ def build_icloud_actions_router(engine: Engine) -> APIRouter:
         # prevent the existing live Cockpit or read-only iCloud viewer boot.
         MailDecisionBase.metadata.create_all(engine, checkfirst=True)
         installed = True
-    except SQLAlchemyError:
-        _LOG.warning("icloud_action_storage_unavailable")  # no PHI/secrets
+    except SQLAlchemyError as exc:
+        # SQLAlchemy exception text/statement/parameters can contain secrets
+        # or identifiers. Record ONLY the exception class and allowlisted
+        # database SQLSTATE, never the raw exception or SQL.
+        kind = type(exc).__name__
+        if kind not in ("ProgrammingError", "OperationalError",
+                        "IntegrityError", "InternalError", "DatabaseError"):
+            kind = "OtherSqlError"
+        original = getattr(exc, "orig", None)
+        sqlstate = (getattr(original, "sqlstate", None)
+                    or getattr(original, "pgcode", None))
+        if not isinstance(sqlstate, str) or not re.fullmatch(r"[0-9A-Z]{5}", sqlstate):
+            sqlstate = "UNKNOWN"
+        _LOG.warning(
+            "icloud_action_storage_unavailable failure=%s sqlstate=%s",
+            kind, sqlstate,
+        )
 
     def ready():
         if not installed:

@@ -1,3 +1,5 @@
+> **2026-11-01 LIVE diagnosis — action storage not yet ready:** The released iCloud clinician pilot (#271, main `b045267362eb29ebe769e98814fb0cce0bd5c3c6`) rendered LIVE but emitted the allowlisted `icloud_action_storage_unavailable` warning during optional two-table creation. This means new manual mail classifications and contact decisions may return 503; the read-only iCloud viewer and attachment download remain independent. This bounded diagnostic change records ONLY a SQLAlchemy exception class and normalized five-character PG SQLSTATE without SQL/parameters/PHI. No database privileges, schema/table state, messages, patient records or provider credentials are changed by this diagnostic. The real cause must be confirmed from live PostgreSQL startup stage evidence before a fix or user acceptance.
+
 # Cockpit iCloud — usable one-doctor clinical pilot
 
 **31 Oct 2026 · existing Clinical Key · no new user/role/referral identifier**
