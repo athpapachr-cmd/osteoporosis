@@ -1191,6 +1191,8 @@ Operational source truth stays with the appointment provider (the current reason
 
 # 34. Clinician-first Clinical Excellence Home and Visit Intelligence
 
+**Current operational override (Product Owner, 2026-11-01):** the Cockpit is a single-clinician installation authenticated by its existing Clinical Key. The iCloud IMAP inbox is already connected; no extra provider integration is needed for this clinical follow-through slice. Reuse the existing signed ClinicalPending and its established clinical history/booking ownership: **no new authentication framework, staff V2 (#270), PostgreSQL instance, tables, schema migrations or second durable follow-through owner**. The proposed future multi-user/Reception-wide architecture below is not an implementation prerequisite and must not reopen until separately requested for commercialization. Preserve the clinical safety and source-qualification boundaries. PRs #267–#269 are synthetic proof to be selectively reused, not sequential release candidates as-is; see `cockpit/PRODUCT_CONSTITUTION.md` for binding scope.
+
 The first Home job is to direct the clinician's **attention and next clinical action**. The hierarchy is:
 
 ```text
