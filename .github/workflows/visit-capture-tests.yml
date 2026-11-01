@@ -15,6 +15,14 @@ on:
       - "clinical_pending_one_tap.py"
       - "test_cockpit_cp2.py"
       - "test_pending_signed_write_integrity.py"
+      - "clinical_icloud_preferences.py"
+      - "test_icloud_preferences.py"
+      - "test_icloud_preferences_browser.py"
+      - "clinical_icloud_mail.py"
+      - "clinical_icloud_triage_rules.py"
+      - "cockpit/migrations/20261101_icloud_triage_preferences.sql"
+      - "static/cockpit/icloud-*.js"
+      - "static/cockpit/doctor-shell.js"
       - "test_cockpit_appointment_chart.py"
       - "clinical_visit_brief.py"
       - "test_cockpit_patient_entry.py"
@@ -46,6 +54,14 @@ on:
       - "clinical_pending_one_tap.py"
       - "test_cockpit_cp2.py"
       - "test_pending_signed_write_integrity.py"
+      - "clinical_icloud_preferences.py"
+      - "test_icloud_preferences.py"
+      - "test_icloud_preferences_browser.py"
+      - "clinical_icloud_mail.py"
+      - "clinical_icloud_triage_rules.py"
+      - "cockpit/migrations/20261101_icloud_triage_preferences.sql"
+      - "static/cockpit/icloud-*.js"
+      - "static/cockpit/doctor-shell.js"
       - "test_cockpit_appointment_chart.py"
       - "clinical_visit_brief.py"
       - "test_cockpit_patient_entry.py"
@@ -119,5 +135,9 @@ jobs:
         env:
           P2_TEST_POSTGRES_URL: postgresql+psycopg://p2:synthetic-p2-only@127.0.0.1:5432/p2_test
         run: pytest -q test_pending_signed_write_integrity.py
+      - name: iCloud preference SQLite/PostgreSQL and real synthetic browser
+        env:
+          P2_TEST_POSTGRES_URL: postgresql+psycopg://p2:synthetic-p2-only@127.0.0.1:5432/p2_test
+        run: pytest -q test_icloud_preferences.py test_icloud_preferences_browser.py
       - name: Diff hygiene
         run: git diff --check HEAD^ HEAD

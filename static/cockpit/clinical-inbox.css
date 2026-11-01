@@ -84,3 +84,8 @@
 }
 #doctorIcloudInboxView .doctor-icloud-candidate p{width:100%;margin:2px 0}
 #doctorIcloudInboxView .doctor-icloud-candidate button{white-space:normal;text-align:left}
+
+.doctor-icloud-preferences { border-top:1px solid #d6e1e5; margin-top:1rem; padding-top:1rem; }
+.doctor-icloud-preferences label { display:block; margin:.65rem 0; }
+.doctor-icloud-preferences input:not([type=checkbox]), .doctor-icloud-preferences select { display:block; box-sizing:border-box; width:100%; max-width:100%; padding:.6rem; }
+.doctor-icloud-preferences button { margin:.3rem .3rem .3rem 0; }

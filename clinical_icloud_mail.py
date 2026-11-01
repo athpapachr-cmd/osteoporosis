@@ -340,7 +340,7 @@ def _uid_is_unseen(mail, uid: str) -> bool:
     return verified
 
 
-def _list_items(mail, validity: str, alias: str, limit: int, cursor: str | None = None, *, unseen_only: bool = False, view: str = "clinical", override_lookup=None):
+def _list_items(mail, validity: str, alias: str, limit: int, cursor: str | None = None, *, unseen_only: bool = False, view: str = "clinical", override_lookup=None, project_header=None):
     last_uid = _uid_next(mail) - 1
     if cursor is not None:
         match = _ITEM_RE.fullmatch(cursor)
@@ -377,6 +377,8 @@ def _list_items(mail, validity: str, alias: str, limit: int, cursor: str | None 
                     item = _summary(str(uid), validity, header, alias, include_nonclinical=True)
                     if item is not None:
                         item["category"] = overrides.get(item["id"], item["category"])
+                        if project_header:
+                            project_header(item, header)
                         if (view == "clinical" and item["category"] not in ("clinical", "review")
                                 or view == "administrative" and item["category"] not in ("administrative", "other")):
                             item = None
@@ -553,14 +555,34 @@ def _read(operation):
 
 
 def build_icloud_mail_router(engine=None) -> APIRouter:
-    # The signed Clinical Key remains the ONLY current clinician authority.
-    # Optional private decision metadata can affect display grouping, not mail
-    # bytes, server-side flags or actual clinical patient association.
-    def overrides(validity, uids):
-        if engine is None:
-            return {}
-        from clinical_icloud_actions import stored_mail_categories
-        return stored_mail_categories(engine, validity, uids)
+    def preferences(validity, alias):
+        if engine is None:  # Pure source-reader embedding/tests; production binds its engine.
+            return None, lambda item, message: None
+        from clinical_icloud_preferences import read_preferences, scope_key, metadata, classify
+        scope = scope_key(_settings()[0], alias)
+        try:
+            revision, state = read_preferences(engine, scope)
+            meta = metadata(scope, validity, revision)
+        except HTTPException as error:
+            if error.status_code != 503:
+                raise
+            meta = {"mailbox_key": scope, "uidvalidity": validity, "revision": None, "available": False}
+            state = None
+        def project(item, message):
+            if state is None:
+                item["category"], item["category_origin"] = "review", "unavailable"
+            else:
+                item["category"], item["category_origin"] = classify(
+                    state, scope, validity, item["id"].split("-")[1], message, item["category"])
+        return meta, project
+
+    def listed(mail, validity, alias, limit, cursor=None, *, unseen=False, view="clinical"):
+        meta, project = preferences(validity, alias)
+        result = _list_items(mail, validity, alias, limit, cursor, unseen_only=unseen,
+            view="all" if meta and not meta["available"] else view, project_header=project)
+        if meta is not None:
+            result["triage"] = meta
+        return result
 
     router = APIRouter(
         prefix="/clinical/icloud-mail", tags=["clinical-icloud-mail"],
@@ -573,8 +595,8 @@ def build_icloud_mail_router(engine=None) -> APIRouter:
         return {
             "source": "icloud_mail", "scope": "recipient_alias_inbox_only",
             "filter": "unseen",
-            **_read(lambda mail, validity, alias: _list_items(
-                mail, validity, alias, 4, unseen_only=True, override_lookup=overrides)),
+            **_read(lambda mail, validity, alias: listed(
+                mail, validity, alias, 4, unseen=True)),
         }
 
     @router.get("")
@@ -588,7 +610,7 @@ def build_icloud_mail_router(engine=None) -> APIRouter:
         return {
             "source": "icloud_mail", "scope": "recipient_alias_inbox_only",
             "filter": "all", "view": view,
-            **_read(lambda mail, validity, alias: _list_items(mail, validity, alias, limit, cursor, view=view, override_lookup=overrides)),
+            **_read(lambda mail, validity, alias: listed(mail, validity, alias, limit, cursor, view=view)),
         }
 
     @router.get("/items/{item_id}")
@@ -598,12 +620,11 @@ def build_icloud_mail_router(engine=None) -> APIRouter:
         def result(mail, validity, alias):
             message = _message(mail, validity, alias, item_id)
             header = _summary(item_id.split("-")[1], validity, message, alias, include_nonclinical=True)
-            saved = overrides(validity, [int(item_id.split("-")[1])])
-            if header and header["id"] in saved:
-                header["category"] = saved[header["id"]]
+            meta, project = preferences(validity, alias)
+            project(header, message)
             available = _attachments(message)
             return {
-                "source": "icloud_mail", "item": {
+                "source": "icloud_mail", **({"triage": meta} if meta is not None else {}), "item": {
                     **header, "body": _body(message),
                     "attachments_unavailable": max(0, _attachment_count(message) - len(available)),
                     "attachments": [

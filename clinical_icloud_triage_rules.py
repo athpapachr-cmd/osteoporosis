@@ -17,7 +17,7 @@ CLINICAL_WORDS = (
     "υπερηχο", "ακτινογραφ", "εργαστηρι", "αποτελεσμα", "εξετασ",
     "αιματολογ", "βιοχημικ", "γνωματευ", "πορισμα", "patient",
     "medical", "hospital", "lab result", "laborator", "scan",
-    "referral", "οστεοπορωσ", "physiotherapy",
+    "referral", "οστεοπορωσ", "physiotherapy", "αξονικη", "αξονικι",
 )
 ADMIN_SUBJECT = (
     "payout", "payment", "invoice", "receipt", "billing",

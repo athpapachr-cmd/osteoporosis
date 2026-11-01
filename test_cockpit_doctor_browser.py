@@ -802,18 +802,18 @@ def exercise_icloud_secretary_session_isolation(page, auth):
     expect(page.locator("#doctorIcloudInboxView")).to_be_visible()
     expect(page.locator("#doctorIcloudInboxState")).to_contain_text(
         "Η σύνδεση γραμματείας παραμένει ενεργή")
-    assert full_attempts["count"] == 1, "Expected one denied full-list read before role bootstrap"
+    assert full_attempts["count"] == 0, "Denied clinical status must stop before the mailbox read"
     assert page.evaluate("window.CockpitStaffRole") == "secretary"
     assert page.evaluate("window.__secretaryIcloudAuthLoss") == 0
     page.locator("#doctorIcloudInboxReload").click()
     expect(page.locator("#doctorIcloudInboxState")).to_contain_text(
         "Η σύνδεση γραμματείας παραμένει ενεργή")
-    assert full_attempts["count"] == 1
+    assert full_attempts["count"] == 0
     page.locator("#doctorIcloudInboxBack").click()
     page.evaluate("window.location.hash='#icloud-mail'")
     expect(page.locator("#doctorIcloudInboxState")).to_contain_text(
         "Η σύνδεση γραμματείας παραμένει ενεργή")
-    assert full_attempts["count"] == 1
+    assert full_attempts["count"] == 0
     page.locator("#doctorIcloudInboxBack").click()
     page.unroute("**/clinical/icloud-mail?*", denied_full)
     page.unroute("**/clinical/icloud-mail", denied_full)
@@ -865,7 +865,7 @@ def exercise_icloud_secretary_session_isolation(page, auth):
     expect(page.locator("#doctorIcloudInboxView")).to_be_hidden()
     expect(page.locator("#ceGlobalAccessPanel")).to_be_visible()
     assert page.evaluate("window.__secretaryIcloudAuthLoss") >= 2
-    assert full_attempts["count"] == 1
+    assert full_attempts["count"] == 0
     page.keyboard.press("Escape")
 
     # The same original login can re-authorize clinician reads without a new
