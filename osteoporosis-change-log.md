@@ -2019,3 +2019,8 @@ Product Owner explicitly authorized merge/deploy. Frozen HEAD `2e9a003238674f224
 ## 2026-11-01 — iCloud existing/new rules and retained-page classification PR283 released
 
 Frozen HEAD1467f4a517eb6ace0bc72932019b5cede0f256d7/all25 final CI SUCCESS; expected-HEAD squash7262acaa4e68b0fa36893c9270d67196e221df4c. Independent corrected R2 CLOSED PASS0:0:0, browser36 PASS, CI SQLite/PostgreSQL17 preference/browser66 PASS1 expected skip. ONE native Renderdep-dbjm8mm417fc73b2sbg0 exact-source LIVE16:12:10Z; bounded health/exact assets/auth/protected read-intent projection smoke PASS; fixed-window app ERROR/HTTP5xx empty. One separately accepted operational coverage setting changed via CAS9→10 with criteria/unrelated rules preserved; another saved-rule conflict remains pending explicit Product Owner choice. No patient/provider writes, schema/settings/grant/network/secret changes or duplicate deploy. Actual production combined-Save usability is not claimed by API smoke. Receipt `cockpit/releases/COCKPIT_ICLOUD_RULE_COVERAGE_RELEASE_2026-11-01.md`; docs publication uses [skip render].
+
+
+## 2026-11-01 — explicit private operational preference conflict resolved
+
+Following explicit Product Owner disposition, existing conflicting alternate rule disabled CAS10→11 and intended administrative criteria/existing-new coverage saved CAS11→12. Readback preserves all unrelated rules and rule count. Protected current captured-header projection checks three older matching messages: one rule classification, two preserved individual choices. No patient/provider write, source/schema/configuration/deploy change or new review loop. Exact criteria/identities/source content stay private; earlier pending-choice HOLD closed.
