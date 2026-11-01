@@ -505,6 +505,11 @@
     // Synthetic-161 and real provider paths must never cross, including
     // during successful synthetic Clinical Key/status bootstrapping.
     if(syntheticInbox() || secretaryIcloudSession())return;
+    // A classification Save revokes the hidden preview immediately, but must
+    // not start a second mailbox scan behind the actively opened full Inbox.
+    // An explicit preview opening still qualifies/fetches in inbox().
+    if($("doctorIcloudInboxView")?.hidden===false &&
+        !(state.panel==="inbox"&&!popover.hidden))return;
     if(unreadPeek.authorized && !document.hidden)void fetchUnreadPeek(force);
   }
   function secretaryIcloudNotice(){
