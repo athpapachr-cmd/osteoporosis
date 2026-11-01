@@ -20,7 +20,7 @@ from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, JSON, String, UniqueConstraint, select
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, JSON, String, UniqueConstraint, inspect, select
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import DeclarativeBase, Session
@@ -392,6 +392,39 @@ def stored_mail_categories(engine: Engine, validity: str,
         return {}
 
 
+def _read_only_storage_ready(engine: Engine) -> bool:
+    """Fail closed on absent/partial iCloud storage without issuing DDL.
+
+    Only catalog metadata is inspected; no clinical or mailbox rows are read.
+    Grants and production migration authority require a separate release gate.
+    """
+    inspector = inspect(engine)
+    for table in (MailDecisionORM.__table__, MailDecisionEventORM.__table__):
+        if not inspector.has_table(table.name):
+            return False
+        expected = {column.name for column in table.columns}
+        present = {column["name"] for column in inspector.get_columns(table.name)}
+        if not expected.issubset(present):
+            return False
+        primary = inspector.get_pk_constraint(table.name).get("constrained_columns") or []
+        if set(primary) != {column.name for column in table.primary_key.columns}:
+            return False
+    unique_names = {item.get("name") for item in
+                    inspector.get_unique_constraints(MailDecisionEventORM.__tablename__)}
+    if not {"uq_icloud_message_action_version",
+            "uq_icloud_message_action_request"}.issubset(unique_names):
+        return False
+    references = inspector.get_foreign_keys(MailDecisionEventORM.__tablename__)
+    if not any(
+        fk.get("referred_table") == MailDecisionORM.__tablename__
+        and fk.get("constrained_columns") == ["source_key"]
+        and fk.get("referred_columns") == ["source_key"]
+        for fk in references
+    ):
+        return False
+    return True
+
+
 def build_icloud_actions_router(engine: Engine) -> APIRouter:
     """Uses existing Clinical Key — there is currently ONE cockpit clinician."""
     router = APIRouter(
@@ -400,10 +433,10 @@ def build_icloud_actions_router(engine: Engine) -> APIRouter:
     )
     installed = False
     try:
-        # Additive, idempotent metadata-only table creation. Failure must NEVER
-        # prevent the existing live Cockpit or read-only iCloud viewer boot.
-        MailDecisionBase.metadata.create_all(engine, checkfirst=True)
-        installed = True
+        # Production role does NOT own DDL. Only a separately reviewed
+        # migration may create both tables; this boot path only reads catalog
+        # metadata and keeps actions at 503 until the full schema is ready.
+        installed = _read_only_storage_ready(engine)
     except SQLAlchemyError as exc:
         # SQLAlchemy exception text/statement/parameters can contain secrets
         # or identifiers. Record ONLY the exception class and allowlisted
