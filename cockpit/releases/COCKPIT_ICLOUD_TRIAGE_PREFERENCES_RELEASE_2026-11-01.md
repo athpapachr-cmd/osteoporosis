@@ -1,6 +1,6 @@
 # iCloud sorting preferences — authorized release checkpoint
 
-Status: PREFLIGHT BLOCKED BY OPERATOR NETWORK ACCESS. No provisioning, merge or deploy.
+Status: PROVISIONED AND MERGED; exact-source native Render deploy in progress. Production smoke pending. Earlier preflight blockers below are resolved historical checkpoints.
 
 Product Owner approved one operational-preference table in the existing database, PR279 merge, native deploy and no-patient-record-write smoke. Independent design and final-code R2 are closed PASS; no new review chain.
 
@@ -44,3 +44,7 @@ SHA-bound squash merge succeeded: `445c5ee2f7af8f085a4316c5ddfff5fe96767927`, fr
 ## Native deploy identified
 
 Auto-deploy `dep-dbjhivtg1s2s73fvbcg0`, created2026-11-01T10:50:39Z, source `445c5ee2f7af8f085a4316c5ddfff5fe96767927`, trigger new_commit, build_in_progress. Full source tree equals frozen PR279 tree `9b8c6b4dfe400a610eadc0c2747aadd225e35ad3`. No manual deploy.
+
+## Exact-source LIVE
+
+Native deploy terminal LIVE2026-11-01T10:52:49.547728Z (12:52:49 Asia/Nicosia), exact source445c5ee2f7af8f085a4316c5ddfff5fe96767927, deploy dep-dbjhivtg1s2s73fvbcg0. Startup complete; no duplicate deploy. Bounded smoke next.
