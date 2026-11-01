@@ -25,7 +25,7 @@ assert.match(ui, /IMAP_FLAGS_FETCH_FAILED/);
 assert.match(ui, /function emptySelection\(\)/);
 assert.match(ui, /Η προβολή δεν αλλάζει την κατάστασή του στο iCloud/);
 assert.match(html, /clinical-inbox\.css\?v=icloud-triage-20261031/);
-assert.match(html, /icloud-inbox\.js\?v=triage-refresh-20261101/);
+assert.match(html, /icloud-inbox\.js\?v=triage-coverage-20261101/);
 assert.match(ui, /Δεν έχει επιβεβαιωθεί/);
 assert.doesNotMatch(ui, /Ο IMAP server απέρριψε τη σύνδεση|Ο IMAP server δεν επέτρεψε άνοιγμα/);
 assert.match(ui, /IMAP_HEADER_FETCH_FAILED/);
@@ -70,7 +70,8 @@ assert.match(ui, /state\.controller\?\.abort\(\)/);
 assert.match(shell, /\/clinical\/icloud-mail\/peek/);
 assert.doesNotMatch(ui, /innerHTML|outerHTML|localStorage|sessionStorage/);
 // This iCloud view never writes or creates another task/role/storage owner.
-assert.doesNotMatch(ui, /method:"POST"|method:"DELETE"|method:"PUT"/);
+assert.doesNotMatch(ui, /method:"DELETE"|method:"PUT"/);
+assert.match(ui, /api\("\/category-projection"/);
 assert.ok(!ui.includes("/clinical/icloud-actions"));
 assert.ok(ui.includes("/clinical/patients?query="));
 assert.ok(ui.includes("/clinical/patient/"));

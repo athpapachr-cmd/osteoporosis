@@ -6,11 +6,16 @@ pending task, mailbox flag, or provider write is performed.
 """
 from __future__ import annotations
 
+import base64
+import hashlib
+import hmac
 import imaplib
+import json
 import logging
 import os
 import re
 import ssl
+import time
 import unicodedata
 from contextlib import contextmanager
 from datetime import timezone
@@ -19,7 +24,9 @@ from email.parser import BytesParser
 from email.utils import getaddresses, parsedate_to_datetime
 from html.parser import HTMLParser
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from starlette.concurrency import run_in_threadpool
 
 from clinical_reception_calls import _require_clinical_key
 from clinical_icloud_triage_rules import suggest_category
@@ -554,6 +561,96 @@ def _read(operation):
         raise HTTPException(503, {"code": "IMAP_UNEXPECTED_FAILURE"}) from None
 
 
+# Captured, visible source facts only. These refs NEVER authorize reads/writes or
+# assert current source membership, unread status, clinical identity or freshness.
+_PROJECTION_NAMESPACE = b"icloud-category-projection-v1\0"
+_PROJECTION_BODY_LIMIT = 256 * 1024
+_PROJECTION_REF_LIMIT = 8192
+
+
+class _ProjectionEntry(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    id: str = Field(pattern=_ITEM_RE.pattern, max_length=39)
+    projection_ref: str | None = Field(default=None, max_length=_PROJECTION_REF_LIMIT,
+                                       pattern=r"^[A-Za-z0-9_-]+\.[a-f0-9]{64}$")
+
+
+class _ProjectionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    items: list[_ProjectionEntry] = Field(min_length=1, max_length=25)
+
+
+class _ProjectionFacts(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    v: int = Field(ge=1, le=1)
+    scope: str = Field(pattern=r"^[a-f0-9]{64}$", max_length=64)
+    id: str = Field(pattern=_ITEM_RE.pattern, max_length=39)
+    captured_at: int = Field(ge=1, le=2**53 - 1)
+    display_from: str = Field(max_length=180)
+    display_subject: str = Field(max_length=220)
+    date: str = Field(max_length=64)
+    sender: str = Field(max_length=254)
+    subject: str = Field(max_length=2048)
+    suggested: str = Field(pattern=r"^(clinical|administrative|other|review)$", max_length=14)
+
+
+def _unique_json(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError()
+        result[key] = value
+    return result
+
+
+def _projection_reference(scope, item, message):
+    from clinical_icloud_triage_rules import fold
+    sender = (getaddresses([str(message.get("From", ""))]) or [("", "")])[0][1].casefold()
+    visible_sender = (getaddresses([item["from"]]) or [("", "")])[0][1].casefold()
+    subject = fold(message.get("Subject", ""))
+    # Omit, never truncate or disclose facts omitted from the bounded display.
+    if sender != visible_sender or subject != fold(
+            item["subject"] if str(message.get("Subject", "")).strip() else ""):
+        return None
+    secret = os.getenv("CLINICAL_DATA_KEY", "")
+    if not secret:
+        return None
+    try:
+        facts = _ProjectionFacts(v=1, scope=scope, id=item["id"], captured_at=int(time.time()),
+            display_from=item["from"], display_subject=item["subject"], date=item["date"],
+            sender=sender, subject=subject, suggested=item["category"])
+    except ValidationError:
+        return None
+    raw = json.dumps(facts.model_dump(), sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode()
+    encoded = base64.urlsafe_b64encode(raw).rstrip(b"=").decode("ascii")
+    signature = hmac.new(secret.encode(), _PROJECTION_NAMESPACE + encoded.encode(), hashlib.sha256).hexdigest()
+    ref = encoded + "." + signature
+    if len(ref) > _PROJECTION_REF_LIMIT:
+        return None
+    item["source_captured_at"] = facts.captured_at
+    return ref
+
+
+def _projection_facts(ref, scope, validity, item_id):
+    try:
+        if not re.fullmatch(r"[A-Za-z0-9_-]+\.[a-f0-9]{64}", ref) or len(ref) > _PROJECTION_REF_LIMIT:
+            raise ValueError()
+        encoded, signature = ref.split(".")
+        secret = os.getenv("CLINICAL_DATA_KEY", "")
+        expected = hmac.new(secret.encode(), _PROJECTION_NAMESPACE + encoded.encode(), hashlib.sha256).hexdigest()
+        if not secret or not hmac.compare_digest(signature, expected):
+            raise ValueError()
+        raw = base64.b64decode(encoded + "=" * (-len(encoded) % 4), altchars=b"-_", validate=True)
+        facts = _ProjectionFacts.model_validate(json.loads(raw, object_pairs_hook=_unique_json))
+        if facts.captured_at > int(time.time()) + 60:
+            raise ValueError()
+    except (ValueError, TypeError, UnicodeError, ValidationError, RecursionError):
+        raise HTTPException(422, "Invalid captured mail reference") from None
+    if facts.scope != scope or facts.id != item_id or facts.id.split("-")[0] != validity:
+        raise HTTPException(409, "Captured mailbox scope or epoch changed")
+    return facts
+
+
 def build_icloud_mail_router(engine=None) -> APIRouter:
     def preferences(validity, alias):
         if engine is None:  # Pure source-reader embedding/tests; production binds its engine.
@@ -569,6 +666,9 @@ def build_icloud_mail_router(engine=None) -> APIRouter:
             meta = {"mailbox_key": scope, "uidvalidity": validity, "revision": None, "available": False}
             state = None
         def project(item, message):
+            ref = _projection_reference(scope, item, message)
+            if ref is not None:
+                item["projection_ref"] = ref
             if state is None:
                 item["category"], item["category_origin"] = "review", "unavailable"
             else:
@@ -588,6 +688,56 @@ def build_icloud_mail_router(engine=None) -> APIRouter:
         prefix="/clinical/icloud-mail", tags=["clinical-icloud-mail"],
         dependencies=[Depends(_require_clinical_key)],
     )
+
+    if engine is not None:
+        @router.post("/category-projection")
+        async def category_projection(request: Request, response: Response):
+            from clinical_icloud_preferences import _origin, classify, projection, read_preferences, scope_key
+            _origin(request)
+            _no_store(response)
+            if request.headers.get("content-type", "").split(";", 1)[0].strip() != "application/json":
+                raise HTTPException(415, "JSON projection request required")
+            raw = bytearray()
+            async for chunk in request.stream():
+                if len(raw) + len(chunk) > _PROJECTION_BODY_LIMIT:
+                    raise HTTPException(413, "Projection request exceeds safe limit")
+                raw.extend(chunk)
+            try:
+                query = _ProjectionRequest.model_validate(json.loads(raw, object_pairs_hook=_unique_json))
+                if len({entry.id for entry in query.items}) != len(query.items):
+                    raise ValueError()
+            except (ValueError, TypeError, UnicodeError, ValidationError, RecursionError):
+                raise HTTPException(422, "Invalid category projection request") from None
+
+            def result(mail, validity, alias):
+                scope = scope_key(_settings()[0], alias)
+                revision, state = read_preferences(engine, scope)  # ONE immutable preference snapshot.
+                rows = []
+                for entry in query.items:
+                    epoch, uid = entry.id.split("-")
+                    if epoch != validity:
+                        raise HTTPException(409, "Captured mailbox scope or epoch changed")
+                    if entry.projection_ref is not None:
+                        facts = _projection_facts(entry.projection_ref, scope, validity, entry.id)
+                        # The canonical classifier parses these exact sender/subject facts.
+                        message = {"From": facts.display_from, "Subject": facts.subject}
+                        suggested, captured, ref = facts.suggested, facts.captured_at, entry.projection_ref
+                    else:
+                        try:
+                            message, _ = _fetch_headers(mail, uid)
+                            summary = _summary(uid, validity, message, alias, include_nonclinical=True)
+                        except _BadMessage:
+                            raise HTTPException(404, "Captured mail item unavailable") from None
+                        if summary is None:
+                            raise HTTPException(404, "Captured mail item unavailable")
+                        suggested = summary["category"]
+                        ref = _projection_reference(scope, summary, message)
+                        captured = summary.get("source_captured_at", int(time.time()))
+                    category, origin = classify(state, scope, validity, uid, message, suggested)
+                    rows.append({"id": entry.id, "category": category, "category_origin": origin,
+                                 "projection_ref": ref, "source_captured_at": captured})
+                return {"source": "icloud_mail", **projection(scope, validity, revision, state), "items": rows}
+            return await run_in_threadpool(_read, result)
 
     @router.get("/peek")
     def peek(response: Response):

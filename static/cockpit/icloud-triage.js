@@ -49,13 +49,13 @@
   }
   let channel;
   try{channel=new BroadcastChannel("cockpit-icloud-triage");}catch(_){}
-  function invalidate(meta, remote=false, singleItem=null){
+  function invalidate(meta, remote=false, singleItem=null, localPrefs=null){
     if(!valid(meta))return;
     meta={mailbox_key:meta.mailbox_key,uidvalidity:meta.uidvalidity,revision:meta.revision,available:true};
     floors.set(key(meta),Math.max(meta.revision,floors.get(key(meta))||0));
     if(!remote)observed=meta;
     window.dispatchEvent(new CustomEvent("cockpit:icloud-triage-changed",{
-      detail:singleItem&&!remote?{...meta,singleItem}:meta}));
+      detail:!remote?{...meta,...(singleItem?{singleItem}:{}),...(localPrefs?{prefs:localPrefs}:{})}:meta}));
     if(!remote)channel?.postMessage(meta);
   }
   if(channel)channel.onmessage=event=>invalidate(event.data,true);
@@ -79,8 +79,10 @@
     field(parent,"Κανόνας για ολόκληρο το domain",domain);
     const terms=el("input");terms.maxLength=647;terms.value=(rule.terms||[]).join(", ");
     field(parent,"Λέξεις θέματος, χωρισμένες με κόμμα",terms);
-    parent.append(el("p","Ο κανόνας αφορά επόμενα παρόμοια μηνύματα. Οι υπηρεσίες μεταφοράς αρχείων χρειάζονται και λέξεις θέματος."));
-    return target=>({sender:sender.value,domain:domain.checked,terms:terms.value.split(",").map(x=>x.trim()).filter(Boolean),category:target,
+    const existing=el("input");existing.type="checkbox";existing.checked=rule.rule_id?rule.apply_existing===true:true;
+    field(parent,"Εφαρμογή σε υπάρχοντα και νέα email",existing);
+    parent.append(el("p","Με ολόκληρο domain καλύπτονται και τα υποdomain του. Όλες οι λέξεις πρέπει να υπάρχουν στο θέμα. Κενό πεδίο λέξεων καλύπτει κάθε θέμα· οι υπηρεσίες μεταφοράς αρχείων χρειάζονται λέξεις. Οι ατομικοί χαρακτηρισμοί σου υπερισχύουν."));
+    return target=>({sender:sender.value,domain:domain.checked,terms:terms.value.split(",").map(x=>x.trim()).filter(Boolean),category:target,apply_existing:existing.checked,
       ...(rule.rule_id?{rule_id:rule.rule_id}:{})});
   }
   const notice=()=>{
@@ -95,7 +97,7 @@
     if(!singleItem || data.replayed!==false ||
         data.committed_revision!==singleItem.previousRevision+1 ||
         data.triage.revision!==data.committed_revision)singleItem=null;
-    invalidate(data.triage,false,singleItem);
+    invalidate(data.triage,false,singleItem,data);
     const n=notice();n.replaceChildren(el("p","Η επιλογή αποθηκεύτηκε."));
     if(kind!=="undo" && data.committed_revision===data.triage.revision){
       const undo={kind:"undo",operation_id:crypto.randomUUID(),expected_revision:data.triage.revision,undo_id:data.operation_id};
@@ -118,7 +120,7 @@
     box.append(el("h4","Χαρακτηρισμός μηνύματος"),el("p",origins[item.category_origin]||"Αυτόματη πρόταση"));
     const choose=category(box,item.category,true);
     const useRule=el("input");useRule.type="checkbox";
-    field(box,"Κανόνας και για επόμενα παρόμοια",useRule);
+    field(box,"Κανόνας και για παρόμοια email",useRule);
     const ruleBox=el("div");ruleBox.hidden=true;box.append(ruleBox);
     const readRule=criteria(ruleBox);
     useRule.addEventListener("change",()=>{ruleBox.hidden=!useRule.checked;});
@@ -146,9 +148,9 @@
       catch(error){if(current())status.textContent=error.message;}
     }));
   }
-  async function manager(parent,current){
+  async function manager(parent,current,confirmedPrefs=null){
     let prefs;
-    try{prefs=await qualify();}catch(error){if(current())parent.replaceChildren(el("p",error.message));return;}
+    try{prefs=confirmedPrefs||await qualify();}catch(error){if(current())parent.replaceChildren(el("p",error.message));return;}
     if(!current())return;
     parent.replaceChildren(el("h3","Προσωπικοί κανόνες email"));
     const renderForm=(rule={})=>{
@@ -162,11 +164,11 @@
       if(draft){fields.forEach((n,i)=>{if(n.type==="checkbox")n.checked=!!draft[i];else n.value=draft[i];});status.textContent="Διατηρήθηκαν μη αποθηκευμένες επιλογές. Έλεγξέ τες πριν από την Αποθήκευση.";}
       form.addEventListener("input",()=>{pending=null;drafts.set(draftKey,fields.map(n=>n.type==="checkbox"?n.checked:n.value));});
       const save=button("Αποθήκευση κανόνα",async()=>{
-        if(saving)return;
+        if(!current()||saving)return;
         if(!pending){submittedDraft=drafts.get(draftKey);submittedFields=values(fields);}
         pending=pending||{kind:"rule",operation_id:crypto.randomUUID(),expected_revision:prefs.triage.revision,rule:readRule(choose.value)};
-        const unlock=lockEditors();
-        try{const result=await request(pending);clearSubmitted(draftKey,submittedDraft,submittedFields);confirmed(result,"rule");}
+        const submitted=pending,unlock=lockEditors();
+        try{const result=await request(submitted);clearSubmitted(draftKey,submittedDraft,submittedFields);confirmed(result,"rule");}
         catch(error){if(current())status.textContent=error.message;}
         finally{unlock();}
       });form.append(save,button("Έλεγχος νεότερων επιλογών",async()=>{
@@ -177,14 +179,17 @@
     for(const rule of prefs.rules){
       const row=el("section");row.className="doctor-icloud-preferences";
       row.append(el("p",rule.sender+" · "+rule.terms.join(", ")+" → "+labels[rule.category]),
-        el("p",rule.active?"Ενεργός για επόμενα μηνύματα":rule.enabled?"Χρειάζεται επανενεργοποίηση μετά από αλλαγή θυρίδας":"Απενεργοποιημένος"));
+        el("p",rule.active?(rule.apply_existing?"Ενεργός για υπάρχοντα και νέα email":"Ενεργός μόνο για επόμενα μηνύματα"):rule.enabled?"Χρειάζεται επανενεργοποίηση μετά από αλλαγή θυρίδας":"Απενεργοποιημένος"));
       row.append(button("Τροποποίηση / ενεργοποίηση",()=>renderForm(rule)));
       if(rule.enabled)row.append(button("Απενεργοποίηση κανόνα",()=>{
         const disable={kind:"disable",operation_id:crypto.randomUUID(),expected_revision:prefs.triage.revision,rule_id:rule.rule_id};
         row.append(el("p","Τα μηνύματα που επηρεάζει θα ταξινομούνται από τους υπόλοιπους κανόνες και τις αυτόματες προτάσεις. Οι ατομικές επιλογές σου παραμένουν."),
           button("Επιβεβαίωση απενεργοποίησης",async()=>{
+            if(!current()||saving)return;
+            const unlock=lockEditors();
             try{const result=await request(disable);confirmed(result,"disable");}
             catch(error){if(current())row.append(el("p",error.message));}
+            finally{unlock();}
           }));
       }));parent.append(row);
     }

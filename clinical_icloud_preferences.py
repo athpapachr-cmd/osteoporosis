@@ -45,6 +45,7 @@ class RuleInput(BaseModel):
     domain: bool = False
     terms: list[str] = Field(default_factory=list, max_length=8)
     category: Category
+    apply_existing: bool = Field(default=False, strict=True)
 
     @model_validator(mode="after")
     def criteria(self):
@@ -126,7 +127,8 @@ def read_preferences(engine, scope):
                         raise ValueError()
                 for rule in state["rules"]:
                     UUID(rule["rule_id"])
-                    RuleInput(**{k: rule[k] for k in ("rule_id", "sender", "domain", "terms", "category")})
+                    RuleInput(**{k: rule[k] for k in ("rule_id", "sender", "domain", "terms", "category")},
+                              apply_existing=rule.get("apply_existing", False))
                     if (type(rule["enabled"]) is not bool or type(rule["after_uid"]) is not int
                             or rule["after_uid"] < 0 or not re.fullmatch(r"[1-9][0-9]{0,18}", rule["uidvalidity"])):
                         raise ValueError()
@@ -157,7 +159,8 @@ def classify(state, scope, validity, uid, message, suggested):
     subject = fold(message.get("Subject", ""))
     matched = []
     for rule in state["rules"]:
-        if not rule["enabled"] or rule["uidvalidity"] != validity or int(uid) <= rule["after_uid"]:
+        if (not rule["enabled"] or rule["uidvalidity"] != validity
+                or (not rule.get("apply_existing", False) and int(uid) <= rule["after_uid"])):
             continue
         sender_match = (host == rule["sender"] or host.endswith("." + rule["sender"])) if rule["domain"] else sender == rule["sender"]
         if sender_match and all(re.search(r"(?<!\w)" + re.escape(term) + r"(?!\w)", subject) for term in rule["terms"]):
@@ -177,7 +180,12 @@ def _origin(request):
 def mutate(engine, scope, validity, change, qualify):
     """CAS is the write lock on both dialects. Provider reads precede the short DB transaction."""
     revision, state = read_preferences(engine, scope)
-    payload_hash = _hash(change.model_dump(mode="json"))
+    payload = change.model_dump(mode="json")
+    # Preserve canonical hashes of pre-coverage pending operations and receipts.
+    # Explicit false and legacy omission are identical; true is a material delta.
+    if payload["rule"] is not None and payload["rule"]["apply_existing"] is False:
+        payload["rule"].pop("apply_existing")
+    payload_hash = _hash(payload)
     op_id = str(change.operation_id)
     receipt = next((r for r in state["receipts"] if r["id"] == op_id), None)
     if receipt:
