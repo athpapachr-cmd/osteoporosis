@@ -84,6 +84,7 @@ assert.match(html, /data-icloud-view="administrative"/);
 assert.match(html, /data-icloud-view="all"/);
 assert.match(shell, /action\("Όλα τα email"/);
 assert.match(ui, /renderExistingPending/);
+assert.ok(ui.includes('input.addEventListener("input"'));
 assert.match(ui, /Βρες υπάρχουσα εκκρεμότητα/);
 assert.match(ui, /Δεν δημιουργήθηκε νέος ασθενής/);
 assert.doesNotMatch(ui, /review_notify|patient_notified|callback_complete/);

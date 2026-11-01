@@ -409,6 +409,13 @@
           "Εμφανίζονται έως 20 αποτελέσματα. Εξειδίκευσε το όνομα αν χρειάζεται."));
       }catch(error){handleError(error);}
     }
+    // Editing the query invalidates all prior patient/Pending results, even
+    // when an earlier protected request is still completing.
+    input.addEventListener("input",()=>{
+      ++requestNumber;
+      results.replaceChildren();
+      note.textContent="Η αναζήτηση άλλαξε. Επίλεξε εκ νέου τον σωστό ασθενή.";
+    });
     input.addEventListener("keydown",event=>{
       if(event.key==="Enter"){event.preventDefault();searchPatients();}
     });

@@ -579,6 +579,12 @@ def exercise_icloud_mail_peek(page, width):
     assert details.get_by_role("button",name="Δες εκκρεμότητες").count()==1
     details.get_by_role("button",name="Δες εκκρεμότητες").click()
     expect(details).to_contain_text("Συνθετική MRI")
+    # Editing the patient name must revoke the old candidate immediately.
+    field.fill("Άλλος")
+    assert details.get_by_role("button",name="Άνοιγμα εκκρεμότητας · Συνθετική MRI").count()==0
+    field.fill("Συνθετικός")
+    details.get_by_role("button",name="Βρες υπάρχουσα εκκρεμότητα").click()
+    details.get_by_role("button",name="Δες εκκρεμότητες").click()
     details.get_by_role("button",name="Άνοιγμα εκκρεμότητας · Συνθετική MRI").click()
     expect(page.locator("#doctorIcloudInboxView")).to_be_hidden()
     assert page.evaluate("window.__icloudOpenedPending")=={
