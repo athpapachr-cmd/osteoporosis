@@ -233,3 +233,64 @@ def test_pg_missing_optional_mail_tables_preserve_existing_pending_chart(pg):
             assert all(p["checkpoint_storage_ready"] is True for p in items)
     finally:
         PendingEventBase.metadata.drop_all(engine)
+
+
+@pytest.mark.parametrize("only_decisions_table", [False, True])
+def test_pg_readiness_never_creates_partial_mail_schema(pg, only_decisions_table):
+    """The running Cockpit role checks metadata, never creates missing tables."""
+    from sqlalchemy import event, inspect
+
+    engine, _client, _mail = pg
+    MailDecisionBase.metadata.drop_all(engine)
+    if only_decisions_table:
+        # Migration-1-only rehearsal, still in a disposable synthetic database.
+        MailDecisionORM.__table__.create(engine)
+
+    unexpected_ddl = []
+
+    def forbid_startup_ddl(conn, cursor, statement, parameters, context, executemany):
+        first = statement.lstrip().split(None, 1)[0].upper() if statement.strip() else ""
+        if first in {"CREATE", "ALTER", "DROP", "TRUNCATE"}:
+            unexpected_ddl.append(first)
+            raise AssertionError("Application attempted DDL during iCloud readiness")
+
+    event.listen(engine, "before_cursor_execute", forbid_startup_ddl)
+    try:
+        app = FastAPI()
+        app.include_router(build_icloud_actions_router(engine))
+        with TestClient(app, base_url="https://testserver") as client:
+            denied = get(client)
+            assert denied.status_code == 503
+            assert denied.json() == {"detail": "Mail action storage unavailable"}
+        inspector = inspect(engine)
+        assert inspector.has_table(MailDecisionORM.__tablename__) is only_decisions_table
+        assert not inspector.has_table(MailDecisionEventORM.__tablename__)
+        assert unexpected_ddl == []
+    finally:
+        event.remove(engine, "before_cursor_execute", forbid_startup_ddl)
+
+
+def test_pg_complete_schema_is_readable_at_startup_without_ddl(pg):
+    """An already installed schema remains usable without any boot mutation."""
+    from sqlalchemy import event
+
+    engine, _client, _mail = pg
+    unexpected_ddl = []
+
+    def forbid_startup_ddl(conn, cursor, statement, parameters, context, executemany):
+        first = statement.lstrip().split(None, 1)[0].upper() if statement.strip() else ""
+        if first in {"CREATE", "ALTER", "DROP", "TRUNCATE"}:
+            unexpected_ddl.append(first)
+            raise AssertionError("Application attempted DDL during iCloud readiness")
+
+    event.listen(engine, "before_cursor_execute", forbid_startup_ddl)
+    try:
+        app = FastAPI()
+        app.include_router(build_icloud_actions_router(engine))
+        with TestClient(app, base_url="https://testserver") as client:
+            loaded = get(client)
+            assert loaded.status_code == 200, loaded.text
+            assert loaded.json()["review_status"] == "not_reviewed"
+        assert unexpected_ddl == []
+    finally:
+        event.remove(engine, "before_cursor_execute", forbid_startup_ddl)
