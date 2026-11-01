@@ -20,3 +20,7 @@ Release coordinator owns only the bounded release checkpoints on `docs/icloud-tr
 ## Temporary network exception
 
 Product Owner explicitly approved a single operator IPv6 /128 entry at action time. Saved in Aiven with a TEMP PR279/removal comment, preserving all three existing allowlist entries. Must remove immediately after provisioning verification or if provisioning cannot complete. This temporary configuration change is distinct from the as-yet unexecuted DDL/merge/deploy.
+
+## Table creation checkpoint
+
+Metadata confirmed osteoporosis/avnadmin/public, table absent, existing cockpit_app, schema USAGE=true/CREATE=false, owner default-table-ACL count0. SQL editor split a DO block at semicolons and rejected it with an unterminated dollar quote; post-error metadata still showed table absent. Executed only the exact reviewed standalone schema-qualified CREATE TABLE. Verification: table exists, owner avnadmin,0rows, app SELECT=false. No clinical table inspected or changed. Grant still pending.
