@@ -40,3 +40,7 @@ PR279 marked ready; release authority/provisioning reflected in its body. Fresh 
 ## Merge checkpoint
 
 SHA-bound squash merge succeeded: `445c5ee2f7af8f085a4316c5ddfff5fe96767927`, frozen PR HEAD `9fc712273db157837b5b19344e27add9174b0a14`. All23 final check runs SUCCESS. Native deploy and smoke still pending; no duplicate manual deploy.
+
+## Native deploy identified
+
+Auto-deploy `dep-dbjhivtg1s2s73fvbcg0`, created2026-11-01T10:50:39Z, source `445c5ee2f7af8f085a4316c5ddfff5fe96767927`, trigger new_commit, build_in_progress. Full source tree equals frozen PR279 tree `9b8c6b4dfe400a610eadc0c2747aadd225e35ad3`. No manual deploy.
