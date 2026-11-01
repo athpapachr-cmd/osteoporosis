@@ -1694,3 +1694,5 @@ Use the live Pending Surgery Queue in the Cockpit. Further additions (for exampl
 - Canonical impact, Clinical Calendar snapshot, Surgery Queue and Cockpit Home gates: PASS.
 
 **As-of 2026-09-30 follow-up:** observe the automatic Render deploy and then use the live controls. Verify deploy state afresh before making a current-state claim.
+> **2026-11-01 ICLOUD CLASSIFICATION CORRECTION — DESIGN ONLY:** Product Owner screenshots/reports show missing manual classification, undo and personal rules despite the viewer's banner promising those actions. Bounded local design writer `docs/icloud-triage-design-20261101`, base `b8637bcc8af0deebee3716cf7cd98bc99bf2e912`; no implementation or release authority. Assess the existing disabled mail decision store and adjacent stores before proposing the minimum operational preference persistence; do not repurpose clinical records or silently lift the no-new-table constraint. Root CURRENT owns the writer; iCloud CURRENT owns local detail. Existing #275 navigation and #277 clinical write-integrity releases are not classification acceptance.
+
