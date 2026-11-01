@@ -24,3 +24,7 @@ SHA-bound squash merge succeeded: df173eb692a8d952a7bd880dcd1086f85ea45150, froz
 ## Native deploy identified
 
 One native new_commit deploy dep-dbjj1i3m8hqs73fqvpt0, created2026-11-01T12:30:00Z, exact source df173eb692a8d952a7bd880dcd1086f85ea45150, build_in_progress. Full merge tree equals frozen PR tree. No manual trigger/settings change.
+
+## Exact-source LIVE
+
+Native Render dep-dbjj1i3m8hqs73fqvpt0 terminal LIVE2026-11-01T12:32:06.368837Z (14:32:06 Asia/Nicosia), exact source df173eb692a8d952a7bd880dcd1086f85ea45150. One automatic deploy, no settings/schema/network change. Bounded read-only smoke next.
