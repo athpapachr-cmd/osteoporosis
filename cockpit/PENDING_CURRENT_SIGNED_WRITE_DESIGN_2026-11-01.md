@@ -1,3 +1,5 @@
+> **Authority update 2026-11-01:** Product Owner now explicitly authorized implementation, targeted synthetic PostgreSQL/SQLite tests and independent final-code review of this R2-PASS contract. No merge/deploy or real provider/PHI/production DB access. Earlier design-only authority statements below describe the historical review gate; the approved technical contract is unchanged.
+
 # Pending current-signed writes — approved design with metadata replay correction
 
 ## Authority and frozen review target

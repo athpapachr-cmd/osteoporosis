@@ -1,3 +1,5 @@
+> **Implementation authorized 2026-11-01:** existing-owner P2 only, targeted disposable PostgreSQL/SQLite tests and independent final-code review. No merge/deploy. This supersedes older implementation-HOLD wording below. Root CURRENT owns active writer and exact state.
+
 # Pending current-signed checkpoint writes — DESIGN ONLY
 
 The Product Owner approved the separate P2 design and its bounded metadata-replay correction on 2026-11-01. Frozen design and finite acceptance: [PENDING_CURRENT_SIGNED_WRITE_DESIGN_2026-11-01.md](cockpit/PENDING_CURRENT_SIGNED_WRITE_DESIGN_2026-11-01.md).
