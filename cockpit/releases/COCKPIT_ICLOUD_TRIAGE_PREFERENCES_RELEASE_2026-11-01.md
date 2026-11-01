@@ -28,3 +28,7 @@ Metadata confirmed osteoporosis/avnadmin/public, table absent, existing cockpit_
 ## Minimum grant verification
 
 Standalone GRANT SELECT, INSERT, UPDATE applied only to public.icloud_triage_preferences for existing cockpit_app. Metadata result: SELECT=true, INSERT=true, UPDATE=true, DELETE=false, schema CREATE=false, preference rows0, columns4. No wider grant or clinical change. Temporary operator network exception cleanup is next.
+
+## Provisioning and network cleanup complete
+
+Verified primary key(mailbox_key), bounded positive revision CHECK and JSON-object CHECK. Removed only TEMP PR279 IPv6 /128 entry and saved; Aiven visibly shows exactly the three original allowlist entries. No temporary access remains. Four-column table remains empty; no category/rule row or patient record written. Provisioning complete; PR merge/deploy still not executed.
