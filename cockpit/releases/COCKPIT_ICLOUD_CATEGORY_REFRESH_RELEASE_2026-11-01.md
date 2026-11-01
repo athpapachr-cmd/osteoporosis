@@ -20,3 +20,7 @@ Frozen HEAD2e9a003238674f2244a888679c8283ede2e2cdda READY/MERGEABLE; all18 check
 ## Merge checkpoint
 
 SHA-bound squash merge succeeded: df173eb692a8d952a7bd880dcd1086f85ea45150, frozen PR HEAD2e9a003238674f2244a888679c8283ede2e2cdda, all18 final check runs SUCCESS. Native automatic deploy is next; no duplicate manual deploy.
+
+## Native deploy identified
+
+One native new_commit deploy dep-dbjj1i3m8hqs73fqvpt0, created2026-11-01T12:30:00Z, exact source df173eb692a8d952a7bd880dcd1086f85ea45150, build_in_progress. Full merge tree equals frozen PR tree. No manual trigger/settings change.
