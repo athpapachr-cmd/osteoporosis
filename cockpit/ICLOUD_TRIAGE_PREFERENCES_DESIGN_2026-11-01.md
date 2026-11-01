@@ -1,8 +1,8 @@
 # iCloud email classification — bounded design candidate
 
-**Status:** DESIGN CANDIDATE / STORAGE DECISION REQUIRED. Not implemented, independently reviewed, merged or deployed.
+**Status:** NARROW STORAGE EXCEPTION APPROVED / PRE-CODE R2 NEXT. Not implemented, independently reviewed, merged or deployed.
 
-**Source:** fresh GitHub main `b8637bcc8af0deebee3716cf7cd98bc99bf2e912`, verified 2026-11-01. Local branch `docs/icloud-triage-design-20261101`. Product Owner authorized investigation and a concrete plan before implementation. No real mailbox, database, patient or credential access was used in this investigation. Screenshots are evidence of missing controls, not fixture data for this public repository.
+**Source:** fresh GitHub main `b8637bcc8af0deebee3716cf7cd98bc99bf2e912`, verified 2026-11-01. Local branch `docs/icloud-triage-design-20261101`. Product Owner authorized investigation and a concrete plan before implementation, then explicitly approved the recommended one-table operational-preference exception and independent pre-code review on 2026-11-01. This is design/review authority; no execution of DDL/grants, runtime implementation or release is authorized yet. No real mailbox, database, patient or credential access was used in this investigation. Screenshots are evidence of missing controls, not fixture data for this public repository.
 
 ## Product Owner step card
 
@@ -11,7 +11,7 @@
 - **Example, synthetic:** a WeTransfer notification titled “Αξονικί δοκιμή.rar” can be moved from Other to Clinical. A separately approved rule for that sender plus the term can classify future similar notifications. It does not mark the scan received, reviewed or attached to a patient.
 - **Outside:** patient matching/linking, clinical result acceptance, Pending/checkpoint changes, visit changes, communication and mailbox flags/folders.
 - **Why first:** reliable sorting and correction are a prerequisite for a usable incoming-mail queue. Existing chart navigation does not supply them.
-- **Next milestone:** explicit persistence decision, then one bounded pre-code R2 design review; implementation needs separate authority.
+- **Next milestone:** one bounded pre-code R2 design review of this agreed persistence contract; implementation needs separate authority.
 
 ## Source-proven findings and reuse decision
 
@@ -23,11 +23,11 @@
 
 **Decision:** REUSE the existing Clinical Key, source reader, MIME/UID qualification, paging, viewer, category vocabulary and text normalization; EXTEND their category projection and UI. Do not rebind clinical or calendar storage. The proposed distinct adjacent role is operational email-sorting preferences only. It cannot create a clinical task or clinical fact.
 
-## Storage decision — not already authorized
+## Storage decision — narrow exception approved, execution not authorized
 
-The Product Constitution's current contract explicitly says **“No new PostgreSQL database, tables, schema migrations, permissions or parallel event/task store in this current scope”** and **“If an existing capability is absent in the live database, report the gap and ask for a product-level replan”**. This design does not supersede that instruction.
+The earlier blanket no-new-table boundary was escalated as required by the Product Constitution. On 2026-11-01 the Product Owner explicitly approved ONE small operational-preferences table in the existing database and independent review before implementation. The constitution and affected canonical scope now record this narrow exception. Every other no-new-auth/database/clinical-store/provider-write restriction remains binding; this approval does not execute provisioning or grant runtime/release authority.
 
-**Recommended narrow exception:** one small operational-preferences table in the existing database, with one bounded document per configured mailbox scope. No new database/service, second connector, users/roles, clinical ledger or activation of the old two-table router. The exception must explicitly permit this table's reviewed provisioning and minimum application DML grants; it must not grant application schema-CREATE privilege. No startup `create_all`, implicit migration or provision-on-read. Existing clinical tables remain untouched.
+**Approved design exception:** one small operational-preferences table in the existing database, with one bounded document per configured mailbox scope. No new database/service, second connector, users/roles, clinical ledger or activation of the old two-table router. The design includes reviewed provisioning and minimum application DML privileges for this table only; actual provisioning/grant execution remains a separate authorized release step. Never grant application schema-CREATE privilege. No startup `create_all`, implicit migration or provision-on-read. Existing clinical tables remain untouched.
 
 Candidate table `icloud_triage_preferences`:
 
@@ -47,7 +47,7 @@ Stored message override: source identity hash, one of `clinical`, `administrativ
 - The existing private environment hints support only a limited administrative heuristic and require operator configuration; they cannot implement per-message edits, undo or an in-app rule manager.
 - Patient, visit, RF, calendar or checkpoint rows must not be fabricated or overloaded to avoid naming the missing storage capability.
 
-**Without a storage exception:** do not promise shared durable edits/rules. A separately scoped correction to static suggestions/banner is possible but does not complete this requested workflow.
+**Scope decision:** the shared server-backed preference option was selected. Do not substitute browser-only or ephemeral storage as an equivalent implementation.
 
 ## User-visible contract
 
@@ -99,7 +99,7 @@ Use disposable SQLite/PostgreSQL and actual synthetic Chromium; fake source mess
 10. Existing IMAP EXAMINE/BODY.PEEK behavior, original Pending navigation and existing clinical owner regressions remain passing. Instrumented synthetic browser/server proves no IMAP mutation, patient/visit/Pending/checkpoint mutation or outbound patient contact.
 11. Desktop/mobile doctor completes category change -> reload -> undo -> opt-in rule -> rule disable through the visible controls. Test absence of the old unsupported clinical-action promises. Technical CI alone is not clinician usability acceptance.
 
-Review tier **R2**: new authoritative preference writes, scope identity and possible hiding of clinical-looking incoming items, despite no clinical-record writes. One pre-code review after the product storage decision and one exact-code fidelity review after authorized implementation. No review is claimed by this document. No tests of the proposed behavior have run because it is not implemented; the earlier unchanged-classifier probes are limited diagnostic evidence.
+Review tier **R2**: new authoritative preference writes, scope identity and possible hiding of clinical-looking incoming items, despite no clinical-record writes. One pre-code review of the approved product storage contract and one exact-code fidelity review after authorized implementation. No review is claimed by this document. No tests of the proposed behavior have run because it is not implemented; the earlier unchanged-classifier probes are limited diagnostic evidence.
 
 ## Rollback and handback
 
@@ -107,4 +107,4 @@ Before any later release: verify provisioning separately, exact reviewed HEAD/CI
 
 Rollback disables the triage write adapter and returns to a clearly labelled read-only All view, retaining the preference data for recovery. Do not automatically drop the table, change provider state or remove patient data.
 
-**Handback:** investigation and design candidate complete; local docs writer released. Product Owner must choose the narrow one-table operational-preference exception or an explicitly reduced local-only scope. No exception, runtime implementation, independent PASS, public PR, merge, deploy, schema/grant or live data changes have occurred. The binding constitution remains unchanged until that decision.
+**Handback:** the Product Owner approved the narrow one-table operational-preference exception; this exact design is ready for one independent pre-code R2. No runtime implementation, independent PASS, public PR, merge, deploy, provisioning/grant execution or live-data changes have occurred. After the verdict, checkpoint the result and stop before implementation pending separate authority.
