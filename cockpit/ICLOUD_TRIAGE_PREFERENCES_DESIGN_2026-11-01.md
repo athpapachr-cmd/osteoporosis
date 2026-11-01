@@ -1,6 +1,6 @@
 # iCloud email classification — bounded design candidate
 
-**Status:** NARROW STORAGE EXCEPTION APPROVED / P2-01 DESIGN CORRECTED / DELTA+CUMULATIVE R2 CLOSURE NEXT. Not implemented, independently reviewed, merged or deployed.
+**Status:** NARROW STORAGE EXCEPTION APPROVED / INDEPENDENT PRE-CODE R2 CLOSED PASS0:0:0. Exact reviewed contract `8c34467681b78a430cdae6742efb013f669e1aae`; [closure receipt](reviews/ICLOUD_TRIAGE_PREFERENCES_PRECODE_R2_CLOSURE_PASS_2026-11-01.md). Subsequent disposition text changes no material contract. Not implemented, tested, merged or deployed.
 
 **Source:** fresh GitHub main `b8637bcc8af0deebee3716cf7cd98bc99bf2e912`, verified 2026-11-01. Local branch `docs/icloud-triage-design-20261101`. Product Owner authorized investigation and a concrete plan before implementation, then explicitly approved the recommended one-table operational-preference exception and independent pre-code review on 2026-11-01. This is design/review authority; no execution of DDL/grants, runtime implementation or release is authorized yet. No real mailbox, database, patient or credential access was used in this investigation. Screenshots are evidence of missing controls, not fixture data for this public repository.
 
@@ -11,7 +11,7 @@
 - **Example, synthetic:** a WeTransfer notification titled “Αξονικί δοκιμή.rar” can be moved from Other to Clinical. A separately approved rule for that sender plus the term can classify future similar notifications. It does not mark the scan received, reviewed or attached to a patient.
 - **Outside:** patient matching/linking, clinical result acceptance, Pending/checkpoint changes, visit changes, communication and mailbox flags/folders.
 - **Why first:** reliable sorting and correction are a prerequisite for a usable incoming-mail queue. Existing chart navigation does not supply them.
-- **Next milestone:** one bounded pre-code R2 design review of this agreed persistence contract; implementation needs separate authority.
+- **Next milestone:** separate implementation decision after the closed independent design gate; implementation, provisioning and release have not begun.
 
 ## Source-proven findings and reuse decision
 
@@ -109,7 +109,7 @@ Use disposable SQLite/PostgreSQL and actual synthetic Chromium; fake source mess
 10. Existing IMAP EXAMINE/BODY.PEEK behavior, original Pending navigation and existing clinical owner regressions remain passing. Instrumented synthetic browser/server proves no IMAP mutation, patient/visit/Pending/checkpoint mutation or outbound patient contact.
 11. Desktop/mobile doctor completes category change -> reload -> undo -> opt-in rule -> rule disable through the visible controls. Test absence of the old unsupported clinical-action promises. Technical CI alone is not clinician usability acceptance.
 
-Review tier **R2**: new authoritative preference writes, scope identity and possible hiding of clinical-looking incoming items, despite no clinical-record writes. One pre-code review of the approved product storage contract and one exact-code fidelity review after authorized implementation. The original independent review returned BLOCK0:0:1 for cache coherence; this bounded correction awaits ONE independent delta plus affected cumulative closure. No closure PASS is claimed by this document. No tests of the proposed behavior have run because it is not implemented; the earlier unchanged-classifier probes are limited diagnostic evidence.
+Review tier **R2**: new authoritative preference writes, scope identity and possible hiding of clinical-looking incoming items, despite no clinical-record writes. One pre-code review of the approved product storage contract and one exact-code fidelity review after authorized implementation. The original independent review returned BLOCK0:0:1 for cache coherence; ONE independent delta plus affected cumulative closure of exact `8c34467681b78a430cdae6742efb013f669e1aae` returned PASS0:0:0, all material findings closed and complete declared scope. The design review chain is closed; see the closure receipt. No tests of the proposed behavior have run because it is not implemented; the earlier unchanged-classifier probes are limited diagnostic evidence.
 
 ## Rollback and handback
 
@@ -117,4 +117,4 @@ Before any later release: verify provisioning separately, exact reviewed HEAD/CI
 
 Rollback disables the triage write adapter and returns to a clearly labelled read-only All view, retaining the preference data for recovery. Do not automatically drop the table, change provider state or remove patient data.
 
-**Handback:** the Product Owner approved the narrow one-table operational-preference exception; the original pre-code R2 finding is recorded and this bounded cache correction is ready for ONE independent delta plus affected cumulative closure. Reuse the original supported store/CAS/source/rule questions; do not start an unrelated new review chain. No runtime implementation, independent PASS, public PR, merge, deploy, provisioning/grant execution or live-data changes have occurred. After the verdict, checkpoint the result and stop before implementation pending separate authority.
+**Handback:** approved narrow one-table operational-preference contract and independent pre-code R2 are CLOSED PASS at the exact reviewed contract above. Docs writer released after receipt and one bounded consistency audit. Await separate implementation authority. No runtime implementation, proposed-behavior test execution, public PR, merge, deploy, provisioning/grant execution or live-data changes have occurred. No further design review is required without a genuinely new material delta.
