@@ -16,3 +16,11 @@ Base main: d545b1fc4834d0017a864ab8a4c432eca394b6c5. Bounded correction to alrea
 - Backend CAS/idempotency/current-projection/source qualification/SQLite/PostgreSQL tests from PR279 are reused unchanged; no claim of new production write, IMAP mutation or live service access.
 
 One exact-code independent R1 review is required next. No independent PASS, merge/deploy or production performance claim yet.
+
+## P2-REFRESH-01 bounded correction
+
+Original independent R1 on c5403052317a5c9c653ea70836b3dabbb1b6e5f8 returned BLOCK0:0:1; receipt ICLOUD_CATEGORY_REFRESH_R1_BLOCK_2026-11-01.md. Fixed only the post-await mutable reference: capture const submitted=pending before POST await, use that object for both request and one-item hint. Existing pending/draft/global-control behavior remains.
+
+New real browser regression starts and holds the earlier qualification GET, starts a real committed Save and holds its successful response, verifies DB commit, releases the earlier GET (visible refresh status while controls stay disabled), then releases Save response. Correct confirmation, server category and one-item refresh occur with zero list/peek/IMAP SEARCH. Both DBs and both widths.
+
+Corrected affected cumulative browser suite16 PASS/0 failures/errors/skips in30.42s (original4 + earlier new8 + new race4; executions overlap, not additive totals). JUnit `/tmp/cockpit-pr279-release/refresh-corrected-browser.xml`. Latest triage JS syntax/diff check PASS. Other JS/Node/whole Cockpit browser/backend evidence reused unchanged. Exact corrected candidate requires ONE independent delta+affected cumulative R1 closure next; no PASS/release inferred.

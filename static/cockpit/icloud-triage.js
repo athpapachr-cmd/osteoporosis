@@ -134,9 +134,10 @@
       if(!pending){submittedDraft=drafts.get(item.id);submittedFields=values(fields);}
       pending=pending||{kind:"category",operation_id:crypto.randomUUID(),expected_revision:prefs.triage.revision,item_id:item.id,
         category:choose.value==="automatic"?null:choose.value,...(useRule.checked?{rule:readRule(choose.value)}:{})};
+      const submitted=pending;
       const unlock=lockEditors();
-      try{const result=await request(pending);clearSubmitted(item.id,submittedDraft,submittedFields);
-        confirmed(result,"category",pending.rule?null:{id:item.id,previousRevision:pending.expected_revision});}
+      try{const result=await request(submitted);clearSubmitted(item.id,submittedDraft,submittedFields);
+        confirmed(result,"category",submitted.rule?null:{id:item.id,previousRevision:submitted.expected_revision});}
       catch(error){if(current())status.textContent=error.message;}
       finally{unlock();}
     });

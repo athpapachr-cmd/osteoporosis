@@ -227,6 +227,14 @@ def category_browser(server, request):
               // Deliberately ignore abort, so generation checks must reject late results.
               return fetchSource(input,{...options,signal:undefined});
             }
+            const label=u.pathname==='/clinical/icloud-mail/preferences'?
+              (options.method==='POST'?'SaveReply':'Qualify'):null;
+            if(label&&window['__hold'+label]){
+              window['__hold'+label]=false;
+              const response=await fetchSource(input,options),body=await response.text();
+              await new Promise(resolve=>{window['__release'+label]=resolve;});
+              return new Response(body,{status:response.status,headers:{'Content-Type':'application/json'}});
+            }
             return fetchSource(input,options);
           };
         })();""")
@@ -384,3 +392,38 @@ def test_single_refresh_concurrent_revision_retry_and_auth_fail_closed(category_
     page.evaluate("window.__releaseItem(); delete window.__releaseItem")
     expect(rows).to_be_empty()
     expect(details).to_be_empty()
+
+
+def test_earlier_qualification_cannot_cancel_successful_save_confirmation(category_browser):
+    page, context, url, fake, requests = category_browser
+    page.goto(url + "/static/cockpit/")
+    page.wait_for_load_state("networkidle")
+    page.evaluate("window.CockpitOpenIcloudMail()")
+    rows = page.locator("#doctorIcloudInboxRows")
+    details = page.locator("#doctorIcloudInboxDetails")
+    rows.get_by_role("button", name="Χρειάζεται χαρακτηρισμό · Καλημέρα").click()
+    choose = details.get_by_label("Κατηγορία", exact=True)
+    expect(choose).to_have_value("review")
+    page.wait_for_load_state("networkidle")
+    baseline = source_counts(requests, fake)
+    page.evaluate("window.__holdQualify=true")
+    details.get_by_role("button", name="Έλεγχος νεότερων επιλογών", exact=True).click()
+    page.wait_for_function("typeof window.__releaseQualify==='function'")
+    choose.select_option("administrative")
+    page.evaluate("window.__holdSaveReply=true")
+    details.get_by_role("button", name="Αποθήκευση χαρακτηρισμού", exact=True).click()
+    page.wait_for_function("typeof window.__releaseSaveReply==='function'")
+    # The real DB commit exists, but the UI has not received its response yet.
+    response = context.request.get(url + "/clinical/icloud-mail/items/765-3")
+    assert response.status == 200 and response.json()["item"]["category"] == "administrative"
+    expect(choose).to_be_disabled()
+    page.evaluate("window.__releaseQualify(); delete window.__releaseQualify")
+    expect(details).to_contain_text("Φορτώθηκαν οι νεότερες επιλογές")
+    expect(choose).to_be_disabled()
+    page.evaluate("window.__releaseSaveReply(); delete window.__releaseSaveReply")
+    expect(page.locator("#doctorIcloudTriageNotice")).to_contain_text("Η επιλογή αποθηκεύτηκε")
+    expect(details.locator("h3")).to_have_text("Διοικητικό · Καλημέρα")
+    expect(choose).to_have_value("administrative")
+    expect(rows).to_contain_text("Διοικητικό · Καλημέρα")
+    page.wait_for_load_state("networkidle")
+    assert source_counts(requests, fake) == baseline
