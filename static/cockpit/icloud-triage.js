@@ -49,11 +49,13 @@
   }
   let channel;
   try{channel=new BroadcastChannel("cockpit-icloud-triage");}catch(_){}
-  function invalidate(meta, remote=false){
+  function invalidate(meta, remote=false, singleItem=null){
     if(!valid(meta))return;
+    meta={mailbox_key:meta.mailbox_key,uidvalidity:meta.uidvalidity,revision:meta.revision,available:true};
     floors.set(key(meta),Math.max(meta.revision,floors.get(key(meta))||0));
     if(!remote)observed=meta;
-    window.dispatchEvent(new CustomEvent("cockpit:icloud-triage-changed",{detail:meta}));
+    window.dispatchEvent(new CustomEvent("cockpit:icloud-triage-changed",{
+      detail:singleItem&&!remote?{...meta,singleItem}:meta}));
     if(!remote)channel?.postMessage(meta);
   }
   if(channel)channel.onmessage=event=>invalidate(event.data,true);
@@ -87,14 +89,20 @@
       document.getElementById("doctorIcloudInboxState").after(n);}
     return n;
   };
-  function confirmed(data,kind){
-    invalidate(data.triage);
-    const n=notice();n.replaceChildren(el("p","Η επιλογή αποθηκεύτηκε. Οι προβολές email ενημερώθηκαν."));
+  function confirmed(data,kind,singleItem=null){
+    // A local hint is valid only for one fresh, consecutive committed change.
+    // Other tabs receive revision metadata only and perform full invalidation.
+    if(!singleItem || data.replayed!==false ||
+        data.committed_revision!==singleItem.previousRevision+1 ||
+        data.triage.revision!==data.committed_revision)singleItem=null;
+    invalidate(data.triage,false,singleItem);
+    const n=notice();n.replaceChildren(el("p","Η επιλογή αποθηκεύτηκε."));
     if(kind!=="undo" && data.committed_revision===data.triage.revision){
       const undo={kind:"undo",operation_id:crypto.randomUUID(),expected_revision:data.triage.revision,undo_id:data.operation_id};
       n.append(button("Αναίρεση τελευταίας αλλαγής",async()=>{
         const b=n.querySelector("button");b.disabled=true;
-        try{const result=await request(undo);confirmed(result,"undo");}
+        try{const result=await request(undo);confirmed(result,"undo",singleItem?
+          {id:singleItem.id,previousRevision:undo.expected_revision}:null);}
         catch(error){n.append(el("p",error.message));b.disabled=false;}
       }));
     }
@@ -127,7 +135,8 @@
       pending=pending||{kind:"category",operation_id:crypto.randomUUID(),expected_revision:prefs.triage.revision,item_id:item.id,
         category:choose.value==="automatic"?null:choose.value,...(useRule.checked?{rule:readRule(choose.value)}:{})};
       const unlock=lockEditors();
-      try{const result=await request(pending);clearSubmitted(item.id,submittedDraft,submittedFields);confirmed(result,"category");}
+      try{const result=await request(pending);clearSubmitted(item.id,submittedDraft,submittedFields);
+        confirmed(result,"category",pending.rule?null:{id:item.id,previousRevision:pending.expected_revision});}
       catch(error){if(current())status.textContent=error.message;}
       finally{unlock();}
     });
