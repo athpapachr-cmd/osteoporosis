@@ -6,6 +6,7 @@ from __future__ import annotations
 import os
 import secrets
 import re
+from contextlib import contextmanager
 from datetime import date
 from typing import Literal, Optional
 from uuid import uuid4
@@ -14,7 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import Column, DateTime, Integer, JSON, String, UniqueConstraint, select, inspect
 from sqlalchemy.engine import Engine
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.orm import DeclarativeBase, Session
 
 from clinical_staff_auth import StaffActor, require_staff_clinician, STAFF_COOKIE
@@ -134,9 +135,32 @@ def can_write(request, patient):
 
 def _signed_source(session, row):
     source=session.get(EncounterORM,row.source_encounter_id)
-    signed=(source.payload_json or {}).get("_visit_capture_v1",{}) if source else {}
-    if not source or source.patient_id!=row.patient_id or source.status not in ("completed","amended") or not signed.get("signed") or not signed.get("signed_at"):
+    payload=source.payload_json if source else None
+    signed=payload.get("_visit_capture_v1") if isinstance(payload,dict) else None
+    if (not source or source.patient_id!=row.patient_id or source.status not in ("completed","amended")
+            or not isinstance(signed,dict) or signed.get("signed") is not True or not signed.get("signed_at")):
         raise HTTPException(409,"Pending source is not signed")
+    return signed
+
+def _current_member(session,row):
+    signed=_signed_source(session,row)
+    ids=signed.get("pending_ids");candidate=signed.get("candidate")
+    items=candidate.get("pending") if isinstance(candidate,dict) else None
+    if (not isinstance(ids,list) or not isinstance(items,list) or len(ids)!=len(items)
+            or any(not isinstance(i,str) or not i for i in ids)
+            or len(set(ids))!=len(ids) or ids.count(row.id)!=1):
+        raise HTTPException(409,"Pending is not a current signed member")
+    item=items[ids.index(row.id)]
+    if not isinstance(item,dict) or not isinstance(item.get("item_type"),str) or not item["item_type"].strip():
+        raise HTTPException(409,"Pending signed membership is malformed")
+    # Audited metadata may change the row's category/date without changing
+    # its signed identity. Never compare those mutable values to the source.
+
+def _lock_conflict(error):
+    code=getattr(error.orig,"sqlite_errorcode",None)
+    return ((isinstance(code,int) and code & 255 in (5,6)) or
+            (getattr(error.orig,"sqlstate",None) or getattr(error.orig,"pgcode",None))
+            in ("40001","40P01","55P03"))
 
 def _events(session,row):
     return session.scalars(select(PendingCheckpointEventORM).where(
@@ -195,12 +219,37 @@ def cancel_pending(db,row,actor,expected_revision,idempotency_key):
     db.add(event)
     return event
 
+@contextmanager
+def pending_write_session(engine):
+    """One transaction for Pending writes and their existing amendment owner."""
+    with Session(engine) as db:
+        try:
+            if engine.dialect.name=="sqlite":
+                # SQLite has no row locks: reserve its writer before reads.
+                db.connection().exec_driver_sql("BEGIN IMMEDIATE")
+            yield db
+        except OperationalError as error:
+            db.rollback()
+            if _lock_conflict(error):
+                raise HTTPException(409,"Pending changed; reload") from None
+            raise
+
 def attach_pending_one_tap_routes(router,engine,protected):
     def load(db,patient_id,pending_id,request,allow_deleted=False):
-        if not installed(engine):raise HTTPException(503,"Checkpoint storage is not installed")
+        if not installed(db.connection()):raise HTTPException(503,"Checkpoint storage is not installed")
+        identity=db.execute(select(ClinicalPendingORM.patient_id,ClinicalPendingORM.source_encounter_id)
+            .where(ClinicalPendingORM.id==pending_id)).first()
+        if not identity or identity.patient_id!=patient_id:raise HTTPException(404,"Pending not found")
         patient=db.get(PatientORM,patient_id)
-        row=db.scalar(select(ClinicalPendingORM).where(ClinicalPendingORM.id==pending_id).with_for_update())
+        # Same order as visit amendment: Encounter, then Pending. Discovery
+        # above is not authorization; refresh and recheck after both locks.
+        source=db.scalar(select(EncounterORM).where(EncounterORM.id==identity.source_encounter_id)
+            .with_for_update().execution_options(populate_existing=True))
+        row=db.scalar(select(ClinicalPendingORM).where(ClinicalPendingORM.id==pending_id)
+            .with_for_update().execution_options(populate_existing=True))
         if not patient or not row or row.patient_id!=patient_id:raise HTTPException(404,"Pending not found")
+        if not source or row.source_encounter_id!=source.id or source.patient_id!=patient_id:
+            raise HTTPException(409,"Pending source changed; reload")
         actor=actor_for(request,patient);_signed_source(db,row)
         if row.status=="deleted" and not allow_deleted:raise HTTPException(409,"Pending was permanently deleted")
         return row,actor
@@ -221,15 +270,10 @@ def attach_pending_one_tap_routes(router,engine,protected):
     @router.post("/patient/{patient_id}/pending/{pending_id}/metadata",dependencies=protected)
     def correct_metadata(patient_id:str,pending_id:str,action:PendingMetadataEdit,request:Request):
         """One exact Pending row, its signed source and the existing event audit."""
-        with Session(engine) as db:
+        with pending_write_session(engine) as db:
             row,actor=load(db,patient_id,pending_id,request)
             existing=db.scalar(select(PendingCheckpointEventORM).where(
                 PendingCheckpointEventORM.idempotency_key==action.idempotency_key))
-            allowed={"investigation","test","result","document","follow_up","referral","other"}
-            # Other signed legacy categories may be retained when editing only
-            # the date, but must not be invented by this category chooser.
-            if action.item_type!=row.item_type and action.item_type not in allowed:
-                raise HTTPException(422,"Unsupported obligation category")
             desired={"item_type":action.item_type,"review_date":action.review_date}
             if existing is not None:
                 metadata=existing.plan_json or {}
@@ -244,6 +288,10 @@ def attach_pending_one_tap_routes(router,engine,protected):
                 return {"replayed":True,"event_id":existing.id,
                         "current":{"item_type":row.item_type,"review_date":row.review_date,
                                    "status":row.status,"revision":project_lifecycle(db,row)["revision"]}}
+            allowed={"investigation","test","result","document","follow_up","referral","other"}
+            # Current-category eligibility applies only to a NEW event.
+            if action.item_type!=row.item_type and action.item_type not in allowed:
+                raise HTTPException(422,"Unsupported obligation category")
             if row.status not in ("open","awaiting_patient","awaiting_result","resolved"):
                 raise HTTPException(409,"Inactive obligation cannot be edited")
             events=_events(db,row)
@@ -273,7 +321,7 @@ def attach_pending_one_tap_routes(router,engine,protected):
 
     @router.post("/patient/{patient_id}/pending/{pending_id}/checkpoint-plan",dependencies=protected)
     def adopt(patient_id:str,pending_id:str,action:AdoptPlan,request:Request):
-        with Session(engine) as db:
+        with pending_write_session(engine) as db:
             row,actor=load(db,patient_id,pending_id,request)
             plan=VisitCaptureCheckpointPlan(steps=[VisitCaptureCheckpointStep(key=k,question=q,meaning=m) for k,q,m in PLANS[action.template]]).model_dump(mode="json")
             # The initial explicit observation is part of the replay identity.
@@ -284,6 +332,7 @@ def attach_pending_one_tap_routes(router,engine,protected):
             plan["initial_observation"] = action.first_observation
             prior=replay(db,row,actor,action.idempotency_key,"plan_approved","__approved_plan__",plan=plan)
             if prior:return prior
+            _current_member(db,row)
             if row.status not in ("open","awaiting_patient","awaiting_result"):raise HTTPException(409,"Plan cannot be adopted")
             events=_events(db,row)
             if _approved_plan(events) or _revision(events)!=action.expected_revision:
@@ -306,10 +355,11 @@ def attach_pending_one_tap_routes(router,engine,protected):
 
     @router.post("/patient/{patient_id}/pending/{pending_id}/checkpoint",dependencies=protected)
     def confirm(patient_id:str,pending_id:str,action:CheckpointAction,request:Request):
-        with Session(engine) as db:
+        with pending_write_session(engine) as db:
             row,actor=load(db,patient_id,pending_id,request)
             prior=replay(db,row,actor,action.idempotency_key,action.observation,action.checkpoint_key,action.retracts_event_id)
             if prior:return prior
+            _current_member(db,row)
             events=_events(db,row);plan=_approved_plan(events)
             if not plan or _revision(events)!=action.expected_revision:raise HTTPException(409,"Checkpoint revision changed")
             if action.checkpoint_key not in {s.key for s in plan.steps}:raise HTTPException(422,"Unknown checkpoint")
@@ -334,7 +384,7 @@ def attach_pending_one_tap_routes(router,engine,protected):
 
     @router.post("/patient/{patient_id}/pending/{pending_id}/lifecycle",dependencies=protected)
     def lifecycle(patient_id:str,pending_id:str,action:PendingLifecycleAction,request:Request):
-        with Session(engine) as db:
+        with pending_write_session(engine) as db:
             row,actor=load(db,patient_id,pending_id,request,allow_deleted=True)
             permanent=action.action=="delete_permanently"
             if row.status=="deleted" and not permanent:raise HTTPException(409,"Pending was permanently deleted")
@@ -342,6 +392,7 @@ def attach_pending_one_tap_routes(router,engine,protected):
             prior=replay(db,row,actor,action.idempotency_key,kind,"__lifecycle__",action.cancellation_event_id,
                          check_plan=False,expected_revision=action.expected_revision if permanent else None)
             if prior:return prior
+            if action.action=="restore":_current_member(db,row)
             events=_events(db,row)
             if _revision(events)!=action.expected_revision:raise HTTPException(409,"Pending revision changed")
             if action.action=="cancel":

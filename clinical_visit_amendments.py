@@ -10,7 +10,7 @@ from sqlalchemy import select, update, delete
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, OperationalError
 from clinical_data import EncounterORM, PatientORM, ClinicalPendingORM, VisitCaptureContextORM, VisitCaptureCandidateV1, _validate_visit_capture_candidate, _render_visit_capture, utcnow
-from clinical_pending_one_tap import actor_for, installed, project_lifecycle, cancel_pending
+from clinical_pending_one_tap import actor_for, installed, project_lifecycle, cancel_pending, pending_write_session
 
 class Amendment(BaseModel):
     model_config={"extra":"forbid"}
@@ -84,7 +84,7 @@ def attach_visit_amendments(router,engine,protected,context_for,ensure_patient):
         if req.candidate.source_identity_state!='consistent':raise HTTPException(409,'Resolve source identity before saving')
         if len(req.pending_bindings)!=len(req.candidate.pending):raise HTTPException(422,'Invalid task bindings')
         identity=digest({'patient':patient_id,'visit':encounter_id,'request':req.model_dump(mode='json')})
-        with Session(engine) as db:
+        with pending_write_session(engine) as db:
             patient,actor,row,signed,pending=load(db,patient_id,encounter_id,request)
             history=deepcopy(signed.get('amendment_history',[]))
             for h in history:
