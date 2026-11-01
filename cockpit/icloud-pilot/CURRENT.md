@@ -1,3 +1,5 @@
+> **2026-11-01 TRIAGE P2-01 DESIGN CORRECTED:** Both cached category surfaces require fresh source/preference-revision qualification and shared generation invalidation on confirmed mutation; specific browser acceptance added. One independent affected closure next. No runtime changes or PASS/implementation/release authority.
+
 > **2026-11-01 TRIAGE R2 BLOCK 0:0:1 — SHARED CACHE REVISION GAP:** Reviewer supports store/CAS/source/rule contracts but requires revision-bound inbox AND shell peek cache reuse/invalidation after confirmed changes. [Receipt](../reviews/ICLOUD_TRIAGE_PREFERENCES_PRECODE_R2_BLOCK_2026-11-01.md). Correct design only, then one independent closure. No implementation/provisioning/live data/merge/deploy.
 
 > **2026-11-01 TRIAGE PREFERENCES — EXACT DESIGN INDEPENDENT R2 RUNNING:** Target `65b665d3eccffc31bd48826a2953fd4d30815930`, ONE independent read-only review of approved one-table preference scope. [Request](../reviews/ICLOUD_TRIAGE_PREFERENCES_PRECODE_R2_REQUEST_2026-11-01.md). Design unchanged by lifecycle-only checkpoints; verdict pending. No implementation/provisioning/live data/merge/deploy.
