@@ -571,10 +571,11 @@
   $("doctorIcloudRules")?.addEventListener("click",()=>{
     if(!state.active||!triage||state.updatingId)return;
     state.manager=true;
-    const ticket=++state.epoch;
-    state.selection++;state.controller?.abort();state.controller=new AbortController();
-    void triage.manager($("doctorIcloudInboxDetails"),()=>current(ticket)).then(meta=>{
-      if(current(ticket)&&meta&&state.projection&&!triage.same(meta,state.projection))void refreshChanged(meta);
+    const ticket=++state.epoch,selected=++state.selection;
+    state.controller?.abort();state.controller=new AbortController();
+    const managerCurrent=()=>current(ticket)&&state.manager&&selected===state.selection;
+    void triage.manager($("doctorIcloudInboxDetails"),managerCurrent).then(meta=>{
+      if(managerCurrent()&&meta&&state.projection&&!triage.same(meta,state.projection))void refreshChanged(meta);
     });
   });
   async function refreshChanged(meta) {

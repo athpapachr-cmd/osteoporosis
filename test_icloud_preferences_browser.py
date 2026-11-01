@@ -615,3 +615,27 @@ def test_new_selection_reconciles_unnotified_newer_page(category_browser):
     expect(page.locator("#doctorIcloudInboxDetails").get_by_label("Κατηγορία",exact=True)).to_have_value("review")
     assert source_counts(requests,fake)==baseline
     assert {args[0] for op,args in fake.operations[start:] if op=="FETCH"}=={"3"}  # Only the deliberately opened message.
+
+
+def test_late_rule_manager_qualification_cannot_cover_new_selection(category_browser):
+    page, context, url, fake, requests=category_browser
+    page.goto(url+"/static/cockpit/")
+    page.wait_for_load_state("networkidle")
+    page.evaluate("window.CockpitOpenIcloudMail()")
+    rows=page.locator("#doctorIcloudInboxRows")
+    details=page.locator("#doctorIcloudInboxDetails")
+    expect(rows).to_contain_text("Καλημέρα")
+    page.wait_for_load_state("networkidle")
+    baseline=source_counts(requests,fake)
+    page.evaluate("window.__holdQualify=true")
+    page.locator("#doctorIcloudRules").click()
+    page.wait_for_function("typeof window.__releaseQualify==='function'")
+    rows.get_by_role("button",name="Χρειάζεται χαρακτηρισμό · Καλημέρα").click()
+    expect(details.locator("h3")).to_have_text("Χρειάζεται χαρακτηρισμό · Καλημέρα")
+    expect(details.get_by_role("button",name="Αποθήκευση χαρακτηρισμού",exact=True)).to_be_visible()
+    page.evaluate("window.__releaseQualify(); delete window.__releaseQualify")
+    page.wait_for_load_state("networkidle")
+    expect(details.locator("h3")).to_have_text("Χρειάζεται χαρακτηρισμό · Καλημέρα")
+    expect(details.get_by_role("button",name="Αποθήκευση χαρακτηρισμού",exact=True)).to_be_visible()
+    expect(details.get_by_role("button",name="Αποθήκευση κανόνα",exact=True)).to_have_count(0)
+    assert source_counts(requests,fake)==baseline
