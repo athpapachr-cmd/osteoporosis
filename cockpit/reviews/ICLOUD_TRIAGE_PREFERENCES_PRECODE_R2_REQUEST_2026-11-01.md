@@ -1,6 +1,6 @@
 # Independent pre-code R2 request — iCloud triage preferences
 
-Status: REVIEW IN PROGRESS, no verdict inferred. Requested 2026-11-01 after explicit Product Owner approval of the narrow one-table operational preference exception.
+Status: Original review COMPLETE / BLOCK0:0:1; actual disposition is in `ICLOUD_TRIAGE_PREFERENCES_PRECODE_R2_BLOCK_2026-11-01.md`. This original request is retained as evidence, not a pending second review. Requested 2026-11-01 after explicit Product Owner approval of the narrow one-table operational preference exception.
 
 Exact target `65b665d3eccffc31bd48826a2953fd4d30815930`; source main `b8637bcc8af0deebee3716cf7cd98bc99bf2e912`, fresh verified unchanged. Target design: `cockpit/ICLOUD_TRIAGE_PREFERENCES_DESIGN_2026-11-01.md`. Reviewer `icloud_triage_design_r2` is independent of the design author. Subsequent request/status receipts are docs only and do not change the frozen design.
 
