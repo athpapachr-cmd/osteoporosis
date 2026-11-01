@@ -2,7 +2,7 @@
 
 The Product Owner approved the separate P2 design and its bounded metadata-replay correction on 2026-11-01. Frozen design and finite acceptance: [PENDING_CURRENT_SIGNED_WRITE_DESIGN_2026-11-01.md](cockpit/PENDING_CURRENT_SIGNED_WRITE_DESIGN_2026-11-01.md).
 
-Mode: one independent R2 delta plus affected cumulative design closure review. Metadata exact-event replay precedes current-category eligibility, while existing auth/ownership/terminal policies remain. Encounter -> Pending lock ordering and legitimate metadata/history operations are preserved. No runtime implementation, test execution, merge or deploy authority. Root/Cockpit CURRENT own review state. The separate pre-existing P2 remains uncorrected in runtime.
+Design gate CLOSED: the independent R2 delta plus affected cumulative closure of `c975960af6f40a2e143c40fa6aeb9f2dbe3dfd3d` returned PASS / P0:P1:P2=0:0:0 / ALL_MATERIAL_FINDINGS_CLOSED=YES / COMPLETE_FOR_DECLARED_SCOPE=YES. Receipt: `cockpit/reviews/PENDING_CURRENT_SIGNED_WRITE_DESIGN_R2_CLOSURE_2026-11-01.md`. Await separate explicit implementation authority. Metadata exact-event replay precedes current-category eligibility, while existing auth/ownership/terminal policies remain. Encounter -> Pending lock ordering and legitimate metadata/history operations are preserved. No runtime implementation, test execution, merge or deploy authority. Root/Cockpit CURRENT own review state. The separate pre-existing P2 remains uncorrected in runtime.
 
 The completed capture slice below is historical and is not the active design slice.
 
