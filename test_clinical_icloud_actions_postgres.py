@@ -169,3 +169,67 @@ def test_pg_reviewed_mail_can_be_corrected_without_false_closure(pg):
     assert undone.json()["contact_status"] == "not_requested"
     assert post(client, "callback_complete", 4).status_code == 409
     assert get(client).json()["callback_complete"] is False
+
+
+def test_pg_missing_optional_mail_tables_preserve_existing_pending_chart(pg):
+    """A missing mail feature must not abort PostgreSQL chart transactions.
+
+    PostgreSQL fails the whole transaction after SELECT on an absent table.
+    Its failure is isolated to the optional SAVEPOINT, so signed Pending,
+    checkpoint history and the global obligations reader remain available.
+    """
+    from sqlalchemy import inspect
+    from clinical_data import build_clinical_router
+    from clinical_pending_one_tap import PendingEventBase
+
+    engine, _client, _mail = pg
+    second_id = "synthetic-pg-second-pending"
+    PendingEventBase.metadata.create_all(engine)
+    try:
+        with Session(engine) as db, db.begin():
+            encounter = db.get(EncounterORM, VISIT)
+            payload = dict(encounter.payload_json)
+            signed = dict(payload["_visit_capture_v1"])
+            signed["pending_ids"] = [PENDING, second_id]
+            signed["candidate"] = {
+                **signed["candidate"],
+                "pending": [{"item_type": "imaging"}, {"item_type": "laboratory"}],
+            }
+            encounter.payload_json = {**payload, "_visit_capture_v1": signed}
+            db.add(ClinicalPendingORM(
+                id=second_id, patient_id=PATIENT, source_encounter_id=VISIT,
+                item_type="laboratory", description="Synthetic laboratory follow-up",
+                status="awaiting_result", responsible_role="patient",
+                provenance_json=["synthetic-pg-fixture"],
+                created_at=NOW, updated_at=NOW,
+            ))
+
+        # Simulate the current Aiven deployment: iCloud decision tables are NOT
+        # present while signed visits/checkpoint tables remain available.
+        MailDecisionBase.metadata.drop_all(engine)
+        assert not inspect(engine).has_table(MailDecisionORM.__tablename__)
+
+        app = FastAPI()
+        app.include_router(build_clinical_router(engine))
+        with TestClient(app, base_url="https://testserver") as clinic:
+            auth = {"X-Clinical-Key": DOCTOR_KEY}
+            chart = clinic.get(f"/clinical/patient/{PATIENT}/chart", headers=auth)
+            assert chart.status_code == 200, chart.text
+            pending = chart.json()["pending"]
+            assert {p["pending_id"] for p in pending} == {PENDING, second_id}
+            assert all(p["mail_followthrough"] == [] for p in pending)
+            assert all(p["checkpoint_storage_ready"] is True for p in pending)
+            assert all(p["lifecycle"]["revision"] == 0 for p in pending)
+
+            updates = clinic.get(
+                "/clinical/clinical-updates?scope=real&active_only=true",
+                headers=auth,
+            )
+            assert updates.status_code == 200, updates.text
+            items = [p for p in updates.json()["items"]
+                     if p["pending_id"] in {PENDING, second_id}]
+            assert len(items) == 2
+            assert all(p["mail_followthrough"] == [] for p in items)
+            assert all(p["checkpoint_storage_ready"] is True for p in items)
+    finally:
+        PendingEventBase.metadata.drop_all(engine)
