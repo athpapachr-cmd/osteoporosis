@@ -994,6 +994,19 @@
   // Existing signed-Pending list may return to the same protected iCloud
   // message; it cannot confer a new identity or bypass Clinical Key.
   window.CockpitOpenIcloudMail=(itemId)=>showIcloudInbox(itemId,"all");
+  // Direct navigation only; never attest receipt, link an email or mutate a
+  // clinical obligation. The original chart/Pending component owns all actions.
+  window.CockpitOpenPendingFromIcloud=(patientId,pendingId)=>{
+    if(window.CockpitSynthetic===true ||
+       typeof patientId!=="string"||!patientId||patientId.length>120 ||
+       typeof pendingId!=="string"||!pendingId||pendingId.length>120 ||
+       typeof window.CockpitStoredChart?.openPending!=="function")return false;
+    if(typeof window.CockpitStoredChart.canLeave==="function" &&
+       !window.CockpitStoredChart.canLeave())return false;
+    showHome();
+    void window.CockpitStoredChart.openPending(patientId,pendingId);
+    return true;
+  };
   function showClinicalInbox(itemId=null){
     // Normal live Cockpit retains the honest unconnected source placeholder.
     if(window.CockpitSynthetic!==true ||
