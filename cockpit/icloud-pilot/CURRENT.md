@@ -1,3 +1,5 @@
+> **2026-11-01 TRIAGE PREFERENCES — IMPLEMENTATION AUTHORIZED:** Writer `fix/icloud-triage-preferences-20261101`, R2-PASS contract `8c34467681b78a430cdae6742efb013f669e1aae`. Code+disposable SQLite/PostgreSQL+synthetic browser tests then one independent exact-code R2. No production provisioning/provider/patient/config/merge/deploy authority.
+
 > **2026-11-01 TRIAGE PREFERENCES — DESIGN R2 CLOSED PASS:** Exact corrected contract `8c34467681b78a430cdae6742efb013f669e1aae`, independent closure0:0:0, all material findings closed and complete scope. [Receipt](../reviews/ICLOUD_TRIAGE_PREFERENCES_PRECODE_R2_CLOSURE_PASS_2026-11-01.md). Store/CAS/undo/rules/source contracts supported and shared inbox/shell cache coherence gap closed at DESIGN level. No runtime/DB provisioning/live data/merge/deploy. Docs writer released; await separate implementation authority. No new review chain.
 
 > **2026-11-01 TRIAGE CACHE CLOSURE RUNNING:** Same independent reviewer, exact corrected design `8c34467681b78a430cdae6742efb013f669e1aae`; original supported questions reused. Verdict pending; no runtime/provisioning/merge/deploy.
