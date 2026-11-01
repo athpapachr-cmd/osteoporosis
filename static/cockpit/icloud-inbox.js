@@ -51,7 +51,7 @@
   const state = {active:false, epoch:0, selection:0, id:null, items:[], controller:null,
     view:"clinical",
     pages:[null], pageIndex:0, nextCursor:null, skipped:0, coverageComplete:false,
-    latest:null, latestAt:0, projection:null, listProjection:null, detail:null, updatingId:null};
+    latest:null, latestAt:0, projection:null, listProjection:null, detail:null, updatingId:null, categoriesKnown:true, manager:false};
   const el = (tag, cls, value) => {
     const node = document.createElement(tag);
     if (cls) node.className = cls;
@@ -71,7 +71,7 @@
     state.controller = null;
     state.id = null;
     state.projection=null;
-    state.listProjection=null;state.detail=null;state.updatingId=null;
+    state.listProjection=null;state.detail=null;state.updatingId=null;state.categoriesKnown=true;state.manager=false;
     state.items = [];
     state.pages = [null];state.pageIndex = 0;state.nextCursor = null;
     state.skipped = 0;state.coverageComplete = false;
@@ -91,14 +91,17 @@
     typeof row.subject === "string" && typeof row.from === "string" &&
     typeof row.date === "string" &&
     ["clinical","review","administrative","other"].includes(row.category);
-  async function api(path, signal) {
+  async function api(path, signal, body=null) {
     const response = await fetch("/clinical/icloud-mail" + path, {
       credentials:"same-origin", cache:"no-store", signal,
-      headers:{"Accept":"application/json"}
+      headers:{"Accept":"application/json",...(body?{"Content-Type":"application/json"}:{})},
+      ...(body?{method:"POST",body:JSON.stringify(body)}:{})
     });
     if (!response.ok) {
       const error = new Error("Mail source unavailable");
       error.status = response.status;
+      if(body&&(response.status===401||response.status===403))
+        window.dispatchEvent(new Event("clinical:unauthenticated"));
       if (response.status === 503) {
         try {
           const failure = await response.json();
@@ -192,7 +195,7 @@
     other:"Άλλο", review:"Χρειάζεται χαρακτηρισμό"
   });
   function rowTitle(item) {
-    return categoryName[item.category] + " · " + item.subject;
+    return (state.categoriesKnown?categoryName[item.category]:"Χαρακτηρισμός μη επιβεβαιωμένος") + " · " + item.subject;
   }
   function updateViews() {
     document.querySelectorAll("[data-icloud-view]").forEach(button => {
@@ -204,7 +207,7 @@
   function rows() {
     const root = $("doctorIcloudInboxRows");
     root.replaceChildren();
-    const visible=state.items.filter(item=>state.view==="all" ||
+    const visible=state.items.filter(item=>!state.categoriesKnown || state.view==="all" ||
       (state.view==="clinical"?["clinical","review"]:["administrative","other"]).includes(item.category));
     for (const item of visible) {
       const button = el("button", "doctor-action-row clinical-inbox-row");
@@ -212,7 +215,7 @@
       button.disabled=state.updatingId!==null;
       button.setAttribute("aria-pressed", String(item.id === state.id));
       const body = el("span");
-      body.append(el("strong", "", state.updatingId===item.id?
+      body.append(el("strong", "", state.updatingId!==null?
         "Ενημέρωση χαρακτηρισμού · "+item.subject:rowTitle(item)));
       body.append(el("small", "", item.from + (item.date ? " · " + new Date(item.date).toLocaleDateString("el-CY") : "")));
       button.append(body, el("span", "", "›"));
@@ -261,7 +264,7 @@
     ++state.selection;
     state.controller?.abort();
     state.id = null;state.items = [];
-    state.detail=null;state.updatingId=null;state.listProjection=null;
+    state.detail=null;state.updatingId=null;state.listProjection=null;state.categoriesKnown=true;state.manager=false;
     $("doctorIcloudInboxRows").replaceChildren();
     emptySelection();
     const controller = new AbortController();
@@ -488,12 +491,12 @@
     renderExistingPending(id,ticket,selected,data.item,details);
   }
   async function select(id) {
-    if (!state.active || !/^[1-9][0-9]{0,18}-[1-9][0-9]{0,18}$/.test(id))return;
+    if (!state.active || !state.categoriesKnown || state.updatingId || !/^[1-9][0-9]{0,18}-[1-9][0-9]{0,18}$/.test(id))return;
     if(secretaryIcloudSession() && !(await guardSecretarySession()))return;
     if(!state.active||view.hidden)return; // Never fetch after closing.
     const ticket = state.epoch;
     const selected = ++state.selection;
-    state.id = id;state.detail=null;state.updatingId=null;
+    state.id = id;state.detail=null;state.updatingId=null;state.manager=false;
     rows();
     const details = $("doctorIcloudInboxDetails");
     details.replaceChildren(el("p", "clinical-inbox-note", "Φόρτωση μηνύματος…"));
@@ -504,7 +507,10 @@
       if (!current(ticket) || selected !== state.selection || state.id !== id) return;
       if (!validDetail(data,id))throw Error("Invalid message");
       if(triage && data.triage?.available && !triage.accept(data.triage))throw {status:409};
-      renderMessage(data,ticket,selected);
+      state.items=state.items.map(item=>item.id===id?{...data.item,body:undefined,attachments:undefined}:item);
+      rows();renderMessage(data,ticket,selected);
+      if(triage&&state.listProjection&&!triage.same(state.listProjection,data.triage))
+        void refreshChanged(data.triage);
     } catch (error) {
       if (!current(ticket) || selected !== state.selection) return;
       if(error?.status===401||error?.status===403){
@@ -535,7 +541,7 @@
       state.epoch++;state.selection++;
       state.controller?.abort();state.controller=new AbortController();
       state.id=null;state.items=[];state.pages=[null];state.pageIndex=0;
-      state.listProjection=null;state.detail=null;state.projection=null;state.updatingId=null;
+      state.listProjection=null;state.detail=null;state.projection=null;state.updatingId=null;state.categoriesKnown=true;state.manager=false;
       state.latest=null;state.latestAt=0;
       $("doctorIcloudInboxRows").replaceChildren();
       $("doctorIcloudInboxDetails").replaceChildren();
@@ -563,68 +569,108 @@
     state.pages = [null];state.pageIndex = 0;load();
   });
   $("doctorIcloudRules")?.addEventListener("click",()=>{
-    if(!state.active||!triage)return;
-    clear(true);const ticket=state.epoch;
-    void triage.manager($("doctorIcloudInboxDetails"),()=>current(ticket)).then(meta=>{if(current(ticket))state.projection=meta;});
-  });
-  function reloadChanged() {
-    clear(true);
-    if(state.active&&!view.hidden)void load();
-  }
-  async function refreshChanged(meta) {
-    const delta=meta?.singleItem;
-    const before=delta?{...meta,revision:delta.previousRevision}:null;
-    const hasPage=state.listProjection!==null;
-    if(!triage || !delta || !Number.isSafeInteger(delta.previousRevision) ||
-        delta.previousRevision<0 || meta.revision!==delta.previousRevision+1 ||
-        !current(state.epoch) || state.updatingId || state.id!==delta.id ||
-        !state.detail || !triage.same(state.detail.triage,before) ||
-        (hasPage?!triage.same(state.listProjection,before):state.items.length!==0)){
-      reloadChanged();return;
-    }
-    // The CAS-proven delta changes one override. Revoke old callbacks/caches,
-    // retain the exact source page, and qualify only the selected UID again.
-    const id=delta.id,items=state.items;
+    if(!state.active||!triage||state.updatingId)return;
+    state.manager=true;
     const ticket=++state.epoch,selected=++state.selection;
     state.controller?.abort();state.controller=new AbortController();
-    state.latest=null;state.latestAt=0; // Never renew mailbox source freshness.
-    state.detail=null;state.projection=meta;
-    state.listProjection=hasPage?meta:null;state.updatingId=id;
+    const managerCurrent=()=>current(ticket)&&state.manager&&selected===state.selection;
+    void triage.manager($("doctorIcloudInboxDetails"),managerCurrent).then(meta=>{
+      if(managerCurrent()&&meta&&state.projection&&!triage.same(meta,state.projection))void refreshChanged(meta);
+    });
+  });
+  async function refreshChanged(meta) {
+    state.latest=null;state.latestAt=0;
+    if(!triage||!current(state.epoch))return;
+    const previous=state.listProjection||state.detail?.triage||state.projection;
+    if(previous&&(previous.mailbox_key!==meta?.mailbox_key||previous.uidvalidity!==meta?.uidvalidity)){
+      clear(true);
+      $("doctorIcloudInboxState").textContent="Η θυρίδα άλλαξε. Επίλεξε Ανανέωση για νέα έγκυρη προβολή.";
+      return;
+    }
+    const items=new Map(state.items.map(item=>[item.id,item]));
+    if(state.detail)items.set(state.detail.item.id,state.detail.item);
+    const ticket=++state.epoch,selected=++state.selection;
+    state.controller?.abort();state.controller=new AbortController();
+    state.categoriesKnown=false;state.updatingId="*";
     rows();
     const details=$("doctorIcloudInboxDetails");
     details.setAttribute("aria-busy","true");
     const heading=details.querySelector("h3");
-    if(heading)heading.textContent="Ενημέρωση χαρακτηρισμού…";
-    details.querySelector(".doctor-icloud-preferences")?.replaceChildren(
-      el("p","clinical-inbox-note","Η επιλογή αποθηκεύτηκε. Ενημέρωση μόνο αυτού του μηνύματος…"));
+    if(heading&&!state.manager)heading.textContent="Ενημέρωση χαρακτηρισμού…";
+    details.querySelectorAll(".doctor-icloud-preferences").forEach(section=>section.replaceChildren(
+      el("p","clinical-inbox-note","Ενημέρωση χαρακτηρισμών…")));
     details.querySelectorAll("button,input,select").forEach(n=>{n.disabled=true;});
-    $("doctorIcloudInboxState").textContent="Ενημέρωση του επιλεγμένου μηνύματος· η τρέχουσα σελίδα διατηρείται.";
+    $("doctorIcloudInboxState").replaceChildren(el("p","","Ενημέρωση χαρακτηρισμών της φορτωμένης ενότητας…"));
     try{
-      const data=await api("/items/"+encodeURIComponent(id),state.controller.signal);
-      if(!current(ticket)||selected!==state.selection||state.id!==id)return;
-      if(!validDetail(data,id)||!triage.same(data.triage,meta)||!triage.accept(data.triage)){
-        reloadChanged();return;
+      if(items.size>25)throw Error("Projection limit");
+      const data=items.size?await api("/category-projection",state.controller.signal,{items:Array.from(items.values(),item=>({
+        id:item.id,...(item.projection_ref?{projection_ref:item.projection_ref}:{})
+      }))}):meta.prefs||await triage.qualify();
+      if(!current(ticket)||selected!==state.selection)return;
+      if(!triage.accept(data.triage)||data.triage.mailbox_key!==meta.mailbox_key||
+          data.triage.uidvalidity!==meta.uidvalidity||data.triage.revision<meta.revision)throw {status:409};
+      const updates=new Map();
+      if(items.size){
+        if(data.source!=="icloud_mail"||!Array.isArray(data.items)||data.items.length!==items.size)throw Error("Incomplete projection");
+        for(const row of data.items){
+          if(!row||!items.has(row.id)||updates.has(row.id)||
+              !Object.hasOwn(categoryName,row.category)||
+              !["manual","rule","conflict","suggestion"].includes(row.category_origin)||
+              !Number.isSafeInteger(row.source_captured_at)||row.source_captured_at<=0||
+              !(row.projection_ref===null||(typeof row.projection_ref==="string"&&row.projection_ref.length<=8192)))throw Error("Invalid projection");
+          updates.set(row.id,row);
+        }
       }
-      state.items=items.map(item=>item.id===id?{...item,
-        subject:data.item.subject,from:data.item.from,date:data.item.date,
-        category:data.item.category,category_origin:data.item.category_origin}:item);
-      state.updatingId=null;
-      rows();renderMessage(data,ticket,selected);
-      $("doctorIcloudInboxState").textContent="Ο χαρακτηρισμός ενημερώθηκε. Η υπάρχουσα ενότητα email διατηρήθηκε· Ανανέωση για νέο έλεγχο της θυρίδας.";
+      if(!Array.isArray(data.rules))throw Error("Missing rules");
+      state.items=state.items.map(item=>({...item,...updates.get(item.id)}));
+      state.projection=data.triage;
+      if(state.listProjection)state.listProjection=data.triage;
+      state.categoriesKnown=true;state.updatingId=null;
+      rows();details.removeAttribute("aria-busy");
+      if(state.detail)state.detail={...state.detail,triage:data.triage,item:{...state.detail.item,...updates.get(state.detail.item.id)}};
+      if(state.manager)await triage.manager(details,()=>current(ticket)&&selected===state.selection,data);
+      else if(state.detail)renderMessage(state.detail,ticket,selected);
+      else emptySelection();
+      if(!current(ticket)||selected!==state.selection)return;
+      $("doctorIcloudInboxState").textContent="Οι χαρακτηρισμοί ενημερώθηκαν για τη φορτωμένη ενότητα. Ανανέωση για άλλα ή νέα μηνύματα· η πηγή και η κάλυψή της δεν ανανεώθηκαν.";
     }catch(error){
       if(!current(ticket)||selected!==state.selection)return;
       if(error?.status===401||error?.status===403){
         clear(true);sourceError(error,$("doctorIcloudInboxState"));return;
       }
-      reloadChanged();
+      if(error?.status===409){
+        clear(true);
+        $("doctorIcloudInboxState").textContent="Δεν επιβεβαιώθηκε η ίδια θυρίδα. Επίλεξε Ανανέωση για νέα προβολή.";
+        return;
+      }
+      state.updatingId=null;state.categoriesKnown=false;rows();
+      details.removeAttribute("aria-busy");
+      if(heading&&!state.manager)heading.textContent="Χαρακτηρισμός μη επιβεβαιωμένος · "+(state.detail?.item.subject||"");
+      const status=$("doctorIcloudInboxState");
+      status.replaceChildren(el("p","","Οι χαρακτηρισμοί δεν ενημερώθηκαν. Διατηρείται η ήδη φορτωμένη πηγή χωρίς επιβεβαιωμένες κατηγορίες."));
+      const retry=el("button","doctor-command-button","Επανάληψη ενημέρωσης χαρακτηρισμών");
+      retry.type="button";retry.addEventListener("click",()=>void refreshChanged(meta));status.append(retry);
     }
   }
   window.addEventListener("cockpit:icloud-triage-changed",event=>{void refreshChanged(event.detail);});
   async function qualifyReturn(){
     if(!triage||!state.active||view.hidden||document.hidden)return;
     const ticket=state.epoch;
-    try{const prefs=await triage.qualify();if(current(ticket)&&state.projection&&!triage.same(prefs.triage,state.projection)){clear(true);void load();}}
-    catch(_){if(current(ticket)){clear(true);$("doctorIcloudInboxState").textContent="Οι κατηγορίες δεν επιβεβαιώθηκαν. Επίλεξε Ανανέωση για όλα τα email.";}}
+    try{
+      const prefs=await triage.qualify();
+      if(current(ticket)&&state.projection&&!triage.same(prefs.triage,state.projection))void refreshChanged({...prefs.triage,prefs});
+    }catch(error){
+      if(current(ticket)){
+        if(error.status===401||error.status===403){clear(true);sourceError(error,$("doctorIcloudInboxState"));}
+        else {
+          state.categoriesKnown=false;rows();
+          $("doctorIcloudInboxDetails").querySelectorAll(".doctor-icloud-preferences").forEach(section=>section.replaceChildren());
+          const heading=$("doctorIcloudInboxDetails").querySelector("h3");
+          if(heading&&!state.manager)heading.textContent="Χαρακτηρισμός μη επιβεβαιωμένος · "+(state.detail?.item.subject||"");
+          $("doctorIcloudInboxState").textContent="Οι κατηγορίες δεν επιβεβαιώθηκαν. Επίλεξε Ανανέωση ή έλεγξε τις επιλογές ξανά.";
+        }
+      }
+    }
   }
   window.addEventListener("focus",qualifyReturn);
   document.addEventListener("visibilitychange",qualifyReturn);
