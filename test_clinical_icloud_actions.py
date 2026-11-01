@@ -181,11 +181,12 @@ def test_manual_admin_classification_persists_and_does_not_create_patient(scenar
     r=post(client,"765-11","classify",0,category="other")
     assert r.status_code==200 and r.json()["category"]=="other"
     assert get(client,endpoint("765-11")).json()["category"]=="other"
-    assert "765-11" not in {
-        x["id"] for x in get(client,"/clinical/icloud-mail?view=clinical").json()["items"]
-    }
-    assert any(x["id"]=="765-11" and x["category"]=="other"
-               for x in get(client,"/clinical/icloud-mail?view=all").json()["items"])
+    # Legacy decisions are NOT the approved operational preference store.
+    # Without the separately provisioned preference table, reads expose All
+    # with unknown categories rather than hiding mail using an empty fallback.
+    listing=get(client,"/clinical/icloud-mail?view=clinical").json()
+    assert listing["triage"]["available"] is False
+    assert any(x["id"]=="765-11" and x["category_origin"]=="unavailable" for x in listing["items"])
     with Session(engine) as db:
         item=db.scalar(select(MailDecisionORM).where(MailDecisionORM.message_ref=="765-11"))
         assert item is not None and item.patient_id is None

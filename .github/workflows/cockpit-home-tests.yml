@@ -68,6 +68,7 @@ jobs:
           node --check static/cockpit/obligations-view.js
           node --check static/cockpit/doctor-shell.js
           node --check static/cockpit/icloud-inbox.js
+          node --check static/cockpit/icloud-triage.js
           node --check static/cockpit/shared-nav.js
           node --check static/baseline-audit/g4-workspace-ergonomics.js
       - name: Cockpit Home deterministic tests

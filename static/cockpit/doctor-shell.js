@@ -305,6 +305,7 @@
 
   // Clinician-session, volatile unread-summary cache. No local/session storage,
   // Postgres, cross-principal data, raw IMAP, or background fetch without auth.
+  const triage=window.CockpitIcloudTriage;
   const ICLOUD_PEEK_TTL_MS = 5 * 60 * 1000;
   // Only the currently open inbox popover may render its verified cache.
   // A background IMAP response cannot bypass a pending Clinical Key check.
@@ -332,7 +333,7 @@
   function updateUnreadBadge() {
     // A dot means at least one verified UNSEEN message, never a false total.
     const badge=$("doctorInboxBadge");
-    const hasUnread=!!(unreadPeek.data?.items?.length);
+    const hasUnread=unreadPeek.data?.triage?.available!==false && !!(unreadPeek.data?.items?.length);
     badge.hidden=!hasUnread;
     badge.textContent=hasUnread?"•":"";
     buttons.inbox.setAttribute("aria-label",hasUnread?
@@ -376,6 +377,11 @@
     const data=unreadPeek.data;
     const outdated=unreadPeek.updatedAt &&
       Date.now()-unreadPeek.updatedAt>=ICLOUD_PEEK_TTL_MS;
+    if(data?.triage?.available===false){
+      content.append(text("Οι κατηγορίες δεν επιβεβαιώθηκαν. Δεν γνωρίζουμε αν υπάρχουν μη αναγνωσμένα κλινικά email."));
+      content.append(action("Όλα τα email","Ανάγνωση χωρίς φιλτράρισμα",()=>showIcloudInbox(null,"all")));
+      return;
+    }
     if(data){
       const checked=new Date(unreadPeek.updatedAt).toLocaleTimeString("el-CY",
         {hour:"2-digit",minute:"2-digit"});
@@ -422,6 +428,8 @@
     const pending=(async()=>{
       let err=null;
       try{
+        if(triage)await triage.qualify();
+        if(unreadPeek.generation!==generation)return;
         const response=await fetch("/clinical/icloud-mail/peek",{
           credentials:"same-origin",cache:"no-store",signal:controller.signal,
           headers:{"Accept":"application/json"}
@@ -439,6 +447,7 @@
         const code=icloudPeekContractCode(data);
         if(code)throw {clientCode:code};
         if(unreadPeek.generation!==generation)return;
+        if(triage && data.triage?.available && !triage.accept(data.triage))throw {clientCode:"PEEK_REVISION"};
         if(secretaryIcloudSession()){clearUnreadPeek();return;}
         unreadPeek.data=data;unreadPeek.updatedAt=Date.now();unreadPeek.error=null;
         if(typeof window.dispatchEvent==="function")
@@ -447,6 +456,7 @@
         if(unreadPeek.generation!==generation)return;
         if(controller.signal.aborted)return;
         if(secretaryIcloudSession()){clearUnreadPeek();return;}
+        if(triage){unreadPeek.data=null;unreadPeek.updatedAt=0;}
         unreadPeek.error={
           status:Number.isInteger(error?.status)?error.status:0,
           code:typeof error?.code==="string"?error.code:null,
@@ -568,6 +578,22 @@
           // out-of-date local secretary hint; do NOT claim secretary is active.
           window.CockpitStaffRole=null;
         }
+        if(triage){
+          try{
+            const prefs=await triage.qualify();
+            if(!activePeek("inbox",ticket)||unreadPeek.generation!==generation)return;
+            if(unreadPeek.data&&!triage.same(prefs.triage,unreadPeek.data.triage)){
+              clearUnreadPeek();
+            }
+          }catch(error){
+            if(!activePeek("inbox",ticket))return;
+            clearUnreadPeek();content.replaceChildren();
+            content.append(text("Οι κατηγορίες δεν επιβεβαιώθηκαν. Δεν προβάλλεται παλιά φιλτραρισμένη λίστα."));
+            content.append(action("Όλα τα email","Ανάγνωση χωρίς φιλτράρισμα",()=>showIcloudInbox(null,"all")));
+            return;
+          }
+        }
+        if(!triage&&unreadPeek.data?.triage)clearUnreadPeek();
         unreadPeek.authorized=true;
         verifiedUnreadPanelTicket=ticket;
         displayUnreadPeek();
@@ -1254,8 +1280,27 @@
   // visible Cockpit tab. Hidden or logged-out tabs make no provider requests.
   if(typeof window.setInterval==="function")
     window.setInterval(()=>maybeRefreshUnread(),ICLOUD_PEEK_TTL_MS);
-  document.addEventListener("visibilitychange",()=>maybeRefreshUnread());
-  window.addEventListener("focus",()=>maybeRefreshUnread());
+  async function qualifiedReturn(){
+    if(!triage){maybeRefreshUnread();return;}
+    if(!unreadPeek.authorized||document.hidden||syntheticInbox())return;
+    const generation=unreadPeek.generation;
+    try{const prefs=await triage.qualify();
+      if(generation!==unreadPeek.generation)return;
+      if(unreadPeek.data&&!triage.same(prefs.triage,unreadPeek.data.triage)){
+        clearUnreadPeek();unreadPeek.authorized=true;
+        if(state.panel==="inbox"&&!popover.hidden){void inbox();return;}
+      }
+      maybeRefreshUnread();
+    }catch(_){if(generation===unreadPeek.generation){clearUnreadPeek();
+      if(state.panel==="inbox"&&!popover.hidden)content.replaceChildren(text("Οι κατηγορίες δεν επιβεβαιώθηκαν· η λίστα είναι άγνωστη."));}}
+  }
+  document.addEventListener("visibilitychange",qualifiedReturn);
+  window.addEventListener("focus",qualifiedReturn);
+  window.addEventListener("cockpit:icloud-triage-changed",()=>{
+    const authorized=unreadPeek.authorized;clearUnreadPeek();unreadPeek.authorized=authorized;
+    if(state.panel==="inbox"&&!popover.hidden)void inbox();
+    else if(authorized)maybeRefreshUnread(true);
+  });
   window.addEventListener("clinical:authenticated",()=>{
     clearUnreadPeek();
     if(secretaryIcloudSession()){

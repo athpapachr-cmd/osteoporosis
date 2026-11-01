@@ -278,11 +278,12 @@ ENCOUNTER DETAIL
         <div><p class="eyebrow">iCloud Mail · Δεν αλλάζουμε τα email</p><h2>Εισερχόμενα ασθενών</h2></div>
         <button id="doctorIcloudInboxBack" class="doctor-command-button" type="button">← Αρχική</button>
       </header>
-      <p class="clinical-inbox-banner">Μόνο μηνύματα προς το alias του ιατρείου στον κύριο φάκελο iCloud Mail. Η προβολή δεν είναι πλήρης για κρυφούς παραλήπτες ή άλλους φακέλους. Οι κατηγορίες είναι προτάσεις. Εσύ μπορείς να χαρακτηρίσεις, να συνδέσεις με επίσκεψη και να καταγράψεις αξιολόγηση. Δεν αλλάζουμε την κατάσταση των μηνυμάτων στο iCloud.</p>
+      <p class="clinical-inbox-banner">Μόνο μηνύματα προς το alias του ιατρείου στον κύριο φάκελο iCloud Mail. Η προβολή δεν είναι πλήρης για κρυφούς παραλήπτες ή άλλους φακέλους. Οι κατηγορίες είναι προτάσεις. Μπορείς να διορθώνεις τον χαρακτηρισμό και να ορίζεις προσωπικούς κανόνες. Η ταξινόμηση δεν καταγράφει παραλαβή ή ιατρική αξιολόγηση. Δεν αλλάζουμε την κατάσταση των μηνυμάτων στο iCloud.</p>
       <div class="clinical-inbox-tools" role="group" aria-label="Προβολή email">
         <button data-icloud-view="clinical" class="doctor-command-button" type="button" aria-pressed="true">Κλινικά</button>
         <button data-icloud-view="administrative" class="doctor-command-button" type="button" aria-pressed="false">Διοικητικά</button>
         <button data-icloud-view="all" class="doctor-command-button" type="button" aria-pressed="false">Όλα τα email</button>
+        <button id="doctorIcloudRules" class="doctor-command-button" type="button">Προσωπικοί κανόνες</button>
         <button id="doctorIcloudInboxReload" class="doctor-command-button" type="button">Ανανέωση</button>
       </div>
       <p id="doctorIcloudInboxState" role="status" aria-live="polite"></p>
@@ -614,8 +615,9 @@ ENCOUNTER DETAIL
   <script src="/static/cockpit/patient-entry.js?v=chart-continuity-20261018" defer></script>
   <script src="/static/cockpit/obligations-view.js?v=topbar-peeks-20261024" defer></script>
   <script src="/static/cockpit/clinical-inbox.js?v=one-tap-source-review-20261024" defer></script>
-  <script src="/static/cockpit/icloud-inbox.js?v=icloud-existing-pending-20261101" defer></script>
-  <script src="/static/cockpit/doctor-shell.js?v=icloud-existing-pending-20261101" defer></script>
+  <script src="/static/cockpit/icloud-triage.js?v=triage-20261101" defer></script>
+  <script src="/static/cockpit/icloud-inbox.js?v=triage-20261101" defer></script>
+  <script src="/static/cockpit/doctor-shell.js?v=triage-20261101" defer></script>
   <script src="/static/cockpit/shared-nav.js" defer></script>
 </body>
 </html>

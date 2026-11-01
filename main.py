@@ -12,6 +12,7 @@ from legacy_main import app, engine
 from clinical_auth import ClinicalCookieMiddleware, build_auth_router
 from clinical_reception_calls import build_reception_calls_router
 from clinical_icloud_mail import build_icloud_mail_router
+from clinical_icloud_preferences import build_preferences_router
 from clinical_notion_tasks import build_notion_tasks_router
 from clinical_calendar import build_clinical_calendar_router
 from clinical_data import build_clinical_router
@@ -66,10 +67,12 @@ def clinical_workspace_root() -> RedirectResponse:
 app.add_middleware(ClinicalCookieMiddleware)
 app.include_router(build_auth_router())
 app.include_router(build_reception_calls_router())
-# The existing iCloud IMAP viewer is READ-ONLY and needs no additional DB.
+# IMAP remains READ-ONLY. Only sorting preferences use the explicitly
+# approved operational table; provisioning is separate, never startup DDL.
 # The former per-mail action router attempted two unapproved table creations
 # at boot. Clinical follow-through now opens the EXISTING signed Pending owner.
-app.include_router(build_icloud_mail_router())
+app.include_router(build_preferences_router(engine))
+app.include_router(build_icloud_mail_router(engine))
 app.include_router(build_notion_tasks_router(engine))
 app.include_router(build_clinical_status_router(engine))
 app.include_router(build_clinical_router(engine))
