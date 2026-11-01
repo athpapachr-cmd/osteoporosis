@@ -352,7 +352,9 @@
       results.replaceChildren();
       note.textContent="Έλεγχος υπαρχουσών εκκρεμοτήτων…";
       try{
-        const items=await protectedRead("/clinical/patient/"+encodeURIComponent(patientId)+"/pending");
+        // This existing endpoint filters by CURRENT signed-visit membership
+        // and exact patient/Pending identity; never show an unsigned legacy item.
+        const items=await protectedRead("/clinical/patient/"+encodeURIComponent(patientId)+"/pending?signed_only=true");
         if(!stillCurrent()||version!==requestNumber)return;
         if(!Array.isArray(items)||items.length>500)throw Error("Invalid Pending list");
         const active=items.filter(row=>row&&row.patient_id===patientId&&

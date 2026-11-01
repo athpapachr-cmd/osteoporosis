@@ -854,3 +854,49 @@ def test_compact_branch_and_permanent_removal_browser(setup,tmp_path):
                 context.close()
             browser.close()
     finally:server.should_exit=True;thread.join(10);sock.close()
+
+
+def test_icloud_signed_only_pending_filter_reuses_current_signed_visit(setup):
+    """No new table, task, patient link or auth: reuse exact current Pending."""
+    app, engine = setup
+    client, pending, _ = seed(app, engine)
+    target = '/clinical/patient/' + TEST_ID + '/pending'
+    assert client.get(target + '?signed_only=true').status_code == 200
+    assert [p['pending_id'] for p in client.get(target + '?signed_only=true').json()] == [
+        pending['pending_id']
+    ]
+    assert TestClient(app).get(target + '?signed_only=true').status_code == 401
+
+    stale_id = 'synthetic-icloud-orphan-pending'
+    with Session(engine) as db:
+        original = db.get(ClinicalPendingORM, pending['pending_id'])
+        db.add(ClinicalPendingORM(
+            id=stale_id, patient_id=TEST_ID,
+            source_encounter_id=original.source_encounter_id,
+            item_type=original.item_type, description='Synthetic unsigned extra Pending',
+            status='awaiting_result', responsible_role='patient',
+            trigger_text=None, provenance_json=['synthetic-only'],
+            created_at=original.created_at, updated_at=original.updated_at,
+        ))
+        db.commit()
+
+    # Default endpoint remains unchanged; iCloud shows only signed members.
+    assert len(client.get(target).json()) == 2
+    filtered = client.get(target + '?signed_only=true')
+    assert filtered.status_code == 200, filtered.text
+    assert [p['pending_id'] for p in filtered.json()] == [pending['pending_id']]
+
+    with Session(engine) as db:
+        source = db.get(EncounterORM, pending['source_encounter_id'])
+        payload = dict(source.payload_json)
+        signed = dict(payload['_visit_capture_v1'])
+        signed['pending_ids'] = []
+        candidate = dict(signed['candidate'])
+        candidate['pending'] = []
+        signed['candidate'] = candidate
+        source.payload_json = {**payload, '_visit_capture_v1': signed}
+        db.commit()
+
+    # Amendment removed this member even though its stale row stays active.
+    assert client.get(target + '?signed_only=true').json() == []
+    assert len(client.get(target).json()) == 2

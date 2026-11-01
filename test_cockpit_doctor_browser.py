@@ -523,7 +523,7 @@ def exercise_icloud_mail_peek(page, width):
             "description":"Συνθετική MRI","status":"awaiting_result"
         }])
     page.route("**/clinical/patients?query=*", patient_registry)
-    page.route("**/clinical/patient/SYN-MAIL-PATIENT/pending", existing_pending)
+    page.route("**/clinical/patient/SYN-MAIL-PATIENT/pending?signed_only=true", existing_pending)
     page.evaluate("""() => {
       window.__icloudOpenedPending = null;
       window.__originalIcloudChart = window.CockpitStoredChart || null;
@@ -648,7 +648,7 @@ def exercise_icloud_mail_peek(page, width):
     page.unroute("**/clinical/status", expired_status)
 
     page.unroute("**/clinical/patients?query=*", patient_registry)
-    page.unroute("**/clinical/patient/SYN-MAIL-PATIENT/pending", existing_pending)
+    page.unroute("**/clinical/patient/SYN-MAIL-PATIENT/pending?signed_only=true", existing_pending)
     page.evaluate("""() => {
       if (window.__originalIcloudChart === null) delete window.CockpitStoredChart;
       else window.CockpitStoredChart = window.__originalIcloudChart;

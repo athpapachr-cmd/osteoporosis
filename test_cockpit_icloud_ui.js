@@ -74,7 +74,7 @@ assert.doesNotMatch(ui, /method:"POST"|method:"DELETE"|method:"PUT"/);
 assert.ok(!ui.includes("/clinical/icloud-actions"));
 assert.ok(ui.includes("/clinical/patients?query="));
 assert.ok(ui.includes("/clinical/patient/"));
-assert.ok(ui.includes("/pending"));
+assert.ok(ui.includes("/pending?signed_only=true"));
 assert.ok(shell.includes("CockpitOpenPendingFromIcloud"));
 assert.ok(!main.includes("app.include_router(build_icloud_actions_router"));
 assert.ok(main.includes("app.include_router(build_icloud_mail_router())"));
