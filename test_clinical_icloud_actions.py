@@ -56,6 +56,8 @@ def scenario(monkeypatch):
         connect_args={"check_same_thread":False}, poolclass=StaticPool)
     ClinicalBase.metadata.create_all(engine)
     CalendarBase.metadata.create_all(engine)
+    # Synthetic fixture DDL is explicit; production router startup is read-only.
+    MailDecisionBase.metadata.create_all(engine)
     with Session(engine) as db, db.begin():
         db.add(PatientORM(
             patient_id=PATIENT, demographics_json={
