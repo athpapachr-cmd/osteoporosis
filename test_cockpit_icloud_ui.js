@@ -69,15 +69,16 @@ assert.match(ui, /Το email υπερβαίνει το όριο ασφαλούς
 assert.match(ui, /state\.controller\?\.abort\(\)/);
 assert.match(shell, /\/clinical\/icloud-mail\/peek/);
 assert.doesNotMatch(ui, /innerHTML|outerHTML|localStorage|sessionStorage/);
-// Current iCloud is a source viewer. Only the existing Pending owns writes.
+// This iCloud view never writes or creates another task/role/storage owner.
 assert.doesNotMatch(ui, /method:"POST"|method:"DELETE"|method:"PUT"/);
-assert.doesNotMatch(ui, /icloud-actions/);
-assert.match(ui, /clinical\\/patients\\?query=/);
-assert.match(ui, /clinical\\/patient\\//);
-assert.match(shell, /CockpitOpenPendingFromIcloud/);
-assert.doesNotMatch(main, /include_router\\(build_icloud_actions_router/);
-assert.match(main, /build_icloud_mail_router\\(\\)/);
-assert.doesNotMatch(capture, /MailDecisionORM/);
+assert.ok(!ui.includes("/clinical/icloud-actions"));
+assert.ok(ui.includes("/clinical/patients?query="));
+assert.ok(ui.includes("/clinical/patient/"));
+assert.ok(ui.includes("/pending"));
+assert.ok(shell.includes("CockpitOpenPendingFromIcloud"));
+assert.ok(!main.includes("app.include_router(build_icloud_actions_router"));
+assert.ok(main.includes("app.include_router(build_icloud_mail_router())"));
+assert.ok(!capture.includes("MailDecisionORM"));
 assert.match(html, /data-icloud-view="clinical"/);
 assert.match(html, /data-icloud-view="administrative"/);
 assert.match(html, /data-icloud-view="all"/);

@@ -526,9 +526,13 @@ def exercise_icloud_mail_peek(page, width):
     page.route("**/clinical/patient/SYN-MAIL-PATIENT/pending", existing_pending)
     page.evaluate("""() => {
       window.__icloudOpenedPending = null;
-      window.__originalIcloudOpenPending = window.CockpitStoredChart.openPending;
-      window.CockpitStoredChart.openPending = (patient,pending) => {
-        window.__icloudOpenedPending = {patient,pending};
+      window.__originalIcloudChart = window.CockpitStoredChart || null;
+      window.CockpitStoredChart = {
+        ...(window.CockpitStoredChart || {}),
+        canLeave: () => true,
+        openPending: (patient,pending) => {
+          window.__icloudOpenedPending = {patient,pending};
+        }
       };
     }""")
     page.route("**/clinical/icloud-mail/peek", peek)
@@ -640,8 +644,9 @@ def exercise_icloud_mail_peek(page, width):
     page.unroute("**/clinical/patients?query=*", patient_registry)
     page.unroute("**/clinical/patient/SYN-MAIL-PATIENT/pending", existing_pending)
     page.evaluate("""() => {
-      window.CockpitStoredChart.openPending = window.__originalIcloudOpenPending;
-      delete window.__originalIcloudOpenPending;
+      if (window.__originalIcloudChart === null) delete window.CockpitStoredChart;
+      else window.CockpitStoredChart = window.__originalIcloudChart;
+      delete window.__originalIcloudChart;
       delete window.__icloudOpenedPending;
     }""")
     page.unroute("**/clinical/icloud-mail/items/765-4", item)
