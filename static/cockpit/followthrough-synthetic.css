@@ -1,0 +1,21 @@
+/* Strictly synthetic #161 visit follow-through. No production email/PHI UI. */
+#syntheticFollowthroughDemo{margin:16px 0 4px;padding:14px;border:1px solid #dce8e5;border-radius:15px;background:#f7faf9}
+#syntheticFollowthroughDemo[hidden]{display:none!important}
+.synthetic-cycle-header h3{margin:0 0 4px;color:#244550;font-size:16px;line-height:1.35}
+.synthetic-cycle-header p{margin:0 0 12px;color:#69838a;font-size:12px;line-height:1.5}
+.synthetic-cycle-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.synthetic-cycle-card{border:1px solid #dde8e7;border-radius:13px;background:white;padding:16px;min-width:0;display:flex;flex-direction:column;gap:8px}
+.synthetic-cycle-card small{font-size:10px;letter-spacing:.045em;color:#698890;font-weight:750}
+.synthetic-cycle-card h4{margin:0;color:#1e414b;font-size:16px}
+.synthetic-cycle-parts{display:grid;gap:5px;color:#486971;font-size:12px;line-height:1.45;overflow-wrap:anywhere}
+.synthetic-cycle-status{margin:3px 0 6px;color:#775d43;font-size:12px;font-weight:700}
+.synthetic-cycle-status.done{color:#1b766b}
+.synthetic-cycle-action{align-self:flex-start;background:#176f67;color:white;border:0;border-radius:10px;min-height:39px;font:inherit;font-weight:700;font-size:12px;padding:10px 13px;text-align:left;cursor:pointer;white-space:normal}
+.synthetic-cycle-action.fixture{background:#edf5f3;color:#1b5e5c;border:1px solid #bdd6d0}
+.synthetic-cycle-action:disabled{opacity:.6;cursor:wait}
+.synthetic-cycle-action:focus-visible{outline:2px solid #167d74;outline-offset:2px}
+.synthetic-cycle-error{color:#9b442d;font-size:12px}
+.synthetic-visit-followthrough{margin:14px 0 0;padding:11px;border:1px solid #d7e7df;border-radius:10px;background:#f1f8f5}
+.synthetic-visit-followthrough strong{color:#245b52;font-size:12px}
+.synthetic-visit-followthrough p{font-size:12px;margin:5px 0 0;color:#59756d}
+@media(max-width:720px){.synthetic-cycle-grid{grid-template-columns:1fr}#syntheticFollowthroughDemo{padding:12px}.synthetic-cycle-card{padding:13px}}
