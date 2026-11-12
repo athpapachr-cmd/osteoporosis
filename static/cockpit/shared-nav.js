@@ -4,7 +4,9 @@
   // A floating key entry is a convenience, not a new login authority.
   const ROOT = "/static/cockpit/";
   const shortcuts = [
+    ["Ημέρα μου", "/static/cockpit/?view=day"],
     ["Εισερχόμενα ασθενών", "/static/cockpit/#icloud-mail"],
+    ["Περιστατικά ιατρείου", "/static/cockpit/#office-cases"],
     ["Εβδομαδιαίο ημερολόγιο", "/static/clinical-calendar/"],
     ["Καταγραφή επίσκεψης", "/static/cockpit/visit-capture/"],
     ["RF · Ραδιοσυχνότητες", "/clinical/clinic-utilities/rf"],
@@ -29,9 +31,15 @@
     nav.setAttribute("aria-label", "Κοινή πλοήγηση Cockpit");
     const actions = element("div", "ce-global-actions");
     const home = element("a", "ce-global-button");
-    home.href = ROOT;
-    home.title = "Επιστροφή στο Cockpit Home";
+    const startPage = window.CockpitStartPage;
+    home.href = startPage?.href?.() || ROOT;
+    home.title = "Άνοιγμα αρχικής σελίδας";
     home.append(element("span", "ce-global-glyph", "⌂"), document.createTextNode("Αρχική"));
+
+    const setHome = element("button", "ce-global-button ce-set-home");
+    setHome.id = "ceSetHome";
+    setHome.type = "button";
+    setHome.hidden = true;
 
     const actionsButton = element("button", "ce-global-button");
     actionsButton.type = "button";
@@ -86,9 +94,34 @@
     status.setAttribute("role", "status");
     form.append(label, submit, status);
     accessPanel.append(form);
-    actions.append(home, actionsButton, keyButton, shortcutPanel, accessPanel);
+    actions.append(home, setHome, actionsButton, keyButton, shortcutPanel, accessPanel);
     nav.append(actions);
     document.body.insertBefore(nav, document.body.firstChild);
+
+    const syncStartPage = () => {
+      if (!startPage) { setHome.hidden = true; home.href = ROOT; return; }
+      home.href = startPage.href();
+      home.title = "Άνοιγμα αρχικής σελίδας: " + startPage.label();
+      const here = startPage.current();
+      setHome.hidden = !here;
+      if (!here) return;
+      const selected = startPage.read() === here;
+      setHome.textContent = selected ? "✓ Αρχική σελίδα" : "Ορισμός ως αρχικής";
+      setHome.title = selected ? "Αυτή είναι η αρχική σου σελίδα" :
+        "Να ανοίγει πρώτη: " + startPage.label(here);
+      setHome.setAttribute("aria-pressed", String(selected));
+    };
+    setHome.addEventListener("click", () => {
+      const here = startPage?.current?.();
+      if (here && startPage.write(here)) syncStartPage();
+    });
+    window.addEventListener("hashchange", syncStartPage);
+    window.addEventListener("cockpit:view-changed", syncStartPage);
+    window.addEventListener("cockpit:start-page-changed", syncStartPage);
+    window.addEventListener("storage", event => {
+      if (event?.key === startPage?.key) syncStartPage();
+    });
+    syncStartPage();
 
     const close = () => {
       shortcutPanel.hidden = true;

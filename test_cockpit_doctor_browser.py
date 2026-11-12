@@ -19,6 +19,7 @@ CSS = "\n".join((ROOT / part).read_text(encoding="utf-8") for part in (
     "static/cockpit/shared-nav.css",
 ))
 JS = [(ROOT / part).read_text(encoding="utf-8") for part in (
+    "static/cockpit/start-page.js",
     "static/cockpit/clinical-workspace.js",
     "static/cockpit/visit-brief.js",
     "static/cockpit/app.js",
@@ -1168,7 +1169,7 @@ def browser_suite(width, screenshot_name):
         # synthetic DOM test. The original Home smoke omitted these assets.
         nav = page.locator("#ceGlobalNav")
         expect(nav).to_be_visible()
-        expect(nav.locator("a.ce-global-button").first).to_have_attribute("href", "/static/cockpit/")
+        expect(nav.locator("a.ce-global-button").first).to_have_attribute("href", "/static/cockpit/?view=day")
         expect(page.locator("#ceGlobalShortcuts")).to_be_visible()
         expect(page.locator("#ceGlobalKey")).to_be_visible()
         assert page.evaluate("""() => {
@@ -1180,8 +1181,9 @@ def browser_suite(width, screenshot_name):
         }"""), "shared toolbar overflows the viewport or is not sticky"
         page.locator("#ceGlobalShortcuts").click()
         expect(page.locator("#ceGlobalShortcutsPanel")).to_be_visible()
-        assert page.locator("#ceGlobalShortcutsPanel a.ce-global-shortcut").count() == 9
+        assert page.locator("#ceGlobalShortcutsPanel a.ce-global-shortcut").count() == 11
         assert page.locator("#ceGlobalShortcutsPanel a[href=\"/static/cockpit/#icloud-mail\"]").count() == 1
+        assert page.locator("#ceGlobalShortcutsPanel a[href=\"/static/cockpit/#office-cases\"]").count() == 1
         panel = page.locator("#ceGlobalShortcutsPanel").bounding_box()
         assert panel and panel["x"] >= -1 and panel["x"] + panel["width"] <= width + 1, "shortcuts popover off-screen"
         page.keyboard.press("Escape")

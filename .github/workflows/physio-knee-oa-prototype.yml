@@ -77,7 +77,7 @@ jobs:
       - name: Install isolated prototype dependencies
         run: |
           python -m pip install -r clinic_utilities/physio_referral_product/prototype/requirements.txt
-          python -m pip install 'playwright==1.55.0'
+          python -m pip install 'playwright==1.63.0'
       - name: Check syntax
         run: |
           python -m py_compile clinic_utilities/physio_referral_product/prototype/*.py clinic_utilities/physio_referral_product/jurisdiction_overlay.py test_physio_knee_oa_jurisdiction_overlay.py

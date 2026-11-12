@@ -13,6 +13,22 @@ def test_service_root_enters_global_cockpit_home():
     assert 'request.url.path.startswith("/static/cockpit/")' in main
 
 
+def test_cockpit_selectable_start_pages_are_allowlisted_and_client_only():
+    start = _read("static/cockpit/start-page.js")
+    shared = _read("static/cockpit/shared-nav.js")
+    shell = _read("static/cockpit/doctor-shell.js")
+    assert 'clinical-excellence.start-page.v1' in start
+    for value in ("day", "calendar", "inbox", "cases"):
+        assert f"{value}: Object.freeze" in start
+    assert 'window.location.replace(pages[preferred].href)' in start
+    assert 'URLSearchParams(window.location.search).has("chart")' in start
+    assert "patient_id" not in start and "appointment_id" not in start and "message_id" not in start
+    assert "/clinical/" not in start and "fetch(" not in start
+    assert 'id = "ceSetHome"' in shared
+    assert 'Ορισμός ως αρχικής' in shared and '✓ Αρχική σελίδα' in shared
+    assert '#office-cases' in shell and 'openOfficeCasesRoute' in shell
+
+
 def test_cockpit_home_has_global_information_architecture():
     html = _read("static/cockpit/index.html")
 
