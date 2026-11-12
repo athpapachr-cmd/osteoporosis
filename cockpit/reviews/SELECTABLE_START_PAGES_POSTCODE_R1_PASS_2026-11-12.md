@@ -19,4 +19,4 @@
 - no new clinical/provider/server-side owner, write or data persistence;
 - focused unit, Python and real-Chromium regressions.
 
-The review produced no correction request. Runtime and test bytes remain those of the exact reviewed commit. A later CI-only compatibility correction aligns three inherited Physio workflow Playwright pins with the already-passing Cockpit workflow version (`1.65.1`); it does not change reviewed product or test bytes. Exact PR-head CI remains a separate release gate.
+The review produced no correction request. Runtime and test bytes remain those of the exact reviewed commit. A later CI-only compatibility correction aligns five inherited Physio workflow Playwright pins with the already-passing Cockpit workflow version (`1.65.1`); it does not change reviewed product or test bytes. Exact PR-head CI remains a separate release gate.
