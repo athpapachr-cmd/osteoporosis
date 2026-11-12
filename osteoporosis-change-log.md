@@ -2024,3 +2024,10 @@ Frozen HEAD1467f4a517eb6ace0bc72932019b5cede0f256d7/all25 final CI SUCCESS; expe
 ## 2026-11-01 — explicit private operational preference conflict resolved
 
 Following explicit Product Owner disposition, existing conflicting alternate rule disabled CAS10→11 and intended administrative criteria/existing-new coverage saved CAS11→12. Readback preserves all unrelated rules and rule count. Protected current captured-header projection checks three older matching messages: one rule classification, two preserved individual choices. No patient/provider write, source/schema/configuration/deploy change or new review loop. Exact criteria/identities/source content stay private; earlier pending-choice HOLD closed.
+
+
+## 2026-11-12 — Selectable Cockpit start pages released (#286)
+
+The clinician can now set Day, current-week Calendar, unselected iCloud Inbox or default Office Cases as the start page for the current browser profile. The shared Home link and generic Cockpit entry follow only that fixed allowlist; explicit Day and clinical deep links remain reachable. The saved value is one local page id and contains no patient, appointment, message, case or credential data. Each Mac/browser profile chooses independently.
+
+Frozen PR head `4b8aec3a77e6713e9e6ac6c900c1627d5c1de5c7` passed all18 final checks and exact-head Bugbot PASS0:0:0, then squash-merged as `09988d485b157e6218c46b5177244211bb41138b`. Native Render `dep-dbr21tff3r2c73bqumn0` became LIVE on that exact source. Bounded no-PHI production browser smoke selected/reopened all four choices, preserved explicit Day, confirmed three assets200 and found no release-window application ERROR or HTTP5xx logs. No patient/provider/clinical write, schema/auth/config/network/secret change or duplicate deploy. Receipt: `cockpit/releases/COCKPIT_SELECTABLE_START_PAGES_RELEASE_2026-11-12.md`; final documentation uses `[skip render]`.
