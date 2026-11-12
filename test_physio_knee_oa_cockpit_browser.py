@@ -55,7 +55,8 @@ class KneeOACockpitBrowserTests(unittest.TestCase):
 
     def ready(self):
         self.page.locator("#assertion").click(); self.page.locator("[data-side=right]").click()
-        expect(self.page.locator("#copy")).to_be_enabled(); expect(self.page.locator("#referralText")).to_contain_text("δεξιού γόνατος")
+        expect(self.page.locator("#copy")).to_be_enabled(timeout=15_000)
+        expect(self.page.locator("#referralText")).to_contain_text("δεξιού γόνατος", timeout=15_000)
 
     def open_optional_refinement(self, kind):
         control=self.page.locator(f"[data-clinical-v4={kind}]")
