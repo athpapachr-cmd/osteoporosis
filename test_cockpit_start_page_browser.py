@@ -78,4 +78,3 @@ def test_selectable_start_pages_in_real_chromium():
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
             context.close()
         browser.close()
-

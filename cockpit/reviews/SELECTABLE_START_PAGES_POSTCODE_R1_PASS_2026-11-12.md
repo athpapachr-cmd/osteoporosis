@@ -20,4 +20,3 @@
 - focused unit, Python and real-Chromium regressions.
 
 The review produced no correction request. Runtime and test bytes remain those of the exact reviewed commit. Later lifecycle checkpoints may be documentation-only; exact PR-head CI remains a separate release gate.
-

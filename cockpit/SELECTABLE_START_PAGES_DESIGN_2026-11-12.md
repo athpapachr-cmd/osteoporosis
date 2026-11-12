@@ -50,4 +50,3 @@ Each eligible surface exposes one compact action: **Ορισμός ως αρχι
 - automatic AI prioritization or redesign of **Ημέρα μου**;
 - restoration of a patient, message, case, week or unfinished visit;
 - any clinical or provider-side write.
-

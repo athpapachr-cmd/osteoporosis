@@ -20,7 +20,9 @@ for (const path of entrypoints) {
   const content = fs.readFileSync(path, 'utf8');
   assert(content.includes('src="/static/cockpit/shared-nav.js"'), path + ': missing shared navigation');
   assert(content.includes('href="/static/cockpit/shared-nav.css"'), path + ': missing shared style');
-  assert(content.includes('src="/static/cockpit/start-page.js?v=20261112"'), path + ': missing start-page preference');
+  const eligible = path === 'static/cockpit/index.html' || path === 'static/clinical-calendar/index.html';
+  assert.strictEqual(content.includes('src="/static/cockpit/start-page.js?v=20261112"'), eligible,
+    path + ': start-page bootstrap eligibility mismatch');
 }
 const source = fs.readFileSync('static/cockpit/shared-nav.js','utf8');
 const style = fs.readFileSync('static/cockpit/shared-nav.css','utf8');
