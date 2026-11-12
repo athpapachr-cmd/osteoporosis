@@ -20,6 +20,7 @@ for (const path of entrypoints) {
   const content = fs.readFileSync(path, 'utf8');
   assert(content.includes('src="/static/cockpit/shared-nav.js"'), path + ': missing shared navigation');
   assert(content.includes('href="/static/cockpit/shared-nav.css"'), path + ': missing shared style');
+  assert(content.includes('src="/static/cockpit/start-page.js?v=20261112"'), path + ': missing start-page preference');
 }
 const source = fs.readFileSync('static/cockpit/shared-nav.js','utf8');
 const style = fs.readFileSync('static/cockpit/shared-nav.css','utf8');
@@ -66,6 +67,15 @@ const window = {
   dispatchEvent(e) {winEvents.push(e.type);},
   addEventListener(name,cb) {events.push({name,cb});}
 };
+let startPreference = 'inbox';
+window.CockpitStartPage = {
+  key: 'clinical-excellence.start-page.v1',
+  href(value) {return (value || startPreference) === 'inbox' ? '/static/cockpit/#icloud-mail' : '/static/cockpit/?view=day';},
+  label(value) {return (value || startPreference) === 'inbox' ? 'Κλινικά εισερχόμενα' : 'Ημέρα μου';},
+  current() {return 'day';},
+  read() {return startPreference;},
+  write(value) {startPreference=value;return true;},
+};
 async function fetch(url,options = {}) {
   requests.push({url, method:options.method||'GET', options});
   if (url==='/clinical/status') return {ok:mode==='authenticated',status:mode==='authenticated'?200:401};
@@ -90,13 +100,20 @@ assert.strictEqual(body.children[0],get('ceGlobalNav'));
 const nav = get('ceGlobalNav');
 const panel = get('ceGlobalShortcutsPanel'), access = get('ceGlobalAccessPanel');
 const home=nav.children[0].children[0];
-assert.strictEqual(home.href,'/static/cockpit/');
+assert.strictEqual(home.href,'/static/cockpit/#icloud-mail');
+assert.strictEqual(get('ceSetHome').hidden,false);
+assert.strictEqual(get('ceSetHome').textContent,'Ορισμός ως αρχικής');
 (async()=>{
+  await get('ceSetHome').fire('click');
+  assert.strictEqual(startPreference,'day');
+  assert.strictEqual(home.href,'/static/cockpit/?view=day');
+  assert.strictEqual(get('ceSetHome').getAttribute('aria-pressed'),'true');
   await get('ceGlobalShortcuts').fire('click');
   assert.strictEqual(panel.hidden,false);
   const anchors = panel.children.filter(el=>el.tag==='a');
-  assert.strictEqual(anchors.length,9);
+  assert.strictEqual(anchors.length,11);
   assert(anchors.some(a=>a.href==='/static/cockpit/#icloud-mail'));
+  assert(anchors.some(a=>a.href==='/static/cockpit/#office-cases'));
   assert(anchors.every(x=>x.href?.startsWith('/')));
   assert(anchors.some(a=>a.href==='/clinical/clinic-utilities/rf'));
   assert(anchors.some(a=>a.href==='/static/clinical-calendar/'));

@@ -1022,10 +1022,16 @@
        window.location.hash!=="#icloud-mail")
       window.history?.replaceState?.(null,"","/static/cockpit/#icloud-mail");
     window.CockpitIcloudInbox.open(itemId,viewMode);
+    announceViewChanged();
   }
   // Existing signed-Pending list may return to the same protected iCloud
   // message; it cannot confer a new identity or bypass Clinical Key.
   window.CockpitOpenIcloudMail=(itemId)=>showIcloudInbox(itemId,"all");
+  function announceViewChanged(){
+    const EventType=window.Event||(typeof Event==="function"?Event:null);
+    if(EventType&&typeof window.dispatchEvent==="function")
+      window.dispatchEvent(new EventType("cockpit:view-changed"));
+  }
   // Direct navigation only; never attest receipt, link an email or mutate a
   // clinical obligation. The original chart/Pending component owns all actions.
   window.CockpitOpenPendingFromIcloud=(patientId,pendingId)=>{
@@ -1099,6 +1105,14 @@
       b.classList.toggle("selected",selected);b.setAttribute("aria-pressed",String(selected));
     });
     if(category === "cases") window.CockpitOfficeCases?.open?.();
+    if(window.location?.origin && window.location.origin!=="null" &&
+       window.location.pathname?.startsWith("/static/cockpit/")){
+      if(category==="cases" && window.location.hash!=="#office-cases")
+        window.history?.replaceState?.(null,"","/static/cockpit/#office-cases");
+      else if(category!=="cases" && window.location.hash==="#office-cases")
+        window.history?.replaceState?.(null,"","/static/cockpit/");
+    }
+    announceViewChanged();
     $("doctorBackHome").focus();
   }
   function showHome() {
@@ -1111,12 +1125,13 @@
     $("doctorObligationsView").hidden=true;
     $("doctorLibraryView").hidden=true;
     $("doctorMainView").hidden=false;
-    if(window.location?.hash==="#icloud-mail"){
+    if(window.location?.hash==="#icloud-mail" || window.location?.hash==="#office-cases"){
       if(window.location.origin!=="null" &&
          window.location.pathname?.startsWith("/static/cockpit/"))
         window.history?.replaceState?.(null,"","/static/cockpit/");
       else window.location.hash="";
     }
+    announceViewChanged();
     $("doctorActionsButton").focus();
   }
   const rfCounterNames = [
@@ -1333,6 +1348,12 @@
       showIcloudInbox();
   }
   window.addEventListener("hashchange",openIcloudRoute);
+  function openOfficeCasesRoute(){
+    if(window.location?.hash==="#office-cases" && $("doctorLibraryView").hidden)
+      showLibrary("cases");
+  }
+  window.addEventListener("hashchange",openOfficeCasesRoute);
   openIcloudRoute();
+  openOfficeCasesRoute();
   loadRfAttention();
 })();
