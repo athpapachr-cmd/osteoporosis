@@ -70,7 +70,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install -r requirements.txt
-          python -m pip install 'playwright==1.65.1'
+          python -m pip install 'playwright==1.63.0'
       - name: Syntax
         run: |
           python -m py_compile clinic_utilities/physio_referral_product/knee_oa_presentation_v4.py clinic_utilities/physio_referral_product/production_api.py clinic_utilities/physio_referral_product/jurisdiction_overlay.py clinic_utilities/physio_referral_product/prototype/server.py clinic_utilities/physio_referral_product/prototype/test_browser_qualifiers.py test_physio_knee_oa_cockpit_browser.py test_physio_knee_oa_cockpit_integration.py test_physio_knee_oa_jurisdiction_overlay.py
