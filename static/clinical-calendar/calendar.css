@@ -19,6 +19,10 @@ h1{margin:0;font-size:32px;line-height:1.1}
 .button{display:inline-flex;align-items:center;justify-content:center;border-radius:10px;padding:9px 12px;border:1px solid transparent;text-decoration:none;cursor:pointer;font-weight:650;font-size:13px}
 .button.primary{background:#172033;color:#fff}.button.ghost{background:#fff;border-color:#d7deea;color:#27324a}.button:hover{filter:brightness(.98)}
 .calendar-toolbar{padding:14px 16px;display:flex;justify-content:space-between;gap:16px;align-items:center}
+.calendar-filters{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 4px}
+.calendar-filters button{background:#fff;color:#31525a;border-color:#d4e3e0}
+.calendar-filters button[aria-pressed="true"]{background:#176e67;color:#fff;border-color:#176e67}
+.calendar-filters button:focus-visible{outline:2px solid #176e67;outline-offset:2px}
 .week-controls{display:flex;gap:8px;flex-wrap:wrap}.week-label{font-size:15px;font-weight:750;text-align:right}.status{font-size:12px;color:#667085;margin:4px 0 0;text-align:right}.status.err{color:#b42318}.status.ok{color:#067647}
 .summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:14px 0}
 .summary-card{background:#fff;border:1px solid #dfe5ef;border-radius:14px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}

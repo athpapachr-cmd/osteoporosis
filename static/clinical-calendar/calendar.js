@@ -3,6 +3,8 @@
 
   const $ = (s) => document.querySelector(s);
   let weekOffset = 0;
+  let calendarMode = "all";
+  let weekRequest = 0;
 
   const CATEGORY_LABELS = {
     osteoporosis_first: "1ο ραντεβού οστεοπόρωσης",
@@ -10,6 +12,7 @@
     osteoporosis_unspecified: "Οστεοπόρωση · ταξινόμηση",
     prolia: "Prolia",
     aclasta: "Aclasta",
+    other: "Ραντεβού",
   };
 
   const MANUAL_CLASSIFICATION_OPTIONS = [
@@ -78,26 +81,38 @@
   }
 
   function mondayForOffset(offset) {
-    const now = new Date();
-    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const weekday = d.getDay();
+    const parts = Object.fromEntries(new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Nicosia", year: "numeric", month: "2-digit", day: "2-digit"
+    }).formatToParts(new Date()).filter(p => p.type !== "literal").map(p => [p.type, Number(p.value)]));
+    const d = new Date(Date.UTC(parts.year, parts.month - 1, parts.day, 12));
+    const weekday = d.getUTCDay();
     const diff = weekday === 0 ? -6 : 1 - weekday;
-    d.setDate(d.getDate() + diff + offset * 7);
-    d.setHours(0, 0, 0, 0);
+    d.setUTCDate(d.getUTCDate() + diff + offset * 7);
     return d;
   }
 
   function addDays(date, days) {
     const d = new Date(date);
-    d.setDate(d.getDate() + days);
+    d.setUTCDate(d.getUTCDate() + days);
     return d;
   }
 
   function dateKey(date) {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, "0");
-    const d = String(date.getDate()).padStart(2, "0");
-    return `${y}-${m}-${d}`;
+    const parts = Object.fromEntries(new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Nicosia", year: "numeric", month: "2-digit", day: "2-digit"
+    }).formatToParts(date).filter(p => p.type !== "literal").map(p => [p.type, p.value]));
+    return `${parts.year}-${parts.month}-${parts.day}`;
+  }
+
+  function cyprusMidnight(date) {
+    const [year, month, day] = dateKey(date).split("-").map(Number);
+    const probe = new Date(Date.UTC(year, month - 1, day));
+    const parts = Object.fromEntries(new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Nicosia", year:"numeric", month:"2-digit", day:"2-digit",
+      hour:"2-digit", minute:"2-digit", second:"2-digit", hourCycle:"h23"
+    }).formatToParts(probe).filter(p => p.type !== "literal").map(p => [p.type, Number(p.value)]));
+    const offset = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second) - probe.getTime();
+    return new Date(Date.UTC(year, month - 1, day) - offset);
   }
 
   function parseServerDate(value) {
@@ -106,10 +121,10 @@
     return new Date(hasZone ? value : `${value}Z`);
   }
 
-  const fmtDay = new Intl.DateTimeFormat("el-CY", { weekday: "long" });
-  const fmtDate = new Intl.DateTimeFormat("el-CY", { day: "2-digit", month: "2-digit" });
-  const fmtLong = new Intl.DateTimeFormat("el-CY", { day: "2-digit", month: "short", year: "numeric" });
-  const fmtTime = new Intl.DateTimeFormat("el-CY", { hour: "2-digit", minute: "2-digit", hour12: false });
+  const fmtDay = new Intl.DateTimeFormat("el-CY", { timeZone: "Asia/Nicosia", weekday: "long" });
+  const fmtDate = new Intl.DateTimeFormat("el-CY", { timeZone: "Asia/Nicosia", day: "2-digit", month: "2-digit" });
+  const fmtLong = new Intl.DateTimeFormat("el-CY", { timeZone: "Asia/Nicosia", day: "2-digit", month: "short", year: "numeric" });
+  const fmtTime = new Intl.DateTimeFormat("el-CY", { timeZone: "Asia/Nicosia", hour: "2-digit", minute: "2-digit", hour12: false });
 
   function esc(value) {
     return String(value ?? "").replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
@@ -132,16 +147,18 @@
 
   function appointmentHtml(row) {
     const start = parseServerDate(row.start_at);
-    const category = row.category || "osteoporosis_unspecified";
+    const category = row.category || "other";
     const label = CATEGORY_LABELS[category] || "Οστεοπόρωση";
     const patient = row.patient_display_name || row.linked_patient_id || "Χωρίς αντιστοίχιση ασθενούς";
     const reason = row.reason || "";
-    const clinic = row.clinic ? ` · ${row.clinic}` : "";
+    const meta = [row.status, row.clinic].filter(Boolean).join(" · ");
+    const end = parseServerDate(row.end_at);
+    const duration = row.duration_minutes ?? (start && end ? Math.round((end - start) / 60000) : null);
     return `<article class="appt">
-      <div class="appt-time"><strong>${start ? fmtTime.format(start) : "—"}</strong><span class="appt-duration">${row.duration_minutes || 0}'</span></div>
+      <div class="appt-time"><strong>${start ? fmtTime.format(start) : "—"}</strong><span class="appt-duration">${Number.isFinite(duration) && duration > 0 ? esc(duration) + "′" : ""}</span></div>
       <span class="badge ${esc(category)}">${esc(label)}</span>
       <div class="appt-name">${esc(patient)}</div>
-      <div class="appt-meta">${esc(row.status || "scheduled")}${esc(clinic)}</div>
+      <div class="appt-meta">${esc(meta)}</div>
       ${reason ? `<div class="appt-label">${esc(reason)}</div>` : ""}
       <a class="button ghost" href="/static/cockpit/?booking=${encodeURIComponent(row.appointment_id)}&amp;booking_date=${start ? dateKey(start) : ''}">Καρτέλα · Τελευταία επίσκεψη</a>
       ${classificationControl(row, category)}
@@ -166,7 +183,7 @@
       const items = grouped.get(key) || [];
       const col = document.createElement("section");
       col.className = "day-column";
-      col.innerHTML = `<div class="day-head"><strong>${esc(fmtDay.format(day))}</strong><span>${esc(fmtDate.format(day))}</span></div><div class="day-body">${items.length ? items.map(appointmentHtml).join("") : '<div class="empty-day">Δεν υπάρχουν ραντεβού οστεοπόρωσης.</div>'}</div>`;
+      col.innerHTML = `<div class="day-head"><strong>${esc(fmtDay.format(day))}</strong><span>${esc(fmtDate.format(day))}</span></div><div class="day-body">${items.length ? items.map(appointmentHtml).join("") : '<div class="empty-day">Δεν υπάρχουν ραντεβού σε αυτή την προβολή.</div>'}</div>`;
       grid.appendChild(col);
     }
 
@@ -177,14 +194,14 @@
     $("#countUnspecified").textContent = (rows || []).filter(x => x.category === "osteoporosis_unspecified").length;
   }
 
-  function renderWeekUnavailable(monday) {
+  function renderWeekUnavailable(monday, loading = false) {
     const grid = $("#weekGrid");
     grid.innerHTML = "";
     for (let i = 0; i < 7; i += 1) {
       const day = addDays(monday, i);
       const col = document.createElement("section");
       col.className = "day-column";
-      col.innerHTML = `<div class="day-head"><strong>${esc(fmtDay.format(day))}</strong><span>${esc(fmtDate.format(day))}</span></div><div class="day-body"><div class="empty-day">Το ημερολόγιο δεν είναι διαθέσιμο αυτή τη στιγμή.</div></div>`;
+      col.innerHTML = `<div class="day-head"><strong>${esc(fmtDay.format(day))}</strong><span>${esc(fmtDate.format(day))}</span></div><div class="day-body"><div class="empty-day">${loading ? "Φόρτωση…" : "Το ημερολόγιο δεν είναι διαθέσιμο αυτή τη στιγμή."}</div></div>`;
       grid.appendChild(col);
     }
     $("#countOsteoporosis").textContent = "—";
@@ -194,15 +211,22 @@
   }
 
   async function loadWeek() {
+    const ticket = ++weekRequest;
+    const requestedMode = calendarMode;
     const monday = mondayForOffset(weekOffset);
     const end = addDays(monday, 7);
     $("#weekLabel").textContent = `${fmtLong.format(monday)} — ${fmtLong.format(addDays(monday, 6))}`;
     setStatus("Φόρτωση…");
+    renderWeekUnavailable(monday, true);
     try {
-      const rows = await api(`/clinical/calendar/appointments?start=${encodeURIComponent(monday.toISOString())}&end=${encodeURIComponent(end.toISOString())}`);
+      const endpoint = requestedMode === "all" ? "agenda" : "appointments";
+      const rows = await api(`/clinical/calendar/${endpoint}?start=${encodeURIComponent(cyprusMidnight(monday).toISOString())}&end=${encodeURIComponent(cyprusMidnight(end).toISOString())}`);
+      if (ticket !== weekRequest) return;
+      if (!Array.isArray(rows)) throw new Error("Invalid schedule");
       renderWeek(rows, monday);
-      setStatus(`${rows.length} σχετικά με οστεοπόρωση`, "ok");
+      setStatus(`${rows.length} ραντεβού · ${requestedMode === "all" ? "όλες οι κατηγορίες" : "οστεοπόρωση"}`, "ok");
     } catch (err) {
+      if (ticket !== weekRequest) return;
       const last = parseServerDate(err.detail?.last_fetched_at);
       const freshness = last ? ` · τελευταία ανάγνωση ${fmtLong.format(last)} ${fmtTime.format(last)}` : "";
       setStatus(`Μη διαθέσιμο${freshness}`, "err");
@@ -215,6 +239,15 @@
   $("#prevWeek").addEventListener("click", () => { weekOffset -= 1; loadWeek(); });
   $("#thisWeek").addEventListener("click", () => { weekOffset = 0; loadWeek(); });
   $("#nextWeek").addEventListener("click", () => { weekOffset += 1; loadWeek(); });
+  function changeMode(mode) {
+    if (calendarMode === mode) return;
+    calendarMode = mode;
+    $("#showAllAppointments").setAttribute("aria-pressed", String(mode === "all"));
+    $("#showOsteoporosisAppointments").setAttribute("aria-pressed", String(mode === "osteoporosis"));
+    loadWeek();
+  }
+  $("#showAllAppointments").addEventListener("click", () => changeMode("all"));
+  $("#showOsteoporosisAppointments").addEventListener("click", () => changeMode("osteoporosis"));
 
   $("#weekGrid").addEventListener("change", async (event) => {
     const select = event.target.closest(".classification-select");

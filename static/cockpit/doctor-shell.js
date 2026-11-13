@@ -71,6 +71,47 @@
     const today=document.createElement('button');today.id='doctorDayToday';today.type='button';today.className='doctor-day-today';today.textContent='Σήμερα';today.disabled=state.day===dayKey();
     today.addEventListener('click',()=>{state.day=dayKey();loadDay('doctorDayNext');});nav.append(line,today);return nav;
   }
+  let homeAgendaGeneration = 0;
+  async function loadHomeAgenda() {
+    const root = $("homeAgendaRows");
+    if (!root) return;
+    const generation = ++homeAgendaGeneration;
+    const requestedDay = dayKey();
+    if ($("homeAgendaFreshness")) $("homeAgendaFreshness").textContent = "";
+    root.replaceChildren(text("Φόρτωση προγράμματος…"));
+    try {
+      const range = todayRange();
+      const q = new URLSearchParams({start:range.start,end:range.end});
+      const response = await fetch(clinicalURL("/clinical/calendar/agenda?" + q), {
+        credentials:"same-origin", cache:"no-store", headers:{"Accept":"application/json"}
+      });
+      if (!response.ok) throw new Error("unavailable");
+      const rows = await response.json();
+      if (generation !== homeAgendaGeneration) return;
+      if (requestedDay !== dayKey()) { void loadHomeAgenda(); return; }
+      if (!Array.isArray(rows)) throw new Error("invalid");
+      root.replaceChildren();
+      if ($("homeAgendaFreshness")) $("homeAgendaFreshness").textContent =
+        "Πρόγραμμα " + dateLabel.format(new Date()) + " · Ανάγνωση " + timeLabel.format(new Date());
+      if (!rows.length) root.append(text("Δεν υπάρχουν ραντεβού στην διαθέσιμη προβολή της ημέρας."));
+      rows.sort((a,b)=>String(a.start_at).localeCompare(String(b.start_at))).slice(0,6).forEach(row=>{
+        const start = new Date(/(?:Z|[+-]\d{2}:?\d{2})$/.test(row.start_at) ? row.start_at : row.start_at + "Z");
+        const time = Number.isNaN(start.getTime()) ? "—" : timeLabel.format(start);
+        const name = String(row.patient_display_name || "Ραντεβού χωρίς καταχωρισμένο όνομα");
+        const reason = String(row.reason || row.category || "Ραντεβού");
+        root.append(action(time + " · " + name, reason, () => {
+          if (window.CockpitHome?.openAppointment) window.CockpitHome.openAppointment({
+            kind:"appointment", name, reason, time,
+            date:Number.isNaN(start.getTime()) ? null : dayKey(start),
+            appointmentId:row.appointment_id, patientId:null
+          });
+        }));
+      });
+      if (rows.length > 6) root.append(action("Προβολή και των " + rows.length + " ραντεβού", "Άνοιγμα προγράμματος ημέρας", () => openPanel("day", buttons.day)));
+    } catch (_) {
+      if (generation === homeAgendaGeneration) root.replaceChildren(text("Το πρόγραμμα δεν είναι διαθέσιμο. Δοκίμασε ανανέωση."));
+    }
+  }
   function text(message) {
     const p = document.createElement("p");
     p.className = "doctor-help";
@@ -1197,6 +1238,10 @@
   function attention() {
     const target = $("doctorAttentionList"); target.replaceChildren();
     const s = state.surgeries, rf = state.rf;
+    const officeOverview = $("officeSurgeryOverview");
+    if (officeOverview) officeOverview.textContent = s
+      ? "Χειρουργεία · " + s.total + " εκκρεμή. " + surgeryAttentionLines(s).replace(/\n/g, " · ")
+      : "Χειρουργεία · Η σύνοψη δεν είναι διαθέσιμη.";
     target.append(action(
       s ? "Χειρουργεία · " + s.total + " εκκρεμή" : "Χειρουργεία · Μη διαθέσιμα",
       s ? surgeryAttentionLines(s) : "Άνοιγμα προστατευμένης λίστας",
@@ -1218,6 +1263,10 @@
   }
 
     buttons.day.addEventListener("click",()=>openPanel("day",buttons.day));
+  $("homeOpenAgenda")?.addEventListener("click",()=>openPanel("day",buttons.day));
+  $("homeOpenInbox")?.addEventListener("click",()=>showIcloudInbox());
+  $("homeOpenObligations")?.addEventListener("click",()=>showObligations());
+  $("homeAgendaRefresh")?.addEventListener("click",loadHomeAgenda);
   buttons.calls.addEventListener("click",()=>openPanel("calls",buttons.calls));
   buttons.inbox.addEventListener("click",()=>openPanel("inbox",buttons.inbox));
   $("doctorClinicalInboxBack").addEventListener("click",showHome);
@@ -1230,6 +1279,7 @@
   buttons.actions.addEventListener("click",()=>openPanel("actions",buttons.actions));
   $("doctorPopoverClose").addEventListener("click",close);
   if (typeof window !== "undefined" && typeof window.addEventListener === "function") window.addEventListener("clinical:authenticated", () => {
+    loadHomeAgenda();
     if(state.panel === "day") loadDay();
     if(state.panel === "tasks") tasks();
     if(state.panel === "inbox" && syntheticInbox()) inbox();
@@ -1332,7 +1382,12 @@
     if(state.panel==="inbox"&&!popover.hidden&&!syntheticInbox())void inbox();
     maybeRefreshUnread(true);
   });
-  window.addEventListener("clinical:unauthenticated",clearUnreadPeek);
+  window.addEventListener("clinical:unauthenticated",()=>{
+    ++homeAgendaGeneration;
+    if ($("homeAgendaFreshness")) $("homeAgendaFreshness").textContent = "";
+    $("homeAgendaRows")?.replaceChildren(text("Απαιτείται σύνδεση για το πρόγραμμα."));
+    clearUnreadPeek();
+  });
   const bootstrapGeneration=unreadPeek.generation;
   fetch("/clinical/status",{credentials:"same-origin",cache:"no-store"})
     .then(r=>{
@@ -1340,8 +1395,14 @@
         // The server authenticated clinician access; discard a stale staff hint.
         if(secretaryIcloudSession())window.CockpitStaffRole=null;
         unreadPeek.authorized=true;maybeRefreshUnread(true);
+        loadHomeAgenda();
+      } else if (bootstrapGeneration===unreadPeek.generation) {
+        $("homeAgendaRows")?.replaceChildren(text("Απαιτείται σύνδεση για το πρόγραμμα."));
       }
-    }).catch(()=>{});
+    }).catch(()=>{
+      if (bootstrapGeneration===unreadPeek.generation)
+        $("homeAgendaRows")?.replaceChildren(text("Το πρόγραμμα δεν είναι διαθέσιμο. Δοκίμασε ανανέωση."));
+    });
   // One stable deep link shared by all Cockpit modules and browser bookmarks.
   function openIcloudRoute(){
     if(window.location?.hash==="#icloud-mail" && $("doctorIcloudInboxView").hidden)
