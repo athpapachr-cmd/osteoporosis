@@ -187,6 +187,12 @@ function findAction(label,node=$('doctorPopoverContent')){
  return null;
 }
 (async()=>{
+ await tick();await tick();
+ const homeAppointments = $("homeAgendaRows").children.filter(n => n.tagName === "button");
+ assert.equal(homeAppointments.length, 2, "home displays the protected daily agenda");
+ homeAppointments[0].fire("click");
+ assert.equal(windowStub.lastAppointment.patientId, null, "home agenda cannot link a patient by name");
+ assert.equal(windowStub.lastAppointment.appointmentId, "cal.com:synthetic-1");
  for(const [day,hours] of [['2026-03-29',23],['2026-10-25',25],['2026-12-31',24]]){
    const range=windowStub.dayRangeForTest(new Date(day+'T12:00:00Z'));
    assert.equal((new Date(range.end)-new Date(range.start))/3600000,hours,'Cyprus calendar boundaries '+day);
@@ -293,7 +299,7 @@ function findAction(label,node=$('doctorPopoverContent')){
  assert.equal($("doctorPopover").hidden,false);
  assert.equal($("doctorDateButton").attributes["aria-expanded"],"true");
  const calendarCalls=calls.filter(x=>x.url.startsWith("/clinical/calendar/agenda?"));
- assert.equal(calendarCalls.length,1);
+ assert.equal(calendarCalls.length,2,"home agenda and explicit day panel each read the protected source");
  assert.match(calendarCalls[0].url,/\/clinical\/calendar\/agenda\?start=/);
  assert.match(calendarCalls[0].url,/&end=/);
  const todayStart=new URLSearchParams(calendarCalls[0].url.split('?')[1]).get('start');

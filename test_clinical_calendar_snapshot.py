@@ -663,6 +663,13 @@ def test_weekly_live_rows_preserve_classification_and_override_without_snapshot_
         and row["manual_category"] == "osteoporosis_review"
         for row in relisted
     )
+    agenda = client.get(
+        "/clinical/calendar/agenda", headers=CLINICAL_HEADERS,
+        params={"start": datetime(2026, 10, 6, 0, 0, tzinfo=timezone.utc).isoformat(),
+                "end": datetime(2026, 10, 7, 0, 0, tzinfo=timezone.utc).isoformat()},
+    )
+    assert agenda.status_code == 200
+    assert next(row for row in agenda.json() if row["appointment_id"] == "cal.com:other-live")["manual_category"] == "osteoporosis_review"
 
 
 def test_snapshot_removes_only_missing_same_source_exact_window(monkeypatch):
@@ -685,7 +692,7 @@ def test_snapshot_removes_only_missing_same_source_exact_window(monkeypatch):
 
 def test_weekly_calendar_ui_distinguishes_source_unavailable_from_empty_week():
     script = Path("static/clinical-calendar/calendar.js").read_text(encoding="utf-8")
-    assert "function renderWeekUnavailable(monday)" in script
+    assert "function renderWeekUnavailable(monday, loading = false)" in script
     assert "Το ημερολόγιο δεν είναι διαθέσιμο αυτή τη στιγμή." in script
     load_week = script.split("async function loadWeek()", 1)[1].split(
         '$("#loginBtn")', 1
@@ -774,7 +781,7 @@ def test_full_agenda_keeps_other_visits_minimal_while_weekly_stays_filtered(monk
     agenda=client.get('/clinical/calendar/agenda',headers=CLINICAL_HEADERS,params=params)
     assert agenda.status_code==200 and agenda.headers['cache-control']=='no-store'
     data=agenda.json();assert [r['appointment_id'] for r in data]==['cal.com:osteo-agenda','cal.com:knee-agenda']
-    allowed={'appointment_id','start_at','end_at','clinic','category','patient_display_name','reason'}
+    allowed={'appointment_id','start_at','end_at','clinic','category','manual_category','patient_display_name','reason'}
     assert all(set(row)==allowed for row in data)
     assert data[1]['category']=='other' and data[1]['reason']=='Επανέλεγχος γόνατος'
     assert datetime.fromisoformat(data[1]['start_at']).astimezone(ZoneInfo('Asia/Nicosia')).hour==12

@@ -80,6 +80,10 @@
     $("doctorIcloudInboxDetails").removeAttribute("aria-busy");
     $("doctorIcloudInboxState").textContent = "";
     $("doctorIcloudInboxShown").textContent = "";
+    if ($("doctorIcloudPageSummary")) {
+      $("doctorIcloudPageSummary").replaceChildren();
+      $("doctorIcloudPageSummary").hidden = true;
+    }
     if(purgeCache){state.latest=null;state.latestAt=0;}
   }
   function close(purgeCache=false) {
@@ -209,6 +213,20 @@
     root.replaceChildren();
     const visible=state.items.filter(item=>!state.categoriesKnown || state.view==="all" ||
       (state.view==="clinical"?["clinical","review"]:["administrative","other"]).includes(item.category));
+    const summary = $("doctorIcloudPageSummary");
+    if (summary) {
+      summary.replaceChildren();
+      summary.hidden = !state.categoriesKnown;
+      if (state.categoriesKnown) {
+        const label = el("span", "", "Στην τρέχουσα φορτωμένη σελίδα:");
+        const clinical = state.items.filter(item => item.category === "clinical").length;
+        const review = state.items.filter(item => item.category === "review").length;
+        const administrative = state.items.filter(item => ["administrative","other"].includes(item.category)).length;
+        summary.append(label, el("strong", "", clinical + " κλινικά"),
+          el("strong", "", review + " για χαρακτηρισμό"),
+          el("strong", "", administrative + " διοικητικά / λοιπά"));
+      }
+    }
     for (const item of visible) {
       const button = el("button", "doctor-action-row clinical-inbox-row");
       button.type = "button";
@@ -264,6 +282,10 @@
     ++state.selection;
     state.controller?.abort();
     state.id = null;state.items = [];
+    if ($("doctorIcloudPageSummary")) {
+      $("doctorIcloudPageSummary").replaceChildren();
+      $("doctorIcloudPageSummary").hidden = true;
+    }
     state.detail=null;state.updatingId=null;state.listProjection=null;state.categoriesKnown=true;state.manager=false;
     $("doctorIcloudInboxRows").replaceChildren();
     emptySelection();

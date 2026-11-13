@@ -8,7 +8,7 @@
   <meta name="description" content="Κεντρική αρχική σελίδα του Clinical Excellence Cockpit." />
   <link rel="stylesheet" href="/static/cockpit/styles.css" />
   <link rel="stylesheet" href="/static/cockpit/clinical-workspace.css" />
-  <link rel="stylesheet" href="/static/cockpit/doctor-shell.css?v=purpose-focused-20261029" />
+  <link rel="stylesheet" href="/static/cockpit/doctor-shell.css?v=home-experience-20261113" />
   <link rel="stylesheet" href="/static/cockpit/clinical-inbox.css?v=icloud-triage-20261031" />
   <link rel="stylesheet" href="/static/cockpit/shared-nav.css" />
   <script src="/static/cockpit/start-page.js?v=20261112"></script>
@@ -53,6 +53,18 @@
       </aside>
     <section id="clinicalWorkspace" class="clinical-workspace" aria-label="Κλινικές επισκέψεις">
       <div id="visitWorkspaceHome">
+        <section class="home-orientation" aria-labelledby="homeOrientationTitle">
+          <div>
+            <p class="home-orientation-kicker">ΗΜΕΡΑ ΜΟΥ</p>
+            <h2 id="homeOrientationTitle">Η κλινική σου ημέρα, με μια ματιά</h2>
+            <p>Δες το πρόγραμμα, τα μηνύματα και τις ανοιχτές υποχρεώσεις από ένα σημείο.</p>
+          </div>
+          <div class="home-shortcuts" aria-label="Γρήγορες ενέργειες ημέρας">
+            <button type="button" id="homeOpenAgenda">Πρόγραμμα ημέρας</button>
+            <button type="button" id="homeOpenInbox">Εισερχόμενα ασθενών</button>
+            <button type="button" id="homeOpenObligations">Υποχρεώσεις ασθενών</button>
+          </div>
+        </section>
         <div class="clinical-search-block">
           <label for="visitPatientSearch">Αναζήτηση ασθενούς</label>
           <input type="search" id="visitPatientSearch" autocomplete="off"
@@ -87,6 +99,13 @@
               </button>
             </div>
             <p id="calendarNote" class="panel-note">Φορτώνεται το πρόγραμμα ραντεβού. Ενημερώνεται καθημερινά.</p>
+            <div class="home-agenda">
+              <div class="home-agenda-heading"><h3>Το πρόγραμμα σήμερα</h3>
+                <button id="homeAgendaRefresh" type="button">Ανανέωση</button></div>
+              <p id="homeAgendaFreshness" class="clinical-muted"></p>
+              <div id="homeAgendaRows" aria-live="polite"><p class="clinical-muted">Φόρτωση προγράμματος…</p></div>
+              <p class="clinical-muted">Προβολή από τη διαθέσιμη πηγή της Γραμματείας. Για πλήρη διαθεσιμότητα και κρατήσεις άνοιξε τη Γραμματεία.</p>
+            </div>
             <div class="clinical-calendar-actions">
               <button type="button" id="cockpitCalendarRetry" class="clinical-calendar-retry" hidden>↻ Ανανέωση</button>
               <a class="clinical-sidebar-link" href="/static/clinical-calendar/">Άνοιγμα εβδομαδιαίου ημερολογίου</a>
@@ -99,12 +118,13 @@
             <div id="doctorAttentionList" class="doctor-attention-list" aria-live="polite">
               <p class="clinical-muted">Ενημέρωση από τις διαθέσιμες πηγές…</p>
             </div>
-            <p class="clinical-muted"><a class="clinical-sidebar-link"
-              href="/static/cockpit/pending-one-tap-synthetic.html">Δοκιμή εκκρεμότητας · Demo</a></p>
           </section>
         </div>
-        <p><a class="clinical-sidebar-link" href="/clinical/synthetic-161/">Δοκιμή #161 · αποθηκευμένο ραντεβού και Visit Brief</a></p>
         <p id="visitHomeNote" class="clinical-muted" role="status">Τα ραντεβού προέρχονται από τη διαθέσιμη προβολή της Γραμματείας, η οποία μπορεί να μην καλύπτει ολόκληρη την ημέρα. Η ημερομηνία πάνω δεξιά δείχνει μέρος του προγράμματος· για όλες τις κρατήσεις άνοιξε από εκεί τη Γραμματεία.</p>
+        <details class="clinical-muted"><summary>Δοκιμαστικές λειτουργίες</summary>
+          <p><a class="clinical-sidebar-link" href="/static/cockpit/pending-one-tap-synthetic.html">Δοκιμή εκκρεμότητας · Demo</a></p>
+          <p><a class="clinical-sidebar-link" href="/clinical/synthetic-161/">Δοκιμή #161 · αποθηκευμένο ραντεβού και Visit Brief</a></p>
+        </details>
       </div>
 
       <section id="visitWorkspacePatient" class="clinical-active-visit" hidden aria-label="Επιλεγμένη επίσκεψη">
@@ -289,6 +309,7 @@ ENCOUNTER DETAIL
       </div>
       <p id="doctorIcloudInboxState" role="status" aria-live="polite"></p>
       <p id="doctorIcloudInboxShown"></p>
+      <div id="doctorIcloudPageSummary" class="inbox-page-summary" aria-live="polite" hidden></div>
       <div class="clinical-inbox-layout">
         <section class="clinical-inbox-list" aria-label="Μηνύματα προς το ιατρείο">
           <div id="doctorIcloudInboxRows"></div>
@@ -360,10 +381,11 @@ ENCOUNTER DETAIL
         <p>Προστατευμένη παρακολούθηση περιστατικών. Κάθε αλλαγή αποθηκεύεται μετά από δική σου ενέργεια.</p>
       </div>
       <nav class="office-tabs" aria-label="Κατηγορίες περιστατικών">
-        <button type="button" data-office-tab="surgery" aria-pressed="true">Χειρουργεία</button>
-        <button type="button" data-office-tab="accidents" aria-pressed="false">Τροχαία</button>
-        <button type="button" data-office-tab="rf" aria-pressed="false">RF</button>
+        <button type="button" data-office-tab="surgery" aria-pressed="true"><strong>Χειρουργεία</strong><small>Λίστα αναμονής και ημερομηνίες</small></button>
+        <button type="button" data-office-tab="accidents" aria-pressed="false"><strong>Τροχαία</strong><small>Εκθέσεις και πληρωμές</small></button>
+        <button type="button" data-office-tab="rf" aria-pressed="false"><strong>RF</strong><small>Αιτήσεις και εξέλιξη</small></button>
       </nav>
+      <p id="officeSurgeryOverview" class="office-overview" aria-live="polite"></p>
 
       <article class="panel surgery-panel" data-office-tab-panel="surgery">
         <div class="panel-head surgery-panel-head">
@@ -617,8 +639,8 @@ ENCOUNTER DETAIL
   <script src="/static/cockpit/obligations-view.js?v=topbar-peeks-20261024" defer></script>
   <script src="/static/cockpit/clinical-inbox.js?v=one-tap-source-review-20261024" defer></script>
   <script src="/static/cockpit/icloud-triage.js?v=triage-coverage-20261101" defer></script>
-  <script src="/static/cockpit/icloud-inbox.js?v=triage-coverage-20261101" defer></script>
-  <script src="/static/cockpit/doctor-shell.js?v=triage-refresh-20261101" defer></script>
+  <script src="/static/cockpit/icloud-inbox.js?v=home-experience-20261113" defer></script>
+  <script src="/static/cockpit/doctor-shell.js?v=home-experience-20261113" defer></script>
   <script src="/static/cockpit/shared-nav.js" defer></script>
 </body>
 </html>

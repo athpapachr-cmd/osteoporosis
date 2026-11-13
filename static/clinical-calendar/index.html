@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Clinical Calendar — Osteoporosis</title>
-  <link rel="stylesheet" href="./calendar.css" />
+  <link rel="stylesheet" href="./calendar.css?v=home-experience-20261113" />
   <link rel="stylesheet" href="/static/cockpit/shared-nav.css" />
   <script src="/static/cockpit/start-page.js?v=20261112"></script>
 </head>
@@ -13,8 +13,8 @@
     <header class="topbar">
       <div>
         <p class="eyebrow">Module 01 · Osteoporosis</p>
-        <h1>Clinical Calendar</h1>
-        <p class="subtitle">Εμφανίζονται μόνο ραντεβού που σχετίζονται με οστεοπόρωση, Prolia ή Aclasta. Οι υπενθυμίσεις και τα CareTasks παραμένουν ξεχωριστά.</p>
+        <h1>Εβδομαδιαίο πρόγραμμα</h1>
+        <p class="subtitle">Δες τα διαθέσιμα ραντεβού του ιατρείου ή εστίασε στην οστεοπόρωση. Αν η πηγή δεν καλύπτει ολόκληρη την εβδομάδα, το πρόγραμμα εμφανίζεται ως μη διαθέσιμο.</p>
       </div>
       <a class="button ghost" href="../baseline-audit/">Baseline Audit</a>
     </header>
@@ -41,6 +41,10 @@
         </div>
       </div>
 
+      <div class="calendar-filters" role="group" aria-label="Φίλτρο ραντεβού">
+        <button id="showAllAppointments" class="button" type="button" aria-pressed="true">Όλα τα ραντεβού</button>
+        <button id="showOsteoporosisAppointments" class="button" type="button" aria-pressed="false">Οστεοπόρωση · Prolia · Aclasta</button>
+      </div>
       <section class="summary-grid" aria-label="Σύνοψη εβδομάδας">
         <article class="summary-card"><span>Οστεοπόρωση</span><strong id="countOsteoporosis">0</strong></article>
         <article class="summary-card"><span>Prolia</span><strong id="countProlia">0</strong></article>
@@ -56,7 +60,7 @@
       </section>
     </section>
   </main>
-  <script src="./calendar.js?v=chart-continuity-20261018"></script>
+  <script src="./calendar.js?v=home-experience-20261113"></script>
   <script src="/static/cockpit/shared-nav.js" defer></script>
 </body>
 </html>
