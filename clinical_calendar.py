@@ -147,6 +147,10 @@ class CockpitAppointment(BaseModel):
     reason: str
 
 
+class AgendaAppointment(CockpitAppointment):
+    manual_category: Optional[str] = None
+
+
 class CockpitContext(BaseModel):
     generated_at: datetime
     source_updated_at: Optional[datetime]
@@ -626,13 +630,14 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
         # Weekly Osteoporosis projection remains unchanged.
         return await calendar_rows(start,end)
 
-    @router.get("/agenda", response_model=List[CockpitAppointment], dependencies=protected)
-    async def day_agenda(response: Response, start: datetime = Query(...), end: datetime = Query(...)) -> List[CockpitAppointment]:
+    @router.get("/agenda", response_model=List[AgendaAppointment], dependencies=protected)
+    async def day_agenda(response: Response, start: datetime = Query(...), end: datetime = Query(...)) -> List[AgendaAppointment]:
         response.headers['Cache-Control']='no-store'
         rows=await calendar_rows(start,end,include_other=True)
-        return [CockpitAppointment(appointment_id=row.appointment_id,
+        return [AgendaAppointment(appointment_id=row.appointment_id,
             start_at=row.start_at.replace(tzinfo=timezone.utc),end_at=row.end_at.replace(tzinfo=timezone.utc),
-            clinic=row.clinic,category=row.category,patient_display_name=row.patient_display_name,reason=row.reason) for row in rows]
+            clinic=row.clinic,category=row.category,manual_category=row.manual_category,
+            patient_display_name=row.patient_display_name,reason=row.reason) for row in rows]
 
     @router.put(
         "/appointments/{appointment_id}/classification",

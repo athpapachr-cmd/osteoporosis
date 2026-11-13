@@ -22,6 +22,8 @@ def test_calendar_home_all_filter_and_unavailable():
                 if path == "/clinical/status":
                     return route.fulfill(json={"database_dialect": "synthetic"})
                 if path.startswith("/clinical/calendar/"):
+                    if route.request.method == "PUT":
+                        return route.fulfill(status=401, json={"detail": "unauthorized"})
                     if state["fail"]:
                         return route.fulfill(status=503, json={"detail": {"status": "unavailable"}})
                     start = datetime.fromisoformat(parse_qs(parts.query)["start"][0].replace("Z", "+00:00"))
@@ -30,7 +32,7 @@ def test_calendar_home_all_filter_and_unavailable():
                     base = {"start_at": begin, "end_at": end, "clinic": "Synthetic",
                             "reason": "Synthetic", "status": "scheduled", "duration_minutes": 30}
                     rows = [{**base, "appointment_id": "synthetic-ost", "patient_display_name": "Synthetic Osteo",
-                             "category": "osteoporosis_review"}]
+                             "category": "osteoporosis_review", "manual_category": "osteoporosis_review"}]
                     if path.endswith("/agenda"):
                         rows.append({**base, "appointment_id": "synthetic-other",
                                      "patient_display_name": "Synthetic Other", "category": "other"})
@@ -49,6 +51,13 @@ def test_calendar_home_all_filter_and_unavailable():
             page.goto("https://cockpit.invalid/static/clinical-calendar/")
             expect(page.locator("#connectionStatus")).to_contain_text("2 ραντεβού")
             expect(page.get_by_text("Synthetic Other", exact=True)).to_be_visible()
+            expect(page.locator(".classification-select")).to_have_value("osteoporosis_review")
+            page.locator(".classification-select").select_option("")
+            expect(page.locator("#calendarApp")).to_be_hidden()
+            expect(page.locator("#authCard")).to_be_visible()
+            expect(page.get_by_text("Synthetic Osteo", exact=True)).to_have_count(0)
+            page.reload()
+            expect(page.locator("#connectionStatus")).to_contain_text("2 ραντεβού")
             page.locator("#showOsteoporosisAppointments").click()
             expect(page.locator("#connectionStatus")).to_contain_text("1 ραντεβού")
             expect(page.get_by_text("Synthetic Other", exact=True)).to_have_count(0)

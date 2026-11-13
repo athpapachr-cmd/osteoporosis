@@ -5,6 +5,7 @@
   let weekOffset = 0;
   let calendarMode = "all";
   let weekRequest = 0;
+  let authGeneration = 0;
 
   const CATEGORY_LABELS = {
     osteoporosis_first: "1ο ραντεβού οστεοπόρωσης",
@@ -51,19 +52,33 @@
   }
 
   async function checkAuth() {
+    const ticket = ++authGeneration;
     try {
       const status = await api("/clinical/status", { method: "GET", headers: {} });
+      if (ticket !== authGeneration) return;
       $("#authCard").hidden = true;
       $("#calendarApp").hidden = false;
       setStatus(`Protected DB · ${status.database_dialect}`, "ok");
       await loadWeek();
     } catch (err) {
-      $("#authCard").hidden = false;
-      $("#calendarApp").hidden = true;
+      if (ticket !== authGeneration) return;
+      clearProtectedCalendar();
       const msg = $("#authMessage");
       msg.textContent = err.status === 503 ? "Το clinical access δεν έχει ρυθμιστεί." : "Απαιτείται σύνδεση.";
       msg.className = "status err";
     }
+  }
+
+  function clearProtectedCalendar() {
+    ++authGeneration;
+    ++weekRequest;
+    $("#calendarApp").hidden = true;
+    $("#authCard").hidden = false;
+    $("#weekGrid").replaceChildren();
+    for (const id of ["#countOsteoporosis", "#countProlia", "#countAclasta", "#countUnspecified"])
+      $(id).textContent = "—";
+    setStatus("");
+    $("#authMessage").textContent = "Απαιτείται σύνδεση.";
   }
 
   async function login() {
@@ -227,6 +242,7 @@
       setStatus(`${rows.length} ραντεβού · ${requestedMode === "all" ? "όλες οι κατηγορίες" : "οστεοπόρωση"}`, "ok");
     } catch (err) {
       if (ticket !== weekRequest) return;
+      if (err.status === 401 || err.status === 403) { clearProtectedCalendar(); return; }
       const last = parseServerDate(err.detail?.last_fetched_at);
       const freshness = last ? ` · τελευταία ανάγνωση ${fmtLong.format(last)} ${fmtTime.format(last)}` : "";
       setStatus(`Μη διαθέσιμο${freshness}`, "err");
@@ -263,11 +279,13 @@
       );
       await loadWeek();
     } catch (err) {
+      if (err.status === 401 || err.status === 403) { clearProtectedCalendar(); return; }
       setStatus(err.message, "err");
       select.disabled = false;
     }
   });
 
   if (typeof window !== "undefined" && typeof window.addEventListener === "function") window.addEventListener("clinical:authenticated", checkAuth);
+  if (typeof window !== "undefined" && typeof window.addEventListener === "function") window.addEventListener("clinical:unauthenticated", clearProtectedCalendar);
   checkAuth();
 })();
