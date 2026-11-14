@@ -286,6 +286,23 @@
     container.append(list);
   }
 
+  function validLinkedSummary(data) {
+    if (data.linked !== true || typeof data.patient_id !== "string" || !data.patient_id ||
+        typeof data.patient_name !== "string" || !Array.isArray(data.pending) ||
+        !Object.prototype.hasOwnProperty.call(data, "latest_visit")) return false;
+    if (!data.pending.every(item => item && typeof item === "object" && typeof item.description === "string" &&
+        typeof item.pending_id === "string" && typeof item.status === "string")) return false;
+    const latest = data.latest_visit;
+    if (latest === null) return true;
+    if (!latest || typeof latest !== "object" || typeof latest.source_encounter_id !== "string" ||
+        typeof latest.date !== "string" || typeof latest.reason !== "string" ||
+        !Array.isArray(latest.findings) || !Array.isArray(latest.decisions)) return false;
+    const validFact = item => item && typeof item === "object" && typeof item.text === "string" &&
+      Array.isArray(item.source_roles) && item.source_roles.every(role => typeof role === "string") &&
+      typeof item.certainty === "string" && typeof item.verification === "string";
+    return latest.findings.every(validFact) && latest.decisions.every(validFact);
+  }
+
   async function loadVisitSummary(row, start) {
     const generation = previewGeneration;
     const controller = new AbortController();
@@ -304,7 +321,8 @@
       const freshStart = parseServerDate(booking?.start_at);
       if (!["chart_linked", "booking_only"].includes(data?.mode) || booking?.booking_uid !== canonicalUid ||
           !freshStart || !Number.isFinite(freshStart.getTime()) || typeof booking.patient_display_name !== "string" ||
-          typeof booking.reason_available !== "string" || typeof booking.reason_may_be_truncated !== "boolean") {
+          typeof booking.reason_available !== "string" || typeof booking.reason_may_be_truncated !== "boolean" ||
+          (data.mode === "chart_linked" && !validLinkedSummary(data))) {
         throw new Error("Invalid booking preview");
       }
       $("#appointmentDialogTitle").textContent = booking.patient_display_name || "Ραντεβού";

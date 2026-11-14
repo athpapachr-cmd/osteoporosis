@@ -368,9 +368,9 @@ def test_inline_preview_uses_fresh_booking_and_discards_late_results():
                 if(!String(url).endsWith('/visit-brief/chart-read'))return original(url,opts);
                 const uid=JSON.parse(opts.body).booking_uid;
                 if(uid==='one')return new Promise(resolve=>{window.resolveFirst=resolve;});
-                return Promise.resolve(new Response(JSON.stringify({mode:'chart_linked',booking:{booking_uid:'cal.com:two',
+                return Promise.resolve(new Response(JSON.stringify({mode:'chart_linked',linked:true,patient_id:'synthetic-two',patient_name:'Συνθετικός Δύο',booking:{booking_uid:'cal.com:two',
                   patient_display_name:'Συνθετικός Δύο',start_at:'2026-11-10T08:00:00Z',reason_available:'Α'.repeat(240)+' ΝΕΟ',
-                  reason_may_be_truncated:false},latest_visit:{date:'2026-01-01',reason:'Δεύτερη επίσκεψη',findings:[],decisions:[]},pending:[]}),
+                  reason_may_be_truncated:false},latest_visit:{source_encounter_id:'visit-two',date:'2026-01-01',reason:'Δεύτερη επίσκεψη',findings:[],decisions:[]},pending:[]}),
                   {status:200,headers:{'Content-Type':'application/json'}}));
               };
             }""")
@@ -392,9 +392,19 @@ def test_inline_preview_uses_fresh_booking_and_discards_late_results():
             expect(page.locator('#calendarVisitSummary')).not_to_contain_text('Πρώτη επίσκεψη')
             page.keyboard.press('Escape')
             page.evaluate("""() => {
-              window.reasonLength=999; window.returnUnauthorized=false;
+              window.reasonLength=999; window.returnUnauthorized=false; window.malformedKind='';
               window.fetch=(url,opts)=> {
                 if(window.returnUnauthorized)return Promise.resolve(new Response('{}',{status:401}));
+                if(window.malformedKind){
+                  const payload={mode:'chart_linked',linked:true,patient_id:'synthetic-two',patient_name:'Συνθετικός Δύο',
+                    booking:{booking_uid:'cal.com:two',patient_display_name:'Συνθετικός Δύο',start_at:'2026-11-10T08:00:00Z',
+                      reason_available:'Φρέσκος λόγος',reason_may_be_truncated:false},
+                    latest_visit:{source_encounter_id:'visit-two',date:'2026-01-01',reason:'Επίσκεψη',findings:[],decisions:[]},pending:[]};
+                  if(window.malformedKind==='pending')delete payload.pending;
+                  if(window.malformedKind==='latest')delete payload.latest_visit;
+                  if(window.malformedKind==='decisions')delete payload.latest_visit.decisions;
+                  return Promise.resolve(new Response(JSON.stringify(payload),{status:200,headers:{'Content-Type':'application/json'}}));
+                }
                 return Promise.resolve(new Response(JSON.stringify({mode:'booking_only',booking:{booking_uid:'cal.com:two',
                   patient_display_name:'Συνθετικός Δύο',start_at:'2026-11-10T08:00:00Z',reason_available:'λ'.repeat(window.reasonLength),
                   reason_may_be_truncated:window.reasonLength>=1000}}),{status:200,headers:{'Content-Type':'application/json'}}));
@@ -414,6 +424,13 @@ def test_inline_preview_uses_fresh_booking_and_discards_late_results():
             page.locator('.appt-row').filter(has_text='Συνθετικός Δύο').click()
             expect(page.locator('#previewReason')).to_contain_text('Δεν υπάρχει διαθέσιμος λόγος')
             page.keyboard.press('Escape')
+            for malformed in ('pending','latest','decisions'):
+                page.evaluate('(kind) => window.malformedKind=kind', malformed)
+                page.locator('.appt-row').filter(has_text='Συνθετικός Δύο').click()
+                expect(page.locator('#calendarVisitSummary')).to_contain_text('Η σύνοψη δεν είναι διαθέσιμη')
+                expect(page.locator('#calendarVisitSummary')).not_to_contain_text('Δεν υπάρχουν ανοικτές υποχρεώσεις')
+                expect(page.locator('#calendarVisitSummary')).not_to_contain_text('Δεν έχει καταγραφεί προηγούμενο σχέδιο')
+                page.keyboard.press('Escape')
             page.evaluate('window.returnUnauthorized=true')
             page.locator('.appt-row').filter(has_text='Συνθετικός Δύο').click()
             expect(page.locator('#authCard')).to_be_visible()
