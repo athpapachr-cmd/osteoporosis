@@ -431,7 +431,23 @@ def test_inline_preview_uses_fresh_booking_and_discards_late_results():
                 expect(page.locator('#calendarVisitSummary')).not_to_contain_text('Δεν υπάρχουν ανοικτές υποχρεώσεις')
                 expect(page.locator('#calendarVisitSummary')).not_to_contain_text('Δεν έχει καταγραφεί προηγούμενο σχέδιο')
                 page.keyboard.press('Escape')
-            page.evaluate('window.returnUnauthorized=true')
+            page.evaluate("""() => {
+              window.fetch=()=>new Promise(resolve=>{window.resolveLogout=resolve;});
+            }""")
+            page.locator('.appt-row').filter(has_text='Συνθετικός Δύο').click()
+            page.evaluate("""() => {
+              window.dispatchEvent(new Event('clinical:unauthenticated'));
+              window.resolveLogout(new Response(JSON.stringify({mode:'chart_linked',linked:true,patient_id:'synthetic-two',
+                patient_name:'Συνθετικός Δύο',booking:{booking_uid:'cal.com:two',patient_display_name:'Συνθετικός Δύο',
+                start_at:'2026-11-10T08:00:00Z',reason_available:'ΚΡΥΦΟ',reason_may_be_truncated:false},
+                latest_visit:null,pending:[]}),{status:200,headers:{'Content-Type':'application/json'}}));
+            }""")
+            expect(page.locator('#authCard')).to_be_visible()
+            expect(page.locator('#appointmentDialog')).to_be_hidden()
+            assert page.locator('#appointmentDialogContent').inner_text()==''
+            page.reload()
+            expect(page.locator('.appt-row')).to_have_count(2)
+            page.evaluate("window.fetch=()=>Promise.resolve(new Response('{}',{status:401}))")
             page.locator('.appt-row').filter(has_text='Συνθετικός Δύο').click()
             expect(page.locator('#authCard')).to_be_visible()
             expect(page.locator('#appointmentDialog')).to_be_hidden()
