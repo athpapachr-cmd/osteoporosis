@@ -173,10 +173,11 @@
     const category = row.category || "other";
     const label = CATEGORY_LABELS[category] || "Ραντεβού";
     const patient = row.patient_display_name || row.linked_patient_id || "Χωρίς αντιστοίχιση ασθενούς";
+    const reason = typeof row.reason === "string" ? row.reason.replace(/\s+/g, " ").trim() : "";
     const time = start ? fmtTime.format(start) : "—";
     const marker = category === "other" ? "" : `<span class="appt-indicator ${esc(category)}" aria-hidden="true"></span>`;
-    return `<button type="button" class="appt-row" data-appointment-key="${esc(key)}" aria-label="${esc(time + " · " + patient + " · " + label)}" title="${esc(patient + " · " + label)}">
-      <time>${esc(time)}</time><span class="appt-name">${esc(patient)}</span>${marker}
+    return `<button type="button" class="appt-row" data-appointment-key="${esc(key)}" aria-label="${esc(time + " · " + patient + " · " + label + (reason ? " · " + reason : ""))}" title="${esc(patient + " · " + label + (reason ? " · " + reason : ""))}">
+      <time>${esc(time)}</time><span class="appt-copy"><span class="appt-name">${esc(patient)}</span>${reason ? `<span class="appt-reason">${esc(reason)}</span>` : ""}</span>${marker}
     </button>`;
   }
 

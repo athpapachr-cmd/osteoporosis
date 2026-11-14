@@ -127,7 +127,8 @@ def test_busy_week_compact_rows_details_and_keyboard():
                                 "start_at": begin.isoformat(), "end_at": (begin + timedelta(minutes=20)).isoformat(),
                                 "clinic": "Ιατρείο δοκιμής", "category": "prolia" if index == 0 else "other",
                                 "patient_display_name": f"Ασθενής Δοκιμής {day}-{index}",
-                                "reason": "<img src=x> Πλήρης συνθετικός λόγος", "manual_category": None})
+                                "reason": "  \n\t " if index == 1 else "<img src=x> Πλήρης συνθετικός λόγος για την επίσκεψη με αρκετές επιπλέον λέξεις για δοκιμή συντόμευσης",
+                                "manual_category": None})
                     for index in range(2):
                         begin = start + timedelta(hours=16, minutes=20 * index)
                         rows.append({"appointment_id":"duplicate-id", "start_at":begin.isoformat(),
@@ -150,6 +151,10 @@ def test_busy_week_compact_rows_details_and_keyboard():
             rows = page.locator(".appt-row")
             expect(rows).to_have_count(77)
             assert rows.first.bounding_box()["height"] <= 40
+            expect(rows.first.locator(".appt-reason")).to_have_text("<img src=x> Πλήρης συνθετικός λόγος για την επίσκεψη με αρκετές επιπλέον λέξεις για δοκιμή συντόμευσης")
+            assert rows.first.locator("img").count() == 0
+            assert rows.nth(1).locator(".appt-reason").count() == 0
+            assert rows.first.locator(".appt-reason").evaluate("(el) => el.scrollWidth > el.clientWidth")
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
             if width == 1440:
                 assert rows.nth(14).bounding_box()["y"] + rows.nth(14).bounding_box()["height"] <= 900
@@ -157,7 +162,7 @@ def test_busy_week_compact_rows_details_and_keyboard():
             dialog = page.locator("#appointmentDialog")
             expect(dialog).to_be_visible()
             expect(dialog).to_contain_text("Ασθενής Δοκιμής 0-0")
-            expect(dialog).to_contain_text("<img src=x> Πλήρης συνθετικός λόγος")
+            expect(dialog).to_contain_text("<img src=x> Πλήρης συνθετικός λόγος για την επίσκεψη με αρκετές επιπλέον λέξεις για δοκιμή συντόμευσης")
             assert dialog.locator("img").count() == 0
             expect(dialog.locator("a.appointment-chart")).to_have_attribute(
                 "href", re.compile(r"booking=busy-0-0"))
