@@ -118,6 +118,8 @@ def test_busy_week_compact_rows_details_and_keyboard():
                 parts = urlsplit(route.request.url)
                 if parts.path == "/clinical/status":
                     return route.fulfill(json={"database_dialect": "synthetic"})
+                if parts.path.endswith("/visit-brief/chart-read"):
+                    return route.fulfill(status=503, json={"detail":"synthetic unavailable"})
                 if parts.path.startswith("/clinical/calendar/"):
                     start = datetime.fromisoformat(parse_qs(parts.query)["start"][0].replace("Z", "+00:00"))
                     rows = []
@@ -159,7 +161,11 @@ def test_busy_week_compact_rows_details_and_keyboard():
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
             if width == 1440:
                 assert rows.nth(14).bounding_box()["y"] + rows.nth(14).bounding_box()["height"] <= 900
-            expect(rows.first).to_have_attribute("href", re.compile(r"/static/cockpit/\?booking=busy-0-0&booking_date="))
+            rows.first.click()
+            expect(page.locator("#appointmentDialog")).to_be_visible()
+            expect(page.locator("#previewReason")).to_contain_text("Πλήρης συνθετικός λόγος")
+            assert "/static/clinical-calendar/" in page.url
+            page.keyboard.press("Escape")
             page.get_by_role("button", name="Επιλογές ραντεβού · Ασθενής Δοκιμής 0-0").click()
             dialog = page.locator("#appointmentDialog")
             expect(dialog).to_be_visible()
@@ -316,7 +322,7 @@ def test_clinic_labels_remain_available_without_visit_kind_classification():
         page.route("**/*", route_request)
         page.goto("https://cockpit.invalid/static/clinical-calendar/")
         assert page.locator("#calendarVisitKind").count() == 0
-        expect(page.locator(".appt-row")).to_have_attribute("href", re.compile(r"booking=cal.com%3Asynthetic"))
+        expect(page.locator(".appt-row")).to_have_count(1)
         page.get_by_role("button", name="Επιλογές ραντεβού · Synthetic").click()
         assert page.locator('[data-field="visit_kind"]').count() == 0
         page.locator('[data-field="clinic_override"]').select_option("evrychou")
@@ -328,4 +334,90 @@ def test_clinic_labels_remain_available_without_visit_kind_classification():
         page.get_by_role("button", name="Επιλογές ραντεβού · Synthetic").click()
         expect(page.locator("#appointmentDialog")).to_contain_text("δεν αλλάζει την κράτηση")
         expect(page.locator("#appointmentDialog")).to_contain_text("limassol")
+        browser.close()
+
+
+def test_inline_preview_uses_fresh_booking_and_discards_late_results():
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        for width in (1280, 390):
+            page = browser.new_page(viewport={"width":width,"height":900})
+            def route_request(route):
+                parts = urlsplit(route.request.url)
+                if parts.path == "/clinical/status":
+                    return route.fulfill(json={"database_dialect":"synthetic"})
+                if parts.path == "/clinical/calendar/agenda":
+                    start = datetime.fromisoformat(parse_qs(parts.query)["start"][0].replace("Z", "+00:00")) + timedelta(hours=9)
+                    rows = [{"appointment_id":uid,"patient_display_name":name,"start_at":start.isoformat(),
+                             "end_at":(start+timedelta(minutes=20)).isoformat(),"clinic":"limassol",
+                             "category":"other","reason":"Α"*(994 if uid=="one" else 240)+" ΠΑΛΙΟ"}
+                            for uid,name in (("one","Συνθετικός Ένας"),("two","Συνθετικός Δύο"))]
+                    return route.fulfill(json=rows)
+                asset = ROOT / "static" / parts.path.removeprefix("/static/")
+                if asset.is_dir(): asset = asset / "index.html"
+                if asset.is_file():
+                    mime = "text/html" if asset.suffix == ".html" else ("text/css" if asset.suffix == ".css" else "application/javascript")
+                    return route.fulfill(content_type=mime, body=asset.read_text(encoding="utf8"))
+                return route.fulfill(status=404, body="")
+            page.route("**/*", route_request)
+            page.goto("https://cockpit.invalid/static/clinical-calendar/")
+            expect(page.locator(".appt-row")).to_have_count(2)
+            page.evaluate("""() => {
+              const original=window.fetch.bind(window);
+              window.fetch=(url,opts)=>{
+                if(!String(url).endsWith('/visit-brief/chart-read'))return original(url,opts);
+                const uid=JSON.parse(opts.body).booking_uid;
+                if(uid==='one')return new Promise(resolve=>{window.resolveFirst=resolve;});
+                return Promise.resolve(new Response(JSON.stringify({mode:'chart_linked',booking:{booking_uid:'cal.com:two',
+                  patient_display_name:'Συνθετικός Δύο',start_at:'2026-11-10T08:00:00Z',reason_available:'Α'.repeat(240)+' ΝΕΟ',
+                  reason_may_be_truncated:false},latest_visit:{date:'2026-01-01',reason:'Δεύτερη επίσκεψη',findings:[],decisions:[]},pending:[]}),
+                  {status:200,headers:{'Content-Type':'application/json'}}));
+              };
+            }""")
+            page.locator('.appt-row').filter(has_text='Συνθετικός Ένας').click()
+            expect(page.locator('#previewReason')).to_contain_text('ΠΑΛΙΟ')
+            expect(page.locator('#previewReasonLimit')).to_be_visible()
+            page.keyboard.press('Escape')
+            page.locator('.appt-row').filter(has_text='Συνθετικός Δύο').click()
+            expect(page.locator('#previewReason')).to_contain_text('ΝΕΟ')
+            expect(page.locator('#calendarVisitSummary')).to_contain_text('Δεύτερη επίσκεψη')
+            assert '/static/clinical-calendar/' in page.url
+            page.evaluate("""() => window.resolveFirst(new Response(JSON.stringify({mode:'chart_linked',booking:{
+              booking_uid:'cal.com:one',patient_display_name:'Συνθετικός Ένας',start_at:'2026-11-10T08:00:00Z',
+              reason_available:'ΠΑΛΑΙΟ ΑΠΟΤΕΛΕΣΜΑ',reason_may_be_truncated:false},
+              latest_visit:{date:'2026-01-01',reason:'Πρώτη επίσκεψη',findings:[],decisions:[]},pending:[]}),
+              {status:200,headers:{'Content-Type':'application/json'}}))""")
+            page.wait_for_timeout(50)
+            expect(page.locator('#appointmentDialogTitle')).to_have_text('Συνθετικός Δύο')
+            expect(page.locator('#calendarVisitSummary')).not_to_contain_text('Πρώτη επίσκεψη')
+            page.keyboard.press('Escape')
+            page.evaluate("""() => {
+              window.reasonLength=999; window.returnUnauthorized=false;
+              window.fetch=(url,opts)=> {
+                if(window.returnUnauthorized)return Promise.resolve(new Response('{}',{status:401}));
+                return Promise.resolve(new Response(JSON.stringify({mode:'booking_only',booking:{booking_uid:'cal.com:two',
+                  patient_display_name:'Συνθετικός Δύο',start_at:'2026-11-10T08:00:00Z',reason_available:'λ'.repeat(window.reasonLength),
+                  reason_may_be_truncated:window.reasonLength>=1000}}),{status:200,headers:{'Content-Type':'application/json'}}));
+              };
+            }""")
+            page.locator('.appt-row').filter(has_text='Συνθετικός Δύο').click()
+            expect(page.locator('#previewReason')).to_have_text('λ'*999)
+            expect(page.locator('#previewReasonLimit')).to_be_hidden()
+            expect(page.locator('#calendarVisitSummary')).to_contain_text('Δεν υπάρχει επιβεβαιωμένη σύνδεση')
+            page.keyboard.press('Escape')
+            page.evaluate('window.reasonLength=1000')
+            page.locator('.appt-row').filter(has_text='Συνθετικός Δύο').click()
+            expect(page.locator('#previewReason')).to_have_text('λ'*1000)
+            expect(page.locator('#previewReasonLimit')).to_be_visible()
+            page.keyboard.press('Escape')
+            page.evaluate('window.reasonLength=0')
+            page.locator('.appt-row').filter(has_text='Συνθετικός Δύο').click()
+            expect(page.locator('#previewReason')).to_contain_text('Δεν υπάρχει διαθέσιμος λόγος')
+            page.keyboard.press('Escape')
+            page.evaluate('window.returnUnauthorized=true')
+            page.locator('.appt-row').filter(has_text='Συνθετικός Δύο').click()
+            expect(page.locator('#authCard')).to_be_visible()
+            expect(page.locator('#appointmentDialog')).to_be_hidden()
+            assert page.locator('#appointmentDialogContent').inner_text()==''
+            page.close()
         browser.close()

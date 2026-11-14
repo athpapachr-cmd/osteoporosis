@@ -17,6 +17,8 @@
   let classificationPending = false;
   let classificationNeedsRefresh = false;
   let classificationController = null;
+  let previewGeneration = 0;
+  let previewController = null;
   const RELEVANT_CATEGORIES = new Set(["osteoporosis_first", "osteoporosis_review",
     "osteoporosis_unspecified", "prolia", "aclasta"]);
 
@@ -189,16 +191,20 @@
     const time = start ? fmtTime.format(start) : "—";
     const accessible = time + " · " + patient + " · " + label + (reason ? " · " + reason : "");
     const marker = category === "other" ? "" : `<span class="appt-indicator ${esc(category)}" aria-hidden="true"></span>`;
-    const chartUrl = `/static/cockpit/?booking=${encodeURIComponent(row.appointment_id)}&amp;booking_date=${start ? dateKey(start) : ""}`;
-    const tag = ambiguous ? "button" : "a";
-    const destination = ambiguous ? 'type="button"' : `href="${chartUrl}"`;
-    return `<div class="appt-entry"><${tag} ${destination} class="appt-row" data-appointment-key="${esc(key)}" data-base-label="${esc(accessible)}" aria-label="${esc(accessible)}" title="${esc(patient + " · " + label + (reason ? " · " + reason : ""))}">
+    return `<div class="appt-entry"><button type="button" class="appt-row" data-appointment-key="${esc(key)}" data-base-label="${esc(accessible)}" aria-label="${esc(accessible)}" title="${esc(patient + " · " + label + (reason ? " · " + reason : ""))}">
       <time>${esc(time)}</time><span class="appt-copy"><span class="appt-name">${esc(patient)}</span>${reason ? `<span class="appt-reason">${esc(reason)}</span>` : ""}</span>${marker}<span class="appt-now" hidden aria-hidden="true">Τώρα</span>
-    </${tag}>${ambiguous ? "" : `<button type="button" class="appt-options" data-appointment-key="${esc(key)}" aria-label="Επιλογές ραντεβού · ${esc(patient)}" title="Επιλογές ραντεβού">⋯</button>`}</div>`;
+    </button>${ambiguous ? "" : `<button type="button" class="appt-options" data-appointment-key="${esc(key)}" aria-label="Επιλογές ραντεβού · ${esc(patient)}" title="Επιλογές ραντεβού">⋯</button>`}</div>`;
+  }
+
+  function cancelPreview() {
+    previewGeneration += 1;
+    previewController?.abort();
+    previewController = null;
   }
 
   function closeAppointment() {
     const dialog = $("#appointmentDialog");
+    cancelPreview();
     if (classificationPending) {
       classificationNeedsRefresh = true;
       classificationController?.abort();
@@ -223,7 +229,8 @@
     status.append(refresh);
   }
 
-  function openAppointment(entry) {
+  function openAppointment(entry, optionsOnly = false) {
+    cancelPreview();
     const {row, ambiguous} = entry;
     const start = parseServerDate(row.start_at);
     const end = parseServerDate(row.end_at);
@@ -235,17 +242,104 @@
     const time = start ? fmtTime.format(start) : "—";
     const dialog = $("#appointmentDialog");
     $("#appointmentDialogContent").innerHTML = `<div class="appointment-dialog-header">
-      <div><p class="appointment-dialog-date">${start ? esc(fmtLong.format(start)) : ""} · ${esc(time)}${Number.isFinite(duration) && duration > 0 ? " · " + esc(duration) + "′" : ""}</p>
+      <div><p class="appointment-dialog-date" id="previewBookingDate">${start ? esc(fmtLong.format(start)) : ""} · ${esc(time)}${Number.isFinite(duration) && duration > 0 ? " · " + esc(duration) + "′" : ""}</p>
       <h2 id="appointmentDialogTitle">${esc(name)}</h2></div>
       <button type="button" class="appointment-dialog-close" aria-label="Κλείσιμο">×</button></div>
-      <p><span class="badge ${esc(category)}">${esc(label)}</span></p>
-      ${row.reason ? `<p class="appointment-dialog-reason">${esc(row.reason)}</p>` : '<p class="appointment-dialog-reason">Δεν έχει καταχωριστεί λόγος επίσκεψης.</p>'}
-      ${meta ? `<p class="appointment-dialog-meta">${esc(meta)}</p>` : ""}
-      ${ambiguous ? '<p class="appointment-dialog-status">Το αναγνωριστικό αυτής της κράτησης εμφανίζεται περισσότερες από μία φορές. Έλεγξε την κράτηση στη Γραμματεία πριν ανοίξεις καρτέλα ή αλλάξεις ταξινόμηση.</p>' : classificationControl(row, category) + labelControls(row)}
+      ${optionsOnly ? `<p><span class="badge ${esc(category)}">${esc(label)}</span></p>` : ""}
+      <h3 class="appointment-section-title">Λόγος ραντεβού</h3>
+      <p class="appointment-dialog-reason" id="previewReason">${row.reason ? esc(row.reason) : 'Δεν υπάρχει διαθέσιμος λόγος στην κράτηση.'}</p>
+      <p class="appointment-dialog-meta" id="previewReasonLimit" ${Array.from(row.reason || "").length >= 1000 ? "" : "hidden"}>Ο λόγος μπορεί να είναι μεγαλύτερος στην αρχική κράτηση.</p>
+      ${optionsOnly && meta ? `<p class="appointment-dialog-meta">${esc(meta)}</p>` : ""}
+      ${ambiguous ? '<p class="appointment-dialog-status">Το αναγνωριστικό αυτής της κράτησης εμφανίζεται περισσότερες από μία φορές. Έλεγξε την κράτηση στη Γραμματεία πριν ανοίξεις καρτέλα ή αλλάξεις ταξινόμηση.</p>' : optionsOnly ? classificationControl(row, category) + labelControls(row) : '<section id="calendarVisitSummary" aria-live="polite"><p class="appointment-dialog-meta">Φόρτωση σύνοψης…</p></section>'}
       <p class="appointment-dialog-status" role="status"></p>
-      ${ambiguous ? "" : `<a class="button primary appointment-chart" href="/static/cockpit/?booking=${encodeURIComponent(row.appointment_id)}&amp;booking_date=${start ? dateKey(start) : ''}">Καρτέλα · Τελευταία επίσκεψη</a>`}`;
+      ${ambiguous ? "" : `<a class="button primary appointment-chart" href="/static/cockpit/?booking=${encodeURIComponent(row.appointment_id)}&amp;booking_date=${start ? dateKey(start) : ''}">Άνοιγμα καρτέλας</a>`}`;
     if (classificationNeedsRefresh) showUnconfirmedClassification();
     dialog.showModal();
+    if (!ambiguous && !optionsOnly) void loadVisitSummary(row, start);
+  }
+
+  function summaryFact(value) {
+    if (!value || typeof value !== "object") return String(value || "");
+    const sourceLabel = {heidi_today:"Heidi", gesy_today:"ΓεΣΥ σήμερα", gesy_previous:"ΓεΣΥ προηγούμενο", dia_summary:"Σύνοψη Dia", clinician_edit:"Ιατρική καταγραφή"};
+    const roles = Array.isArray(value.source_roles) ? value.source_roles.slice(0, 3).map(role => sourceLabel[role] || "Μη προσδιορισμένη πηγή") : [];
+    return String(value.text || "") + (roles.length ? " · Πηγή: " + roles.join(", ") : "") +
+      (value.certainty && value.certainty !== "certain" ? " · Βεβαιότητα: " + value.certainty : "") +
+      (value.verification && value.verification !== "clinician_confirmed" ? " · Καταγραφή από πηγή" : "");
+  }
+
+  function summarySection(container, title, values, empty) {
+    const heading = document.createElement("h3");
+    heading.className = "appointment-section-title";
+    heading.textContent = title;
+    container.append(heading);
+    const texts = values.map(summaryFact).filter(text => text.trim());
+    if (!texts.length) {
+      const paragraph = document.createElement("p");
+      paragraph.className = "appointment-dialog-meta";
+      paragraph.textContent = empty;
+      container.append(paragraph);
+      return;
+    }
+    const list = document.createElement("ul");
+    list.className = "appointment-summary-list";
+    texts.forEach(text => { const item = document.createElement("li"); item.textContent = text; list.append(item); });
+    container.append(list);
+  }
+
+  async function loadVisitSummary(row, start) {
+    const generation = previewGeneration;
+    const controller = new AbortController();
+    previewController = controller;
+    let timedOut = false;
+    const timeout = setTimeout(() => { timedOut = true; controller.abort(); }, 15000);
+    const uid = String(row.appointment_id || "");
+    const canonicalUid = uid.startsWith("cal.com:") ? uid : "cal.com:" + uid;
+    try {
+      const data = await api("/clinical/calendar/visit-brief/chart-read", {
+        method: "POST", cache: "no-store", signal: controller.signal,
+        body: JSON.stringify({booking_uid: uid, target_date: start ? dateKey(start) : null}),
+      });
+      if (generation !== previewGeneration || !$("#appointmentDialog").open) return;
+      const booking = data?.booking;
+      const freshStart = parseServerDate(booking?.start_at);
+      if (!["chart_linked", "booking_only"].includes(data?.mode) || booking?.booking_uid !== canonicalUid ||
+          !freshStart || !Number.isFinite(freshStart.getTime()) || typeof booking.patient_display_name !== "string" ||
+          typeof booking.reason_available !== "string" || typeof booking.reason_may_be_truncated !== "boolean") {
+        throw new Error("Invalid booking preview");
+      }
+      $("#appointmentDialogTitle").textContent = booking.patient_display_name || "Ραντεβού";
+      $("#previewBookingDate").textContent = `${fmtLong.format(freshStart)} · ${fmtTime.format(freshStart)}`;
+      $("#previewReason").textContent = booking.reason_available || "Δεν υπάρχει διαθέσιμος λόγος στην κράτηση.";
+      $("#previewReasonLimit").hidden = !booking.reason_may_be_truncated;
+      $("#appointmentDialogContent .appointment-chart").href = `/static/cockpit/?booking=${encodeURIComponent(booking.booking_uid)}&booking_date=${dateKey(freshStart)}`;
+      const summary = $("#calendarVisitSummary");
+      summary.replaceChildren();
+      if (data.mode === "booking_only") {
+        const text = document.createElement("p");
+        text.className = "appointment-dialog-meta";
+        text.textContent = "Δεν υπάρχει επιβεβαιωμένη σύνδεση καρτέλας για αυτό το ραντεβού.";
+        summary.append(text);
+        $("#appointmentDialogContent .appointment-chart").textContent = "Άνοιγμα / σύνδεση καρτέλας";
+        return;
+      }
+      const latest = data.latest_visit;
+      const previous = latest ? [String(latest.date || "") + " · " + String(latest.reason || ""), ...(Array.isArray(latest.findings) ? latest.findings : [])] : [];
+      summarySection(summary, "Τελευταία αποθηκευμένη επίσκεψη", previous, "Δεν έχει αποθηκευτεί επίσκεψη.");
+      summarySection(summary, "Προηγούμενη απόφαση και σχέδιο", Array.isArray(latest?.decisions) ? latest.decisions : [], "Δεν έχει καταγραφεί προηγούμενο σχέδιο.");
+      summarySection(summary, "Ανοικτές υποχρεώσεις", Array.isArray(data.pending) ? data.pending.map(item => item.description) : [], "Δεν υπάρχουν ανοικτές υποχρεώσεις.");
+    } catch (err) {
+      if (generation !== previewGeneration || !$("#appointmentDialog").open || (err.name === "AbortError" && !timedOut)) return;
+      if (err.status === 401 || err.status === 403) { clearProtectedCalendar(); return; }
+      const summary = $("#calendarVisitSummary");
+      summary.replaceChildren();
+      const text = document.createElement("p");
+      text.className = "appointment-dialog-meta";
+      text.textContent = "Η σύνοψη δεν είναι διαθέσιμη αυτή τη στιγμή. Εμφανίζεται η τελευταία ανάγνωση του ημερολογίου.";
+      summary.append(text);
+    } finally {
+      clearTimeout(timeout);
+      if (previewController === controller) previewController = null;
+    }
   }
 
   function labelControls(row) {
@@ -449,7 +543,7 @@
   $("#weekGrid").addEventListener("click", event => {
     const control = event.target.closest(".appt-options, button.appt-row");
     const row = control && appointmentRows.get(control.dataset.appointmentKey);
-    if (row) openAppointment(row);
+    if (row) openAppointment(row, control.classList.contains("appt-options"));
   });
   $("#appointmentDialog").addEventListener("click", event => {
     if (event.target.closest(".appointment-dialog-close") && !classificationPending) closeAppointment();
@@ -458,7 +552,10 @@
     if (classificationPending) event.preventDefault();
   });
   $("#appointmentDialog").addEventListener("close", () => {
-    if (!$("#appointmentDialog").open) $("#appointmentDialogContent").replaceChildren();
+    if (!$("#appointmentDialog").open) {
+      cancelPreview();
+      $("#appointmentDialogContent").replaceChildren();
+    }
   });
   $("#appointmentDialog").addEventListener("change", async (event) => {
     const select = event.target.closest(".classification-select, .label-select");

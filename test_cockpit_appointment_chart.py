@@ -108,6 +108,23 @@ def test_dated_authority_boundaries_and_latest_signed_visit(fixture,monkeypatch)
     assert c.post(PATH+'chart-read',json={'booking_uid':'chart-fixture'}).status_code==409
 
 
+def test_chart_read_returns_available_fresh_reason_and_honest_limit(fixture):
+    app,engine,c,p,state=fixture
+    read=c.post(PATH+'chart-read',json={'booking_uid':'chart-fixture'}).json()
+    assert c.post(PATH+'chart-select',json=selection(c,read)).status_code==200
+    for length in (0, 241, 999, 1000):
+        reason='α'*max(0,length-1)+('β' if length else '')
+        state['source']=state['source'].model_copy(update={'reason':reason})
+        response=c.post(PATH+'chart-read',json={'booking_uid':'chart-fixture'})
+        assert response.status_code==200
+        result=response.json()
+        assert result['mode']=='chart_linked'
+        assert result['booking']['reason']==reason[:240]
+        assert result['booking']['reason_available']==reason
+        assert result['booking']['reason_may_be_truncated'] is (length>=1000)
+        assert response.headers['cache-control']=='no-store'
+
+
 def test_browser_single_login_booking_link_latest_and_independent_session(fixture,tmp_path):
     import socket,threading,shutil,json
     import uvicorn
@@ -154,7 +171,12 @@ def test_browser_single_login_booking_link_latest_and_independent_session(fixtur
                 page.clock.set_fixed_time(source.start_at-timedelta(hours=1))
                 page.route('**/clinical/calendar/agenda?*',lambda route:route.fulfill(json=[{**record,'category':'osteoporosis_unspecified'}]))
                 page.goto(base+'/static/clinical-calendar/')
-                page.get_by_role('link',name='Συνθετικός Ραντεβού',exact=False).click()
+                page.locator('.appt-row').filter(has_text='Συνθετικός Ραντεβού').click()
+                expect(page.locator('#appointmentDialog')).to_be_visible()
+                expect(page.locator('#previewReason')).to_have_text(source.reason)
+                expect(page.locator('#calendarVisitSummary')).to_contain_text('Επανέλεγχος γόνατος')
+                assert '/static/clinical-calendar/' in page.url
+                page.get_by_role('link',name='Άνοιγμα καρτέλας').click()
                 expect(page.locator('#visitBriefOverlay')).to_be_visible()
                 expect(page.locator('#visitBriefIdentity')).to_contain_text('Συνδεδεμένη καρτέλα')
                 expect(page.locator('#visitBriefPrevious')).to_contain_text('Επανέλεγχος γόνατος')
