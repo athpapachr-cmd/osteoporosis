@@ -589,6 +589,14 @@ def test_legacy_sqlite_requires_explicit_migration(tmp_path):
         assert (row.category, row.visit_kind, row.clinic_override, row.revision) == ("prolia", None, None, 0)
 
 
+def test_fresh_file_backed_sqlite_keeps_first_run_support(tmp_path):
+    engine = create_engine(f"sqlite:///{tmp_path / 'fresh.db'}")
+    build_clinical_calendar_router(engine)
+    with Session(engine) as session:
+        assert session.query(ClinicalAppointmentClassificationORM).count() == 0
+        assert session.query(ClinicalAppointmentORM).count() == 0
+
+
 def test_context_preserves_start_order_aclasta_exception_and_fail_closed_overlaps(monkeypatch):
     base = datetime(2026, 10, 3, 9, 0)
     cases = [

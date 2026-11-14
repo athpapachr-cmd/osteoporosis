@@ -381,10 +381,17 @@ def _cockpit_appointment(row: Optional[ClinicalAppointmentORM]) -> Optional[Cock
 
 
 def build_clinical_calendar_router(engine: Engine) -> APIRouter:
-    if engine.dialect.name == "sqlite" and engine.url.database in (None, "", ":memory:"):
-        CalendarBase.metadata.create_all(bind=engine)
+    if engine.dialect.name == "sqlite":
+        inspector = inspect(engine)
+        if not inspector.has_table("clinical_appointment_classifications") and not inspector.has_table("clinical_appointments"):
+            # Preserve the existing first-run local SQLite bootstrap only when
+            # neither calendar table exists; never upgrade a partial/old schema.
+            CalendarBase.metadata.create_all(bind=engine)
     # Production and upgraded SQLite provisioning are performed separately.
-    cols = {column["name"] for column in inspect(engine).get_columns("clinical_appointment_classifications")}
+    inspector = inspect(engine)
+    if not inspector.has_table("clinical_appointment_classifications"):
+        raise RuntimeError("Calendar classification schema is not qualified; apply the reviewed migration")
+    cols = {column["name"] for column in inspector.get_columns("clinical_appointment_classifications")}
     if not {"appointment_id", "category", "visit_kind", "clinic_override", "revision", "updated_at"}.issubset(cols):
         raise RuntimeError("Calendar classification schema is not qualified; apply the reviewed migration")
     router = APIRouter(prefix="/clinical/calendar", tags=["clinical-calendar"])
