@@ -7,6 +7,9 @@
   let weekRequest = 0;
   let authGeneration = 0;
   let appointmentRows = new Map();
+  let classificationPending = false;
+  let classificationNeedsRefresh = false;
+  let classificationController = null;
 
   const CATEGORY_LABELS = {
     osteoporosis_first: "1ο ραντεβού οστεοπόρωσης",
@@ -163,25 +166,46 @@
     </label>`;
   }
 
-  function appointmentHtml(row) {
+  function appointmentHtml(row, key) {
     const start = parseServerDate(row.start_at);
     const category = row.category || "other";
     const label = CATEGORY_LABELS[category] || "Ραντεβού";
     const patient = row.patient_display_name || row.linked_patient_id || "Χωρίς αντιστοίχιση ασθενούς";
     const time = start ? fmtTime.format(start) : "—";
     const marker = category === "other" ? "" : `<span class="appt-indicator ${esc(category)}" aria-hidden="true"></span>`;
-    return `<button type="button" class="appt-row" data-appointment-key="${esc(row.appointment_id)}" aria-label="${esc(time + " · " + patient + " · " + label)}" title="${esc(patient + " · " + label)}">
+    return `<button type="button" class="appt-row" data-appointment-key="${esc(key)}" aria-label="${esc(time + " · " + patient + " · " + label)}" title="${esc(patient + " · " + label)}">
       <time>${esc(time)}</time><span class="appt-name">${esc(patient)}</span>${marker}
     </button>`;
   }
 
   function closeAppointment() {
     const dialog = $("#appointmentDialog");
+    if (classificationPending) {
+      classificationNeedsRefresh = true;
+      classificationController?.abort();
+      classificationPending = false;
+    }
     if (dialog.open) dialog.close();
     $("#appointmentDialogContent").replaceChildren();
   }
 
-  function openAppointment(row) {
+  function showUnconfirmedClassification() {
+    const content = $("#appointmentDialogContent");
+    const select = content.querySelector(".classification-select");
+    const status = content.querySelector("[role='status']");
+    if (select) select.disabled = true;
+    if (!status) return;
+    status.textContent = "Η αποθήκευση δεν επιβεβαιώθηκε και μπορεί να έχει ολοκληρωθεί. Ανανέωσε το πρόγραμμα και έλεγξε την ταξινόμηση πριν ξαναπροσπαθήσεις. ";
+    const refresh = document.createElement("button");
+    refresh.type = "button";
+    refresh.className = "button ghost";
+    refresh.textContent = "Ανανέωση προγράμματος";
+    refresh.addEventListener("click", () => void loadWeek());
+    status.append(refresh);
+  }
+
+  function openAppointment(entry) {
+    const {row, ambiguous} = entry;
     const start = parseServerDate(row.start_at);
     const end = parseServerDate(row.end_at);
     const category = row.category || "other";
@@ -198,21 +222,26 @@
       <p><span class="badge ${esc(category)}">${esc(label)}</span></p>
       ${row.reason ? `<p class="appointment-dialog-reason">${esc(row.reason)}</p>` : '<p class="appointment-dialog-reason">Δεν έχει καταχωριστεί λόγος επίσκεψης.</p>'}
       ${meta ? `<p class="appointment-dialog-meta">${esc(meta)}</p>` : ""}
-      ${classificationControl(row, category)}
+      ${ambiguous ? '<p class="appointment-dialog-status">Το αναγνωριστικό αυτής της κράτησης εμφανίζεται περισσότερες από μία φορές. Έλεγξε την κράτηση στη Γραμματεία πριν ανοίξεις καρτέλα ή αλλάξεις ταξινόμηση.</p>' : classificationControl(row, category)}
       <p class="appointment-dialog-status" role="status"></p>
-      <a class="button primary appointment-chart" href="/static/cockpit/?booking=${encodeURIComponent(row.appointment_id)}&amp;booking_date=${start ? dateKey(start) : ''}">Καρτέλα · Τελευταία επίσκεψη</a>`;
+      ${ambiguous ? "" : `<a class="button primary appointment-chart" href="/static/cockpit/?booking=${encodeURIComponent(row.appointment_id)}&amp;booking_date=${start ? dateKey(start) : ''}">Καρτέλα · Τελευταία επίσκεψη</a>`}`;
+    if (classificationNeedsRefresh) showUnconfirmedClassification();
     dialog.showModal();
   }
 
   function renderWeek(rows, monday) {
-    appointmentRows = new Map((rows || []).map(row => [String(row.appointment_id), row]));
+    const counts = new Map();
+    (rows || []).forEach(row => counts.set(String(row.appointment_id), (counts.get(String(row.appointment_id)) || 0) + 1));
+    appointmentRows = new Map((rows || []).map((row, index) =>
+      [String(index), {row, ambiguous: counts.get(String(row.appointment_id)) > 1}]));
     const grouped = new Map();
     for (let i = 0; i < 7; i += 1) grouped.set(dateKey(addDays(monday, i)), []);
-    (rows || []).forEach(row => {
+    appointmentRows.forEach((entry, rowKey) => {
+      const row = entry.row;
       const start = parseServerDate(row.start_at);
       if (!start) return;
-      const key = dateKey(start);
-      if (grouped.has(key)) grouped.get(key).push(row);
+      const dayKey = dateKey(start);
+      if (grouped.has(dayKey)) grouped.get(dayKey).push({row, key: rowKey});
     });
 
     const grid = $("#weekGrid");
@@ -223,7 +252,7 @@
       const items = grouped.get(key) || [];
       const col = document.createElement("section");
       col.className = "day-column";
-      col.innerHTML = `<div class="day-head"><strong>${esc(fmtDay.format(day))}</strong><span>${esc(fmtDate.format(day))} · ${items.length}</span></div><div class="day-body">${items.length ? items.map(appointmentHtml).join("") : '<div class="empty-day">Δεν υπάρχουν ραντεβού σε αυτή την προβολή.</div>'}</div>`;
+      col.innerHTML = `<div class="day-head"><strong>${esc(fmtDay.format(day))}</strong><span>${esc(fmtDate.format(day))} · ${items.length}</span></div><div class="day-body">${items.length ? items.map(item => appointmentHtml(item.row, item.key)).join("") : '<div class="empty-day">Δεν υπάρχουν ραντεβού σε αυτή την προβολή.</div>'}</div>`;
       grid.appendChild(col);
     }
 
@@ -266,6 +295,7 @@
       if (ticket !== weekRequest) return;
       if (!Array.isArray(rows)) throw new Error("Invalid schedule");
       renderWeek(rows, monday);
+      classificationNeedsRefresh = false;
       setStatus(`${rows.length} ραντεβού · ${requestedMode === "all" ? "όλες οι κατηγορίες" : "οστεοπόρωση"}`, "ok");
     } catch (err) {
       if (ticket !== weekRequest) return;
@@ -298,32 +328,53 @@
     if (row) openAppointment(row);
   });
   $("#appointmentDialog").addEventListener("click", event => {
-    if (event.target.closest(".appointment-dialog-close")) closeAppointment();
+    if (event.target.closest(".appointment-dialog-close") && !classificationPending) closeAppointment();
+  });
+  $("#appointmentDialog").addEventListener("cancel", event => {
+    if (classificationPending) event.preventDefault();
   });
   $("#appointmentDialog").addEventListener("close", () => {
     if (!$("#appointmentDialog").open) $("#appointmentDialogContent").replaceChildren();
   });
   $("#appointmentDialog").addEventListener("change", async (event) => {
     const select = event.target.closest(".classification-select");
-    if (!select) return;
+    if (!select || classificationPending || classificationNeedsRefresh) return;
     const ticket = weekRequest;
+    const closeButton = $("#appointmentDialogContent .appointment-dialog-close");
+    const status = $("#appointmentDialogContent [role='status']");
+    const controller = new AbortController();
+    classificationController = controller;
+    classificationPending = true;
+    if (closeButton) closeButton.disabled = true;
+    if (status) status.textContent = "Αποθήκευση ταξινόμησης…";
     select.disabled = true;
+    const timeout = setTimeout(() => controller.abort(), 15000);
     try {
       await api(
         `/clinical/calendar/appointments/${encodeURIComponent(select.dataset.appointmentId)}/classification`,
         {
           method: "PUT",
+          signal: controller.signal,
           body: JSON.stringify({ category: select.value || null }),
         }
       );
+      if (classificationController === controller) {
+        classificationPending = false;
+        classificationController = null;
+      }
       if (ticket === weekRequest) await loadWeek();
     } catch (err) {
+      if (classificationController === controller) {
+        classificationPending = false;
+        classificationController = null;
+      }
       if (ticket !== weekRequest) return;
       if (err.status === 401 || err.status === 403) { clearProtectedCalendar(); return; }
-      setStatus(err.message, "err");
-      const status = $("#appointmentDialogContent .appointment-dialog-status");
-      if (status) status.textContent = "Η ταξινόμηση δεν αποθηκεύτηκε. Δοκίμασε ξανά.";
-      select.disabled = false;
+      classificationNeedsRefresh = true;
+      if (closeButton) closeButton.disabled = false;
+      showUnconfirmedClassification();
+    } finally {
+      clearTimeout(timeout);
     }
   });
 

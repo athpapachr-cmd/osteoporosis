@@ -59,10 +59,33 @@ def test_calendar_home_all_filter_and_unavailable():
             page.get_by_role("button", name="Synthetic Osteo", exact=False).click()
             expect(page.locator("#appointmentDialog")).to_be_visible()
             expect(page.locator(".classification-select")).to_have_value("osteoporosis_review")
+            page.evaluate("""() => {
+              window.originalFetch = window.fetch.bind(window);
+              window.fetch = (url, opts) => opts?.method === "PUT"
+                ? new Promise((resolve, reject) => { window.resolveWrite = resolve; window.rejectWrite = reject; })
+                : window.originalFetch(url, opts);
+            }""")
             page.locator(".classification-select").select_option("prolia")
+            expect(page.locator(".appointment-dialog-close")).to_be_disabled()
+            page.keyboard.press("Escape")
+            expect(page.locator("#appointmentDialog")).to_be_visible()
+            state["manual"] = "prolia"
+            page.evaluate("""() => window.resolveWrite(new Response(JSON.stringify({manual_category:"prolia"}), {
+              status:200, headers:{"Content-Type":"application/json"}}))""")
             expect(page.locator("#appointmentDialog")).to_be_hidden()
             page.get_by_role("button", name="Synthetic Osteo", exact=False).click()
             expect(page.locator(".classification-select")).to_have_value("prolia")
+            page.locator(".classification-select").select_option("osteoporosis_first")
+            page.evaluate("""() => window.rejectWrite(new Error("synthetic network loss"))""")
+            expect(page.locator("#appointmentDialog [role=status]")).to_contain_text("μπορεί να έχει ολοκληρωθεί")
+            expect(page.locator(".classification-select")).to_be_disabled()
+            page.locator(".appointment-dialog-close").click()
+            page.get_by_role("button", name="Synthetic Osteo", exact=False).click()
+            expect(page.locator(".classification-select")).to_be_disabled()
+            page.get_by_role("button", name="Ανανέωση προγράμματος").click()
+            expect(page.locator("#appointmentDialog")).to_be_hidden()
+            page.evaluate("() => { window.fetch = window.originalFetch; }")
+            page.get_by_role("button", name="Synthetic Osteo", exact=False).click()
             state["lose_session"] = True
             page.locator(".classification-select").select_option("")
             expect(page.locator("#calendarApp")).to_be_hidden()
@@ -105,6 +128,12 @@ def test_busy_week_compact_rows_details_and_keyboard():
                                 "clinic": "Ιατρείο δοκιμής", "category": "prolia" if index == 0 else "other",
                                 "patient_display_name": f"Ασθενής Δοκιμής {day}-{index}",
                                 "reason": "<img src=x> Πλήρης συνθετικός λόγος", "manual_category": None})
+                    for index in range(2):
+                        begin = start + timedelta(hours=16, minutes=20 * index)
+                        rows.append({"appointment_id":"duplicate-id", "start_at":begin.isoformat(),
+                            "end_at":(begin + timedelta(minutes=20)).isoformat(), "clinic":"Synthetic",
+                            "category":"other", "patient_display_name":f"Διπλό δοκιμαστικό {index}",
+                            "reason":f"Διαφορετικός λόγος {index}", "manual_category":None})
                     return route.fulfill(json=rows)
                 asset = ROOT / "static" / parts.path.removeprefix("/static/")
                 if asset.is_dir():
@@ -117,9 +146,9 @@ def test_busy_week_compact_rows_details_and_keyboard():
 
             page.route("**/*", route_request)
             page.goto("https://cockpit.invalid/static/clinical-calendar/")
-            expect(page.locator("#connectionStatus")).to_contain_text("75 ραντεβού")
+            expect(page.locator("#connectionStatus")).to_contain_text("77 ραντεβού")
             rows = page.locator(".appt-row")
-            expect(rows).to_have_count(75)
+            expect(rows).to_have_count(77)
             assert rows.first.bounding_box()["height"] <= 40
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
             if width == 1440:
@@ -135,5 +164,13 @@ def test_busy_week_compact_rows_details_and_keyboard():
             page.keyboard.press("Escape")
             expect(dialog).to_be_hidden()
             expect(rows.first).to_be_focused()
+            for index in range(2):
+                page.get_by_role("button", name=f"Διπλό δοκιμαστικό {index}", exact=False).click()
+                expect(dialog).to_contain_text(f"Διπλό δοκιμαστικό {index}")
+                expect(dialog).to_contain_text(f"Διαφορετικός λόγος {index}")
+                expect(dialog).to_contain_text("εμφανίζεται περισσότερες από μία φορές")
+                assert dialog.locator("a.appointment-chart").count() == 0
+                assert dialog.locator(".classification-select").count() == 0
+                page.keyboard.press("Escape")
             page.close()
         browser.close()
