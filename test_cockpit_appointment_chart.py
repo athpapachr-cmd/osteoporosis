@@ -1,6 +1,7 @@
 """Explicit per-booking chart choice, same clinical session, no name-inferred identity."""
 from datetime import datetime,timedelta,timezone
 from uuid import uuid4
+from zoneinfo import ZoneInfo
 import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
@@ -148,6 +149,16 @@ def test_browser_single_login_booking_link_latest_and_independent_session(fixtur
                 expect(page.locator('#visitBriefOpenLatest')).to_be_visible()
                 expect(page.locator('#visitBriefPrevious')).to_contain_text('Επανέλεγχος γόνατος')
                 overlay.screenshot(path=str(tmp_path/f'appointment-chart-{width}.png'))
+                # A calendar row opens the existing protected booking preview directly,
+                # without any first/review classification or identity write.
+                page.clock.set_fixed_time(source.start_at-timedelta(hours=1))
+                page.route('**/clinical/calendar/agenda?*',lambda route:route.fulfill(json=[{**record,'category':'osteoporosis_unspecified'}]))
+                page.goto(base+'/static/clinical-calendar/')
+                page.get_by_role('link',name='Συνθετικός Ραντεβού',exact=False).click()
+                expect(page.locator('#visitBriefOverlay')).to_be_visible()
+                expect(page.locator('#visitBriefIdentity')).to_contain_text('Συνδεδεμένη καρτέλα')
+                expect(page.locator('#visitBriefPrevious')).to_contain_text('Επανέλεγχος γόνατος')
+                assert state['dates'][-1].isoformat()==source.start_at.astimezone(ZoneInfo('Asia/Nicosia')).date().isoformat()
                 page.goto(url+'?booking=cal.com%3Achart-fixture&booking_date='+source.start_at.date().isoformat())
                 expect(page.locator('#visitBriefOpenLatest')).to_be_visible()
                 page.locator('#visitBriefOpenLatest').click();expect(page.locator('#visit-'+p['source_encounter_id'])).to_be_visible()

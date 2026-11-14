@@ -180,7 +180,7 @@
     </label>`;
   }
 
-  function appointmentHtml(row, key) {
+  function appointmentHtml(row, key, ambiguous) {
     const start = parseServerDate(row.start_at);
     const category = row.category || "other";
     const label = CATEGORY_LABELS[category] || "Ραντεβού";
@@ -189,9 +189,12 @@
     const time = start ? fmtTime.format(start) : "—";
     const accessible = time + " · " + patient + " · " + label + (reason ? " · " + reason : "");
     const marker = category === "other" ? "" : `<span class="appt-indicator ${esc(category)}" aria-hidden="true"></span>`;
-    return `<button type="button" class="appt-row" data-appointment-key="${esc(key)}" data-base-label="${esc(accessible)}" aria-label="${esc(accessible)}" title="${esc(patient + " · " + label + (reason ? " · " + reason : ""))}">
+    const chartUrl = `/static/cockpit/?booking=${encodeURIComponent(row.appointment_id)}&amp;booking_date=${start ? dateKey(start) : ""}`;
+    const tag = ambiguous ? "button" : "a";
+    const destination = ambiguous ? 'type="button"' : `href="${chartUrl}"`;
+    return `<div class="appt-entry"><${tag} ${destination} class="appt-row" data-appointment-key="${esc(key)}" data-base-label="${esc(accessible)}" aria-label="${esc(accessible)}" title="${esc(patient + " · " + label + (reason ? " · " + reason : ""))}">
       <time>${esc(time)}</time><span class="appt-copy"><span class="appt-name">${esc(patient)}</span>${reason ? `<span class="appt-reason">${esc(reason)}</span>` : ""}</span>${marker}<span class="appt-now" hidden aria-hidden="true">Τώρα</span>
-    </button>`;
+    </${tag}>${ambiguous ? "" : `<button type="button" class="appt-options" data-appointment-key="${esc(key)}" aria-label="Επιλογές ραντεβού · ${esc(patient)}" title="Επιλογές ραντεβού">⋯</button>`}</div>`;
   }
 
   function closeAppointment() {
@@ -238,19 +241,18 @@
       <p><span class="badge ${esc(category)}">${esc(label)}</span></p>
       ${row.reason ? `<p class="appointment-dialog-reason">${esc(row.reason)}</p>` : '<p class="appointment-dialog-reason">Δεν έχει καταχωριστεί λόγος επίσκεψης.</p>'}
       ${meta ? `<p class="appointment-dialog-meta">${esc(meta)}</p>` : ""}
-      ${ambiguous ? '<p class="appointment-dialog-status">Το αναγνωριστικό αυτής της κράτησης εμφανίζεται περισσότερες από μία φορές. Έλεγξε την κράτηση στη Γραμματεία πριν ανοίξεις καρτέλα ή αλλάξεις ταξινόμηση.</p>' : classificationControl(row, category) + labelControls(row, start)}
+      ${ambiguous ? '<p class="appointment-dialog-status">Το αναγνωριστικό αυτής της κράτησης εμφανίζεται περισσότερες από μία φορές. Έλεγξε την κράτηση στη Γραμματεία πριν ανοίξεις καρτέλα ή αλλάξεις ταξινόμηση.</p>' : classificationControl(row, category) + labelControls(row)}
       <p class="appointment-dialog-status" role="status"></p>
       ${ambiguous ? "" : `<a class="button primary appointment-chart" href="/static/cockpit/?booking=${encodeURIComponent(row.appointment_id)}&amp;booking_date=${start ? dateKey(start) : ''}">Καρτέλα · Τελευταία επίσκεψη</a>`}`;
     if (classificationNeedsRefresh) showUnconfirmedClassification();
     dialog.showModal();
   }
 
-  function labelControls(row, start) {
+  function labelControls(row) {
     const opts = (choices, selected) => choices.map(([value, text]) =>
       `<option value="${esc(value)}" ${value === (selected || "") ? "selected" : ""}>${esc(text)}</option>`).join("");
     const attrs = `data-appointment-id="${esc(row.appointment_id)}" data-target-date="${displayedMonday ? dateKey(displayedMonday) : ""}" data-revision="${Number(row.classification_revision || 0)}"`;
-    return `<label class="classification-control"><span>Είδος επίσκεψης</span><select class="label-select" data-field="visit_kind" ${attrs}>${opts([["", "Χωρίς χαρακτηρισμό"], ["first", "Πρώτο ραντεβού"], ["review", "Επανεκτίμηση"], ["other", "Άλλο"]], row.visit_kind)}</select></label>
-      <label class="classification-control"><span>Ιατρείο για ταξινόμηση</span><select class="label-select" data-field="clinic_override" ${attrs}>${opts([["", "Από την κράτηση"], ["limassol", "Λεμεσός"], ["evrychou", "Ευρύχου"], ["other", "Άλλο"]], row.clinic_override)}</select></label>
+    return `<label class="classification-control"><span>Ιατρείο για ταξινόμηση</span><select class="label-select" data-field="clinic_override" ${attrs}>${opts([["", "Από την κράτηση"], ["limassol", "Λεμεσός"], ["evrychou", "Ευρύχου"], ["other", "Άλλο"]], row.clinic_override)}</select></label>
       <p class="appointment-dialog-meta">Το ιατρείο εδώ είναι χαρακτηρισμός στο Cockpit και δεν αλλάζει την κράτηση. Πηγή κράτησης: ${esc(row.clinic || "δεν αναφέρεται")}.</p>`;
   }
 
@@ -299,7 +301,6 @@
     const grouped = new Map();
     const query = normalizeSearch($("#calendarSearch").value);
     const clinic = $("#calendarClinic").value;
-    const visitKind = $("#calendarVisitKind").value;
     let weekendCount = 0;
     let visibleCount = 0;
     const visibleRows = [];
@@ -316,7 +317,6 @@
       if (mode !== "all" && mode !== "osteoporosis" && row.category !== mode) return;
       const effectiveClinic = row.clinic_override ? (row.clinic_override === "other" ? "unknown" : row.clinic_override) : clinicKey(row.clinic);
       if (clinic !== "all" && effectiveClinic !== clinic) return;
-      if (visitKind !== "all" && (row.visit_kind || "unknown") !== visitKind) return;
       const haystack = normalizeSearch((row.patient_display_name || "") + " " + (row.reason || "") + " " + (row.clinic || "") + " " + (CATEGORY_LABELS[row.category] || ""));
       if (query && !haystack.includes(query)) return;
       if (dayCount === 5 && (dayKey === saturday || dayKey === sunday)) return;
@@ -337,7 +337,7 @@
       const col = document.createElement("section");
       col.className = "day-column";
       col.dataset.date = key;
-      col.innerHTML = `<div class="day-head"><strong>${esc(fmtDay.format(day))} <span class="today-label" hidden>· Σήμερα</span></strong><span>${esc(fmtDate.format(day))} · ${items.length}</span></div><div class="day-body">${items.length ? items.map(item => appointmentHtml(item.row, item.key)).join("") : '<div class="empty-day">Δεν υπάρχουν ραντεβού σε αυτή την προβολή.</div>'}</div>`;
+      col.innerHTML = `<div class="day-head"><strong>${esc(fmtDay.format(day))} <span class="today-label" hidden>· Σήμερα</span></strong><span>${esc(fmtDate.format(day))} · ${items.length}</span></div><div class="day-body">${items.length ? items.map(item => appointmentHtml(item.row, item.key, appointmentRows.get(item.key).ambiguous)).join("") : '<div class="empty-day">Δεν υπάρχουν ραντεβού σε αυτή την προβολή.</div>'}</div>`;
       grid.appendChild(col);
     }
     const notice = $("#weekendNotice");
@@ -428,9 +428,6 @@
   $("#calendarClinic").addEventListener("change", () => {
     if (weekRows) renderWeek(weekRows, displayedMonday, calendarMode);
   });
-  $("#calendarVisitKind").addEventListener("change", () => {
-    if (weekRows && displayedMonday) renderWeek(weekRows, displayedMonday, calendarMode);
-  });
   function setDayCount(value) {
     dayCount = value === 5 ? 5 : 7;
     $("#showFiveDays").setAttribute("aria-pressed", String(dayCount === 5));
@@ -450,8 +447,8 @@
   document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshTimeIndicators(); });
 
   $("#weekGrid").addEventListener("click", event => {
-    const button = event.target.closest(".appt-row");
-    const row = button && appointmentRows.get(button.dataset.appointmentKey);
+    const control = event.target.closest(".appt-options, button.appt-row");
+    const row = control && appointmentRows.get(control.dataset.appointmentKey);
     if (row) openAppointment(row);
   });
   $("#appointmentDialog").addEventListener("click", event => {

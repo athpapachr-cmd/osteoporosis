@@ -56,7 +56,7 @@ def test_calendar_home_all_filter_and_unavailable():
             page.goto("https://cockpit.invalid/static/clinical-calendar/")
             expect(page.locator("#connectionStatus")).to_contain_text("2 ραντεβού")
             expect(page.get_by_text("Synthetic Other", exact=True)).to_be_visible()
-            page.get_by_role("button", name="Synthetic Osteo", exact=False).click()
+            page.get_by_role("button", name="Επιλογές ραντεβού · Synthetic Osteo").click()
             expect(page.locator("#appointmentDialog")).to_be_visible()
             expect(page.locator(".classification-select")).to_have_value("osteoporosis_review")
             page.evaluate("""() => {
@@ -73,19 +73,19 @@ def test_calendar_home_all_filter_and_unavailable():
             page.evaluate("""() => window.resolveWrite(new Response(JSON.stringify({manual_category:"prolia"}), {
               status:200, headers:{"Content-Type":"application/json"}}))""")
             expect(page.locator("#appointmentDialog")).to_be_hidden()
-            page.get_by_role("button", name="Synthetic Osteo", exact=False).click()
+            page.get_by_role("button", name="Επιλογές ραντεβού · Synthetic Osteo").click()
             expect(page.locator(".classification-select")).to_have_value("prolia")
             page.locator(".classification-select").select_option("osteoporosis_first")
             page.evaluate("""() => window.rejectWrite(new Error("synthetic network loss"))""")
             expect(page.locator("#appointmentDialog [role=status]")).to_contain_text("μπορεί να έχει ολοκληρωθεί")
             expect(page.locator(".classification-select")).to_be_disabled()
             page.locator(".appointment-dialog-close").click()
-            page.get_by_role("button", name="Synthetic Osteo", exact=False).click()
+            page.get_by_role("button", name="Επιλογές ραντεβού · Synthetic Osteo").click()
             expect(page.locator(".classification-select")).to_be_disabled()
             page.get_by_role("button", name="Ανανέωση προγράμματος").click()
             expect(page.locator("#appointmentDialog")).to_be_hidden()
             page.evaluate("() => { window.fetch = window.originalFetch; }")
-            page.get_by_role("button", name="Synthetic Osteo", exact=False).click()
+            page.get_by_role("button", name="Επιλογές ραντεβού · Synthetic Osteo").click()
             state["lose_session"] = True
             page.locator(".classification-select").select_option("")
             expect(page.locator("#calendarApp")).to_be_hidden()
@@ -159,7 +159,8 @@ def test_busy_week_compact_rows_details_and_keyboard():
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
             if width == 1440:
                 assert rows.nth(14).bounding_box()["y"] + rows.nth(14).bounding_box()["height"] <= 900
-            rows.first.click()
+            expect(rows.first).to_have_attribute("href", re.compile(r"/static/cockpit/\?booking=busy-0-0&booking_date="))
+            page.get_by_role("button", name="Επιλογές ραντεβού · Ασθενής Δοκιμής 0-0").click()
             dialog = page.locator("#appointmentDialog")
             expect(dialog).to_be_visible()
             expect(dialog).to_contain_text("Ασθενής Δοκιμής 0-0")
@@ -169,7 +170,7 @@ def test_busy_week_compact_rows_details_and_keyboard():
                 "href", re.compile(r"booking=busy-0-0"))
             page.keyboard.press("Escape")
             expect(dialog).to_be_hidden()
-            expect(rows.first).to_be_focused()
+            expect(page.get_by_role("button", name="Επιλογές ραντεβού · Ασθενής Δοκιμής 0-0")).to_be_focused()
             for index in range(2):
                 page.get_by_role("button", name=f"Διπλό δοκιμαστικό {index}", exact=False).click()
                 expect(dialog).to_contain_text(f"Διπλό δοκιμαστικό {index}")
@@ -283,7 +284,7 @@ def test_week_views_search_now_and_weekend_duplicate_safety():
         browser.close()
 
 
-def test_visit_and_clinic_labels_are_independent_and_filterable():
+def test_clinic_labels_remain_available_without_visit_kind_classification():
     with sync_playwright() as p:
         browser = p.chromium.launch()
         page = browser.new_page(viewport={"width": 1440, "height": 900})
@@ -314,21 +315,17 @@ def test_visit_and_clinic_labels_are_independent_and_filterable():
             return route.fulfill(status=404, body="")
         page.route("**/*", route_request)
         page.goto("https://cockpit.invalid/static/clinical-calendar/")
-        page.get_by_role("button", name="Synthetic", exact=False).click()
-        page.locator('[data-field="visit_kind"]').select_option("first")
-        expect(page.locator("#appointmentDialog")).to_be_hidden()
-        page.get_by_role("button", name="Synthetic", exact=False).click()
-        expect(page.locator('[data-field="visit_kind"]')).to_have_value("first")
+        assert page.locator("#calendarVisitKind").count() == 0
+        expect(page.locator(".appt-row")).to_have_attribute("href", re.compile(r"booking=cal.com%3Asynthetic"))
+        page.get_by_role("button", name="Επιλογές ραντεβού · Synthetic").click()
+        assert page.locator('[data-field="visit_kind"]').count() == 0
         page.locator('[data-field="clinic_override"]').select_option("evrychou")
         expect(page.locator("#appointmentDialog")).to_be_hidden()
-        page.locator("#calendarVisitKind").select_option("review")
-        expect(page.locator(".appt-row")).to_have_count(0)
-        page.locator("#calendarVisitKind").select_option("first")
         page.locator("#calendarClinic").select_option("limassol")
         expect(page.locator(".appt-row")).to_have_count(0)
         page.locator("#calendarClinic").select_option("evrychou")
         expect(page.locator(".appt-row")).to_have_count(1)
-        page.get_by_role("button", name="Synthetic", exact=False).click()
+        page.get_by_role("button", name="Επιλογές ραντεβού · Synthetic").click()
         expect(page.locator("#appointmentDialog")).to_contain_text("δεν αλλάζει την κράτηση")
         expect(page.locator("#appointmentDialog")).to_contain_text("limassol")
         browser.close()
