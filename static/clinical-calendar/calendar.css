@@ -68,6 +68,8 @@ h1{margin:0;font-size:24px;line-height:1.1}
 .appointment-dialog-close{border:0;background:#f0f5f4;color:#28525b;border-radius:9px;width:36px;height:36px;flex:none;font-size:23px;cursor:pointer}
 .appointment-dialog-close:disabled{opacity:.45;cursor:wait}
 .appointment-dialog-reason{font-size:14px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
+.appointment-section-title{font-size:13px;color:#31525a;margin:16px 0 5px}
+.appointment-summary-list{font-size:13px;line-height:1.45;padding-left:20px;margin:5px 0 10px;overflow-wrap:anywhere}
 .appointment-dialog-status{color:#a12e25;font-size:12px}
 .appointment-chart{margin-top:8px}
 .badge{display:inline-flex;align-items:center;width:max-content;max-width:100%;padding:3px 6px;border-radius:999px;font-size:10px;font-weight:750;border:1px solid #d0d5dd;background:#f9fafb;color:#344054}

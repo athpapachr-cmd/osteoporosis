@@ -727,6 +727,10 @@ def attach_chart_booking_routes(router,engine,protected):
                 result=reply(db,row,source)
             else:result={'mode':'booking_only','booking':_booking_card(source),'revision':row.revision if row else 0,
                 'linked':bool(row and row.state!='revoked'),'replace_required':bool(row),'reason':'choose_chart'}
+            # The calendar preview needs the same freshly resolved source reason
+            # as the linked chart. Reception may already cap it at 1,000 chars.
+            result['booking']['reason_available'] = _text(source.reason, 1000)
+            result['booking']['reason_may_be_truncated'] = len(source.reason or '') >= 1000
             commit(db);return result
 
     @router.post('/visit-brief/chart-select',dependencies=secured)
