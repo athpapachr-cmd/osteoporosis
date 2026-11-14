@@ -93,12 +93,12 @@ def test_calendar_home_all_filter_and_unavailable():
             expect(page.get_by_text("Synthetic Osteo", exact=True)).to_have_count(0)
             page.reload()
             expect(page.locator("#connectionStatus")).to_contain_text("2 ραντεβού")
-            page.locator("#showOsteoporosisAppointments").click()
+            page.locator("#calendarCategory").select_option("osteoporosis")
             expect(page.locator("#connectionStatus")).to_contain_text("1 ραντεβού")
             expect(page.get_by_text("Synthetic Other", exact=True)).to_have_count(0)
             expect(page.get_by_text("Synthetic Osteo", exact=True)).to_be_visible()
             state["fail"] = True
-            page.locator("#showAllAppointments").click()
+            page.locator("#calendarCategory").select_option("all")
             page.locator("#thisWeek").click()
             expect(page.locator("#connectionStatus")).to_contain_text("Μη διαθέσιμο")
             expect(page.get_by_text("Synthetic Osteo", exact=True)).to_have_count(0)
@@ -178,7 +178,7 @@ def test_busy_week_compact_rows_details_and_keyboard():
                 assert dialog.locator("a.appointment-chart").count() == 0
                 assert dialog.locator(".classification-select").count() == 0
                 page.keyboard.press("Escape")
-            page.locator("#showOsteoporosisAppointments").click()
+            page.locator("#calendarCategory").select_option("osteoporosis")
             expect(page.get_by_role("button", name="Διπλό δοκιμαστικό 0", exact=False)).to_be_visible()
             expect(page.get_by_role("button", name="Διπλό δοκιμαστικό 1", exact=False)).to_have_count(0)
             page.get_by_role("button", name="Διπλό δοκιμαστικό 0", exact=False).click()
@@ -205,16 +205,16 @@ def test_week_views_search_now_and_weekend_duplicate_safety():
                 if state["fail"]:
                     return route.fulfill(status=503, json={"detail":{"status":"unavailable"}})
                 start = datetime.fromisoformat(parse_qs(parts.query)["start"][0].replace("Z","+00:00"))
-                def item(uid, name, day, minute, duration, category="other", reason=""):
+                def item(uid, name, day, minute, duration, category="other", reason="", clinic=""):
                     begin = start + timedelta(days=day, hours=8, minutes=minute)
                     return {"appointment_id":uid,"patient_display_name":name,
                         "start_at":begin.isoformat(),"end_at":(begin+timedelta(minutes=duration)).isoformat(),
-                        "clinic":"Synthetic","category":category,"reason":reason,"manual_category":None}
+                        "clinic":clinic,"category":category,"reason":reason,"manual_category":None}
                 return route.fulfill(json=[
-                    item("duplicate","Συνθετικός Τώρα",0,0,20,"prolia"),
-                    item("overlap","Συνθετική Παράλληλη",0,10,20),
-                    item("search","Αλέξης Ιωάννου",1,0,20,reason="Πόνος ώμου"),
-                    item("duplicate","Συνθετικός Σάββατο",5,0,20),
+                    item("duplicate","Συνθετικός Τώρα",0,0,20,"prolia",clinic="limassol"),
+                    item("overlap","Συνθετική Παράλληλη",0,10,20,clinic="evrychou"),
+                    item("search","Αλέξης Ιωάννου",1,0,20,reason="Πόνος ώμου",clinic="Άγνωστο"),
+                    item("duplicate","Συνθετικός Σάββατο",5,0,20,clinic="enrychou"),
                     item("sunday","Συνθετική Κυριακή",6,0,20),
                 ])
             asset = ROOT / "static" / parts.path.removeprefix("/static/")
@@ -252,6 +252,19 @@ def test_week_views_search_now_and_weekend_duplicate_safety():
         page.locator("#calendarSearch").fill("πονος ωμου")
         expect(page.locator(".appt-row")).to_have_count(1)
         page.locator("#calendarSearch").fill("")
+        page.locator("#calendarClinic").select_option("limassol")
+        expect(page.locator(".appt-row")).to_have_count(1)
+        expect(page.locator("#countProlia")).to_have_text("1")
+        page.locator("#calendarClinic").select_option("evrychou")
+        expect(page.locator(".appt-row")).to_have_count(1)
+        expect(page.locator(".appt-row")).to_contain_text("Συνθετική Παράλληλη")
+        page.locator("#calendarClinic").select_option("unknown")
+        expect(page.locator(".appt-row")).to_have_count(1)
+        expect(page.locator(".appt-row")).to_contain_text("Αλέξης Ιωάννου")
+        page.locator("#calendarClinic").select_option("all")
+        page.locator("#calendarCategory").select_option("prolia")
+        expect(page.locator(".appt-row")).to_have_count(1)
+        page.locator("#calendarCategory").select_option("all")
         page.clock.fast_forward(20 * 60 * 1000)
         expect(page.locator(".appt-row.is-current")).to_have_count(0)
         page.get_by_role("button", name="Προβολή 7 ημερών").click()

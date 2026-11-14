@@ -21,6 +21,9 @@ h1{margin:0;font-size:24px;line-height:1.1}
 .calendar-toolbar{padding:6px 12px;display:flex;justify-content:space-between;gap:12px;align-items:center}
 .calendar-filters{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 2px}
 .calendar-filter-group{display:flex;flex-wrap:wrap;gap:6px}
+.calendar-select{display:flex;align-items:center;gap:5px;color:#526e74;font-size:12px;font-weight:700}
+.calendar-select select{max-width:225px;min-height:36px;border:1px solid #cbdcda;border-radius:10px;padding:6px 8px;background:#fff;color:#203342;font:inherit;font-size:12px}
+.calendar-select select:focus-visible{outline:2px solid #176e67;outline-offset:2px}
 .calendar-search{flex:1 1 220px;min-width:0}
 .calendar-search input{width:100%;min-width:0;height:36px;border:1px solid #cbdcda;border-radius:10px;padding:7px 10px;background:#fff;color:#203342;font:inherit;font-size:13px}
 .calendar-search input:focus-visible{outline:2px solid #176e67;outline-offset:2px}

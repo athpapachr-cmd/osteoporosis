@@ -9,6 +9,7 @@
   let appointmentRows = new Map();
   let weekRows = null;
   let displayedMonday = null;
+  let weekReadAt = null;
   let weekState = "loading";
   const DAY_COUNT_KEY = "clinical-excellence.calendar-day-count.v1";
   let dayCount = 7;
@@ -90,6 +91,7 @@
     closeAppointment();
     appointmentRows.clear();
     weekRows = null;
+    weekReadAt = null;
     $("#calendarSearch").value = "";
     $("#weekendNotice").replaceChildren();
     $("#weekendNotice").hidden = true;
@@ -248,6 +250,13 @@
       .toLocaleLowerCase("el").replace(/ς/g, "σ").replace(/\s+/g, " ").trim();
   }
 
+  function clinicKey(value) {
+    const key = normalizeSearch(value);
+    if (["limassol", "λεμεσοσ", "λεμεσσοσ"].includes(key)) return "limassol";
+    if (["evrychou", "enrychou", "ευρυχου"].includes(key)) return "evrychou";
+    return "unknown";
+  }
+
   function refreshTimeIndicators() {
     const now = new Date();
     const today = dateKey(now);
@@ -280,8 +289,10 @@
       [String(index), {row, ambiguous: counts.get(String(row.appointment_id)) > 1}]));
     const grouped = new Map();
     const query = normalizeSearch($("#calendarSearch").value);
+    const clinic = $("#calendarClinic").value;
     let weekendCount = 0;
     let visibleCount = 0;
+    const visibleRows = [];
     const saturday = dateKey(addDays(monday, 5));
     const sunday = dateKey(addDays(monday, 6));
     for (let i = 0; i < 7; i += 1) grouped.set(dateKey(addDays(monday, i)), []);
@@ -292,9 +303,15 @@
       const dayKey = dateKey(start);
       if (dayKey === saturday || dayKey === sunday) weekendCount++;
       if (mode === "osteoporosis" && !RELEVANT_CATEGORIES.has(row.category)) return;
-      const haystack = normalizeSearch((row.patient_display_name || "") + " " + (row.reason || ""));
+      if (mode !== "all" && mode !== "osteoporosis" && row.category !== mode) return;
+      if (clinic !== "all" && clinicKey(row.clinic) !== clinic) return;
+      const haystack = normalizeSearch((row.patient_display_name || "") + " " + (row.reason || "") + " " + (row.clinic || "") + " " + (CATEGORY_LABELS[row.category] || ""));
       if (query && !haystack.includes(query)) return;
-      if (grouped.has(dayKey)) grouped.get(dayKey).push({row, key: rowKey});
+      if (dayCount === 5 && (dayKey === saturday || dayKey === sunday)) return;
+      if (grouped.has(dayKey)) {
+        grouped.get(dayKey).push({row, key: rowKey});
+        visibleRows.push(row);
+      }
     });
 
     const grid = $("#weekGrid");
@@ -315,7 +332,7 @@
     notice.replaceChildren();
     notice.hidden = dayCount !== 5;
     if (dayCount === 5) {
-      notice.append(document.createTextNode("Σαββατοκύριακο: " + weekendCount + " ραντεβού συνολικά · "));
+      notice.append(document.createTextNode("Σαββατοκύριακο: " + weekendCount + " ραντεβού συνολικά, ανεξάρτητα από φίλτρα · "));
       const show = document.createElement("button");
       show.type = "button";
       show.textContent = "Προβολή 7 ημερών";
@@ -323,13 +340,14 @@
       notice.append(show);
     }
     refreshTimeIndicators();
-    setStatus(`${visibleCount} ραντεβού · ${mode === "all" ? "όλες οι κατηγορίες" : "οστεοπόρωση"}${query ? " · αναζήτηση" : ""}`, "ok");
+    const modeLabel = mode === "all" ? "όλες οι κατηγορίες" : mode === "osteoporosis" ? "οστεοπόρωση" : (CATEGORY_LABELS[mode] || "επιλεγμένη κατηγορία");
+    setStatus(`${visibleCount} ραντεβού · ${modeLabel}${query ? " · αναζήτηση" : ""}${weekReadAt ? " · ανάγνωση " + fmtTime.format(weekReadAt) : ""}`, "ok");
 
-    const osteoporosis = (rows || []).filter(x => ["osteoporosis_first", "osteoporosis_review", "osteoporosis_unspecified"].includes(x.category)).length;
+    const osteoporosis = visibleRows.filter(x => ["osteoporosis_first", "osteoporosis_review", "osteoporosis_unspecified"].includes(x.category)).length;
     $("#countOsteoporosis").textContent = osteoporosis;
-    $("#countProlia").textContent = (rows || []).filter(x => x.category === "prolia").length;
-    $("#countAclasta").textContent = (rows || []).filter(x => x.category === "aclasta").length;
-    $("#countUnspecified").textContent = (rows || []).filter(x => x.category === "osteoporosis_unspecified").length;
+    $("#countProlia").textContent = visibleRows.filter(x => x.category === "prolia").length;
+    $("#countAclasta").textContent = visibleRows.filter(x => x.category === "aclasta").length;
+    $("#countUnspecified").textContent = visibleRows.filter(x => x.category === "osteoporosis_unspecified").length;
   }
 
   function renderWeekUnavailable(monday, loading = false) {
@@ -358,6 +376,7 @@
     const monday = mondayForOffset(weekOffset);
     displayedMonday = monday;
     weekRows = null;
+    weekReadAt = null;
     weekState = "loading";
     const end = addDays(monday, 7);
     $("#weekLabel").textContent = `${fmtLong.format(monday)} — ${fmtLong.format(addDays(monday, 6))}`;
@@ -368,6 +387,7 @@
       if (ticket !== weekRequest) return;
       if (!Array.isArray(rows)) throw new Error("Invalid schedule");
       weekRows = rows;
+      weekReadAt = new Date();
       weekState = "ready";
       renderWeek(rows, monday, calendarMode);
       classificationNeedsRefresh = false;
@@ -387,15 +407,15 @@
   $("#prevWeek").addEventListener("click", () => { weekOffset -= 1; loadWeek(); });
   $("#thisWeek").addEventListener("click", () => { weekOffset = 0; loadWeek(); });
   $("#nextWeek").addEventListener("click", () => { weekOffset += 1; loadWeek(); });
-  function changeMode(mode) {
-    if (calendarMode === mode) return;
-    calendarMode = mode;
-    $("#showAllAppointments").setAttribute("aria-pressed", String(mode === "all"));
-    $("#showOsteoporosisAppointments").setAttribute("aria-pressed", String(mode === "osteoporosis"));
+  $("#refreshWeek").addEventListener("click", () => loadWeek());
+  function changeMode() {
+    calendarMode = $("#calendarCategory").value;
     if (weekRows) renderWeek(weekRows, displayedMonday, calendarMode);
   }
-  $("#showAllAppointments").addEventListener("click", () => changeMode("all"));
-  $("#showOsteoporosisAppointments").addEventListener("click", () => changeMode("osteoporosis"));
+  $("#calendarCategory").addEventListener("change", changeMode);
+  $("#calendarClinic").addEventListener("change", () => {
+    if (weekRows) renderWeek(weekRows, displayedMonday, calendarMode);
+  });
   function setDayCount(value) {
     dayCount = value === 5 ? 5 : 7;
     $("#showFiveDays").setAttribute("aria-pressed", String(dayCount === 5));
