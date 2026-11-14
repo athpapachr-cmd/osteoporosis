@@ -499,6 +499,56 @@ def test_clearing_manual_relevant_override_minimizes_other_before_commit(monkeyp
         assert row.category == "other" and row.phone_e164 == "" and row.linked_patient_id is None
 
 
+def test_independent_labels_preserve_category_reset_and_snapshot(monkeypatch):
+    import clinical_visit_brief
+    client, engine = _client(monkeypatch)
+    now = datetime(2026, 10, 3, 8, 0)
+    monkeypatch.setattr(clinical_calendar, "utcnow", lambda: now)
+    async def fresh(uid, target_date):
+        assert uid == "cal.com:synthetic-label" and target_date.isoformat() == "2026-10-03"
+    monkeypatch.setattr(clinical_visit_brief, "_fresh_booking", fresh)
+    label_url = "/clinical/calendar/appointments/cal.com:synthetic-label/labels"
+    category_url = "/clinical/calendar/appointments/cal.com:synthetic-label/classification"
+    label = {"field": "visit_kind", "value": "first", "target_date": "2026-10-03", "expected_revision": 0}
+    assert client.put(label_url, json=label).status_code == 401
+    assert client.put(label_url, headers=CLINICAL_HEADERS, json=label).json()["revision"] == 1
+    assert client.put(label_url, headers=CLINICAL_HEADERS, json=label).status_code == 409
+    label.update(field="clinic_override", value="evrychou", expected_revision=1)
+    assert client.put(label_url, headers=CLINICAL_HEADERS, json=label).json()["revision"] == 2
+    assert client.put(category_url, headers=CLINICAL_HEADERS, json={"category":"prolia"}).status_code == 200
+    assert client.put(category_url, headers=CLINICAL_HEADERS, json={"category":None}).status_code == 200
+    item = _appointment("synthetic-label", start=now, minutes=40, label="Οστεοπόρωση", comment="Οστεοπόρωση")
+    result = client.post("/clinical/calendar/appointments/snapshot", headers=HEADERS,
+                         json=_snapshot(now, now + timedelta(days=1), [item]))
+    assert result.json()["inserted"] == 1
+    with Session(engine) as session:
+        row = session.get(ClinicalAppointmentClassificationORM, "cal.com:synthetic-label")
+        assert (row.category, row.visit_kind, row.clinic_override, row.revision) == ("", "first", "evrychou", 4)
+        assert session.get(ClinicalAppointmentORM, "cal.com:synthetic-label").category == "osteoporosis_review"
+    _set_actual_source(monkeypatch, [item], now)
+    start = datetime(2026, 10, 3, tzinfo=ZoneInfo("Asia/Nicosia"))
+    agenda = client.get("/clinical/calendar/agenda", headers=CLINICAL_HEADERS,
+                        params={"start":start.isoformat(), "end":(start+timedelta(days=1)).isoformat()}).json()
+    assert agenda[0]["manual_category"] is None and agenda[0]["category"] == "osteoporosis_review"
+    assert (agenda[0]["visit_kind"], agenda[0]["clinic_override"], agenda[0]["classification_revision"]) == ("first", "evrychou", 4)
+
+
+def test_label_write_rejects_duplicate_or_unavailable_source(monkeypatch):
+    import clinical_visit_brief
+    client, engine = _client(monkeypatch)
+    now = datetime(2026, 10, 3, 8, 0)
+    monkeypatch.setattr(clinical_visit_brief, "_utcnow", lambda: now.replace(tzinfo=timezone.utc))
+    item = _appointment("duplicate", start=now, minutes=40, label="Other")
+    _set_actual_source(monkeypatch, [item, item], now)
+    url = "/clinical/calendar/appointments/cal.com:duplicate/labels"
+    body = {"field":"visit_kind", "value":"first", "target_date":"2026-10-03", "expected_revision":0}
+    assert client.put(url, headers=CLINICAL_HEADERS, json=body).status_code == 409
+    monkeypatch.delenv("RECEPTION_SCHEDULE_CONTEXT_URL")
+    assert client.put(url, headers=CLINICAL_HEADERS, json=body).status_code == 503
+    with Session(engine) as session:
+        assert session.get(ClinicalAppointmentClassificationORM, "cal.com:duplicate") is None
+
+
 def test_context_preserves_start_order_aclasta_exception_and_fail_closed_overlaps(monkeypatch):
     base = datetime(2026, 10, 3, 9, 0)
     cases = [
@@ -781,7 +831,8 @@ def test_full_agenda_keeps_other_visits_minimal_while_weekly_stays_filtered(monk
     agenda=client.get('/clinical/calendar/agenda',headers=CLINICAL_HEADERS,params=params)
     assert agenda.status_code==200 and agenda.headers['cache-control']=='no-store'
     data=agenda.json();assert [r['appointment_id'] for r in data]==['cal.com:osteo-agenda','cal.com:knee-agenda']
-    allowed={'appointment_id','start_at','end_at','clinic','category','manual_category','patient_display_name','reason'}
+    allowed={'appointment_id','start_at','end_at','clinic','category','manual_category','patient_display_name','reason',
+             'visit_kind','clinic_override','classification_revision'}
     assert all(set(row)==allowed for row in data)
     assert data[1]['category']=='other' and data[1]['reason']=='Επανέλεγχος γόνατος'
     assert datetime.fromisoformat(data[1]['start_at']).astimezone(ZoneInfo('Asia/Nicosia')).hour==12
