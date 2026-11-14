@@ -281,3 +281,54 @@ def test_week_views_search_now_and_weekend_duplicate_safety():
         expect(page.locator(".appt-row")).to_have_count(0)
         page.close()
         browser.close()
+
+
+def test_visit_and_clinic_labels_are_independent_and_filterable():
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page(viewport={"width": 1440, "height": 900})
+        state = {"visit_kind":None, "clinic_override":None, "revision":0}
+        def route_request(route):
+            parts = urlsplit(route.request.url)
+            if parts.path == "/clinical/status":
+                return route.fulfill(json={"database_dialect":"synthetic"})
+            if parts.path.endswith("/labels"):
+                body = json.loads(route.request.post_data)
+                assert body["expected_revision"] == state["revision"]
+                assert datetime.fromisoformat(body["target_date"]).weekday() == 0
+                state[body["field"]] = body["value"]
+                state["revision"] += 1
+                return route.fulfill(json={"revision":state["revision"]})
+            if parts.path == "/clinical/calendar/agenda":
+                start = datetime.fromisoformat(parse_qs(parts.query)["start"][0].replace("Z", "+00:00")) + timedelta(hours=9)
+                return route.fulfill(json=[{"appointment_id":"cal.com:synthetic", "patient_display_name":"Synthetic",
+                    "start_at":start.isoformat(), "end_at":(start+timedelta(minutes=20)).isoformat(),
+                    "clinic":"limassol", "category":"other", "reason":"Synthetic reason",
+                    "visit_kind":state["visit_kind"], "clinic_override":state["clinic_override"],
+                    "classification_revision":state["revision"]}])
+            asset = ROOT / "static" / parts.path.removeprefix("/static/")
+            if asset.is_dir(): asset = asset / "index.html"
+            if asset.is_file():
+                mime = "text/html" if asset.suffix == ".html" else ("text/css" if asset.suffix == ".css" else "application/javascript")
+                return route.fulfill(content_type=mime, body=asset.read_text(encoding="utf8"))
+            return route.fulfill(status=404, body="")
+        page.route("**/*", route_request)
+        page.goto("https://cockpit.invalid/static/clinical-calendar/")
+        page.get_by_role("button", name="Synthetic", exact=False).click()
+        page.locator('[data-field="visit_kind"]').select_option("first")
+        expect(page.locator("#appointmentDialog")).to_be_hidden()
+        page.get_by_role("button", name="Synthetic", exact=False).click()
+        expect(page.locator('[data-field="visit_kind"]')).to_have_value("first")
+        page.locator('[data-field="clinic_override"]').select_option("evrychou")
+        expect(page.locator("#appointmentDialog")).to_be_hidden()
+        page.locator("#calendarVisitKind").select_option("review")
+        expect(page.locator(".appt-row")).to_have_count(0)
+        page.locator("#calendarVisitKind").select_option("first")
+        page.locator("#calendarClinic").select_option("limassol")
+        expect(page.locator(".appt-row")).to_have_count(0)
+        page.locator("#calendarClinic").select_option("evrychou")
+        expect(page.locator(".appt-row")).to_have_count(1)
+        page.get_by_role("button", name="Synthetic", exact=False).click()
+        expect(page.locator("#appointmentDialog")).to_contain_text("δεν αλλάζει την κράτηση")
+        expect(page.locator("#appointmentDialog")).to_contain_text("limassol")
+        browser.close()

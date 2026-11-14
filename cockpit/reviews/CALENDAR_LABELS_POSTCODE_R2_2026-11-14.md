@@ -1,0 +1,3 @@
+# Calendar labels — independent R2 closure
+
+The independent review of code `c4f4f63` blocked full-week UID verification, old SQLite schema qualification and stale category writes. Subsequent closures found and corrected fresh SQLite first-run and partial-schema readiness. Final delta and affected cumulative closure of `2eabba245ea0d18190a6d2b465e83f99097c351d` returned **PASS, P0:P1:P2=0:0:0**; the reviewer ran seven targeted synthetic checks. The author ran 61 affected synthetic tests and an isolated PostgreSQL migration/update/reset check. No live database, role, provisioning, provider write or release was included in this verdict.

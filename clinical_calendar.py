@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from typing import List, Optional, Literal
 from zoneinfo import ZoneInfo
 import os
@@ -14,7 +14,9 @@ import httpx
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response
 from clinical_staff_auth import require_staff_actor, staff_enabled
 from pydantic import BaseModel, Field, ConfigDict
-from sqlalchemy import Column, DateTime, Integer, String, func, select
+from sqlalchemy import Column, DateTime, Integer, String, func, inspect, select, update
+from sqlalchemy.dialects.postgresql import insert as postgres_insert
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session
 
@@ -48,6 +50,9 @@ class ClinicalAppointmentClassificationORM(CalendarBase):
 
     appointment_id = Column(String, primary_key=True)
     category = Column(String, nullable=False, index=True)
+    visit_kind = Column(String, nullable=True)
+    clinic_override = Column(String, nullable=True)
+    revision = Column(Integer, nullable=False, default=0, server_default="0")
     updated_at = Column(DateTime, nullable=False, index=True)
 
 
@@ -118,6 +123,9 @@ class AppointmentRecord(BaseModel):
     clinic: str
     category: str
     manual_category: Optional[str] = None
+    visit_kind: Optional[str] = None
+    clinic_override: Optional[str] = None
+    classification_revision: int = 0
     patient_display_name: str
     phone_e164: str
     linked_patient_id: Optional[str]
@@ -130,11 +138,26 @@ class AppointmentRecord(BaseModel):
 
 class AppointmentClassificationUpdate(BaseModel):
     category: Optional[str] = None
+    expected_revision: int = Field(ge=0)
 
 
 class AppointmentClassificationUpdateResult(BaseModel):
     appointment_id: str
     manual_category: Optional[str]
+
+
+class AppointmentLabelUpdate(BaseModel):
+    field: Literal["visit_kind", "clinic_override"]
+    value: Optional[str] = None
+    target_date: date
+    expected_revision: int = Field(ge=0)
+
+
+class AppointmentLabelUpdateResult(BaseModel):
+    appointment_id: str
+    revision: int
+    field: str
+    value: Optional[str]
 
 
 class CockpitAppointment(BaseModel):
@@ -149,6 +172,9 @@ class CockpitAppointment(BaseModel):
 
 class AgendaAppointment(CockpitAppointment):
     manual_category: Optional[str] = None
+    visit_kind: Optional[str] = None
+    clinic_override: Optional[str] = None
+    classification_revision: int = 0
 
 
 class CockpitContext(BaseModel):
@@ -355,7 +381,19 @@ def _cockpit_appointment(row: Optional[ClinicalAppointmentORM]) -> Optional[Cock
 
 
 def build_clinical_calendar_router(engine: Engine) -> APIRouter:
-    CalendarBase.metadata.create_all(bind=engine)
+    if engine.dialect.name == "sqlite":
+        inspector = inspect(engine)
+        if not inspector.has_table("clinical_appointment_classifications") and not inspector.has_table("clinical_appointments"):
+            # Preserve the existing first-run local SQLite bootstrap only when
+            # neither calendar table exists; never upgrade a partial/old schema.
+            CalendarBase.metadata.create_all(bind=engine)
+    # Production and upgraded SQLite provisioning are performed separately.
+    inspector = inspect(engine)
+    if not inspector.has_table("clinical_appointment_classifications") or not inspector.has_table("clinical_appointments"):
+        raise RuntimeError("Calendar classification schema is not qualified; apply the reviewed migration")
+    cols = {column["name"] for column in inspector.get_columns("clinical_appointment_classifications")}
+    if not {"appointment_id", "category", "visit_kind", "clinic_override", "revision", "updated_at"}.issubset(cols):
+        raise RuntimeError("Calendar classification schema is not qualified; apply the reviewed migration")
     router = APIRouter(prefix="/clinical/calendar", tags=["clinical-calendar"])
 
     def require_clinical_key(
@@ -586,7 +624,7 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
         ids = [row[0] for row in candidates]
         with Session(engine) as session:
             overrides = {
-                item.appointment_id: item.category
+                item.appointment_id: (item.category or None, item.visit_kind, item.clinic_override, item.revision)
                 for item in session.execute(
                     select(ClinicalAppointmentClassificationORM).where(
                         ClinicalAppointmentClassificationORM.appointment_id.in_(ids)
@@ -597,7 +635,7 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
         rows: List[AppointmentRecord] = []
         source_updated = source.fetched_at.astimezone(timezone.utc).replace(tzinfo=None)
         for appointment_id, source_id, item, item_start, item_end, duration_minutes, automatic_category in candidates:
-            manual_category = overrides.get(appointment_id)
+            manual_category, visit_kind, clinic_override, revision = overrides.get(appointment_id, (None, None, None, 0))
             category = manual_category or automatic_category
             if not include_other and category not in RELEVANT_CATEGORIES:
                 continue
@@ -612,6 +650,9 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
                     clinic=item.clinic or "",
                     category=category,
                     manual_category=manual_category,
+                    visit_kind=visit_kind,
+                    clinic_override=clinic_override,
+                    classification_revision=revision,
                     patient_display_name=item.patient_display_name or "",
                     phone_e164="",
                     linked_patient_id=None,
@@ -637,7 +678,26 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
         return [AgendaAppointment(appointment_id=row.appointment_id,
             start_at=row.start_at.replace(tzinfo=timezone.utc),end_at=row.end_at.replace(tzinfo=timezone.utc),
             clinic=row.clinic,category=row.category,manual_category=row.manual_category,
+            visit_kind=row.visit_kind,clinic_override=row.clinic_override,classification_revision=row.classification_revision,
             patient_display_name=row.patient_display_name,reason=row.reason) for row in rows]
+
+    def update_classification_field(session: Session, appointment_id: str, field: str,
+                                    value: Optional[str], revision: int, now: datetime) -> None:
+        changed = session.execute(update(ClinicalAppointmentClassificationORM).where(
+            ClinicalAppointmentClassificationORM.appointment_id == appointment_id,
+            ClinicalAppointmentClassificationORM.revision == revision,
+        ).values(**{field: value, "updated_at": now,
+                    "revision": ClinicalAppointmentClassificationORM.revision + 1})).rowcount
+        if not changed and revision == 0:
+            insert_for_engine = sqlite_insert if engine.dialect.name == "sqlite" else postgres_insert
+            fields = {"appointment_id": appointment_id, "category": "", "updated_at": now, "revision": 1}
+            fields[field] = value
+            stmt = insert_for_engine(ClinicalAppointmentClassificationORM).values(**fields)
+            changed = session.execute(stmt.on_conflict_do_nothing(
+                index_elements=[ClinicalAppointmentClassificationORM.appointment_id])).rowcount
+        if not changed:
+            session.rollback()
+            raise HTTPException(409, "Classification changed; refresh and try again")
 
     @router.put(
         "/appointments/{appointment_id}/classification",
@@ -654,12 +714,13 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
                 raise HTTPException(status_code=404, detail="Appointment not found")
 
             category = (req.category or "").strip()
-            existing = session.get(ClinicalAppointmentClassificationORM, appointment_id)
             now = utcnow()
 
+            if category and category not in MANUAL_CLASSIFICATION_CATEGORIES:
+                raise HTTPException(status_code=422, detail="Unsupported manual classification")
+            update_classification_field(session, appointment_id, "category", category, req.expected_revision, now)
+
             if not category:
-                if existing is not None:
-                    session.delete(existing)
                 if row is not None:
                     row.category = classify_appointment(
                         row.label or "",
@@ -675,19 +736,6 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
                     manual_category=None,
                 )
 
-            if category not in MANUAL_CLASSIFICATION_CATEGORIES:
-                raise HTTPException(status_code=422, detail="Unsupported manual classification")
-
-            if existing is None:
-                existing = ClinicalAppointmentClassificationORM(
-                    appointment_id=appointment_id,
-                    category=category,
-                    updated_at=now,
-                )
-            else:
-                existing.category = category
-                existing.updated_at = now
-            session.add(existing)
             if row is not None:
                 row.category = category
                 row.updated_at = now
@@ -697,6 +745,31 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
                 appointment_id=appointment_id,
                 manual_category=category,
             )
+
+    @router.put("/appointments/{appointment_id}/labels", response_model=AppointmentLabelUpdateResult,
+                dependencies=protected)
+    async def update_appointment_label(appointment_id: str, req: AppointmentLabelUpdate):
+        allowed = {"visit_kind": {"first", "review", "other"},
+                   "clinic_override": {"limassol", "evrychou", "other"}}
+        if not appointment_id.startswith("cal.com:") or not appointment_id.removeprefix("cal.com:") or len(appointment_id) > 168:
+            raise HTTPException(422, "Invalid appointment identity")
+        if req.value is not None and req.value not in allowed[req.field]:
+            raise HTTPException(422, "Unsupported label")
+        if req.target_date.weekday() != 0:
+            raise HTTPException(422, "Week start must be Monday")
+        tz = ZoneInfo("Asia/Nicosia")
+        week_start = datetime.combine(req.target_date, time.min, tzinfo=tz)
+        week_end = datetime.combine(req.target_date + timedelta(days=7), time.min, tzinfo=tz)
+        # Re-read the whole reviewed week from the fresh, coverage-qualified source.
+        source_rows = await calendar_rows(week_start, week_end, include_other=True)
+        if sum(row.appointment_id == appointment_id for row in source_rows) != 1:
+            raise HTTPException(409, "Booking missing or UID ambiguous")
+        now = utcnow()
+        with Session(engine) as session:
+            update_classification_field(session, appointment_id, req.field, req.value, req.expected_revision, now)
+            session.commit()
+        return AppointmentLabelUpdateResult(appointment_id=appointment_id,
+            revision=req.expected_revision + 1, field=req.field, value=req.value)
 
     def _apply_import_item(
         session: Session,
@@ -730,7 +803,7 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
             ClinicalAppointmentClassificationORM,
             record_id,
         )
-        if manual_override is not None:
+        if manual_override is not None and manual_override.category:
             category = manual_override.category
 
         if category not in RELEVANT_CATEGORIES:

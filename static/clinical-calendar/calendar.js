@@ -173,7 +173,7 @@
     ).join("");
     return `<label class="classification-control">
       <span>${row.manual_category ? "Χειροκίνητη ταξινόμηση" : "Χρειάζεται ταξινόμηση"}</span>
-      <select class="classification-select" data-appointment-id="${esc(row.appointment_id)}">
+      <select class="classification-select" data-appointment-id="${esc(row.appointment_id)}" data-revision="${Number(row.classification_revision || 0)}">
         <option value="">${esc(placeholder)}</option>
         ${options}
       </select>
@@ -207,9 +207,9 @@
 
   function showUnconfirmedClassification() {
     const content = $("#appointmentDialogContent");
-    const select = content.querySelector(".classification-select");
+    const selects = content.querySelectorAll(".classification-select, .label-select");
     const status = content.querySelector("[role='status']");
-    if (select) select.disabled = true;
+    selects.forEach(select => { select.disabled = true; });
     if (!status) return;
     status.textContent = "Η αποθήκευση δεν επιβεβαιώθηκε και μπορεί να έχει ολοκληρωθεί ή να ολοκληρωθεί αργότερα. Ανανέωσε το πρόγραμμα και έλεγξε την ταξινόμηση πριν ξαναπροσπαθήσεις. ";
     const refresh = document.createElement("button");
@@ -238,11 +238,20 @@
       <p><span class="badge ${esc(category)}">${esc(label)}</span></p>
       ${row.reason ? `<p class="appointment-dialog-reason">${esc(row.reason)}</p>` : '<p class="appointment-dialog-reason">Δεν έχει καταχωριστεί λόγος επίσκεψης.</p>'}
       ${meta ? `<p class="appointment-dialog-meta">${esc(meta)}</p>` : ""}
-      ${ambiguous ? '<p class="appointment-dialog-status">Το αναγνωριστικό αυτής της κράτησης εμφανίζεται περισσότερες από μία φορές. Έλεγξε την κράτηση στη Γραμματεία πριν ανοίξεις καρτέλα ή αλλάξεις ταξινόμηση.</p>' : classificationControl(row, category)}
+      ${ambiguous ? '<p class="appointment-dialog-status">Το αναγνωριστικό αυτής της κράτησης εμφανίζεται περισσότερες από μία φορές. Έλεγξε την κράτηση στη Γραμματεία πριν ανοίξεις καρτέλα ή αλλάξεις ταξινόμηση.</p>' : classificationControl(row, category) + labelControls(row, start)}
       <p class="appointment-dialog-status" role="status"></p>
       ${ambiguous ? "" : `<a class="button primary appointment-chart" href="/static/cockpit/?booking=${encodeURIComponent(row.appointment_id)}&amp;booking_date=${start ? dateKey(start) : ''}">Καρτέλα · Τελευταία επίσκεψη</a>`}`;
     if (classificationNeedsRefresh) showUnconfirmedClassification();
     dialog.showModal();
+  }
+
+  function labelControls(row, start) {
+    const opts = (choices, selected) => choices.map(([value, text]) =>
+      `<option value="${esc(value)}" ${value === (selected || "") ? "selected" : ""}>${esc(text)}</option>`).join("");
+    const attrs = `data-appointment-id="${esc(row.appointment_id)}" data-target-date="${displayedMonday ? dateKey(displayedMonday) : ""}" data-revision="${Number(row.classification_revision || 0)}"`;
+    return `<label class="classification-control"><span>Είδος επίσκεψης</span><select class="label-select" data-field="visit_kind" ${attrs}>${opts([["", "Χωρίς χαρακτηρισμό"], ["first", "Πρώτο ραντεβού"], ["review", "Επανεκτίμηση"], ["other", "Άλλο"]], row.visit_kind)}</select></label>
+      <label class="classification-control"><span>Ιατρείο για ταξινόμηση</span><select class="label-select" data-field="clinic_override" ${attrs}>${opts([["", "Από την κράτηση"], ["limassol", "Λεμεσός"], ["evrychou", "Ευρύχου"], ["other", "Άλλο"]], row.clinic_override)}</select></label>
+      <p class="appointment-dialog-meta">Το ιατρείο εδώ είναι χαρακτηρισμός στο Cockpit και δεν αλλάζει την κράτηση. Πηγή κράτησης: ${esc(row.clinic || "δεν αναφέρεται")}.</p>`;
   }
 
   function normalizeSearch(value) {
@@ -290,6 +299,7 @@
     const grouped = new Map();
     const query = normalizeSearch($("#calendarSearch").value);
     const clinic = $("#calendarClinic").value;
+    const visitKind = $("#calendarVisitKind").value;
     let weekendCount = 0;
     let visibleCount = 0;
     const visibleRows = [];
@@ -304,7 +314,9 @@
       if (dayKey === saturday || dayKey === sunday) weekendCount++;
       if (mode === "osteoporosis" && !RELEVANT_CATEGORIES.has(row.category)) return;
       if (mode !== "all" && mode !== "osteoporosis" && row.category !== mode) return;
-      if (clinic !== "all" && clinicKey(row.clinic) !== clinic) return;
+      const effectiveClinic = row.clinic_override ? (row.clinic_override === "other" ? "unknown" : row.clinic_override) : clinicKey(row.clinic);
+      if (clinic !== "all" && effectiveClinic !== clinic) return;
+      if (visitKind !== "all" && (row.visit_kind || "unknown") !== visitKind) return;
       const haystack = normalizeSearch((row.patient_display_name || "") + " " + (row.reason || "") + " " + (row.clinic || "") + " " + (CATEGORY_LABELS[row.category] || ""));
       if (query && !haystack.includes(query)) return;
       if (dayCount === 5 && (dayKey === saturday || dayKey === sunday)) return;
@@ -416,6 +428,9 @@
   $("#calendarClinic").addEventListener("change", () => {
     if (weekRows) renderWeek(weekRows, displayedMonday, calendarMode);
   });
+  $("#calendarVisitKind").addEventListener("change", () => {
+    if (weekRows && displayedMonday) renderWeek(weekRows, displayedMonday, calendarMode);
+  });
   function setDayCount(value) {
     dayCount = value === 5 ? 5 : 7;
     $("#showFiveDays").setAttribute("aria-pressed", String(dayCount === 5));
@@ -449,7 +464,7 @@
     if (!$("#appointmentDialog").open) $("#appointmentDialogContent").replaceChildren();
   });
   $("#appointmentDialog").addEventListener("change", async (event) => {
-    const select = event.target.closest(".classification-select");
+    const select = event.target.closest(".classification-select, .label-select");
     if (!select || classificationPending || classificationNeedsRefresh) return;
     const ticket = weekRequest;
     const closeButton = $("#appointmentDialogContent .appointment-dialog-close");
@@ -459,15 +474,17 @@
     classificationPending = true;
     if (closeButton) closeButton.disabled = true;
     if (status) status.textContent = "Αποθήκευση ταξινόμησης…";
-    select.disabled = true;
+    $("#appointmentDialogContent").querySelectorAll(".classification-select, .label-select").forEach(input => { input.disabled = true; });
     const timeout = setTimeout(() => controller.abort(), 15000);
     try {
+      const isLabel = select.classList.contains("label-select");
       await api(
-        `/clinical/calendar/appointments/${encodeURIComponent(select.dataset.appointmentId)}/classification`,
+        `/clinical/calendar/appointments/${encodeURIComponent(select.dataset.appointmentId)}/${isLabel ? "labels" : "classification"}`,
         {
           method: "PUT",
           signal: controller.signal,
-          body: JSON.stringify({ category: select.value || null }),
+          body: JSON.stringify(isLabel ? {field: select.dataset.field, value: select.value || null,
+            target_date: select.dataset.targetDate, expected_revision: Number(select.dataset.revision)} : { category: select.value || null, expected_revision: Number(select.dataset.revision) }),
         }
       );
       if (classificationController === controller) {

@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Clinical Calendar — Osteoporosis</title>
-  <link rel="stylesheet" href="./calendar.css?v=week-focus-20261114" />
+  <link rel="stylesheet" href="./calendar.css?v=visit-labels-20261114" />
   <link rel="stylesheet" href="/static/cockpit/shared-nav.css" />
   <script src="/static/cockpit/start-page.js?v=20261112"></script>
 </head>
@@ -55,6 +55,15 @@
             <option value="other">Λοιπά ραντεβού</option>
           </select>
         </label>
+        <label class="calendar-select">Είδος επίσκεψης
+          <select id="calendarVisitKind">
+            <option value="all">Όλα</option>
+            <option value="first">Πρώτο ραντεβού</option>
+            <option value="review">Επανεκτίμηση</option>
+            <option value="other">Άλλο</option>
+            <option value="unknown">Χωρίς χαρακτηρισμό</option>
+          </select>
+        </label>
         <label class="calendar-select">Ιατρείο
           <select id="calendarClinic">
             <option value="all">Όλα</option>
@@ -96,7 +105,7 @@
       </section>
     </section>
   </main>
-  <script src="./calendar.js?v=week-focus-20261114"></script>
+  <script src="./calendar.js?v=visit-labels-20261114"></script>
   <script src="/static/cockpit/shared-nav.js" defer></script>
 </body>
 </html>
