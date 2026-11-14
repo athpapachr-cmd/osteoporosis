@@ -7,6 +7,7 @@ on:
       - "schemas/clinical_calendar_contract_v1.yaml"
       - "test_clinical_calendar.py"
       - "test_clinical_calendar_snapshot.py"
+      - "test_cockpit_calendar_home_browser.py"
       - "static/clinical-calendar/**"
       - ".github/workflows/clinical-calendar-snapshot-tests.yml"
   pull_request:
@@ -15,6 +16,7 @@ on:
       - "schemas/clinical_calendar_contract_v1.yaml"
       - "test_clinical_calendar.py"
       - "test_clinical_calendar_snapshot.py"
+      - "test_cockpit_calendar_home_browser.py"
       - "static/clinical-calendar/**"
       - ".github/workflows/clinical-calendar-snapshot-tests.yml"
 
@@ -37,5 +39,11 @@ jobs:
         run: node --check static/clinical-calendar/calendar.js
       - name: Clinical Calendar deterministic tests
         run: pytest -q test_clinical_calendar.py test_clinical_calendar_snapshot.py
+      - name: Install Chromium for calendar experience tests
+        run: |
+          pip install 'playwright==1.63.0'
+          python -m playwright install --with-deps chromium
+      - name: Compact calendar browser tests
+        run: pytest -q test_cockpit_calendar_home_browser.py
       - name: Diff hygiene
         run: git diff --check HEAD^ HEAD
