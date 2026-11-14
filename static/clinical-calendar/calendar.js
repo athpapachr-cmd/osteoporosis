@@ -6,6 +6,7 @@
   let calendarMode = "all";
   let weekRequest = 0;
   let authGeneration = 0;
+  let appointmentRows = new Map();
 
   const CATEGORY_LABELS = {
     osteoporosis_first: "1ο ραντεβού οστεοπόρωσης",
@@ -75,6 +76,8 @@
     $("#calendarApp").hidden = true;
     $("#authCard").hidden = false;
     $("#weekGrid").replaceChildren();
+    closeAppointment();
+    appointmentRows.clear();
     for (const id of ["#countOsteoporosis", "#countProlia", "#countAclasta", "#countUnspecified"])
       $(id).textContent = "—";
     setStatus("");
@@ -163,24 +166,46 @@
   function appointmentHtml(row) {
     const start = parseServerDate(row.start_at);
     const category = row.category || "other";
-    const label = CATEGORY_LABELS[category] || "Οστεοπόρωση";
+    const label = CATEGORY_LABELS[category] || "Ραντεβού";
     const patient = row.patient_display_name || row.linked_patient_id || "Χωρίς αντιστοίχιση ασθενούς";
-    const reason = row.reason || "";
-    const meta = [row.status, row.clinic].filter(Boolean).join(" · ");
+    const time = start ? fmtTime.format(start) : "—";
+    const marker = category === "other" ? "" : `<span class="appt-indicator ${esc(category)}" aria-hidden="true"></span>`;
+    return `<button type="button" class="appt-row" data-appointment-key="${esc(row.appointment_id)}" aria-label="${esc(time + " · " + patient + " · " + label)}" title="${esc(patient + " · " + label)}">
+      <time>${esc(time)}</time><span class="appt-name">${esc(patient)}</span>${marker}
+    </button>`;
+  }
+
+  function closeAppointment() {
+    const dialog = $("#appointmentDialog");
+    if (dialog.open) dialog.close();
+    $("#appointmentDialogContent").replaceChildren();
+  }
+
+  function openAppointment(row) {
+    const start = parseServerDate(row.start_at);
     const end = parseServerDate(row.end_at);
+    const category = row.category || "other";
+    const label = CATEGORY_LABELS[category] || "Ραντεβού";
+    const name = row.patient_display_name || row.linked_patient_id || "Χωρίς αντιστοίχιση ασθενούς";
+    const meta = [row.status, row.clinic].filter(Boolean).join(" · ");
     const duration = row.duration_minutes ?? (start && end ? Math.round((end - start) / 60000) : null);
-    return `<article class="appt">
-      <div class="appt-time"><strong>${start ? fmtTime.format(start) : "—"}</strong><span class="appt-duration">${Number.isFinite(duration) && duration > 0 ? esc(duration) + "′" : ""}</span></div>
-      <span class="badge ${esc(category)}">${esc(label)}</span>
-      <div class="appt-name">${esc(patient)}</div>
-      <div class="appt-meta">${esc(meta)}</div>
-      ${reason ? `<div class="appt-label">${esc(reason)}</div>` : ""}
-      <a class="button ghost" href="/static/cockpit/?booking=${encodeURIComponent(row.appointment_id)}&amp;booking_date=${start ? dateKey(start) : ''}">Καρτέλα · Τελευταία επίσκεψη</a>
+    const time = start ? fmtTime.format(start) : "—";
+    const dialog = $("#appointmentDialog");
+    $("#appointmentDialogContent").innerHTML = `<div class="appointment-dialog-header">
+      <div><p class="appointment-dialog-date">${start ? esc(fmtLong.format(start)) : ""} · ${esc(time)}${Number.isFinite(duration) && duration > 0 ? " · " + esc(duration) + "′" : ""}</p>
+      <h2 id="appointmentDialogTitle">${esc(name)}</h2></div>
+      <button type="button" class="appointment-dialog-close" aria-label="Κλείσιμο">×</button></div>
+      <p><span class="badge ${esc(category)}">${esc(label)}</span></p>
+      ${row.reason ? `<p class="appointment-dialog-reason">${esc(row.reason)}</p>` : '<p class="appointment-dialog-reason">Δεν έχει καταχωριστεί λόγος επίσκεψης.</p>'}
+      ${meta ? `<p class="appointment-dialog-meta">${esc(meta)}</p>` : ""}
       ${classificationControl(row, category)}
-    </article>`;
+      <p class="appointment-dialog-status" role="status"></p>
+      <a class="button primary appointment-chart" href="/static/cockpit/?booking=${encodeURIComponent(row.appointment_id)}&amp;booking_date=${start ? dateKey(start) : ''}">Καρτέλα · Τελευταία επίσκεψη</a>`;
+    dialog.showModal();
   }
 
   function renderWeek(rows, monday) {
+    appointmentRows = new Map((rows || []).map(row => [String(row.appointment_id), row]));
     const grouped = new Map();
     for (let i = 0; i < 7; i += 1) grouped.set(dateKey(addDays(monday, i)), []);
     (rows || []).forEach(row => {
@@ -198,7 +223,7 @@
       const items = grouped.get(key) || [];
       const col = document.createElement("section");
       col.className = "day-column";
-      col.innerHTML = `<div class="day-head"><strong>${esc(fmtDay.format(day))}</strong><span>${esc(fmtDate.format(day))}</span></div><div class="day-body">${items.length ? items.map(appointmentHtml).join("") : '<div class="empty-day">Δεν υπάρχουν ραντεβού σε αυτή την προβολή.</div>'}</div>`;
+      col.innerHTML = `<div class="day-head"><strong>${esc(fmtDay.format(day))}</strong><span>${esc(fmtDate.format(day))} · ${items.length}</span></div><div class="day-body">${items.length ? items.map(appointmentHtml).join("") : '<div class="empty-day">Δεν υπάρχουν ραντεβού σε αυτή την προβολή.</div>'}</div>`;
       grid.appendChild(col);
     }
 
@@ -210,6 +235,7 @@
   }
 
   function renderWeekUnavailable(monday, loading = false) {
+    appointmentRows.clear();
     const grid = $("#weekGrid");
     grid.innerHTML = "";
     for (let i = 0; i < 7; i += 1) {
@@ -226,6 +252,7 @@
   }
 
   async function loadWeek() {
+    closeAppointment();
     const ticket = ++weekRequest;
     const requestedMode = calendarMode;
     const monday = mondayForOffset(weekOffset);
@@ -265,9 +292,21 @@
   $("#showAllAppointments").addEventListener("click", () => changeMode("all"));
   $("#showOsteoporosisAppointments").addEventListener("click", () => changeMode("osteoporosis"));
 
-  $("#weekGrid").addEventListener("change", async (event) => {
+  $("#weekGrid").addEventListener("click", event => {
+    const button = event.target.closest(".appt-row");
+    const row = button && appointmentRows.get(button.dataset.appointmentKey);
+    if (row) openAppointment(row);
+  });
+  $("#appointmentDialog").addEventListener("click", event => {
+    if (event.target.closest(".appointment-dialog-close")) closeAppointment();
+  });
+  $("#appointmentDialog").addEventListener("close", () => {
+    if (!$("#appointmentDialog").open) $("#appointmentDialogContent").replaceChildren();
+  });
+  $("#appointmentDialog").addEventListener("change", async (event) => {
     const select = event.target.closest(".classification-select");
     if (!select) return;
+    const ticket = weekRequest;
     select.disabled = true;
     try {
       await api(
@@ -277,10 +316,13 @@
           body: JSON.stringify({ category: select.value || null }),
         }
       );
-      await loadWeek();
+      if (ticket === weekRequest) await loadWeek();
     } catch (err) {
+      if (ticket !== weekRequest) return;
       if (err.status === 401 || err.status === 403) { clearProtectedCalendar(); return; }
       setStatus(err.message, "err");
+      const status = $("#appointmentDialogContent .appointment-dialog-status");
+      if (status) status.textContent = "Η ταξινόμηση δεν αποθηκεύτηκε. Δοκίμασε ξανά.";
       select.disabled = false;
     }
   });

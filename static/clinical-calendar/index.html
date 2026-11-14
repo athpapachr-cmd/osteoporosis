@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Clinical Calendar — Osteoporosis</title>
-  <link rel="stylesheet" href="./calendar.css?v=home-experience-20261113" />
+  <link rel="stylesheet" href="./calendar.css?v=compact-week-20261114" />
   <link rel="stylesheet" href="/static/cockpit/shared-nav.css" />
   <script src="/static/cockpit/start-page.js?v=20261112"></script>
 </head>
@@ -14,7 +14,7 @@
       <div>
         <p class="eyebrow">Module 01 · Osteoporosis</p>
         <h1>Εβδομαδιαίο πρόγραμμα</h1>
-        <p class="subtitle">Δες τα διαθέσιμα ραντεβού του ιατρείου ή εστίασε στην οστεοπόρωση. Αν η πηγή δεν καλύπτει ολόκληρη την εβδομάδα, το πρόγραμμα εμφανίζεται ως μη διαθέσιμο.</p>
+        <p class="subtitle">Ραντεβού από τη διαθέσιμη πηγή. Αν η εβδομάδα δεν καλύπτεται, επισημαίνεται ως μη διαθέσιμη.</p>
       </div>
       <a class="button ghost" href="../baseline-audit/">Baseline Audit</a>
     </header>
@@ -52,15 +52,24 @@
         <article class="summary-card"><span>Χρειάζεται ταξινόμηση</span><strong id="countUnspecified">0</strong></article>
       </section>
 
+      <p class="calendar-legend">Πάτησε σε ραντεβού για λεπτομέρειες
+        <span><i class="appt-indicator osteoporosis_review" aria-hidden="true"></i> Οστεοπόρωση</span>
+        <span><i class="appt-indicator prolia" aria-hidden="true"></i> Prolia</span>
+        <span><i class="appt-indicator aclasta" aria-hidden="true"></i> Aclasta</span>
+        <span><i class="appt-indicator osteoporosis_unspecified" aria-hidden="true"></i> Ταξινόμηση</span>
+      </p>
       <section id="weekGrid" class="week-grid" aria-live="polite"></section>
+      <dialog id="appointmentDialog" class="appointment-dialog" aria-labelledby="appointmentDialogTitle">
+        <div id="appointmentDialogContent"></div>
+      </dialog>
 
       <section class="panel integration-note">
         <strong>Τι χρησιμοποιούμε για την ταξινόμηση</strong>
-        <p>Προτεραιότητα έχει ο λόγος επίσκεψης/σχόλιο του ραντεβού. Η διάρκεια χρησιμοποιείται μόνο όταν έχει ήδη αναγνωριστεί ότι πρόκειται για οστεοπόρωση: 60′ πρώτη επίσκεψη, 40′ επανέλεγχος, 60′ Aclasta και 10′ Prolia. Αν εμφανίζεται «Χρειάζεται ταξινόμηση», επίλεξε μέσα στην κάρτα Πρώτη επίσκεψη, Επανέλεγχος, Prolia ή Aclasta. Η επιλογή αποθηκεύεται ως χειροκίνητη ταξινόμηση και διατηρείται στα επόμενα sync.</p>
+        <p>Προτεραιότητα έχει ο λόγος επίσκεψης/σχόλιο του ραντεβού. Η διάρκεια χρησιμοποιείται μόνο όταν έχει ήδη αναγνωριστεί ότι πρόκειται για οστεοπόρωση: 60′ πρώτη επίσκεψη, 40′ επανέλεγχος, 60′ Aclasta και 10′ Prolia. Άνοιξε το ραντεβού για να δεις ή να αλλάξεις τη χειροκίνητη ταξινόμηση, η οποία διατηρείται στα επόμενα sync.</p>
       </section>
     </section>
   </main>
-  <script src="./calendar.js?v=home-experience-20261113"></script>
+  <script src="./calendar.js?v=compact-week-20261114"></script>
   <script src="/static/cockpit/shared-nav.js" defer></script>
 </body>
 </html>
