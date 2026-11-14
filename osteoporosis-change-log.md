@@ -2039,3 +2039,7 @@ Day now shows a protected daily agenda and direct actions; the calendar offers a
 ## 2026-11-14 — Compact weekly calendar released (#290)
 
 Compact time/name rows open a detail dialog with existing chart and classification actions. Duplicate identifiers are qualified against the full returned week before local filtering; ambiguous actions are disabled. Pending classification is bounded and uncertain outcomes remain explicitly unconfirmed. Independent R1 closure 0:0:0 and final CI PASS, including synthetic 77-appointment browser coverage. Merge `7d773b037bb64f3e6f914c60636cdf3442061229` LIVE on `dep-dbrvbhe417fc73eui53g`; three assets matched and production Chromium synthetic no-PHI smoke passed at 1440/390, with bounded error/5xx logs empty. Real authenticated source interactions and clinician usability remain unverified. [Receipt](cockpit/releases/COMPACT_WEEKLY_CALENDAR_RELEASE_2026-11-14.md).
+
+## 2026-11-14 — Optional visit reason in compact calendar (#292)
+
+Compact rows show a single escaped, shortened source-reason line beneath the name only when present; the full original remains in details. Independent R1 PASS0:0:0, final CI PASS, local synthetic browser/snapshot26 PASS. Merge `2446be68bfa3e6982814fde571790dae4e02dc55` LIVE on `dep-dbrvs3qjnfac73bnl500`; three assets matched and production browser synthetic no-PHI smoke passed at 1440/390, with bounded error/5xx logs empty. Real authenticated source interaction and clinician acceptance remain unverified. [Receipt](cockpit/releases/CALENDAR_REASON_PREVIEW_RELEASE_2026-11-14.md).
