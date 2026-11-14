@@ -10,6 +10,8 @@
   let classificationPending = false;
   let classificationNeedsRefresh = false;
   let classificationController = null;
+  const RELEVANT_CATEGORIES = new Set(["osteoporosis_first", "osteoporosis_review",
+    "osteoporosis_unspecified", "prolia", "aclasta"]);
 
   const CATEGORY_LABELS = {
     osteoporosis_first: "1ο ραντεβού οστεοπόρωσης",
@@ -195,7 +197,7 @@
     const status = content.querySelector("[role='status']");
     if (select) select.disabled = true;
     if (!status) return;
-    status.textContent = "Η αποθήκευση δεν επιβεβαιώθηκε και μπορεί να έχει ολοκληρωθεί. Ανανέωσε το πρόγραμμα και έλεγξε την ταξινόμηση πριν ξαναπροσπαθήσεις. ";
+    status.textContent = "Η αποθήκευση δεν επιβεβαιώθηκε και μπορεί να έχει ολοκληρωθεί ή να ολοκληρωθεί αργότερα. Ανανέωσε το πρόγραμμα και έλεγξε την ταξινόμηση πριν ξαναπροσπαθήσεις. ";
     const refresh = document.createElement("button");
     refresh.type = "button";
     refresh.className = "button ghost";
@@ -229,7 +231,7 @@
     dialog.showModal();
   }
 
-  function renderWeek(rows, monday) {
+  function renderWeek(rows, monday, mode) {
     const counts = new Map();
     (rows || []).forEach(row => counts.set(String(row.appointment_id), (counts.get(String(row.appointment_id)) || 0) + 1));
     appointmentRows = new Map((rows || []).map((row, index) =>
@@ -238,6 +240,7 @@
     for (let i = 0; i < 7; i += 1) grouped.set(dateKey(addDays(monday, i)), []);
     appointmentRows.forEach((entry, rowKey) => {
       const row = entry.row;
+      if (mode === "osteoporosis" && !RELEVANT_CATEGORIES.has(row.category)) return;
       const start = parseServerDate(row.start_at);
       if (!start) return;
       const dayKey = dateKey(start);
@@ -290,13 +293,13 @@
     setStatus("Φόρτωση…");
     renderWeekUnavailable(monday, true);
     try {
-      const endpoint = requestedMode === "all" ? "agenda" : "appointments";
-      const rows = await api(`/clinical/calendar/${endpoint}?start=${encodeURIComponent(cyprusMidnight(monday).toISOString())}&end=${encodeURIComponent(cyprusMidnight(end).toISOString())}`);
+      const rows = await api(`/clinical/calendar/agenda?start=${encodeURIComponent(cyprusMidnight(monday).toISOString())}&end=${encodeURIComponent(cyprusMidnight(end).toISOString())}`);
       if (ticket !== weekRequest) return;
       if (!Array.isArray(rows)) throw new Error("Invalid schedule");
-      renderWeek(rows, monday);
+      renderWeek(rows, monday, requestedMode);
       classificationNeedsRefresh = false;
-      setStatus(`${rows.length} ραντεβού · ${requestedMode === "all" ? "όλες οι κατηγορίες" : "οστεοπόρωση"}`, "ok");
+      const visibleCount = requestedMode === "all" ? rows.length : rows.filter(row => RELEVANT_CATEGORIES.has(row.category)).length;
+      setStatus(`${visibleCount} ραντεβού · ${requestedMode === "all" ? "όλες οι κατηγορίες" : "οστεοπόρωση"}`, "ok");
     } catch (err) {
       if (ticket !== weekRequest) return;
       if (err.status === 401 || err.status === 403) { clearProtectedCalendar(); return; }

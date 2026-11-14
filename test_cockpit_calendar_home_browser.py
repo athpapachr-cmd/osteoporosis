@@ -132,7 +132,7 @@ def test_busy_week_compact_rows_details_and_keyboard():
                         begin = start + timedelta(hours=16, minutes=20 * index)
                         rows.append({"appointment_id":"duplicate-id", "start_at":begin.isoformat(),
                             "end_at":(begin + timedelta(minutes=20)).isoformat(), "clinic":"Synthetic",
-                            "category":"other", "patient_display_name":f"Διπλό δοκιμαστικό {index}",
+                            "category":"prolia" if index == 0 else "other", "patient_display_name":f"Διπλό δοκιμαστικό {index}",
                             "reason":f"Διαφορετικός λόγος {index}", "manual_category":None})
                     return route.fulfill(json=rows)
                 asset = ROOT / "static" / parts.path.removeprefix("/static/")
@@ -172,5 +172,12 @@ def test_busy_week_compact_rows_details_and_keyboard():
                 assert dialog.locator("a.appointment-chart").count() == 0
                 assert dialog.locator(".classification-select").count() == 0
                 page.keyboard.press("Escape")
+            page.locator("#showOsteoporosisAppointments").click()
+            expect(page.get_by_role("button", name="Διπλό δοκιμαστικό 0", exact=False)).to_be_visible()
+            expect(page.get_by_role("button", name="Διπλό δοκιμαστικό 1", exact=False)).to_have_count(0)
+            page.get_by_role("button", name="Διπλό δοκιμαστικό 0", exact=False).click()
+            expect(dialog).to_contain_text("εμφανίζεται περισσότερες από μία φορές")
+            assert dialog.locator("a.appointment-chart").count() == 0
+            assert dialog.locator(".classification-select").count() == 0
             page.close()
         browser.close()
