@@ -1,0 +1,3 @@
+# Calendar week focus — independent R1 review
+
+Reviewed candidate `c3bf68f` against `3894b40` and affected paths against `7b334c8`. Verdict: **PASS; P0:P1:P2 = 0:0:0** within declared scope. The reviewer checked category and source-clinic filtering, visible counts, refresh, search, identity, authorization, the existing category control, five/seven days, today and scheduled-now markers. Synthetic browser/snapshot evidence: 27 passed. Live data and user acceptance were not assessed. Independent stored visit-type and clinic classifications are outside this R1 candidate and require separate design.
