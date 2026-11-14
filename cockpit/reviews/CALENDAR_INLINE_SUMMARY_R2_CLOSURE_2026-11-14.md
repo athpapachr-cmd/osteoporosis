@@ -1,0 +1,7 @@
+# Calendar inline summary — independent R2 closure
+
+Pre-code review of the design on base `800890f3166d011a89557dbb047c88087fb211b5` identified two source-contract gaps: truncated 240-character reason cannot prove snapshot consistency, and Reception may already truncate at 1,000. The revised design closed them by returning the available reason from the same fresh protected booking read and declaring possible truncation. Independent pre-code delta/affected-cumulative R2 PASS, complete scope.
+
+Initial implementation `c740a94` R2 found one P2: an incomplete linked response could be presented as an empty clinical history or plan. Corrected exact runtime/test commit `472204656e9a01ad53eba4980e21a579f068264a` validates the complete linked-summary shape before rendering, with malformed data producing an unavailable state. Independent delta/affected-cumulative R2 closure PASS, P0:P1:P2 = 0:0:0, complete scope. Review covered source/booking coherence, protected audited read, explicit chart association, duplicate booking safety, stale-response/session cleanup and optional controls. The reviewer did not rerun tests or inspect production.
+
+Writer evidence: nine synthetic tests passed for calendar desktop/mobile, actual calendar-to-inline-to-chart flow, linked/unlinked data, old/fresh reasons, 999/1,000 limits, missing linked fields, delayed responses and auth loss; Node syntax and diff checks passed. Final-head CI and deployment are separate gates. No real patient chart or provider write is part of this evidence.
