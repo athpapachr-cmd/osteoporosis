@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Clinical Calendar — Osteoporosis</title>
-  <link rel="stylesheet" href="./calendar.css?v=reason-preview-20261114" />
+  <link rel="stylesheet" href="./calendar.css?v=week-focus-20261114" />
   <link rel="stylesheet" href="/static/cockpit/shared-nav.css" />
   <script src="/static/cockpit/start-page.js?v=20261112"></script>
 </head>
@@ -34,6 +34,7 @@
           <button id="prevWeek" class="button ghost" type="button">← Προηγούμενη</button>
           <button id="thisWeek" class="button ghost" type="button">Αυτή η εβδομάδα</button>
           <button id="nextWeek" class="button ghost" type="button">Επόμενη →</button>
+          <button id="refreshWeek" class="button ghost" type="button">Ανανέωση</button>
         </div>
         <div>
           <div id="weekLabel" class="week-label"></div>
@@ -41,18 +42,44 @@
         </div>
       </div>
 
-      <div class="calendar-filters" role="group" aria-label="Φίλτρο ραντεβού">
-        <button id="showAllAppointments" class="button" type="button" aria-pressed="true">Όλα τα ραντεβού</button>
-        <button id="showOsteoporosisAppointments" class="button" type="button" aria-pressed="false">Οστεοπόρωση · Prolia · Aclasta</button>
+      <div class="calendar-filters">
+        <label class="calendar-select">Κατηγορία
+          <select id="calendarCategory">
+            <option value="all">Όλα</option>
+            <option value="osteoporosis">Οστεοπόρωση · Prolia · Aclasta</option>
+            <option value="osteoporosis_first">Πρώτο οστεοπόρωσης</option>
+            <option value="osteoporosis_review">Επανεκτίμηση οστεοπόρωσης</option>
+            <option value="prolia">Prolia</option>
+            <option value="aclasta">Aclasta</option>
+            <option value="osteoporosis_unspecified">Χρειάζεται ταξινόμηση</option>
+            <option value="other">Λοιπά ραντεβού</option>
+          </select>
+        </label>
+        <label class="calendar-select">Ιατρείο
+          <select id="calendarClinic">
+            <option value="all">Όλα</option>
+            <option value="limassol">Λεμεσός</option>
+            <option value="evrychou">Ευρύχου</option>
+            <option value="unknown">Άγνωστο / άλλο</option>
+          </select>
+        </label>
+        <div class="calendar-filter-group" role="group" aria-label="Ημέρες εβδομάδας">
+          <button id="showFiveDays" class="button" type="button" aria-pressed="false">5 ημέρες</button>
+          <button id="showSevenDays" class="button" type="button" aria-pressed="true">7 ημέρες</button>
+        </div>
+        <label class="calendar-search"><span class="visually-hidden">Αναζήτηση στην επιλεγμένη εβδομάδα</span>
+          <input id="calendarSearch" type="search" autocomplete="off" placeholder="Αναζήτηση στην εβδομάδα…" />
+        </label>
       </div>
-      <section class="summary-grid" aria-label="Σύνοψη εβδομάδας">
+      <p id="weekendNotice" class="weekend-notice" hidden></p>
+      <section class="summary-grid" aria-label="Σύνοψη εμφανιζόμενων ραντεβού">
         <article class="summary-card"><span>Οστεοπόρωση</span><strong id="countOsteoporosis">0</strong></article>
         <article class="summary-card"><span>Prolia</span><strong id="countProlia">0</strong></article>
         <article class="summary-card"><span>Aclasta</span><strong id="countAclasta">0</strong></article>
         <article class="summary-card"><span>Χρειάζεται ταξινόμηση</span><strong id="countUnspecified">0</strong></article>
       </section>
 
-      <p class="calendar-legend">Πάτησε σε ραντεβού για λεπτομέρειες
+      <p class="calendar-legend">Πάτησε σε ραντεβού για λεπτομέρειες · «Τώρα»: προγραμματισμένο χρονικά
         <span><i class="appt-indicator osteoporosis_review" aria-hidden="true"></i> Οστεοπόρωση</span>
         <span><i class="appt-indicator prolia" aria-hidden="true"></i> Prolia</span>
         <span><i class="appt-indicator aclasta" aria-hidden="true"></i> Aclasta</span>
@@ -69,7 +96,7 @@
       </section>
     </section>
   </main>
-  <script src="./calendar.js?v=reason-preview-20261114"></script>
+  <script src="./calendar.js?v=week-focus-20261114"></script>
   <script src="/static/cockpit/shared-nav.js" defer></script>
 </body>
 </html>
