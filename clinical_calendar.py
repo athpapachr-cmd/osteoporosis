@@ -389,7 +389,7 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
             CalendarBase.metadata.create_all(bind=engine)
     # Production and upgraded SQLite provisioning are performed separately.
     inspector = inspect(engine)
-    if not inspector.has_table("clinical_appointment_classifications"):
+    if not inspector.has_table("clinical_appointment_classifications") or not inspector.has_table("clinical_appointments"):
         raise RuntimeError("Calendar classification schema is not qualified; apply the reviewed migration")
     cols = {column["name"] for column in inspector.get_columns("clinical_appointment_classifications")}
     if not {"appointment_id", "category", "visit_kind", "clinic_override", "revision", "updated_at"}.issubset(cols):

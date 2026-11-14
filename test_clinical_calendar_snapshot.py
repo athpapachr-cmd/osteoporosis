@@ -572,6 +572,7 @@ def test_label_rejects_partially_covered_week(monkeypatch):
 
 def test_legacy_sqlite_requires_explicit_migration(tmp_path):
     engine = create_engine(f"sqlite:///{tmp_path / 'old.db'}")
+    ClinicalAppointmentORM.__table__.create(engine)
     with engine.begin() as conn:
         conn.execute(text("CREATE TABLE clinical_appointment_classifications (appointment_id VARCHAR PRIMARY KEY, category VARCHAR NOT NULL, updated_at DATETIME NOT NULL)"))
         conn.execute(text("INSERT INTO clinical_appointment_classifications VALUES ('cal.com:synthetic','prolia','2026-10-05 08:00:00')"))
@@ -595,6 +596,15 @@ def test_fresh_file_backed_sqlite_keeps_first_run_support(tmp_path):
     with Session(engine) as session:
         assert session.query(ClinicalAppointmentClassificationORM).count() == 0
         assert session.query(ClinicalAppointmentORM).count() == 0
+
+
+@pytest.mark.parametrize("present", ["classification", "appointment"])
+def test_partial_sqlite_schema_fails_closed(tmp_path, present):
+    engine = create_engine(f"sqlite:///{tmp_path / (present + '.db')}")
+    table = ClinicalAppointmentClassificationORM.__table__ if present == "classification" else ClinicalAppointmentORM.__table__
+    table.create(engine)
+    with pytest.raises(RuntimeError, match="apply the reviewed migration"):
+        build_clinical_calendar_router(engine)
 
 
 def test_context_preserves_start_order_aclasta_exception_and_fail_closed_overlaps(monkeypatch):
