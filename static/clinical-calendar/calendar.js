@@ -7,6 +7,12 @@
   let weekRequest = 0;
   let authGeneration = 0;
   let appointmentRows = new Map();
+  let weekRows = null;
+  let displayedMonday = null;
+  let weekState = "loading";
+  const DAY_COUNT_KEY = "clinical-excellence.calendar-day-count.v1";
+  let dayCount = 7;
+  try { if (window.localStorage.getItem(DAY_COUNT_KEY) === "5") dayCount = 5; } catch (_) { /* Session-only fallback. */ }
   let classificationPending = false;
   let classificationNeedsRefresh = false;
   let classificationController = null;
@@ -83,6 +89,10 @@
     $("#weekGrid").replaceChildren();
     closeAppointment();
     appointmentRows.clear();
+    weekRows = null;
+    $("#calendarSearch").value = "";
+    $("#weekendNotice").replaceChildren();
+    $("#weekendNotice").hidden = true;
     for (const id of ["#countOsteoporosis", "#countProlia", "#countAclasta", "#countUnspecified"])
       $(id).textContent = "—";
     setStatus("");
@@ -175,9 +185,10 @@
     const patient = row.patient_display_name || row.linked_patient_id || "Χωρίς αντιστοίχιση ασθενούς";
     const reason = typeof row.reason === "string" ? row.reason.replace(/\s+/g, " ").trim() : "";
     const time = start ? fmtTime.format(start) : "—";
+    const accessible = time + " · " + patient + " · " + label + (reason ? " · " + reason : "");
     const marker = category === "other" ? "" : `<span class="appt-indicator ${esc(category)}" aria-hidden="true"></span>`;
-    return `<button type="button" class="appt-row" data-appointment-key="${esc(key)}" aria-label="${esc(time + " · " + patient + " · " + label + (reason ? " · " + reason : ""))}" title="${esc(patient + " · " + label + (reason ? " · " + reason : ""))}">
-      <time>${esc(time)}</time><span class="appt-copy"><span class="appt-name">${esc(patient)}</span>${reason ? `<span class="appt-reason">${esc(reason)}</span>` : ""}</span>${marker}
+    return `<button type="button" class="appt-row" data-appointment-key="${esc(key)}" data-base-label="${esc(accessible)}" aria-label="${esc(accessible)}" title="${esc(patient + " · " + label + (reason ? " · " + reason : ""))}">
+      <time>${esc(time)}</time><span class="appt-copy"><span class="appt-name">${esc(patient)}</span>${reason ? `<span class="appt-reason">${esc(reason)}</span>` : ""}</span>${marker}<span class="appt-now" hidden aria-hidden="true">Τώρα</span>
     </button>`;
   }
 
@@ -232,33 +243,87 @@
     dialog.showModal();
   }
 
+  function normalizeSearch(value) {
+    return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .toLocaleLowerCase("el").replace(/ς/g, "σ").replace(/\s+/g, " ").trim();
+  }
+
+  function refreshTimeIndicators() {
+    const now = new Date();
+    const today = dateKey(now);
+    $("#weekGrid").querySelectorAll(".day-column[data-date]").forEach(col => {
+      const current = col.dataset.date === today;
+      col.classList.toggle("is-today", current);
+      const label = col.querySelector(".today-label");
+      if (label) label.hidden = !current;
+    });
+    $("#weekGrid").querySelectorAll(".appt-row").forEach(button => {
+      const entry = appointmentRows.get(button.dataset.appointmentKey);
+      if (!entry) return;
+      const start = parseServerDate(entry.row.start_at);
+      const end = parseServerDate(entry.row.end_at);
+      const active = start && end && Number.isFinite(start.getTime()) && Number.isFinite(end.getTime())
+        && start.getTime() <= now.getTime() && now.getTime() < end.getTime();
+      button.classList.toggle("is-current", !!active);
+      const badge = button.querySelector(".appt-now");
+      if (badge) badge.hidden = !active;
+      if (active) button.setAttribute("aria-current", "true");
+      else button.removeAttribute("aria-current");
+      button.setAttribute("aria-label", button.dataset.baseLabel + (active ? " · Προγραμματισμένο τώρα" : ""));
+    });
+  }
+
   function renderWeek(rows, monday, mode) {
     const counts = new Map();
     (rows || []).forEach(row => counts.set(String(row.appointment_id), (counts.get(String(row.appointment_id)) || 0) + 1));
     appointmentRows = new Map((rows || []).map((row, index) =>
       [String(index), {row, ambiguous: counts.get(String(row.appointment_id)) > 1}]));
     const grouped = new Map();
+    const query = normalizeSearch($("#calendarSearch").value);
+    let weekendCount = 0;
+    let visibleCount = 0;
+    const saturday = dateKey(addDays(monday, 5));
+    const sunday = dateKey(addDays(monday, 6));
     for (let i = 0; i < 7; i += 1) grouped.set(dateKey(addDays(monday, i)), []);
     appointmentRows.forEach((entry, rowKey) => {
       const row = entry.row;
-      if (mode === "osteoporosis" && !RELEVANT_CATEGORIES.has(row.category)) return;
       const start = parseServerDate(row.start_at);
       if (!start) return;
       const dayKey = dateKey(start);
+      if (dayKey === saturday || dayKey === sunday) weekendCount++;
+      if (mode === "osteoporosis" && !RELEVANT_CATEGORIES.has(row.category)) return;
+      const haystack = normalizeSearch((row.patient_display_name || "") + " " + (row.reason || ""));
+      if (query && !haystack.includes(query)) return;
       if (grouped.has(dayKey)) grouped.get(dayKey).push({row, key: rowKey});
     });
 
     const grid = $("#weekGrid");
     grid.innerHTML = "";
-    for (let i = 0; i < 7; i += 1) {
+    grid.dataset.days = String(dayCount);
+    for (let i = 0; i < dayCount; i += 1) {
       const day = addDays(monday, i);
       const key = dateKey(day);
       const items = grouped.get(key) || [];
+      visibleCount += items.length;
       const col = document.createElement("section");
       col.className = "day-column";
-      col.innerHTML = `<div class="day-head"><strong>${esc(fmtDay.format(day))}</strong><span>${esc(fmtDate.format(day))} · ${items.length}</span></div><div class="day-body">${items.length ? items.map(item => appointmentHtml(item.row, item.key)).join("") : '<div class="empty-day">Δεν υπάρχουν ραντεβού σε αυτή την προβολή.</div>'}</div>`;
+      col.dataset.date = key;
+      col.innerHTML = `<div class="day-head"><strong>${esc(fmtDay.format(day))} <span class="today-label" hidden>· Σήμερα</span></strong><span>${esc(fmtDate.format(day))} · ${items.length}</span></div><div class="day-body">${items.length ? items.map(item => appointmentHtml(item.row, item.key)).join("") : '<div class="empty-day">Δεν υπάρχουν ραντεβού σε αυτή την προβολή.</div>'}</div>`;
       grid.appendChild(col);
     }
+    const notice = $("#weekendNotice");
+    notice.replaceChildren();
+    notice.hidden = dayCount !== 5;
+    if (dayCount === 5) {
+      notice.append(document.createTextNode("Σαββατοκύριακο: " + weekendCount + " ραντεβού συνολικά · "));
+      const show = document.createElement("button");
+      show.type = "button";
+      show.textContent = "Προβολή 7 ημερών";
+      show.addEventListener("click", () => setDayCount(7));
+      notice.append(show);
+    }
+    refreshTimeIndicators();
+    setStatus(`${visibleCount} ραντεβού · ${mode === "all" ? "όλες οι κατηγορίες" : "οστεοπόρωση"}${query ? " · αναζήτηση" : ""}`, "ok");
 
     const osteoporosis = (rows || []).filter(x => ["osteoporosis_first", "osteoporosis_review", "osteoporosis_unspecified"].includes(x.category)).length;
     $("#countOsteoporosis").textContent = osteoporosis;
@@ -271,7 +336,10 @@
     appointmentRows.clear();
     const grid = $("#weekGrid");
     grid.innerHTML = "";
-    for (let i = 0; i < 7; i += 1) {
+    grid.dataset.days = String(dayCount);
+    $("#weekendNotice").hidden = true;
+    $("#weekendNotice").replaceChildren();
+    for (let i = 0; i < dayCount; i += 1) {
       const day = addDays(monday, i);
       const col = document.createElement("section");
       col.className = "day-column";
@@ -287,8 +355,10 @@
   async function loadWeek() {
     closeAppointment();
     const ticket = ++weekRequest;
-    const requestedMode = calendarMode;
     const monday = mondayForOffset(weekOffset);
+    displayedMonday = monday;
+    weekRows = null;
+    weekState = "loading";
     const end = addDays(monday, 7);
     $("#weekLabel").textContent = `${fmtLong.format(monday)} — ${fmtLong.format(addDays(monday, 6))}`;
     setStatus("Φόρτωση…");
@@ -297,16 +367,17 @@
       const rows = await api(`/clinical/calendar/agenda?start=${encodeURIComponent(cyprusMidnight(monday).toISOString())}&end=${encodeURIComponent(cyprusMidnight(end).toISOString())}`);
       if (ticket !== weekRequest) return;
       if (!Array.isArray(rows)) throw new Error("Invalid schedule");
-      renderWeek(rows, monday, requestedMode);
+      weekRows = rows;
+      weekState = "ready";
+      renderWeek(rows, monday, calendarMode);
       classificationNeedsRefresh = false;
-      const visibleCount = requestedMode === "all" ? rows.length : rows.filter(row => RELEVANT_CATEGORIES.has(row.category)).length;
-      setStatus(`${visibleCount} ραντεβού · ${requestedMode === "all" ? "όλες οι κατηγορίες" : "οστεοπόρωση"}`, "ok");
     } catch (err) {
       if (ticket !== weekRequest) return;
       if (err.status === 401 || err.status === 403) { clearProtectedCalendar(); return; }
       const last = parseServerDate(err.detail?.last_fetched_at);
       const freshness = last ? ` · τελευταία ανάγνωση ${fmtLong.format(last)} ${fmtTime.format(last)}` : "";
       setStatus(`Μη διαθέσιμο${freshness}`, "err");
+      weekState = "unavailable";
       renderWeekUnavailable(monday);
     }
   }
@@ -321,10 +392,27 @@
     calendarMode = mode;
     $("#showAllAppointments").setAttribute("aria-pressed", String(mode === "all"));
     $("#showOsteoporosisAppointments").setAttribute("aria-pressed", String(mode === "osteoporosis"));
-    loadWeek();
+    if (weekRows) renderWeek(weekRows, displayedMonday, calendarMode);
   }
   $("#showAllAppointments").addEventListener("click", () => changeMode("all"));
   $("#showOsteoporosisAppointments").addEventListener("click", () => changeMode("osteoporosis"));
+  function setDayCount(value) {
+    dayCount = value === 5 ? 5 : 7;
+    $("#showFiveDays").setAttribute("aria-pressed", String(dayCount === 5));
+    $("#showSevenDays").setAttribute("aria-pressed", String(dayCount === 7));
+    try { window.localStorage.setItem(DAY_COUNT_KEY, String(dayCount)); } catch (_) { /* Session-only fallback. */ }
+    if (weekRows) renderWeek(weekRows, displayedMonday, calendarMode);
+    else if (displayedMonday) renderWeekUnavailable(displayedMonday, weekState === "loading");
+  }
+  $("#showFiveDays").addEventListener("click", () => setDayCount(5));
+  $("#showSevenDays").addEventListener("click", () => setDayCount(7));
+  $("#calendarSearch").addEventListener("input", () => {
+    if (weekRows) renderWeek(weekRows, displayedMonday, calendarMode);
+  });
+  $("#showFiveDays").setAttribute("aria-pressed", String(dayCount === 5));
+  $("#showSevenDays").setAttribute("aria-pressed", String(dayCount === 7));
+  if (typeof window.setInterval === "function") window.setInterval(refreshTimeIndicators, 30000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshTimeIndicators(); });
 
   $("#weekGrid").addEventListener("click", event => {
     const button = event.target.closest(".appt-row");

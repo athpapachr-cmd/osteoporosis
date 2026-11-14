@@ -99,6 +99,7 @@ def test_calendar_home_all_filter_and_unavailable():
             expect(page.get_by_text("Synthetic Osteo", exact=True)).to_be_visible()
             state["fail"] = True
             page.locator("#showAllAppointments").click()
+            page.locator("#thisWeek").click()
             expect(page.locator("#connectionStatus")).to_contain_text("Μη διαθέσιμο")
             expect(page.get_by_text("Synthetic Osteo", exact=True)).to_have_count(0)
             expect(page.locator("#countProlia")).to_have_text("—")
@@ -185,4 +186,85 @@ def test_busy_week_compact_rows_details_and_keyboard():
             assert dialog.locator("a.appointment-chart").count() == 0
             assert dialog.locator(".classification-select").count() == 0
             page.close()
+        browser.close()
+
+
+def test_week_views_search_now_and_weekend_duplicate_safety():
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page(viewport={"width": 1440, "height": 900})
+        page.clock.install(time=datetime(2026, 11, 9, 6, 10, tzinfo=timezone.utc))
+        state = {"fail": False, "reads": 0}
+
+        def route_request(route):
+            parts = urlsplit(route.request.url)
+            if parts.path == "/clinical/status":
+                return route.fulfill(json={"database_dialect":"synthetic"})
+            if parts.path == "/clinical/calendar/agenda":
+                state["reads"] += 1
+                if state["fail"]:
+                    return route.fulfill(status=503, json={"detail":{"status":"unavailable"}})
+                start = datetime.fromisoformat(parse_qs(parts.query)["start"][0].replace("Z","+00:00"))
+                def item(uid, name, day, minute, duration, category="other", reason=""):
+                    begin = start + timedelta(days=day, hours=8, minutes=minute)
+                    return {"appointment_id":uid,"patient_display_name":name,
+                        "start_at":begin.isoformat(),"end_at":(begin+timedelta(minutes=duration)).isoformat(),
+                        "clinic":"Synthetic","category":category,"reason":reason,"manual_category":None}
+                return route.fulfill(json=[
+                    item("duplicate","Συνθετικός Τώρα",0,0,20,"prolia"),
+                    item("overlap","Συνθετική Παράλληλη",0,10,20),
+                    item("search","Αλέξης Ιωάννου",1,0,20,reason="Πόνος ώμου"),
+                    item("duplicate","Συνθετικός Σάββατο",5,0,20),
+                    item("sunday","Συνθετική Κυριακή",6,0,20),
+                ])
+            asset = ROOT / "static" / parts.path.removeprefix("/static/")
+            if asset.is_dir():
+                asset = asset / "index.html"
+            if asset.is_file():
+                mime = "text/html" if asset.suffix == ".html" else (
+                    "text/css" if asset.suffix == ".css" else "application/javascript")
+                return route.fulfill(content_type=mime, body=asset.read_text(encoding="utf8"))
+            return route.fulfill(status=404, body="")
+
+        page.route("**/*", route_request)
+        page.goto("https://cockpit.invalid/static/clinical-calendar/")
+        expect(page.locator("#connectionStatus")).to_contain_text("5 ραντεβού")
+        expect(page.locator(".day-column")).to_have_count(7)
+        expect(page.locator(".day-column.is-today")).to_have_count(1)
+        expect(page.locator(".day-column.is-today")).to_contain_text("Δευτέρα")
+        expect(page.locator(".appt-row.is-current")).to_have_count(2)
+        expect(page.get_by_role("button", name="Συνθετικός Τώρα", exact=False)).to_have_attribute("aria-current","true")
+        reads = state["reads"]
+        page.locator("#showFiveDays").click()
+        expect(page.locator(".day-column")).to_have_count(5)
+        expect(page.locator("#weekendNotice")).to_contain_text("2 ραντεβού")
+        expect(page.get_by_role("button", name="Συνθετικός Σάββατο", exact=False)).to_have_count(0)
+        assert state["reads"] == reads
+        assert page.evaluate("localStorage.getItem('clinical-excellence.calendar-day-count.v1')") == "5"
+        page.get_by_role("button", name="Συνθετικός Τώρα", exact=False).click()
+        expect(page.locator("#appointmentDialog")).to_contain_text("εμφανίζεται περισσότερες από μία φορές")
+        assert page.locator("#appointmentDialog a.appointment-chart").count() == 0
+        page.keyboard.press("Escape")
+        page.locator("#calendarSearch").fill("αλεξης ιωαννου")
+        expect(page.locator(".appt-row")).to_have_count(1)
+        expect(page.locator(".appt-row")).to_contain_text("Αλέξης Ιωάννου")
+        assert state["reads"] == reads
+        page.locator("#calendarSearch").fill("πονος ωμου")
+        expect(page.locator(".appt-row")).to_have_count(1)
+        page.locator("#calendarSearch").fill("")
+        page.clock.fast_forward(20 * 60 * 1000)
+        expect(page.locator(".appt-row.is-current")).to_have_count(0)
+        page.get_by_role("button", name="Προβολή 7 ημερών").click()
+        expect(page.locator(".day-column")).to_have_count(7)
+        expect(page.get_by_role("button", name="Συνθετικός Σάββατο", exact=False)).to_be_visible()
+        page.locator("#showFiveDays").click()
+        page.reload()
+        expect(page.locator("#showFiveDays")).to_have_attribute("aria-pressed","true")
+        expect(page.locator(".day-column")).to_have_count(5)
+        page.locator("#calendarSearch").fill("Αλέξης")
+        page.evaluate("window.dispatchEvent(new Event('clinical:unauthenticated'))")
+        expect(page.locator("#calendarApp")).to_be_hidden()
+        expect(page.locator("#calendarSearch")).to_have_value("")
+        expect(page.locator(".appt-row")).to_have_count(0)
+        page.close()
         browser.close()

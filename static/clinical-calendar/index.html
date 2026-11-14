@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Clinical Calendar — Osteoporosis</title>
-  <link rel="stylesheet" href="./calendar.css?v=reason-preview-20261114" />
+  <link rel="stylesheet" href="./calendar.css?v=week-focus-20261114" />
   <link rel="stylesheet" href="/static/cockpit/shared-nav.css" />
   <script src="/static/cockpit/start-page.js?v=20261112"></script>
 </head>
@@ -41,10 +41,20 @@
         </div>
       </div>
 
-      <div class="calendar-filters" role="group" aria-label="Φίλτρο ραντεβού">
-        <button id="showAllAppointments" class="button" type="button" aria-pressed="true">Όλα τα ραντεβού</button>
-        <button id="showOsteoporosisAppointments" class="button" type="button" aria-pressed="false">Οστεοπόρωση · Prolia · Aclasta</button>
+      <div class="calendar-filters">
+        <div class="calendar-filter-group" role="group" aria-label="Φίλτρο ραντεβού">
+          <button id="showAllAppointments" class="button" type="button" aria-pressed="true">Όλα τα ραντεβού</button>
+          <button id="showOsteoporosisAppointments" class="button" type="button" aria-pressed="false">Οστεοπόρωση · Prolia · Aclasta</button>
+        </div>
+        <div class="calendar-filter-group" role="group" aria-label="Ημέρες εβδομάδας">
+          <button id="showFiveDays" class="button" type="button" aria-pressed="false">5 ημέρες</button>
+          <button id="showSevenDays" class="button" type="button" aria-pressed="true">7 ημέρες</button>
+        </div>
+        <label class="calendar-search"><span class="visually-hidden">Αναζήτηση στην επιλεγμένη εβδομάδα</span>
+          <input id="calendarSearch" type="search" autocomplete="off" placeholder="Αναζήτηση στην εβδομάδα…" />
+        </label>
       </div>
+      <p id="weekendNotice" class="weekend-notice" hidden></p>
       <section class="summary-grid" aria-label="Σύνοψη εβδομάδας">
         <article class="summary-card"><span>Οστεοπόρωση</span><strong id="countOsteoporosis">0</strong></article>
         <article class="summary-card"><span>Prolia</span><strong id="countProlia">0</strong></article>
@@ -69,7 +79,7 @@
       </section>
     </section>
   </main>
-  <script src="./calendar.js?v=reason-preview-20261114"></script>
+  <script src="./calendar.js?v=week-focus-20261114"></script>
   <script src="/static/cockpit/shared-nav.js" defer></script>
 </body>
 </html>
