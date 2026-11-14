@@ -4,11 +4,12 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine, select, text
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
 import clinical_calendar
+import pytest
 from clinical_calendar import (
     ClinicalAppointmentORM, ClinicalAppointmentClassificationORM, build_clinical_calendar_router,
 )
@@ -282,7 +283,7 @@ def test_manual_classification_survives_future_snapshot_and_can_return_to_auto(m
     classified = client.put(
         f"/clinical/calendar/appointments/{appointment_id}/classification",
         headers=CLINICAL_HEADERS,
-        json={"category": "osteoporosis_review"},
+        json={"category": "osteoporosis_review", "expected_revision": 0},
     )
     assert classified.status_code == 200
     assert classified.json() == {
@@ -304,7 +305,7 @@ def test_manual_classification_survives_future_snapshot_and_can_return_to_auto(m
     cleared = client.put(
         f"/clinical/calendar/appointments/{appointment_id}/classification",
         headers=CLINICAL_HEADERS,
-        json={"category": None},
+        json={"category": None, "expected_revision": 1},
     )
     assert cleared.status_code == 200
     assert cleared.json() == {"appointment_id": appointment_id, "manual_category": None}
@@ -319,7 +320,7 @@ def test_manual_classification_survives_future_snapshot_and_can_return_to_auto(m
     invalid = client.put(
         f"/clinical/calendar/appointments/{appointment_id}/classification",
         headers=CLINICAL_HEADERS,
-        json={"category": "other"},
+        json={"category": "other", "expected_revision": 2},
     )
     assert invalid.status_code == 422
 
@@ -488,11 +489,11 @@ def test_clearing_manual_relevant_override_minimizes_other_before_commit(monkeyp
                        json=payload).json()["inserted"] == 1
     url = "/clinical/calendar/appointments/cal.com:manual-other/classification"
     assert client.put(url, headers=CLINICAL_HEADERS,
-                      json={"category": "osteoporosis_review"}).status_code == 200
+                      json={"category": "osteoporosis_review", "expected_revision": 0}).status_code == 200
     item["label"] = "Other"
     client.post("/clinical/calendar/appointments/snapshot", headers=HEADERS,
                 json=_snapshot(now, now + timedelta(days=1), [item]))
-    cleared = client.put(url, headers=CLINICAL_HEADERS, json={"category": None})
+    cleared = client.put(url, headers=CLINICAL_HEADERS, json={"category": None, "expected_revision": 1})
     assert cleared.json() == {"appointment_id": "cal.com:manual-other", "manual_category": None}
     with Session(engine) as session:
         row = session.get(ClinicalAppointmentORM, "cal.com:manual-other")
@@ -500,24 +501,22 @@ def test_clearing_manual_relevant_override_minimizes_other_before_commit(monkeyp
 
 
 def test_independent_labels_preserve_category_reset_and_snapshot(monkeypatch):
-    import clinical_visit_brief
     client, engine = _client(monkeypatch)
-    now = datetime(2026, 10, 3, 8, 0)
+    now = datetime(2026, 10, 5, 8, 0)
     monkeypatch.setattr(clinical_calendar, "utcnow", lambda: now)
-    async def fresh(uid, target_date):
-        assert uid == "cal.com:synthetic-label" and target_date.isoformat() == "2026-10-03"
-    monkeypatch.setattr(clinical_visit_brief, "_fresh_booking", fresh)
+    item = _appointment("synthetic-label", start=now, minutes=40, label="Οστεοπόρωση", comment="Οστεοπόρωση")
+    _set_actual_source(monkeypatch, [item], now)
     label_url = "/clinical/calendar/appointments/cal.com:synthetic-label/labels"
     category_url = "/clinical/calendar/appointments/cal.com:synthetic-label/classification"
-    label = {"field": "visit_kind", "value": "first", "target_date": "2026-10-03", "expected_revision": 0}
+    label = {"field": "visit_kind", "value": "first", "target_date": "2026-10-05", "expected_revision": 0}
     assert client.put(label_url, json=label).status_code == 401
     assert client.put(label_url, headers=CLINICAL_HEADERS, json=label).json()["revision"] == 1
     assert client.put(label_url, headers=CLINICAL_HEADERS, json=label).status_code == 409
     label.update(field="clinic_override", value="evrychou", expected_revision=1)
     assert client.put(label_url, headers=CLINICAL_HEADERS, json=label).json()["revision"] == 2
-    assert client.put(category_url, headers=CLINICAL_HEADERS, json={"category":"prolia"}).status_code == 200
-    assert client.put(category_url, headers=CLINICAL_HEADERS, json={"category":None}).status_code == 200
-    item = _appointment("synthetic-label", start=now, minutes=40, label="Οστεοπόρωση", comment="Οστεοπόρωση")
+    assert client.put(category_url, headers=CLINICAL_HEADERS, json={"category":"prolia", "expected_revision":2}).status_code == 200
+    assert client.put(category_url, headers=CLINICAL_HEADERS, json={"category":None, "expected_revision":2}).status_code == 409
+    assert client.put(category_url, headers=CLINICAL_HEADERS, json={"category":None, "expected_revision":3}).status_code == 200
     result = client.post("/clinical/calendar/appointments/snapshot", headers=HEADERS,
                          json=_snapshot(now, now + timedelta(days=1), [item]))
     assert result.json()["inserted"] == 1
@@ -526,7 +525,7 @@ def test_independent_labels_preserve_category_reset_and_snapshot(monkeypatch):
         assert (row.category, row.visit_kind, row.clinic_override, row.revision) == ("", "first", "evrychou", 4)
         assert session.get(ClinicalAppointmentORM, "cal.com:synthetic-label").category == "osteoporosis_review"
     _set_actual_source(monkeypatch, [item], now)
-    start = datetime(2026, 10, 3, tzinfo=ZoneInfo("Asia/Nicosia"))
+    start = datetime(2026, 10, 5, tzinfo=ZoneInfo("Asia/Nicosia"))
     agenda = client.get("/clinical/calendar/agenda", headers=CLINICAL_HEADERS,
                         params={"start":start.isoformat(), "end":(start+timedelta(days=1)).isoformat()}).json()
     assert agenda[0]["manual_category"] is None and agenda[0]["category"] == "osteoporosis_review"
@@ -534,19 +533,60 @@ def test_independent_labels_preserve_category_reset_and_snapshot(monkeypatch):
 
 
 def test_label_write_rejects_duplicate_or_unavailable_source(monkeypatch):
-    import clinical_visit_brief
     client, engine = _client(monkeypatch)
-    now = datetime(2026, 10, 3, 8, 0)
-    monkeypatch.setattr(clinical_visit_brief, "_utcnow", lambda: now.replace(tzinfo=timezone.utc))
+    now = datetime(2026, 10, 5, 8, 0)
+    monkeypatch.setattr(clinical_calendar, "utcnow", lambda: now)
     item = _appointment("duplicate", start=now, minutes=40, label="Other")
-    _set_actual_source(monkeypatch, [item, item], now)
+    duplicate_later = _appointment("duplicate", start=now+timedelta(days=6), minutes=40, label="Other")
+    _set_actual_source(monkeypatch, [item, duplicate_later], now)
     url = "/clinical/calendar/appointments/cal.com:duplicate/labels"
-    body = {"field":"visit_kind", "value":"first", "target_date":"2026-10-03", "expected_revision":0}
+    body = {"field":"visit_kind", "value":"first", "target_date":"2026-10-05", "expected_revision":0}
     assert client.put(url, headers=CLINICAL_HEADERS, json=body).status_code == 409
     monkeypatch.delenv("RECEPTION_SCHEDULE_CONTEXT_URL")
     assert client.put(url, headers=CLINICAL_HEADERS, json=body).status_code == 503
     with Session(engine) as session:
         assert session.get(ClinicalAppointmentClassificationORM, "cal.com:duplicate") is None
+
+
+def test_label_rejects_partially_covered_week(monkeypatch):
+    import httpx
+    client, engine = _client(monkeypatch)
+    now = datetime(2026, 10, 5, 8, 0)
+    monkeypatch.setattr(clinical_calendar, "utcnow", lambda: now)
+    monkeypatch.setenv("RECEPTION_SCHEDULE_CONTEXT_URL", "https://reception.example/private/schedule-context")
+    class Client:
+        def __init__(self, **kwargs): pass
+        async def __aenter__(self): return self
+        async def __aexit__(self, *args): pass
+        async def get(self, url, headers, params=None):
+            return httpx.Response(200, json={"fetched_at":now.replace(tzinfo=timezone.utc).isoformat(),
+                "coverage_start":"2026-10-05", "coverage_end":"2026-10-05", "appointments":[
+                    {"uid":"uid", "start_at":"2026-10-05T08:00:00+00:00", "end_at":"2026-10-05T08:20:00+00:00",
+                     "clinic":"limassol", "patient_display_name":"Synthetic", "reason":"", "category":"other"}]})
+    monkeypatch.setattr(clinical_calendar.httpx, "AsyncClient", Client)
+    body = {"field":"visit_kind", "value":"first", "target_date":"2026-10-05", "expected_revision":0}
+    assert client.put("/clinical/calendar/appointments/cal.com:uid/labels", headers=CLINICAL_HEADERS, json=body).status_code == 503
+    with Session(engine) as session:
+        assert session.get(ClinicalAppointmentClassificationORM, "cal.com:uid") is None
+
+
+def test_legacy_sqlite_requires_explicit_migration(tmp_path):
+    engine = create_engine(f"sqlite:///{tmp_path / 'old.db'}")
+    with engine.begin() as conn:
+        conn.execute(text("CREATE TABLE clinical_appointment_classifications (appointment_id VARCHAR PRIMARY KEY, category VARCHAR NOT NULL, updated_at DATETIME NOT NULL)"))
+        conn.execute(text("INSERT INTO clinical_appointment_classifications VALUES ('cal.com:synthetic','prolia','2026-10-05 08:00:00')"))
+    with pytest.raises(RuntimeError, match="apply the reviewed migration"):
+        build_clinical_calendar_router(engine)
+    raw = engine.raw_connection()
+    try:
+        raw.executescript((Path(__file__).parent / "cockpit/calendar_labels_sqlite_migration.sql").read_text())
+        raw.commit()
+    finally:
+        raw.close()
+    build_clinical_calendar_router(engine)
+    with Session(engine) as session:
+        row = session.get(ClinicalAppointmentClassificationORM, "cal.com:synthetic")
+        assert (row.category, row.visit_kind, row.clinic_override, row.revision) == ("prolia", None, None, 0)
 
 
 def test_context_preserves_start_order_aclasta_exception_and_fail_closed_overlaps(monkeypatch):
@@ -695,7 +735,7 @@ def test_weekly_live_rows_preserve_classification_and_override_without_snapshot_
     classified = client.put(
         "/clinical/calendar/appointments/cal.com:other-live/classification",
         headers=CLINICAL_HEADERS,
-        json={"category": "osteoporosis_review"},
+        json={"category": "osteoporosis_review", "expected_revision": 0},
     )
     assert classified.status_code == 200
     assert classified.json()["manual_category"] == "osteoporosis_review"

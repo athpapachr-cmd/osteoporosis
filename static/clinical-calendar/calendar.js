@@ -173,7 +173,7 @@
     ).join("");
     return `<label class="classification-control">
       <span>${row.manual_category ? "Χειροκίνητη ταξινόμηση" : "Χρειάζεται ταξινόμηση"}</span>
-      <select class="classification-select" data-appointment-id="${esc(row.appointment_id)}">
+      <select class="classification-select" data-appointment-id="${esc(row.appointment_id)}" data-revision="${Number(row.classification_revision || 0)}">
         <option value="">${esc(placeholder)}</option>
         ${options}
       </select>
@@ -248,7 +248,7 @@
   function labelControls(row, start) {
     const opts = (choices, selected) => choices.map(([value, text]) =>
       `<option value="${esc(value)}" ${value === (selected || "") ? "selected" : ""}>${esc(text)}</option>`).join("");
-    const attrs = `data-appointment-id="${esc(row.appointment_id)}" data-target-date="${start ? dateKey(start) : ""}" data-revision="${Number(row.classification_revision || 0)}"`;
+    const attrs = `data-appointment-id="${esc(row.appointment_id)}" data-target-date="${displayedMonday ? dateKey(displayedMonday) : ""}" data-revision="${Number(row.classification_revision || 0)}"`;
     return `<label class="classification-control"><span>Είδος επίσκεψης</span><select class="label-select" data-field="visit_kind" ${attrs}>${opts([["", "Χωρίς χαρακτηρισμό"], ["first", "Πρώτο ραντεβού"], ["review", "Επανεκτίμηση"], ["other", "Άλλο"]], row.visit_kind)}</select></label>
       <label class="classification-control"><span>Ιατρείο για ταξινόμηση</span><select class="label-select" data-field="clinic_override" ${attrs}>${opts([["", "Από την κράτηση"], ["limassol", "Λεμεσός"], ["evrychou", "Ευρύχου"], ["other", "Άλλο"]], row.clinic_override)}</select></label>
       <p class="appointment-dialog-meta">Το ιατρείο εδώ είναι χαρακτηρισμός στο Cockpit και δεν αλλάζει την κράτηση. Πηγή κράτησης: ${esc(row.clinic || "δεν αναφέρεται")}.</p>`;
@@ -484,7 +484,7 @@
           method: "PUT",
           signal: controller.signal,
           body: JSON.stringify(isLabel ? {field: select.dataset.field, value: select.value || null,
-            target_date: select.dataset.targetDate, expected_revision: Number(select.dataset.revision)} : { category: select.value || null }),
+            target_date: select.dataset.targetDate, expected_revision: Number(select.dataset.revision)} : { category: select.value || null, expected_revision: Number(select.dataset.revision) }),
         }
       );
       if (classificationController === controller) {

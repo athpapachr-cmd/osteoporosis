@@ -295,6 +295,7 @@ def test_visit_and_clinic_labels_are_independent_and_filterable():
             if parts.path.endswith("/labels"):
                 body = json.loads(route.request.post_data)
                 assert body["expected_revision"] == state["revision"]
+                assert datetime.fromisoformat(body["target_date"]).weekday() == 0
                 state[body["field"]] = body["value"]
                 state["revision"] += 1
                 return route.fulfill(json={"revision":state["revision"]})
