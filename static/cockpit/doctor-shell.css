@@ -104,6 +104,25 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
 .doctor-attention-privacy:focus-visible{outline:2px solid #5fa8a1;outline-offset:2px}
 .doctor-attention-coverage{font-size:11px;color:#647b82;line-height:1.4;margin:3px 4px 6px}
 .doctor-attention-urgent strong{color:#a63c32}
+.ha-root{display:flex;flex-direction:column;gap:14px;font-size:13px;color:#1b2a27}
+.ha-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ha-title{font-size:16px;line-height:1.3;margin:0;color:#1b302c}
+.ha-section{display:flex;flex-direction:column;gap:2px;min-width:0}
+.ha-label{font-size:12px;font-weight:500;color:#52645f;margin:0;padding:0 8px 4px}
+.ha-row{display:grid;grid-template-columns:84px minmax(0,1fr) auto;align-items:center;gap:8px;width:100%;min-width:0;min-height:44px;padding:7px 8px;border:0;border-radius:8px;background:transparent;font:inherit;color:inherit;text-align:left;cursor:pointer}
+.ha-row:hover{background:#f1f7f4}.ha-focus{background:#e8f3ee;min-height:55px}.ha-focus:hover{background:#dcece5}
+.ha-task-row{cursor:default}.ha-task-row:hover{background:transparent}
+.ha-row:focus-visible,.ha-ghost:focus-visible,.ha-toggle:focus-visible,.ha-task-name:focus-visible,.ha-task-detail:focus-visible,.ha-more-tasks:focus-visible{outline:2px solid #1f6f5c;outline-offset:2px}
+.ha-tag{justify-self:start;font-size:11px;color:#2c4a43;background:#e8f0ed;border-radius:6px;padding:3px 6px;white-space:nowrap}.ha-tag-fill{background:#1f6f5c;color:#fff;font-weight:700}
+.ha-txt{min-width:0;display:flex;flex-direction:column;gap:2px}.ha-line{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12.5px}
+.ha-task-name,.ha-task-detail,.ha-more-tasks{padding:0;border:0;background:transparent;color:inherit;text-align:left;font:inherit;cursor:pointer;min-width:0}
+.ha-task-name{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ha-task-detail:hover,.ha-task-name:hover,.ha-more-tasks:hover{text-decoration:underline}
+.ha-sub{display:flex;align-items:baseline;min-width:0;overflow:hidden;font-size:11.5px;line-height:1.35;color:#5c706a;white-space:nowrap}.ha-sub-desc{min-width:0;overflow:hidden;text-overflow:ellipsis}.ha-sub-date{flex:none;font-size:10.5px}.ha-more-tasks{color:#20776b;font-size:11px}
+.ha-meta{display:flex;align-items:center;justify-content:flex-end;gap:5px;font-size:11px;color:#546760;white-space:nowrap}.ha-dot{width:7px;height:7px;flex:none;border-radius:50%;background:#b3261e}
+.ha-counter{grid-template-columns:minmax(0,1fr) auto;min-height:40px}.ha-footer{border-top:1px solid #e3e9e7;padding-top:9px;gap:4px}
+.ha-note,.ha-warning{font-size:11px;line-height:1.45;color:#637b73;margin:4px 8px}.ha-warning{color:#975a27}
+.ha-ghost,.ha-toggle{min-height:36px;padding:0 10px;border:1px solid #d5dedb;border-radius:8px;background:#fff;font:inherit;font-size:11px;color:#33423e;cursor:pointer;white-space:nowrap}.ha-ghost{align-self:flex-start;margin:5px 8px 0}
+@media(max-width:520px){.ha-row{grid-template-columns:70px minmax(0,1fr) auto;gap:5px;padding:7px 4px}.ha-counter{grid-template-columns:minmax(0,1fr) auto}.ha-meta{font-size:10px}.ha-tag{font-size:10px;padding:3px 4px}.ha-title{font-size:15px}}
 #visitHomeNote{font-size:11px;color:#8b9da2;margin:12px 0}
 .clinical-visit-identity h2{font-size:25px}
 .clinical-dia-composer,.clinical-dia-preview{box-shadow:none}

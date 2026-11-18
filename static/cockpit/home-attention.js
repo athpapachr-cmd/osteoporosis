@@ -10,8 +10,18 @@
   const dateLabel = new Intl.DateTimeFormat("el-CY", {
     timeZone: "UTC", weekday: "short", day: "numeric", month: "short"
   });
+  const shortDateLabel = new Intl.DateTimeFormat("el-CY", {
+    timeZone: "UTC", day: "numeric", month: "short"
+  });
   const state = {authorized: false, epoch: 0, load: 0, hidden: false,
-    surgeries: null, rf: null, reports: null, tasks: null, calls: null, updated: 0, day: null};
+    surgeries: null, rf: null, reports: null, tasks: null, calls: null, updated: 0, day: null,
+    showAll: false, showAllSurgery: false};
+  const focusKeys = new WeakMap();
+  let focusTargets = new Map();
+  function trackFocus(element, key) {
+    if (key) { focusKeys.set(element, key); focusTargets.set(key, element); }
+    return element;
+  }
   const nav = () => window.CockpitHomeAttentionNavigation || {};
   const today = () => {
     const p = Object.fromEntries(dayParts.formatToParts(new Date())
@@ -25,6 +35,7 @@
     return y >= 100 && t.getUTCFullYear() === y && t.getUTCMonth() + 1 === m && t.getUTCDate() === d;
   }
   const pretty = value => dateLabel.format(new Date(value + "T12:00:00Z"));
+  const shortDate = value => shortDateLabel.format(new Date(value + "T12:00:00Z"));
   const name = value => state.hidden ? "Απόκρυψη ονόματος" : value;
   const node = (tag, cls, value) => {
     const el = document.createElement(tag);
@@ -32,79 +43,175 @@
     if (value !== undefined) el.textContent = value;
     return el;
   };
-  function row(title, detail, open, hot = false) {
-    const b = node("button", "doctor-action-row" + (hot ? " doctor-attention-urgent" : ""));
-    b.type = "button";
-    const body = node("span"); body.append(node("strong", "", title));
-    if (detail) body.append(node("small", "", detail));
-    b.append(body, node("span", "", "›"));
-    b.addEventListener("click", open); return b;
+  const dayValue = value => Date.parse(value + "T00:00:00Z") / 86400000;
+  function nextDay(value) {
+    const d = new Date(value + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + 1);
+    return d.toISOString().slice(0, 10);
   }
-  function section(title, value, entries, open, empty, coverage) {
-    const box = node("section", "doctor-attention-section");
-    box.append(node("h3", "doctor-attention-heading", title));
-    if (value === undefined) box.append(node("p", "doctor-help", "Φόρτωση…"));
-    else if (value === null) box.append(row("Μη διαθέσιμο", "Δεν γνωρίζουμε αν υπάρχουν εκκρεμότητες.", open));
-    else {
-      entries.slice(0, 4).forEach(entry => box.append(entry));
-      if (entries.length > 4) box.append(row("Και " + (entries.length - 4) + " ακόμη", "Άνοιγμα λίστας", open));
-      if (!entries.length) box.append(node("p", "doctor-help", empty));
-      if (coverage) box.append(node("p", "doctor-attention-coverage", coverage));
+  function sourceDate(value) { return validDate(value) ? value : null; }
+  function dueLabel(item) {
+    if (validDate(item.review_date)) return "Προθεσμία " + shortDate(item.review_date);
+    return item.review_date ? "Μη έγκυρη ημερομηνία" : "Χωρίς ημερομηνία";
+  }
+  function actionButton(label, cls, handler, focusKey = null) {
+    const button = node("button", cls, label); button.type = "button";
+    button.addEventListener("click", handler); return trackFocus(button, focusKey);
+  }
+  function basicRow(tag, title, detail, meta, handler, opts = {}) {
+    const b = node("button", "ha-row" + (opts.focus ? " ha-focus" : "") + (opts.footer ? " ha-counter" : "")); b.type = "button";
+    if (opts.aria) b.setAttribute("aria-label", opts.aria);
+    if (!opts.footer) b.append(node("span", "ha-tag" + (opts.focus ? " ha-tag-fill" : ""), tag));
+    const body = node("span", "ha-txt");
+    body.append(node("strong", "ha-line", title));
+    if (detail) body.append(node("span", "ha-sub", detail));
+    b.append(body, node("span", "ha-meta", meta || ""));
+    b.addEventListener("click", handler); return trackFocus(b, opts.focusKey);
+  }
+  function taskRow(group, now, actionsAvailable) {
+    const outer = node("div", "ha-row ha-task-row");
+    outer.append(node("span", "ha-tag", "Υποχρέωση"));
+    const body = node("span", "ha-txt");
+    const overdue = group.items.filter(x => validDate(x.review_date) && x.review_date < now).length;
+    const status = overdue ? overdue + (overdue === 1 ? " εκπρόθεσμη" : " εκπρόθεσμες")
+      : group.items.length === 1 ? "ανοικτή" : group.items.length + " ανοικτές";
+    const label = name(group.name) + " · " + status;
+    if (actionsAvailable) {
+      const main = actionButton(label, "ha-task-name", () => nav().obligations?.(
+        group.items.length === 1 ? group.items[0].pending_id : undefined), "task-group:" + group.key);
+      main.setAttribute("aria-label", "Υποχρέωση · " + label); body.append(main);
+    } else body.append(node("strong", "ha-line", label));
+    for (const item of group.items.slice(0, 2)) {
+      const description = state.hidden ? "Υποχρέωση ασθενούς" : item.description;
+      const line = actionsAvailable
+        ? actionButton("", "ha-sub ha-task-detail", () => nav().obligations?.(item.pending_id), "task:" + group.key + ":" + item.pending_id)
+        : node("span", "ha-sub");
+      line.append(node("span", "ha-sub-desc", description), node("span", "ha-sub-date", " · " + dueLabel(item)));
+      body.append(line);
     }
-    root.append(box);
+    if (group.items.length > 2) {
+      const more = "+" + (group.items.length - 2) + " ακόμη";
+      if (actionsAvailable) body.append(actionButton(more, "ha-more-tasks", () => nav().obligations?.(), "task-more:" + group.key));
+      else body.append(node("span", "ha-sub", more));
+    }
+    outer.append(body);
+    const meta = node("span", "ha-meta");
+    if (overdue && group.date) {
+      const dot = node("span", "ha-dot"); dot.setAttribute("aria-hidden", "true");
+      const days = dayValue(now) - dayValue(group.date);
+      meta.setAttribute("aria-label", "Εκπρόθεσμη κατά " + days + " ημέρες");
+      meta.append(dot, node("span", "", days + " ημ."));
+    } else if (group.date) meta.append(node("span", "", pretty(group.date)));
+    outer.append(meta); return outer;
+  }
+  function groupTasks(items) {
+    const groups = new Map();
+    items.forEach((item, index) => {
+      const id = typeof item.patient_id === "string" && item.patient_id.trim() ? item.patient_id : null;
+      const key = id ? "patient:" + id : "unknown:" + index;
+      if (!groups.has(key)) groups.set(key, {kind: "task", key, name: item.patient_name, items: [], date: null});
+      groups.get(key).items.push(item);
+    });
+    for (const group of groups.values()) {
+      group.items.sort((a,b) => (sourceDate(a.review_date) || "9999-99-99").localeCompare(sourceDate(b.review_date) || "9999-99-99"));
+      group.date = sourceDate(group.items[0].review_date);
+    }
+    return [...groups.values()];
   }
   function draw() {
-    root.replaceChildren();
-    if (!state.authorized) {
-      root.append(node("p", "doctor-help", "Συνδέσου για να δεις τις εκκρεμότητες.")); return;
+    const active = document.activeElement, previousFocus = active ? focusKeys.get(active) : null;
+    const wasInside = Boolean(active && typeof root.contains === "function" && root.contains(active));
+    focusTargets = new Map();
+    const restoreFocus = () => {
+      const target = (previousFocus && focusTargets.get(previousFocus)) || (wasInside && focusTargets.get("heading"));
+      if (target && typeof target.focus === "function") target.focus({preventScroll:true});
+    };
+    root.replaceChildren(); root.className = "doctor-attention-list ha-root";
+    const header = node("div", "ha-header");
+    const heading = node("h2", "ha-title", "Σήμερα και αύριο"); heading.setAttribute("tabindex", "-1");
+    header.append(trackFocus(heading, "heading"));
+    if (state.authorized) {
+      const toggle = actionButton(state.hidden ? "◉ Ονόματα κρυφά" : "◉ Ονόματα", "ha-toggle", () => { state.hidden = !state.hidden; draw(); }, "privacy");
+      toggle.setAttribute("aria-label", state.hidden ? "Εμφάνιση ονομάτων εδώ" : "Απόκρυψη ονομάτων εδώ");
+      toggle.setAttribute("aria-pressed", String(state.hidden)); header.append(toggle);
     }
-    const toggle = node("button", "doctor-attention-privacy", state.hidden ? "Εμφάνιση ονομάτων εδώ" : "Απόκρυψη ονομάτων εδώ");
-    toggle.type = "button"; toggle.setAttribute("aria-pressed", String(state.hidden));
-    toggle.addEventListener("click", () => { state.hidden = !state.hidden; draw(); });
-    root.append(toggle);
-    const now = today(), go = tab => () => nav().cases?.(tab);
-    const s = state.surgeries;
-    const surgeries = s ? [...s.attention].sort((a,b) => {
-      const aPast = a.date < now, bPast = b.date < now;
-      if (aPast !== bPast) return aPast ? 1 : -1;
-      return aPast ? b.date.localeCompare(a.date) : a.date.localeCompare(b.date) || a.time.localeCompare(b.time);
-    }).map(x => row(
-      (x.date < now ? "Περασμένη ημερομηνία" : x.date === now ? "Σήμερα" : pretty(x.date)) + " · " + name(x.name),
-      state.hidden ? "Χειρουργείο" : x.procedure + (x.time ? " · " + x.time : "") + (x.date < now ? " · Παραμένει εκκρεμές" : ""),
-      go("surgery"), x.date <= now)) : [];
-    if (s && (s.undated || s.invalid)) surgeries.push(row("Χειρουργεία χωρίς έγκυρη ημερομηνία · " + (s.undated + s.invalid), "Έλεγχος λίστας", go("surgery")));
-    section("Χειρουργεία", s, surgeries, go("surgery"), "Δεν υπάρχουν εκκρεμή χειρουργεία στο επόμενο επταήμερο.");
-    const rf = state.rf;
-    const rfRows = rf ? rf.items.map(x => row("Εγκεκριμένη RF · " + name(x.patient_name), "Χωρίς σύνδεση με χειρουργείο", () => nav().cases?.("rf", x.id))) : [];
-    section("RF", rf, rfRows, go("rf"), "Δεν βρέθηκαν ασύνδετες εγκεκριμένες RF στην προβολή.",
-      rf && (rf.partial ? "Μερική κάλυψη· άνοιξε τη λίστα για περισσότερα." : "Στιγμιότυπο των διαθέσιμων εγγραφών."));
-    const rep = state.reports;
-    const reports = rep ? rep.items.map(x => row(
-      (x.writing ? "Έκθεση σε σύνταξη · " : "Σταλμένη έκθεση με υπόλοιπο · ") + name(x.patient_name),
-      x.writing ? "Έχει καταχωριστεί έναρξη σύνταξης" : "Υπάρχει καταχωρισμένο ανεξόφλητο υπόλοιπο",
-      go("accidents"))) : [];
-    section("Εκθέσεις · Τροχαία", rep, reports, go("accidents"), "Δεν βρέθηκαν τέτοιες καταχωρίσεις στην προβολή.",
-      rep && rep.partial ? "Μερική κάλυψη· εμφανίζονται τα πρόσφατα περιστατικά." : "");
-    const tasks = state.tasks;
-    const taskRows = tasks ? tasks.items.map(x => row(
-      (x.review_date < now ? "Εκπρόθεσμη · " : "Υποχρέωση · ") + name(x.patient_name),
-      (state.hidden ? "Υποχρέωση ασθενούς" : x.description) + " · " + pretty(x.review_date),
-      () => nav().obligations?.(x.pending_id), x.review_date < now)) : [];
-    section("Υποχρεώσεις ασθενών", tasks, taskRows, () => nav().obligations?.(),
-      "Δεν βρέθηκαν υποχρεώσεις με ημερομηνία στην προβολή.",
-      tasks ? "Προβολή έως 100 πρόσφατων ανοικτών υποχρεώσεων." : "");
-    const calls = state.calls;
-    const callRows = calls && calls.count !== null && calls.count > 0
-      ? [row("Μη σημειωμένες ως διεκπεραιωμένες · " + calls.count,
-        "Στη διαθέσιμη προβολή της Γραμματείας", () => nav().calls?.())] : [];
-    section("Κλήσεις γραμματείας", calls, callRows, () => nav().calls?.(),
-      calls && calls.count === null ? "Ο αριθμός δεν είναι διαθέσιμος." : "Δεν βρέθηκαν μη σημειωμένες κλήσεις στην διαθέσιμη προβολή.",
-      calls ? "Κάλυψη: έως 200 καταγεγραμμένες κλήσεις." : "");
+    root.append(header);
+    if (!state.authorized) { root.append(node("p", "ha-note", "Συνδέσου για να δεις τις εκκρεμότητες.")); restoreFocus(); return; }
+    const now = today(), tomorrow = nextDay(now), go = tab => () => nav().cases?.(tab);
+    const s = state.surgeries, focusSurgeries = s ? s.attention.filter(x => x.date === now || x.date === tomorrow) : [];
+    focusSurgeries.sort((a,b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+    if (focusSurgeries.length) {
+      const section = node("section", "ha-section");
+      const shown = state.showAllSurgery ? focusSurgeries : focusSurgeries.slice(0, 3);
+      let current = "";
+      for (const item of shown) {
+        if (item.date !== current) {
+          current = item.date;
+          section.append(node("h3", "ha-label", (current === now ? "Σήμερα · " : "Αύριο · ") + pretty(current)));
+        }
+        section.append(basicRow("Χειρουργείο", (item.time ? item.time + " · " : "") + name(item.name),
+          state.hidden ? "" : item.procedure, item.time ? "Αίθουσα " + item.time : "", go("surgery"), {focus:true}));
+      }
+      if (focusSurgeries.length > 3) {
+        const more = actionButton(state.showAllSurgery ? "Λιγότερα χειρουργεία" : "Δες όλα τα " + focusSurgeries.length + " χειρουργεία", "ha-ghost", () => { state.showAllSurgery = !state.showAllSurgery; draw(); }, "more-surgeries");
+        more.setAttribute("aria-expanded", String(state.showAllSurgery)); section.append(more);
+      }
+      root.append(section);
+    }
+    const items = [];
+    if (s) for (const x of s.attention) if (x.date !== now && x.date !== tomorrow)
+      items.push({kind:"surgery", date:x.date, value:x});
+    if (state.tasks) items.push(...groupTasks(state.tasks.items));
+    if (state.reports) items.push(...state.reports.items.map(x => ({kind:"report", date:x.date, value:x})));
+    if (state.rf) items.push(...state.rf.items.map(x => ({kind:"rf", date:sourceDate(x.decision_date), value:x})));
+    items.sort((a,b) => (a.date || "9999-99-99").localeCompare(b.date || "9999-99-99"));
+    const list = node("section", "ha-section");
+    const selected = state.showAll ? items : items.slice(0, 4);
+    list.append(node("h3", "ha-label", "Να γίνουν · " + (items.length > 4 ? selected.length + " από " : "") + items.length + " στην προβολή"));
+    if (!items.length) list.append(node("p", "ha-note", "Δεν βρέθηκαν στοιχεία στην τρέχουσα προβολή."));
+    for (const item of selected) {
+      const x = item.value;
+      if (item.kind === "task") list.append(taskRow(item, now, state.tasks.actionsAvailable));
+      else if (item.kind === "rf") list.append(basicRow("RF", name(x.patient_name), "Χωρίς σύνδεση με χειρουργείο",
+        item.date ? "Εγκρίθηκε " + pretty(item.date) : "Εγκεκριμένη", () => nav().cases?.("rf", x.id),
+        {aria:"Εγκεκριμένη RF · " + name(x.patient_name), focusKey:"rf:" + x.id}));
+      else if (item.kind === "report") list.append(basicRow("Έκθεση", name(x.patient_name),
+        x.writing ? "Σε σύνταξη" : "Σταλμένη με υπόλοιπο", item.date ? (x.writing ? "Έναρξη " : "Αποστολή ") + pretty(item.date) : "", go("accidents")));
+      else list.append(basicRow("Χειρουργείο", name(x.name),
+        (state.hidden ? "" : x.procedure + (x.date < now ? " · " : "")) + (x.date < now ? "Περασμένη ημερομηνία" : ""),
+        pretty(x.date), go("surgery")));
+    }
+    if (items.length > 4) {
+      const more = actionButton(state.showAll ? "Δες λιγότερα" : "Δες όλα τα " + items.length, "ha-ghost", () => { state.showAll = !state.showAll; draw(); }, "more-items");
+      more.setAttribute("aria-expanded", String(state.showAll)); list.append(more);
+    }
+    root.append(list);
+    const footer = node("section", "ha-section ha-footer");
+    if (s && s.undated) footer.append(basicRow("", s.undated + (s.undated === 1 ? " χειρουργείο" : " χειρουργεία") + " χωρίς ημερομηνία", "", "Άνοιγμα", go("surgery"), {footer:true,focusKey:"surgery-undated"}));
+    if (s && s.invalid) footer.append(basicRow("", s.invalid + (s.invalid === 1 ? " χειρουργείο" : " χειρουργεία") + " με μη έγκυρη ημερομηνία", "", "Άνοιγμα", go("surgery"), {footer:true,focusKey:"surgery-invalid"}));
+    if (s && s.later) footer.append(basicRow("", s.later + (s.later === 1 ? " χειρουργείο" : " χειρουργεία") + " μετά το επταήμερο", "", "Άνοιγμα", go("surgery"), {footer:true,focusKey:"surgery-later"}));
+    if (state.calls && state.calls.count > 0) footer.append(basicRow("", state.calls.count + (state.calls.count === 1 ? " κλήση" : " κλήσεις") + " χωρίς σήμανση διεκπεραίωσης", "", "Άνοιγμα", () => nav().calls?.(), {footer:true,focusKey:"calls"}));
+    const sources = [["Χειρουργεία", s], ["RF", state.rf], ["Εκθέσεις", state.reports], ["Υποχρεώσεις", state.tasks], ["Κλήσεις", state.calls]];
+    const loading = sources.filter(([,value]) => value === undefined).map(([label]) => label);
+    const missing = sources.filter(([,value]) => value === null).map(([label]) => label);
+    if (state.calls && state.calls.count === null) missing.push("Αριθμός κλήσεων");
+    if (loading.length) footer.append(node("p", "ha-note", "Φόρτωση: " + loading.join(", ") + "."));
+    if (missing.length) footer.append(node("p", "ha-warning", "Μη διαθέσιμο: " + missing.join(", ") + ". Δεν σημαίνει ότι δεν υπάρχουν εκκρεμότητες."));
+    if (state.tasks && !state.tasks.actionsAvailable) footer.append(node("p", "ha-warning", "Η ταυτότητα ορισμένων υποχρεώσεων δεν επιβεβαιώθηκε· το άνοιγμα λεπτομερειών δεν είναι διαθέσιμο."));
+    const partial = [];
+    if (state.rf?.partial) partial.push("RF");
+    if (state.reports?.partial) partial.push("Εκθέσεις");
+    if (partial.length) footer.append(node("p", "ha-warning", "Μερική κάλυψη: " + partial.join(", ") + ". Άνοιξε τις αντίστοιχες λίστες."));
+    const coverage = [];
+    if (state.tasks) coverage.push("έως 100 πρόσφατες υποχρεώσεις");
+    if (state.calls) coverage.push("έως 200 καταγεγραμμένες κλήσεις");
+    if (coverage.length) footer.append(node("p", "ha-note", "Κάλυψη: " + coverage.join(" και ") + "."));
+    root.append(footer);
+    restoreFocus();
   }
   function revoke() {
     state.authorized = false; ++state.epoch; ++state.load;
     state.surgeries = state.rf = state.reports = state.tasks = state.calls = null;
-    state.updated = 0; state.day = null; draw();
+    state.updated = 0; state.day = null; state.showAll = state.showAllSurgery = false; draw();
   }
   async function request(path, epoch, load) {
     const response = await fetch(url(path), {credentials: "same-origin", cache: "no-store", headers: {Accept: "application/json"}});
@@ -146,9 +253,9 @@
             !(x.report_sent_date == null || validDate(x.report_sent_date)) ||
             !(x.writing_started_date == null || validDate(x.writing_started_date)))) throw Error("invalid");
       return {items: d.cases.flatMap(x => {
-        if (validDate(x.writing_started_date) && !x.report_sent_date) return [{patient_name: x.patient_name, writing: true}];
+        if (validDate(x.writing_started_date) && !x.report_sent_date) return [{patient_name: x.patient_name, writing: true, date: x.writing_started_date}];
         if (validDate(x.report_sent_date) && Number.isInteger(x.balance_cents) && x.balance_cents > 0)
-          return [{patient_name: x.patient_name, writing: false}];
+          return [{patient_name: x.patient_name, writing: false, date: x.report_sent_date}];
         return [];
       }), partial: d.has_more};
     }, epoch, load);
@@ -156,10 +263,8 @@
       if (!d || !Array.isArray(d.items) || d.items.length > 100 || d.items.some(x => !x ||
           typeof x.patient_name !== "string" || typeof x.description !== "string" ||
           typeof x.pending_id !== "string" || typeof x.status !== "string")) throw Error("invalid");
-      const n = new Date(today() + "T12:00:00Z"); n.setUTCDate(n.getUTCDate() + 7);
-      const end = n.toISOString().slice(0, 10);
-      return {items: d.items.filter(x => ["open", "awaiting_patient", "awaiting_result"].includes(x.status) &&
-        validDate(x.review_date) && x.review_date <= end).sort((a,b) => a.review_date.localeCompare(b.review_date))};
+      const active = d.items.filter(x => ["open", "awaiting_patient", "awaiting_result"].includes(x.status));
+      return {items: active, actionsAvailable: active.every(x => typeof x.patient_id === "string" && !!x.patient_id.trim() && !!x.pending_id.trim())};
     }, epoch, load);
     void loadSource("calls", "/clinical/reception-calls/peek", d => {
       if (!d || d.source !== "reception_dashboard" || d.is_unread_count !== false ||
@@ -171,10 +276,13 @@
   function receiveSurgery(detail) {
     if (!state.authorized) return;
     if (!detail || detail.unavailable || !Array.isArray(detail.attention) ||
-        !Number.isInteger(detail.undated) || !Number.isInteger(detail.invalid) ||
+        !Number.isInteger(detail.total) || !Number.isInteger(detail.undated) || !Number.isInteger(detail.invalid) ||
+        detail.undated < 0 || detail.invalid < 0 || detail.total < detail.undated + detail.invalid + detail.attention.length ||
         detail.attention.some(x => !x || !validDate(x.date) || typeof x.name !== "string" ||
           typeof x.procedure !== "string" || typeof x.time !== "string")) state.surgeries = null;
-    else state.surgeries = {attention: detail.attention, undated: detail.undated, invalid: detail.invalid};
+    else state.surgeries = {attention: detail.attention.map(x => ({...x, time:/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(x.time) ? x.time : ""})),
+      undated: detail.undated, invalid: detail.invalid,
+      later: detail.total - detail.undated - detail.invalid - detail.attention.length};
     draw();
   }
   function authenticated() {
