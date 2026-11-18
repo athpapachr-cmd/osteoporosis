@@ -1,3 +1,5 @@
 # Day Home agenda: initial final-head CI
 
 PR #305 head `ac9ad4dbdb2db37270aa425d2ba888517502d7bf` has two unrelated failures: an inherited iCloud synthetic check hard-codes the old cache-busting version, and the deliberately static #161 synthetic demo clicks its previous/current/next fixture which the production Home now hides. Preserve the fixture's previous/current/next strip only on the dedicated synthetic #161 page and update the version assertion, then rerun the affected tests and fresh exact-head CI. The runtime remains subject to the subsequent Product Owner request for explicit tomorrow access and its affected R2 gates.
+
+Fresh head `1e341b4` also exposed two inherited browser tests still clicking the intentionally hidden Home context strip. Their synthetic booking fixtures must be supplied through the new existing agenda path and clicked there, retaining their real patient-entry and per-booking identity assertions. This changes test routing only, not clinical runtime. Fresh final-head CI follows.
