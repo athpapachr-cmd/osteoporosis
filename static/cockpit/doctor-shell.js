@@ -1049,6 +1049,7 @@
     if(!window.CockpitIcloudInbox)return;
     if(typeof window.CockpitStoredChart?.canLeave==="function" &&
        !window.CockpitStoredChart.canLeave())return;
+    window.CockpitOfficeCases?.cancelRFOpen?.();
     close();window.CockpitObligations?.close();
     window.CockpitClinicalInbox?.close();
     $("doctorClinicalInboxView").hidden=true;
@@ -1095,6 +1096,7 @@
     }
     if(typeof window.CockpitStoredChart?.canLeave==="function" &&
        !window.CockpitStoredChart.canLeave())return;
+    window.CockpitOfficeCases?.cancelRFOpen?.();
     close();window.CockpitObligations?.close();
     window.CockpitIcloudInbox?.close();
     $("doctorIcloudInboxView").hidden=true;
@@ -1109,6 +1111,7 @@
     // existing guard and its patient-visible reason, never silently hide it.
     if (typeof window.CockpitStoredChart?.canLeave==="function"
         && !window.CockpitStoredChart.canLeave()) return;
+    window.CockpitOfficeCases?.cancelRFOpen?.();
     close();
     window.CockpitClinicalInbox?.close();
     $("doctorClinicalInboxView").hidden=true;
@@ -1130,6 +1133,7 @@
     $("doctorObligationsSearch").focus();
   }
   function showLibrary(category="cases", skipCaseOpen = false) {
+    if (category !== "cases") window.CockpitOfficeCases?.cancelRFOpen?.();
     close();
     window.CockpitClinicalInbox?.close();
     $("doctorClinicalInboxView").hidden=true;
@@ -1157,6 +1161,7 @@
     $("doctorBackHome").focus();
   }
   function showHome(refreshAttention = true) {
+    window.CockpitOfficeCases?.cancelRFOpen?.();
     close();
     window.CockpitClinicalInbox?.close();
     $("doctorClinicalInboxView").hidden=true;

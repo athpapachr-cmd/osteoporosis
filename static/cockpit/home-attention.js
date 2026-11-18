@@ -184,7 +184,8 @@
   window.addEventListener("clinical:unauthenticated", revoke);
   window.addEventListener("cockpit:surgery-counts", event => receiveSurgery(event.detail));
   const maybeRefresh = () => {
-    if (state.authorized && !document.hidden && (state.day !== today() || Date.now() - state.updated > 300000)) refresh();
+    if (state.authorized && !document.hidden && !document.getElementById("doctorMainView")?.hidden &&
+        (state.day !== today() || Date.now() - state.updated > 300000)) refresh();
   };
   document.addEventListener("visibilitychange", maybeRefresh);
   window.addEventListener("focus", maybeRefresh);

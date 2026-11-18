@@ -1298,6 +1298,14 @@ def browser_suite(width, screenshot_name):
                 : original(url, options); }""")
             attention.get_by_role("button", name="Εγκεκριμένη RF · RF Συνθετική").click()
             page.wait_for_function("typeof window.__releaseOldRF === 'function'")
+            page.locator("#doctorBackHome").click()
+            page.evaluate("""async () => { window.__releaseOldRF();
+              await new Promise(r => setTimeout(r, 0)); }""")
+            expect(page.locator("#officeRfList")).not_to_contain_text("RF STALE SYNTHETIC")
+            expect(attention).to_contain_text("RF Συνθετική")
+            page.evaluate("delete window.__releaseOldRF")
+            attention.get_by_role("button", name="Εγκεκριμένη RF · RF Συνθετική").click()
+            page.wait_for_function("typeof window.__releaseOldRF === 'function'")
             page.evaluate("""async () => { window.dispatchEvent(new Event('clinical:unauthenticated'));
               window.__releaseOldRF(); await new Promise(r => setTimeout(r, 0)); }""")
             expect(page.locator("#officeRfList")).not_to_contain_text("RF STALE SYNTHETIC")

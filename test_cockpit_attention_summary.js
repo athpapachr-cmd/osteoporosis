@@ -276,9 +276,20 @@ async function refresh(surgeryResponse, rfResponse) {
   const future = surgery("s7", "Συνθετικός ορίζοντας", "2026-10-23");
   await refresh(ok([future]), ok(rf));
   assert.equal(win.CockpitSurgerySummary.attention.length, 0);
+  $("surgeryFullName").value = "Συνθετικό μη αποθηκευμένο πρόχειρο";
+  $("surgeryEditorDetails").open = true;
   currentTime = "2026-10-15T22:30:00Z";
+  surgeryResponses.push(ok([future]));
   win.CockpitSurgeryQueue.refreshAttention();
+  await settle();
   assert.equal(win.CockpitSurgerySummary.attention[0].name, "Συνθετικός ορίζοντας");
+  assert.equal($("surgeryFullName").value, "Συνθετικό μη αποθηκευμένο πρόχειρο");
+  assert.equal($("surgeryEditorDetails").open, true);
+  // A changed source from another client replaces the cached summary on Home refresh.
+  surgeryResponses.push(ok([surgery("s8", "Νεότερο χειρουργείο", "2026-10-16")]));
+  win.CockpitSurgeryQueue.refreshAttention(); await settle();
+  assert.equal(win.CockpitSurgerySummary.attention[0].name, "Νεότερο χειρουργείο");
+  assert.equal($("surgeryFullName").value, "Συνθετικό μη αποθηκευμένο πρόχειρο");
   // A failed Home status bootstrap broadcasts revocation to the actual surgery owner.
   const oldSurgery = deferred();
   surgeryResponses.push(oldSurgery.promise); rfResponses.push(ok(rf)); notifyAuth();

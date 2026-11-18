@@ -38,6 +38,7 @@
   // The existing protected surgery loader owns the ONLY source of Home detail.
   let surgeryGeneration = 0;
   let surgeryReady = false;
+  let surgeryLoading = false;
   let surgeryAuthEpoch = 0;
   const surgeryDateParts = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Asia/Nicosia", year: "numeric", month: "2-digit", day: "2-digit"
@@ -370,7 +371,7 @@
     for (const control of $("surgeryForm").elements) control.disabled = !enabled;
   }
 
-  function clearSurgeryProjection(message, needsKey = false) {
+  function clearSurgeryProjection(message, needsKey = false, preserveEditor = false) {
     surgeryReady = false;
     surgeryRows = [];
     window.CockpitSurgerySummary = null;
@@ -384,15 +385,18 @@
     $("surgeryQueueNote").textContent = needsKey
       ? "Πάτησε «Πρόσβαση» πάνω δεξιά για σύνδεση με το Clinical Key."
       : "Η προστατευμένη λίστα χειρουργείων δεν είναι διαθέσιμη αυτή τη στιγμή.";
-    resetSurgeryForm();
-    $("surgeryEditorDetails").open = false;
+    if (!preserveEditor) {
+      resetSurgeryForm();
+      $("surgeryEditorDetails").open = false;
+    }
   }
 
-  async function loadSurgeryQueue() {
+  async function loadSurgeryQueue({preserveEditor = false} = {}) {
     const generation = ++surgeryGeneration;
+    surgeryLoading = true;
     // Invalidate immediately, including Clinical Key re-auth and post-write
     // reloads. An older success or failure can never restore/clear a newer view.
-    clearSurgeryProjection("Φόρτωση…");
+    clearSurgeryProjection("Φόρτωση…", false, preserveEditor);
     try {
       const rows = await apiJson("/clinical/surgeries", {}, () => generation === surgeryGeneration);
       if (generation !== surgeryGeneration) return;
@@ -409,7 +413,9 @@
     } catch (error) {
       if (generation !== surgeryGeneration) return;
       const needsKey = error.status === 401 || error.status === 403;
-      clearSurgeryProjection(needsKey ? "Σύνδεση απαιτείται" : "Μη διαθέσιμο", needsKey);
+      clearSurgeryProjection(needsKey ? "Σύνδεση απαιτείται" : "Μη διαθέσιμο", needsKey, preserveEditor);
+    } finally {
+      if (generation === surgeryGeneration) surgeryLoading = false;
     }
   }
 
@@ -625,11 +631,12 @@
   if (typeof window !== "undefined" && typeof window.addEventListener === "function") window.addEventListener("clinical:unauthenticated", () => {
     ++surgeryAuthEpoch;
     ++surgeryGeneration; // Fence any protected read already in flight.
+    surgeryLoading = false;
     clearSurgeryProjection("Σύνδεση απαιτείται", true);
   });
   resetSurgeryForm();
   window.CockpitSurgeryQueue = {
-    refreshAttention() { publishSurgeryCounts(); },
+    refreshAttention() { if (!surgeryLoading) void loadSurgeryQueue({preserveEditor: true}); },
     prefillFromRF(card) {
       if (!surgeryReady || !card || !card.id || !Number.isInteger(card.revision) ||
           !["approved", "scheduled"].includes(card.stage) || card.surgery_id ||
