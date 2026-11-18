@@ -654,6 +654,15 @@ class ChartBookingIntent(BookingIntent):
         if len(uid)>160:raise ValueError('Booking identifier too long')
         return uid
 
+class ChartPreparationIntent(ChartBookingIntent):
+    target_date: date
+    first_batch: bool = True
+
+
+class ChartPreparationCheck(ChartPreparationIntent):
+    token: str = Field(min_length=32, max_length=4096)
+
+
 class ChartBookingSelection(ChartBookingIntent):
     patient_id: str = Field(min_length=1, max_length=120)
     expected_revision: int = Field(ge=0)
@@ -696,7 +705,9 @@ def attach_chart_booking_routes(router,engine,protected):
     from clinical_pending_one_tap import actor_for
     def clinician(request:Request):return actor_for(request,None)
     def no_cache(response:Response):response.headers['Cache-Control']='no-store'
+    def preparation_no_cache(response:Response):response.headers['Cache-Control']='private, no-store'
     secured=protected+[Depends(no_cache)]
+    prep_secured=protected+[Depends(preparation_no_cache)]
     def ready():
         inspector=inspect(engine)
         if not all(inspector.has_table(t.__tablename__) for t in [BookingPatientLinkORM,BookingPatientLinkAuditORM,VisitBriefStaffAuditORM]):
@@ -732,6 +743,114 @@ def attach_chart_booking_routes(router,engine,protected):
             result['booking']['reason_available'] = _text(source.reason, 1000)
             result['booking']['reason_may_be_truncated'] = len(source.reason or '') >= 1000
             commit(db);return result
+
+    # Cleanup concerns only encrypted expiring drafts; failure leaves the
+    # protected read/expiry checks in force and never affects clinical records.
+    import asyncio
+    cleanup_task = None
+    @router.on_event('startup')
+    async def preparation_cleanup_start():
+        nonlocal cleanup_task
+        async def cleanup_loop():
+            from clinical_visit_preparation_store import cleanup
+            while True:
+                try:
+                    await asyncio.to_thread(cleanup, engine)
+                except Exception:
+                    pass
+                await asyncio.sleep(3600)
+        cleanup_task=asyncio.create_task(cleanup_loop())
+    @router.on_event('shutdown')
+    async def preparation_cleanup_stop():
+        if cleanup_task:
+            cleanup_task.cancel()
+            try: await cleanup_task
+            except asyncio.CancelledError: pass
+
+    def require_preparation_day(req, source, instant, first=False):
+        local = _utc(instant).astimezone(CYPRUS).date()
+        start = _utc(source.start_at)
+        if (req.target_date not in ((local + timedelta(days=1),) if first else (local, local + timedelta(days=1)))
+                or start is None or start.astimezone(CYPRUS).date() != req.target_date):
+            raise HTTPException(409, 'Appointment date changed')
+
+    def preparation_snapshot(req, source, instant, actor, audit_event=None):
+        from clinical_visit_preparation import source_projection
+        with Session(engine) as db:
+            link = db.get(BookingPatientLinkORM,(NAMESPACE,req.booking_uid))
+            if not link or link.state != 'chart_linked' or not hmac.compare_digest(link.evidence_type,_chart_reference(source)):
+                raise HTTPException(409, 'Appointment requires confirmed chart')
+            patient_id, revision = link.patient_id, link.revision
+            if patient_id in SYNTHETIC_161_PATIENT_IDS:
+                raise HTTPException(404, 'Patient outside normal chart scope')
+            projection = source_projection(db,patient_id,source,instant)
+            if audit_event:
+                _record_access(db,actor,req.booking_uid,audit_event,'allowed',patient_id,revision)
+                db.commit()
+            return patient_id,revision,projection
+
+    @router.post('/visit-brief/prepare-tomorrow',dependencies=prep_secured)
+    async def prepare_tomorrow(req:ChartPreparationIntent, request:Request, actor:StaffActor=Depends(clinician)):
+        from clinical_visit_preparation import prepare_questions, connected_call, projection_digest
+        from clinical_visit_preparation_store import reserve, cancel, publish
+        first = await booking(req)
+        at_start = _utcnow()
+        require_preparation_day(req,first,at_start,first=req.first_batch)
+        patient_id,revision,projection = preparation_snapshot(req,first,at_start,actor,'visit_preparation_read')
+        key,token=reserve(engine,req.booking_uid,req.target_date)
+        try:
+            status,questions = await connected_call(request,prepare_questions(projection['ai_facts']))
+            if status == 'unavailable':
+                raise HTTPException(503, 'Preparation temporarily unavailable')
+            fresh = await booking(req)
+            at_end = _utcnow()
+            require_preparation_day(req,fresh,at_end,first=req.first_batch)
+            observation=_booking_observation(fresh)
+            if not hmac.compare_digest(_booking_observation(first),observation):
+                raise HTTPException(409, 'Appointment changed during preparation')
+            new_patient,new_revision,new_projection=preparation_snapshot(req,fresh,at_end,actor)
+            if new_patient != patient_id or new_revision != revision or new_projection != projection:
+                raise HTTPException(409, 'Clinical source changed during preparation')
+            if await request.is_disconnected():
+                raise HTTPException(499, 'Request disconnected')
+            payload={'uid':req.booking_uid,'day':req.target_date.isoformat(),'patient_id':patient_id,
+                     'revision':revision,'observation':observation,'source':projection_digest(projection),
+                     'ai_status':status,'questions':questions,'generation':token,
+                     'created_at':at_end.isoformat()}
+            publish(engine,key,token,payload)
+            return {'ready':True}
+        except BaseException:
+            try: cancel(engine,key,token)
+            except Exception: pass
+            raise
+
+    @router.post('/visit-brief/prepare-read',dependencies=prep_secured)
+    async def read_preparation(req:ChartPreparationIntent, actor:StaffActor=Depends(clinician)):
+        from clinical_visit_preparation import projection_digest
+        from clinical_visit_preparation_store import read, check_available
+        source=await booking(req);now=_utcnow();require_preparation_day(req,source,now)
+        patient_id,revision,projection=preparation_snapshot(req,source,now,actor,'visit_preparation_check')
+        payload=read(engine,req.booking_uid,req.target_date)
+        if not payload:return {'state':'missing'}
+        if (payload.get('uid') != req.booking_uid or payload.get('day') != req.target_date.isoformat()
+                or payload.get('patient_id') != patient_id or payload.get('revision') != revision
+                or not hmac.compare_digest(payload.get('observation',''),_booking_observation(source))
+                or not hmac.compare_digest(payload.get('source',''),projection_digest(projection))):
+            return {'state':'stale'}
+        if not check_available(engine,req.booking_uid,req.target_date,payload.get('generation')):
+            return {'state':'missing'}
+        require_preparation_day(req,source,_utcnow())
+        return {'state':'ready','previous':projection['previous'],'items':projection['items'],
+                'partial':projection['partial'],'ai_status':payload['ai_status'],
+                'questions':payload['questions'],'created_at':payload['created_at']}
+
+    @router.post('/visit-brief/prepare-delete',dependencies=prep_secured)
+    async def delete_preparation(req:ChartPreparationIntent,actor:StaffActor=Depends(clinician)):
+        from clinical_visit_preparation_store import remove
+        source=await booking(req);require_preparation_day(req,source,_utcnow())
+        preparation_snapshot(req,source,_utcnow(),actor,'visit_preparation_delete')
+        remove(engine,req.booking_uid)
+        return {'deleted':True}
 
     @router.post('/visit-brief/chart-select',dependencies=secured)
     async def chart_select(req:ChartBookingSelection,actor:StaffActor=Depends(clinician)):

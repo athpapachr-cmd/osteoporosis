@@ -19,6 +19,45 @@
     }
     return response.json();
   }
+  async function loadPreparation(ticket){
+    const view=state.view;if(!view?.uid||!view.date)return;
+    const fmt=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Nicosia",year:"numeric",month:"2-digit",day:"2-digit"});
+    const today=fmt.format(new Date()), next=new Date(today+"T12:00:00Z");next.setUTCDate(next.getUTCDate()+1);
+    const tomorrow=next.toISOString().slice(0,10);
+    if(view.date!==today&&view.date!==tomorrow)return;
+    const box=document.createElement("section");box.id="visitBriefPreparation";
+    const heading=document.createElement("h3");heading.textContent="Προετοιμασία επίσκεψης";
+    const body=document.createElement("div");body.textContent="Έλεγχος αποθηκευμένης προετοιμασίας…";
+    box.append(heading,body);$("visitBriefClinical").append(box);
+    const intent={booking_uid:view.uid,target_date:view.date};
+    const still=()=>ticket===state.ticket&&!$("visitBriefOverlay").hidden&&box.isConnected;
+    async function retrieve(){
+      try{
+        const data=await request("prepare-read",intent);if(!still())return;
+        body.replaceChildren();
+        if(data.state!=="ready"){
+          const message=document.createElement("p");message.textContent=data.state==="stale"?
+            "Τα στοιχεία άλλαξαν από την προετοιμασία. Χρειάζεται νέα προετοιμασία.":"Δεν υπάρχει αποθηκευμένη προετοιμασία.";body.append(message);
+        }else{
+          const facts=document.createElement("h4");facts.textContent="Καταγεγραμμένα στοιχεία";body.append(facts);
+          const list=document.createElement("ul");(data.items||[]).forEach(item=>{const li=document.createElement("li");
+            li.textContent=(item.source_date?item.source_date+" · ":"")+item.label+": "+item.text;list.append(li);});body.append(list);
+          if(data.partial){const note=document.createElement("p");note.textContent="Μερικά στοιχεία δεν ήταν διαθέσιμα ή δεν συμπεριλήφθηκαν.";body.append(note);}
+          const title=document.createElement("h4");title.textContent="Πιθανές ερωτήσεις από το AI · για δικό σας έλεγχο";body.append(title);
+          const questions=document.createElement("ul");(data.questions||[]).forEach(item=>{const li=document.createElement("li");const refs=(item.source_ids||[]).map(id=>{const match=(data.items||[]).find(x=>x.source_id===id);return match?(match.label+(match.source_date?" · "+match.source_date:"")):null;}).filter(Boolean);
+            li.textContent=item.text+(refs.length?" (Πηγές: "+refs.join(", ")+")":"");questions.append(li);});body.append(questions);
+          if(!data.questions?.length){const note=document.createElement("p");note.textContent="Δεν υπάρχουν προτεινόμενες ερωτήσεις για τα διαθέσιμα στοιχεία.";body.append(note);}
+        }
+        const button=document.createElement("button");button.type="button";button.textContent="Νέα προετοιμασία";
+        button.onclick=async()=>{button.disabled=true;body.textContent="Προετοιμασία…";try{await request("prepare-tomorrow",{...intent,first_batch:false});if(still())await retrieve();}catch(e){if(still())body.textContent="Η προετοιμασία δεν είναι διαθέσιμη. Δοκιμάστε ξανά.";}};body.append(button);
+        if(data.state==="ready"||data.state==="stale"){
+          const remove=document.createElement("button");remove.type="button";remove.textContent="Διαγραφή προετοιμασίας";
+          remove.onclick=async()=>{remove.disabled=true;try{await request("prepare-delete",intent);if(still())await retrieve();}catch(e){if(still())body.textContent="Η διαγραφή δεν ολοκληρώθηκε. Δοκιμάστε ξανά.";}};body.append(remove);
+        }
+      }catch(e){if(!still())return;if(e.status===401||e.status===403){identityDenied();return;}body.textContent="Η προετοιμασία δεν είναι διαθέσιμη αυτή τη στιγμή.";}
+    }
+    await retrieve();
+  }
   function evidence(id,values,empty){
     const el=$(id);el.replaceChildren();
     if(!values.length){
@@ -46,6 +85,7 @@
   }
   function clearProtected(){
     state.patientId=null;
+    $("visitBriefPreparation")?.remove();
     $("visitBriefClinical").hidden=true;
     $("visitBriefOpenChart").hidden=true;
     document.getElementById("visitBriefOpenLatest")?.remove?.();
@@ -128,7 +168,7 @@
           state.chartMode=true;
           const data=await request('chart-read',{booking_uid:view.uid,target_date:view.date||null});
           if(ticket!==state.ticket||$('visitBriefOverlay').hidden)return;
-          renderChart(data);return;
+          renderChart(data);if(data.mode==='chart_linked')loadPreparation(ticket);return;
         }
       }
       const data=await request("read",{booking_uid:view.uid});

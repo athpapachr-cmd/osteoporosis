@@ -53,6 +53,28 @@
   }
   const state={rows:null,day:null,checked:0,generation:0,tomorrow:null,pastOpen:false,tomorrowOpen:false,showTomorrow:false, reload:null,surgery:null};
   let pendingFocus=null,tomorrowGeneration=0;
+  const prep={running:false,controller:null,results:new Map(),day:null};
+  function stopPreparation(){if(prep.controller)prep.controller.abort();prep.controller=null;prep.running=false;}
+  async function prepareTomorrow(info, rows){
+    stopPreparation();prep.running=true;prep.day=info.key;prep.results=new Map();
+    const controller=new AbortController();prep.controller=controller;
+    const unique=new Map();
+    for(const item of rows){const id=String(item.raw.appointment_id||"").trim();if(id){const canonical=id.startsWith("cal.com:")?id:"cal.com:"+id;unique.set(canonical,item);}}
+    for(const [uid] of unique){
+      if(controller.signal.aborted)break;
+      prep.results.set(uid,"Σε επεξεργασία");draw();
+      try{
+        const response=await fetch(url("/clinical/calendar/visit-brief/prepare-tomorrow"),{
+          method:"POST",credentials:"same-origin",cache:"no-store",signal:controller.signal,
+          headers:{"Content-Type":"application/json","Accept":"application/json"},
+          body:JSON.stringify({booking_uid:uid,target_date:info.key})});
+        if(response.status===401||response.status===403){window.dispatchEvent(new Event("clinical:unauthenticated"));break;}
+        prep.results.set(uid,response.ok?"Έτοιμη":response.status===409?"Χρειάζεται έλεγχο σύνδεσης ή στοιχείων":"Μη διαθέσιμη · δοκιμάστε ξανά");
+      }catch(e){if(controller.signal.aborted)break;prep.results.set(uid,"Μη διαθέσιμη · δοκιμάστε ξανά");}
+      draw();
+    }
+    if(prep.controller===controller){prep.controller=null;prep.running=false;draw();}
+  }
   const focusKeys=new WeakMap(); let targets=new Map();
   function el(tag,cls,value) {const e=document.createElement(tag); if(cls)e.className=cls;if(value!==undefined)e.textContent=value;return e;}
   function track(e,key){if(key){focusKeys.set(e,key);targets.set(key,e);}return e;}
@@ -72,6 +94,8 @@
       b.disabled=true; b.title="Δεν υπάρχει επιβεβαιωμένο αναγνωριστικό ραντεβού";
     }
     const body=el("span","hg-text");body.append(el("strong","hg-name",tidy(rawName)));
+    const rawId=String(r.appointment_id||"");const id=rawId.startsWith("cal.com:")?rawId:"cal.com:"+rawId;
+    if(style==="tomorrow" && prep.day===dayKey(item.start) && prep.results.has(id))body.append(el("span","hg-why",prep.results.get(id)));
     const why=cleanReason(r.reason,rawName); if(why) {const line=el("span","hg-why",why);line.title=String(r.reason);body.append(line);}
     b.append(el("span","hg-time",clock(item.start)),body,el("span","hg-right",clinic(r.clinic) || "›"));return b;
   }
@@ -109,6 +133,12 @@
     surgeries.forEach((s,i)=>{const time=/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(s.time)?s.time:"";
       items.push({sort:time||"99:99",node:()=>button((time?time+" · ":"")+tidy(s.name)+" · Χειρουργείο", "hg-surgery",()=>window.CockpitHomeAttentionNavigation?.cases?.("surgery"),"surgery:"+i)});});
     items.sort((a,b)=>a.sort.localeCompare(b.sort));const shown=state.tomorrowOpen?items:items.slice(0,4);shown.forEach(x=>box.append(x.node()));
+    if(Array.isArray(t.rows) && t.rows.length){
+      const action=button(prep.running?"Διακοπή προετοιμασίας":"Προετοιμασία αυριανών επισκέψεων", "hg-more",()=>{
+        if(prep.running){stopPreparation();draw();}else prepareTomorrow(info,t.rows);
+      },"prepare-tomorrow");box.append(action);
+      if(prep.running)box.append(el("p","hg-empty","Η προετοιμασία βασίζεται στις επιβεβαιωμένες συνδέσεις καρτέλας."));
+    }
     if(Array.isArray(t.rows) && !t.rows.length)box.append(el("p","hg-empty","Δεν βρέθηκαν ραντεβού αύριο στη διαθέσιμη πηγή."));
     if(!state.surgery)box.append(el("p","hg-empty","Τα αυριανά χειρουργεία δεν επιβεβαιώθηκαν εδώ."));
     if(items.length>4){const more=button(state.tomorrowOpen?"Λιγότερα":"Δες και τα "+items.length,"hg-more",()=>{state.tomorrowOpen=!state.tomorrowOpen;draw();},"tomorrow-more");more.setAttribute("aria-expanded",String(state.tomorrowOpen));box.append(more);}
@@ -130,7 +160,7 @@
     else {
       const toggle=button(state.showTomorrow?"Απόκρυψη αυριανού":"Αύριο","hg-more",()=>{
         state.showTomorrow=!state.showTomorrow;
-        if(!state.showTomorrow){tomorrowGeneration++;state.tomorrow=null;state.tomorrowOpen=false;}
+        if(!state.showTomorrow){stopPreparation();tomorrowGeneration++;state.tomorrow=null;state.tomorrowOpen=false;}
         draw();
       },"toggle-tomorrow");
       toggle.setAttribute("aria-expanded",String(state.showTomorrow));wrap.append(toggle);
@@ -147,7 +177,8 @@
     if(restore) (targets.get(key) || targets.get("heading"))?.focus?.({preventScroll:true});pendingFocus=null;
   }
   function tick(){if(!state.rows||document.hidden)return;if(dayKey(Date.now())!==state.day||Date.now()-state.checked>=300000){state.reload?.();return;}draw();}
-  window.addEventListener("clinical:unauthenticated",()=>clear());
+  window.addEventListener("clinical:unauthenticated",()=>{stopPreparation();prep.results.clear();clear();});
+  window.addEventListener("pagehide",stopPreparation);
   window.addEventListener("cockpit:surgery-counts",e=>{if(state.rows){state.surgery=validSurgery(e.detail)?e.detail:null;if(state.tomorrow)draw();}});
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)tick();});window.addEventListener("focus",tick);
   window.setInterval(tick,30000);
