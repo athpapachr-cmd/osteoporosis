@@ -1,3 +1,5 @@
+> **2026-11-18 DAY HOME AGENDA — EXACT SOURCE LIVE / SMOKE NEXT:** Native Render `dep-dbuu0b5g1s2s739icrc0` LIVE at squash `db2a88a08a112a32d1521bec7feddc94e05dd821`, following PR #305 and 15/15 final workflows. Next bounded no-PHI asset/auth/log smoke; clinician acceptance unverified. Writer `codex/cockpit-agenda-release-20261118`.
+
 > **2026-11-18 DAY HOME AGENDA — MERGED / AUTO DEPLOY BUILDING:** PR #305 passed all 15 final workflows and independent R2; squash `db2a88a08a112a32d1521bec7feddc94e05dd821`. Native Render `dep-dbuu0b5g1s2s739icrc0` building exact source, no duplicate deploy. Writer `codex/cockpit-agenda-release-20261118`; next live and no-PHI smoke. No patient/provider writes.
 
 > **2026-11-18 DAY HOME AGENDA — INHERITED TEST ROUTING FIXED / FINAL CI:** Both failing patient-entry and chart-link real-browser tests now use the actual visible agenda and passed locally (2/2, desktop/mobile). Product runtime remains independent-R2-reviewed `cffa674`; PR #305 fresh exact-head CI and release next. Writer `codex/cockpit-home-agenda-20261118`; no production/patient/provider writes.
