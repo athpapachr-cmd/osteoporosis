@@ -1,0 +1,5 @@
+# Compact Day Home — synthetic implementation evidence
+
+The authorized compact design is implemented using the existing protected owners and auth/revocation lifecycle. Synthetic Node tests cover 4-row/expand behavior, date ordering across task groups, reports and RFs, same name/different patient ids, multiple descriptions and exact pending ids, undated/invalid-date and mixed-invalid-identity handling, partial/503, privacy, 401/403, late responses and refresh. Existing surgery/doctor-shell/iCloud/shared-nav Node regressions pass.
+
+Synthetic Python and Office Cases browser tests: 14 passed, including the patient-task vs Inbox isolation regression. The actual Cockpit headless Chromium suite passed desktop/half/mobile with privacy, RF navigation, logout and long task description/date geometry; desktop screenshot manually inspected. No real patient/provider data or write, schema, setting or clinical decision change. One independent exact-code R2 remains; this is not a deployment or clinician-acceptance claim.

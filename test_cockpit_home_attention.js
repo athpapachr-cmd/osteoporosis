@@ -28,7 +28,7 @@ const fixtures = {
   rf: {applications:[{id:"rf-1",patient_name:"Συνθετικός RF",stage:"approved",surgery_id:null}],has_more:true,snapshot_consistent:false},
   reports: {cases:[{patient_name:"Συνθετική Έκθεση",writing_started_date:"2026-11-17",report_sent_date:null},
     {patient_name:"Χωρίς Αίτημα",writing_started_date:null,report_sent_date:null,visit_date:"2026-09-01"}],has_more:false},
-  tasks: {items:[{patient_name:"Συνθετικός Ασθενής",description:"Ιδιωτικό όνομα Συνθετικός",pending_id:"task-1",status:"open",review_date:"2026-11-17"}]},
+  tasks: {items:[{patient_id:"patient-1",patient_name:"Συνθετικός Ασθενής",description:"Ιδιωτικό όνομα Συνθετικός",pending_id:"task-1",status:"open",review_date:"2026-11-17"}]},
   calls: {source:"reception_dashboard",is_unread_count:false,coverage:"available_call_log_max_200",unhandled_count:2}
 };
 let mode = "bootstrap-pending";
@@ -66,13 +66,16 @@ async function run() {
   let output = text(target);
   assert.match(output, /Συνθετικός νέος/); assert.match(output, /Περασμένη ημερομηνία/);
   assert.match(text(buttons(target).find(b => text(b).includes("Συνθετικός νέος"))), /Συνθετικός νέος/);
+  assert.match(output, /Να γίνουν · 4 από 8 στην προβολή/);
+  buttons(target).find(b => text(b).includes("Δες όλα τα 8")).click();
+  output = text(target);
   assert.match(output, /Συνθετικός RF/); assert.match(output, /Μερική κάλυψη/);
-  assert.match(output, /Έκθεση σε σύνταξη/); assert.doesNotMatch(output, /Χωρίς Αίτημα/);
+  assert.match(output, /Συνθετική Έκθεση Σε σύνταξη/); assert.doesNotMatch(output, /Χωρίς Αίτημα/);
   assert.match(output, /Ιδιωτικό όνομα/); assert.match(output, /2/);
-  buttons(target).find(b => text(b).includes("Απόκρυψη ονομάτων")).click();
+  buttons(target).find(b => b.attributes["aria-label"] === "Απόκρυψη ονομάτων εδώ").click();
   output = text(target); assert.doesNotMatch(output, /Συνθετικός|Συνθετική|Ιδιωτικό όνομα|Επέμβαση/);
   assert.match(output, /Απόκρυψη ονόματος/);
-  buttons(target).find(b => text(b).includes("Εμφάνιση ονομάτων")).click();
+  buttons(target).find(b => b.attributes["aria-label"] === "Εμφάνιση ονομάτων εδώ").click();
   buttons(target).find(b => text(b).includes("Συνθετικός RF")).click(); assert.equal(actions.pop(), "rf");
   buttons(target).find(b => text(b).includes("Συνθετικός Ασθενής")).click(); assert.equal(actions.pop(), "task-1");
   mode = "fail-calls"; window.CockpitHomeAttention.refresh(); await flush();
@@ -93,6 +96,33 @@ async function run() {
   window.CockpitHomeAttention.refresh(); await flush();
   assert.doesNotMatch(text(target), /Συνθετικός RF/, "return/refresh invalidates old data");
   assert.match(text(target), /Μερική κάλυψη/); assert.doesNotMatch(text(target), /Τίποτα επείγον/);
+  // Only proven patient ids group; each task retains its own date and exact target.
+  fixtures.tasks.items = [
+    {patient_id:"same-1",patient_name:"Ίδιο Όνομα",description:"Πρώτη δοκιμή",pending_id:"p1",status:"open",review_date:"2026-11-01"},
+    {patient_id:"same-1",patient_name:"Ίδιο Όνομα",description:"Δεύτερη δοκιμή",pending_id:"p2",status:"open",review_date:"2026-11-15"},
+    {patient_id:"same-1",patient_name:"Ίδιο Όνομα",description:"Τρίτη δοκιμή",pending_id:"p3",status:"open",review_date:null},
+    {patient_id:"same-2",patient_name:"Ίδιο Όνομα",description:"Άλλος ασθενής",pending_id:"p4",status:"open",review_date:"2026-11-03"},
+    {patient_id:"same-3",patient_name:"Χωρίς προθεσμία",description:"Άκυρη ημερομηνία",pending_id:"p5",status:"open",review_date:"2026-02-30"}
+  ];
+  fixtures.reports.cases = [{patient_name:"Συνθετική Έκθεση",writing_started_date:"2026-11-02",report_sent_date:null}];
+  fixtures.rf.applications = [{id:"rf-2",patient_name:"Νέα RF",stage:"approved",surgery_id:null,decision_date:"2026-11-04"}];
+  window.CockpitHomeAttention.refresh(); await flush();
+  let list = target.children.find(n => n.className === "ha-section" && text(n).includes("Να γίνουν"));
+  let visible = list.children.filter(n => (n.className || "").includes("ha-row"));
+  assert.equal(visible.length,4); assert.match(text(visible[0]), /Πρώτη δοκιμή/);
+  assert.match(text(visible[0]), /Δεύτερη δοκιμή/); assert.match(text(visible[0]), /\+1 ακόμη/);
+  assert.match(text(visible[0]), /Νοε/); assert.match(text(visible[1]), /Συνθετική Έκθεση/);
+  assert.match(text(visible[2]), /Άλλος ασθενής/); assert.match(text(visible[3]), /Νέα RF/);
+  buttons(visible[0]).find(b => text(b).includes("Δεύτερη δοκιμή")).click(); assert.equal(actions.pop(), "p2");
+  buttons(target).find(b => text(b).includes("Δες όλα τα 5")).click();
+  assert.match(text(target), /Άκυρη ημερομηνία/); assert.match(text(target), /Μη έγκυρη ημερομηνία/);
+  // An invalid patient identity disables all exact task actions, not just that row.
+  fixtures.tasks.items.push({patient_id:null,patient_name:"Άγνωστη ταυτότητα",description:"Μη διαθέσιμο",pending_id:"p6",status:"open",review_date:null});
+  window.CockpitHomeAttention.refresh(); await flush();
+  assert.match(text(target), /ταυτότητα ορισμένων υποχρεώσεων δεν επιβεβαιώθηκε/);
+  list = target.children.find(n => n.className === "ha-section" && text(n).includes("Να γίνουν"));
+  visible = list.children.filter(n => (n.className || "").includes("ha-task-row"));
+  assert.equal(visible.flatMap(buttons).length, 0, "mixed invalid identity must not promise exact navigation");
   let reprojections = 0;
   window.CockpitSurgeryQueue = {refreshAttention() {
     reprojections++;

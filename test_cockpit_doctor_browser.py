@@ -36,7 +36,7 @@ RECENT = [
     {"patient_id": "SYN-2", "patient_display_name": "Ασθενής Δοκιμαστικός",
      "encounter_date": "2026-10-08", "visit_type": "Κλινική επίσκεψη"},
 ]
-FUTURE_SURGERY_DATE = (datetime.now(ZoneInfo("Asia/Nicosia")).date() + timedelta(days=2)).isoformat()
+FUTURE_SURGERY_DATE = (datetime.now(ZoneInfo("Asia/Nicosia")).date() + timedelta(days=1)).isoformat()
 RF_COUNTS = {
     "scope": "all", "page": 1, "truncated": False, "denominator": 3,
     "applications": [], "counts": {"issued_unknown": 1, "pending": 1,
@@ -1275,6 +1275,16 @@ def browser_suite(width, screenshot_name):
         exercise_notion_tasks(page,width,notion_source)
         attention = page.locator("#doctorAttentionList")
         expect(attention).to_contain_text("RF Συνθετική")
+        assert attention.evaluate("""root => {
+          const line = root.querySelector('.ha-task-detail');
+          const description = line.querySelector('.ha-sub-desc'), date = line.querySelector('.ha-sub-date');
+          const original = description.textContent;
+          description.textContent = 'Συνθετική μακροσκελής περιγραφή '.repeat(20);
+          const outer = line.getBoundingClientRect(), dateRect = date.getBoundingClientRect();
+          const ok = description.scrollWidth > description.clientWidth && dateRect.right <= outer.right + 1;
+          description.textContent = original;
+          return ok;
+        }"""), "A truncated task description must leave its own due date visible"
         attention.get_by_role("button", name="Απόκρυψη ονομάτων εδώ").click()
         expect(attention).not_to_contain_text("RF Συνθετική")
         expect(attention).not_to_contain_text("Εργαστηριακές εξετάσεις")
@@ -1315,7 +1325,7 @@ def browser_suite(width, screenshot_name):
         if width <= 620:
             expect(page.locator("#doctorAttentionList")).to_contain_text("Συνθετικός Ασθενής Β")
             expect(page.locator("#doctorAttentionList")).to_contain_text("RF Συνθετική")
-            expect(page.locator("#doctorAttentionList")).to_contain_text("Εκθέσεις · Τροχαία")
+            expect(page.locator("#doctorAttentionList")).to_contain_text("Να γίνουν")
             assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1")
             # Actual Chromium: hidden registry and Dia details are removed on auth loss.
             exercise_icloud_mail_peek(page, width)
