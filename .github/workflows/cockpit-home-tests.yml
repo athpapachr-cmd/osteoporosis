@@ -16,6 +16,7 @@ on:
       - "static/baseline-audit/index.html"
       - "static/baseline-audit/g4-workspace-ergonomics.js"
       - "test_cockpit_home.py"
+      - "test_cockpit_home_attention.js"
       - "test_cockpit_doctor_shell.js"
       - "test_cockpit_icloud_ui.js"
       - "test_cockpit_shared_navigation.js"
@@ -38,6 +39,7 @@ on:
       - "static/baseline-audit/index.html"
       - "static/baseline-audit/g4-workspace-ergonomics.js"
       - "test_cockpit_home.py"
+      - "test_cockpit_home_attention.js"
       - "test_cockpit_doctor_shell.js"
       - "test_cockpit_icloud_ui.js"
       - "test_cockpit_shared_navigation.js"
@@ -67,6 +69,7 @@ jobs:
           node --check static/cockpit/clinical-workspace.js
           node --check static/cockpit/obligations-view.js
           node --check static/cockpit/doctor-shell.js
+          node --check static/cockpit/home-attention.js
           node --check static/cockpit/icloud-inbox.js
           node --check static/cockpit/icloud-triage.js
           node --check static/cockpit/shared-nav.js
@@ -76,6 +79,7 @@ jobs:
       - name: Cockpit Doctor Shell synthetic workflow
         run: |
           node test_cockpit_doctor_shell.js
+          node test_cockpit_home_attention.js
           node test_cockpit_icloud_ui.js
       - name: Shared navigation and key login synthetic flow
         run: node test_cockpit_shared_navigation.js

@@ -98,6 +98,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
 .doctor-attention-list .doctor-action-row{padding:11px 4px}
 .doctor-attention-list .doctor-action-row small{white-space:pre-line;overflow-wrap:anywhere}
 .doctor-attention-list .doctor-action-row strong{overflow-wrap:anywhere}
+.doctor-attention-section{border-top:1px solid #e4eeeb;padding:8px 0 3px}
+.doctor-attention-heading{font-size:12px;color:#53747c;margin:2px 4px 4px;font-weight:750}
+.doctor-attention-privacy{border:1px solid #c4ddd7;background:#f2faf7;color:#246d65;border-radius:8px;padding:7px 10px;margin:0 0 8px;cursor:pointer;font:inherit;font-size:12px}
+.doctor-attention-privacy:focus-visible{outline:2px solid #5fa8a1;outline-offset:2px}
+.doctor-attention-coverage{font-size:11px;color:#647b82;line-height:1.4;margin:3px 4px 6px}
+.doctor-attention-urgent strong{color:#a63c32}
 #visitHomeNote{font-size:11px;color:#8b9da2;margin:12px 0}
 .clinical-visit-identity h2{font-size:25px}
 .clinical-dia-composer,.clinical-dia-preview{box-shadow:none}
