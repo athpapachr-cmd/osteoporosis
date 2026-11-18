@@ -2050,3 +2050,7 @@ Compact rows show a single escaped, shortened source-reason line beneath the nam
 ## 2026-11-18 — Actionable Day Home released (#301)
 
 Day Home presents source-backed surgery, unlinked approved RF, recorded report states, patient obligations and calls with explicit partial/unavailable coverage, exact RF navigation and an optional local privacy view. Independent R2 closure and 14 final PR workflows passed. Merge `e78aa01bf2ef964312ab7605924a4897c8fbdc9b` is LIVE on native Render `dep-dbujthrbc2fs73afbt00`; six assets match source, five protected anonymous routes return 401 and bounded app/5xx logs were empty. No patient/provider write, schema/config change or duplicate deploy. Actual clinician acceptance remains unverified. [Receipt](cockpit/releases/HOME_ATTENTION_RELEASE_2026-11-18.md).
+
+## 2026-11-18 — Compact Day Home attention
+
+PR #303, independent R2 closed and 14/14 final workflows passed. Native Render source `baf4de29f9aa933484601b4b4e49070f08e316f9` is live; bounded no-PHI smoke passed. The panel groups obligations by validated patient identity, orders available real dates oldest first, keeps exact action links and privacy controls, and exposes undated and later surgeries without invented urgency. See `cockpit/releases/HOME_ATTENTION_COMPACT_RELEASE_2026-11-18.md`. No patient/provider writes or configuration/schema changes.

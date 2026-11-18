@@ -1,0 +1,5 @@
+# Compact Day Home — release receipt, 2026-11-18
+
+[PR #303](https://github.com/athpapachr-cmd/osteoporosis/pull/303), final head `2a928be9b698da24c938b7c235a287aded8f81dd`, passed all 14 final workflows. The substantive code `b07f13b54faa950eaff3adc607db6d8c937817f4` received independent pre-code and post-code R2 closure; all material findings closed. Synthetic tests and real Chromium desktop, half-width and mobile cover identity-safe grouping, dates, privacy, partial coverage, exact RF links, later surgeries and keyboard focus.
+
+Squash source `baf4de29f9aa933484601b4b4e49070f08e316f9` is LIVE on native Render `dep-dbultp0u01pc73f5c700` at 08:18:21 UTC. Six served Cockpit files returned 200 and matched source byte-for-byte; anonymous clinical status, RF, accidents, obligations and call peek returned 401. Render app error and HTTP 500/502/503 filters were empty from 08:16:36 through 08:24:36 UTC. No duplicate deployment, patient/provider write, schema or configuration change. Actual clinician acceptance in normal use remains unverified.
