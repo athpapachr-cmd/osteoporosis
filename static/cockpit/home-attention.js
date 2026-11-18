@@ -127,13 +127,13 @@
     }
     if (epoch === state.epoch && load === state.load && state.authorized) draw();
   }
-  function refresh() {
+  function refresh(reloadSurgery = true) {
     if (!state.authorized) return;
     const epoch = state.epoch, load = ++state.load;
     state.day = today();
     state.rf = state.reports = state.tasks = state.calls = undefined;
     state.updated = Date.now(); draw();
-    window.CockpitSurgeryQueue?.refreshAttention?.();
+    if (reloadSurgery !== false) window.CockpitSurgeryQueue?.refreshAttention?.();
     void loadSource("rf", "/clinical/office-cases/rf?query=&stage=approved&cursor=", d => {
       if (!d || !Array.isArray(d.applications) || typeof d.has_more !== "boolean" ||
           d.applications.some(x => !x || typeof x.id !== "string" || !x.id || x.stage !== "approved" || typeof x.patient_name !== "string" ||
@@ -178,7 +178,7 @@
     draw();
   }
   function authenticated() {
-    revoke(); state.authorized = true; state.surgeries = undefined; draw(); refresh();
+    revoke(); state.authorized = true; state.surgeries = undefined; draw(); refresh(false);
   }
   window.addEventListener("clinical:authenticated", authenticated);
   window.addEventListener("clinical:unauthenticated", revoke);
@@ -202,6 +202,6 @@
     }
     state.authorized = true; state.surgeries = undefined;
     if (window.CockpitSurgerySummary) receiveSurgery(window.CockpitSurgerySummary);
-    refresh();
+    refresh(false);
   }).catch(() => { if (bootstrap === state.epoch) revoke(); });
 })();

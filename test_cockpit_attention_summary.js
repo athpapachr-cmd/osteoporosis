@@ -290,6 +290,15 @@ async function refresh(surgeryResponse, rfResponse) {
   win.CockpitSurgeryQueue.refreshAttention(); await settle();
   assert.equal(win.CockpitSurgerySummary.attention[0].name, "Νεότερο χειρουργείο");
   assert.equal($("surgeryFullName").value, "Συνθετικό μη αποθηκευμένο πρόχειρο");
+  // Home refresh supersedes an in-flight older read after another client changed the source.
+  const inFlight = deferred(); surgeryResponses.push(inFlight.promise);
+  win.CockpitSurgeryQueue.refreshAttention(); await tick();
+  surgeryResponses.push(ok([surgery("s9", "Τρέχουσα αλλαγή", "2026-10-16")]));
+  win.CockpitSurgeryQueue.refreshAttention(); await settle();
+  assert.equal(win.CockpitSurgerySummary.attention[0].name, "Τρέχουσα αλλαγή");
+  inFlight.resolve(ok([future])); await settle();
+  assert.equal(win.CockpitSurgerySummary.attention[0].name, "Τρέχουσα αλλαγή");
+  assert.equal($("surgeryFullName").value, "Συνθετικό μη αποθηκευμένο πρόχειρο");
   // A failed Home status bootstrap broadcasts revocation to the actual surgery owner.
   const oldSurgery = deferred();
   surgeryResponses.push(oldSurgery.promise); rfResponses.push(ok(rf)); notifyAuth();

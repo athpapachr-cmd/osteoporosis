@@ -38,7 +38,6 @@
   // The existing protected surgery loader owns the ONLY source of Home detail.
   let surgeryGeneration = 0;
   let surgeryReady = false;
-  let surgeryLoading = false;
   let surgeryAuthEpoch = 0;
   const surgeryDateParts = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Asia/Nicosia", year: "numeric", month: "2-digit", day: "2-digit"
@@ -393,7 +392,6 @@
 
   async function loadSurgeryQueue({preserveEditor = false} = {}) {
     const generation = ++surgeryGeneration;
-    surgeryLoading = true;
     // Invalidate immediately, including Clinical Key re-auth and post-write
     // reloads. An older success or failure can never restore/clear a newer view.
     clearSurgeryProjection("Φόρτωση…", false, preserveEditor);
@@ -414,8 +412,6 @@
       if (generation !== surgeryGeneration) return;
       const needsKey = error.status === 401 || error.status === 403;
       clearSurgeryProjection(needsKey ? "Σύνδεση απαιτείται" : "Μη διαθέσιμο", needsKey, preserveEditor);
-    } finally {
-      if (generation === surgeryGeneration) surgeryLoading = false;
     }
   }
 
@@ -631,12 +627,11 @@
   if (typeof window !== "undefined" && typeof window.addEventListener === "function") window.addEventListener("clinical:unauthenticated", () => {
     ++surgeryAuthEpoch;
     ++surgeryGeneration; // Fence any protected read already in flight.
-    surgeryLoading = false;
     clearSurgeryProjection("Σύνδεση απαιτείται", true);
   });
   resetSurgeryForm();
   window.CockpitSurgeryQueue = {
-    refreshAttention() { if (!surgeryLoading) void loadSurgeryQueue({preserveEditor: true}); },
+    refreshAttention() { void loadSurgeryQueue({preserveEditor: true}); },
     prefillFromRF(card) {
       if (!surgeryReady || !card || !card.id || !Number.isInteger(card.revision) ||
           !["approved", "scheduled"].includes(card.stage) || card.surgery_id ||
