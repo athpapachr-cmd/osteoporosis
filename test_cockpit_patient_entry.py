@@ -43,6 +43,7 @@ def test_create_uses_existing_staff_boundary(setup,monkeypatch):
 
 def test_browser_shared_entry_and_late_results(setup,tmp_path):
     import socket,threading,shutil
+    from datetime import datetime,timedelta,timezone
     import uvicorn
     from playwright.sync_api import sync_playwright,expect
     app,engine=setup;c=login(app)
@@ -60,6 +61,10 @@ def test_browser_shared_entry_and_late_results(setup,tmp_path):
             for width in [1280,390]:
                 context=browser.new_context(viewport={'width':width,'height':950});page=context.new_page();page.set_default_timeout(8000);errors=[]
                 page.on('pageerror',lambda e:errors.append(str(e)))
+                start=datetime.now(timezone.utc);end=start+timedelta(minutes=30)
+                agenda={'appointment_id':'patient-entry-fixture','patient_display_name':'Συνθετικός Είσοδος',
+                        'start_at':start.isoformat(),'end_at':end.isoformat(),'reason':'Συνθετικός έλεγχος'}
+                page.route('**/clinical/calendar/agenda?*',lambda route:route.fulfill(json=[agenda]))
                 page.goto(url);page.locator('#ceGlobalKey').click();page.locator('#ceGlobalKeyInput').fill(KEY)
                 page.locator('#ceGlobalLoginForm button[type=submit]').click();expect(page.locator('#ceGlobalAuthStatus')).to_contain_text('Συνδέθηκες');page.keyboard.press('Escape')
                 page.locator('#patientEntryHome').click();name=f'Νέα Συνθετική Καρτέλα {width}'
@@ -74,10 +79,9 @@ def test_browser_shared_entry_and_late_results(setup,tmp_path):
                 page.locator('#visitBackHome').click();expect(page.locator('#captureText')).to_have_value('Πρόχειρη καταγραφή που πρέπει να διατηρηθεί')
                 page.locator('#captureComposer').get_by_role('button',name='Κλείσιμο',exact=True).click();page.locator('#visitBackHome').click()
                 # Provider booking boundary only is a fixture. Manual registry is real protected HTTP/DB.
-                page.evaluate("""()=>{const p=document.getElementById('nextAppointmentPatient');p.textContent='Συνθετικός Είσοδος';p.dataset.appointmentId='patient-entry-fixture';document.getElementById('visitSidebarNext').disabled=false;document.getElementById('nextAppointmentTime').textContent='19/10/2026 · 09:40';}""")
                 reads=[];page.on('request',lambda r:reads.append(r.url) if '/clinical/patient/' in r.url and r.url.endswith('/chart') else None)
                 page.route('**/clinical/calendar/visit-brief/chart-read',lambda route:route.fulfill(status=503,json={'detail':'Fresh appointment source unavailable'}))
-                page.locator('#visitSidebarNext').click();expect(page.locator('#visitBriefIdentity')).to_contain_text('Δεν ανανεώθηκε το ραντεβού',timeout=10000)
+                page.locator('#homeAgendaRows .hg-row').filter(has_text='Συνθετικός Είσοδος').first.click();expect(page.locator('#visitBriefIdentity')).to_contain_text('Δεν ανανεώθηκε το ραντεβού',timeout=10000)
                 expect(page.locator('#visitBriefName')).to_have_text('Συνθετικός Είσοδος')
                 expect(page.locator('#visitBriefClinical')).not_to_be_visible()
                 expect(page.locator('#visitBriefChoosePatient')).not_to_be_visible()

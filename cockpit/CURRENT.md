@@ -1,3 +1,5 @@
+> **2026-11-18 DAY HOME AGENDA — INHERITED TEST ROUTING FIXED / FINAL CI:** Both failing patient-entry and chart-link real-browser tests now use the actual visible agenda and passed locally (2/2, desktop/mobile). Product runtime remains independent-R2-reviewed `cffa674`; PR #305 fresh exact-head CI and release next. Writer `codex/cockpit-home-agenda-20261118`; no production/patient/provider writes.
+
 > **2026-11-18 DAY HOME AGENDA — FINAL CI TEST ROUTING CORRECTION:** PR #305 `1e341b4` passed Home and Visit Brief workflows, but Visit Capture inherited two tests clicking the intentionally hidden old context strip. Route their existing synthetic bookings through the current agenda UI and preserve the same patient/booking assertions; no runtime change. Writer `codex/cockpit-home-agenda-20261118`; fresh final-head CI required.
 
 > **2026-11-18 DAY HOME AGENDA — TOMORROW R2 CLOSED / FINAL CI:** Candidate `cffa674a05512b41988419c15dfd6b4415972145` independent affected exact-code R2 PASS0:0:0. PR #305; writer `codex/cockpit-home-agenda-20261118`. Fresh final-head CI and authorized release next. No production/patient/provider write.
