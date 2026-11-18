@@ -1,3 +1,5 @@
+> **2026-11-18 DAY HOME AGENDA + ATTENTION — R2 CLOSED / PR NEXT:** Corrected candidate `c2db17f2caca36f32796ad0b55619fd7aa48ae30` independent affected closure PASS0:0:0; [receipt](cockpit/reviews/HOME_AGENDA_ATTENTION_POSTCODE_R2_CLOSED_2026-11-18.md). Writer `codex/cockpit-home-agenda-20261118`; final-head CI and release next. No patient/provider write; not deployed.
+
 > **2026-11-18 DAY HOME AGENDA + ATTENTION — R2 FINDINGS CORRECTED / CLOSURE NEXT:** Three material findings addressed; [targeted synthetic/browser evidence](cockpit/reviews/HOME_AGENDA_ATTENTION_CORRECTION_2026-11-18.md) PASS. Writer `codex/cockpit-home-agenda-20261118`; one independent affected closure next. No patient/provider write; not deployed.
 
 > **2026-11-18 DAY HOME AGENDA + ATTENTION — R2 BLOCK / CORRECTION:** Exact candidate `b6d6735` independent R2 BLOCK0:0:3: independent tomorrow sources, async focus and expansion visibility. [Receipt](cockpit/reviews/HOME_AGENDA_ATTENTION_POSTCODE_R2_BLOCK_2026-11-18.md). Writer `codex/cockpit-home-agenda-20261118` owns bounded corrections and affected closure. No release or patient/provider writes.
