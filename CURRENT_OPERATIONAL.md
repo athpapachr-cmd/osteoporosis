@@ -1,3 +1,5 @@
+> **2026-11-18 COMPACT DAY HOME — EXACT SOURCE LIVE / SMOKE NEXT:** Native Render `dep-dbultp0u01pc73f5c700` LIVE at `baf4de29f9aa933484601b4b4e49070f08e316f9` following PR #303 and 14/14 CI. Next no-PHI asset/auth/log smoke; live alone does not establish user acceptance. Writer `codex/cockpit-home-compact-release-20261118`.
+
 > **2026-11-18 COMPACT DAY HOME — MERGED / AUTO DEPLOY BUILDING:** PR #303 passed 14/14 final workflows and independent R2, merged `baf4de29f9aa933484601b4b4e49070f08e316f9`. Native Render `dep-dbultp0u01pc73f5c700` is building exact source; no duplicate deploy. Next terminal live and no-PHI smoke. Writer `codex/cockpit-home-compact-release-20261118`; no patient/provider writes.
 
 > **2026-11-18 COMPACT DAY HOME — PR #303 / FINAL CI:** [PR #303](https://github.com/athpapachr-cmd/osteoporosis/pull/303) contains the independently reviewed compact panel. R2 closure PASS0:0:0; exact-head CI and authorized release next. No patient/provider write; NOT DEPLOYED. Writer `codex/cockpit-home-compact-20261118`.
