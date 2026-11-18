@@ -1,3 +1,5 @@
+> **2026-11-18 DAY HOME AGENDA — TOMORROW R2 CLOSED / FINAL CI:** Candidate `cffa674a05512b41988419c15dfd6b4415972145` independent affected exact-code R2 PASS0:0:0. PR #305; writer `codex/cockpit-home-agenda-20261118`. Fresh final-head CI and authorized release next. No production/patient/provider write.
+
 > **2026-11-18 DAY HOME AGENDA — ANYTIME TOMORROW IMPLEMENTED / R2 NEXT:** Protected source toggle and bounded CI fixture corrections implemented; [synthetic/browser evidence](reviews/HOME_AGENDA_TOMORROW_IMPLEMENTATION_2026-11-18.md) PASS. Writer `codex/cockpit-home-agenda-20261118`, PR #305. One affected exact-code R2 then fresh final-head CI. No production/patient/provider writes.
 
 > **2026-11-18 DAY HOME AGENDA — TOMORROW PRE-CODE R2 PASS / IMPLEMENTATION NEXT:** Anytime «Αύριο» through existing protected calendar source, corrected design blob `bc140a7df18d2cdba2d13a5a6fb7221025afa24b`, independently PASS0:0:0. Bounded CI fixture corrections also next. Writer `codex/cockpit-home-agenda-20261118`, PR #305. No production/patient/provider writes.
