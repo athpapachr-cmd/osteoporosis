@@ -1,0 +1,3 @@
+# Day Home agenda: initial final-head CI
+
+PR #305 head `ac9ad4dbdb2db37270aa425d2ba888517502d7bf` has two unrelated failures: an inherited iCloud synthetic check hard-codes the old cache-busting version, and the deliberately static #161 synthetic demo clicks its previous/current/next fixture which the production Home now hides. Preserve the fixture's previous/current/next strip only on the dedicated synthetic #161 page and update the version assertion, then rerun the affected tests and fresh exact-head CI. The runtime remains subject to the subsequent Product Owner request for explicit tomorrow access and its affected R2 gates.
