@@ -70,11 +70,17 @@
   function surgicalAttentionSummary(rows) {
     const today = surgeryToday();
     const dates = new Map();
+    const attention = [];
+    const horizon = new Date(today + "T12:00:00Z");
+    horizon.setUTCDate(horizon.getUTCDate() + 7);
+    const end = horizon.toISOString().slice(0, 10);
     let undated = 0, invalid = 0, overdue = 0;
     for (const row of rows) {
       const date = row.surgery_date;
       if (date === null || date === undefined || date === "") { undated++; continue; }
       if (!validSurgeryDate(date)) { invalid++; continue; }
+      if (date <= end) attention.push({date, name: row.full_name,
+        procedure: row.procedure_type, time: typeof row.room_entry_time === "string" ? row.room_entry_time : ""});
       if (date < today) { overdue++; continue; } // Pending remains pending, never "performed".
       if (!dates.has(date)) dates.set(date, []);
       dates.get(date).push(row);
@@ -88,7 +94,8 @@
       }
       return group; // 2+ rows disclose a count, never identities.
     });
-    return { total: rows.length, undated, invalid, overdue, upcoming };
+    attention.sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+    return { total: rows.length, undated, invalid, overdue, upcoming, attention };
   }
 
   function formatToday(now) {
@@ -363,7 +370,7 @@
     for (const control of $("surgeryForm").elements) control.disabled = !enabled;
   }
 
-  function clearSurgeryProjection(message, needsKey = false) {
+  function clearSurgeryProjection(message, needsKey = false, preserveEditor = false) {
     surgeryReady = false;
     surgeryRows = [];
     window.CockpitSurgerySummary = null;
@@ -377,15 +384,17 @@
     $("surgeryQueueNote").textContent = needsKey
       ? "Πάτησε «Πρόσβαση» πάνω δεξιά για σύνδεση με το Clinical Key."
       : "Η προστατευμένη λίστα χειρουργείων δεν είναι διαθέσιμη αυτή τη στιγμή.";
-    resetSurgeryForm();
-    $("surgeryEditorDetails").open = false;
+    if (!preserveEditor) {
+      resetSurgeryForm();
+      $("surgeryEditorDetails").open = false;
+    }
   }
 
-  async function loadSurgeryQueue() {
+  async function loadSurgeryQueue({preserveEditor = false} = {}) {
     const generation = ++surgeryGeneration;
     // Invalidate immediately, including Clinical Key re-auth and post-write
     // reloads. An older success or failure can never restore/clear a newer view.
-    clearSurgeryProjection("Φόρτωση…");
+    clearSurgeryProjection("Φόρτωση…", false, preserveEditor);
     try {
       const rows = await apiJson("/clinical/surgeries", {}, () => generation === surgeryGeneration);
       if (generation !== surgeryGeneration) return;
@@ -402,7 +411,7 @@
     } catch (error) {
       if (generation !== surgeryGeneration) return;
       const needsKey = error.status === 401 || error.status === 403;
-      clearSurgeryProjection(needsKey ? "Σύνδεση απαιτείται" : "Μη διαθέσιμο", needsKey);
+      clearSurgeryProjection(needsKey ? "Σύνδεση απαιτείται" : "Μη διαθέσιμο", needsKey, preserveEditor);
     }
   }
 
@@ -622,6 +631,7 @@
   });
   resetSurgeryForm();
   window.CockpitSurgeryQueue = {
+    refreshAttention() { void loadSurgeryQueue({preserveEditor: true}); },
     prefillFromRF(card) {
       if (!surgeryReady || !card || !card.id || !Number.isInteger(card.revision) ||
           !["approved", "scheduled"].includes(card.stage) || card.surgery_id ||

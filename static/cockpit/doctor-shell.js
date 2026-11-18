@@ -1049,6 +1049,7 @@
     if(!window.CockpitIcloudInbox)return;
     if(typeof window.CockpitStoredChart?.canLeave==="function" &&
        !window.CockpitStoredChart.canLeave())return;
+    window.CockpitOfficeCases?.cancelRFOpen?.();
     close();window.CockpitObligations?.close();
     window.CockpitClinicalInbox?.close();
     $("doctorClinicalInboxView").hidden=true;
@@ -1095,6 +1096,7 @@
     }
     if(typeof window.CockpitStoredChart?.canLeave==="function" &&
        !window.CockpitStoredChart.canLeave())return;
+    window.CockpitOfficeCases?.cancelRFOpen?.();
     close();window.CockpitObligations?.close();
     window.CockpitIcloudInbox?.close();
     $("doctorIcloudInboxView").hidden=true;
@@ -1109,6 +1111,7 @@
     // existing guard and its patient-visible reason, never silently hide it.
     if (typeof window.CockpitStoredChart?.canLeave==="function"
         && !window.CockpitStoredChart.canLeave()) return;
+    window.CockpitOfficeCases?.cancelRFOpen?.();
     close();
     window.CockpitClinicalInbox?.close();
     $("doctorClinicalInboxView").hidden=true;
@@ -1129,7 +1132,8 @@
     },pendingId);
     $("doctorObligationsSearch").focus();
   }
-  function showLibrary(category="cases") {
+  function showLibrary(category="cases", skipCaseOpen = false) {
+    if (category !== "cases") window.CockpitOfficeCases?.cancelRFOpen?.();
     close();
     window.CockpitClinicalInbox?.close();
     $("doctorClinicalInboxView").hidden=true;
@@ -1145,7 +1149,7 @@
       const selected=b.dataset.doctorLibraryTab===category;
       b.classList.toggle("selected",selected);b.setAttribute("aria-pressed",String(selected));
     });
-    if(category === "cases") window.CockpitOfficeCases?.open?.();
+    if(category === "cases" && !skipCaseOpen) window.CockpitOfficeCases?.open?.();
     if(window.location?.origin && window.location.origin!=="null" &&
        window.location.pathname?.startsWith("/static/cockpit/")){
       if(category==="cases" && window.location.hash!=="#office-cases")
@@ -1156,7 +1160,8 @@
     announceViewChanged();
     $("doctorBackHome").focus();
   }
-  function showHome() {
+  function showHome(refreshAttention = true) {
+    window.CockpitOfficeCases?.cancelRFOpen?.();
     close();
     window.CockpitClinicalInbox?.close();
     $("doctorClinicalInboxView").hidden=true;
@@ -1166,6 +1171,7 @@
     $("doctorObligationsView").hidden=true;
     $("doctorLibraryView").hidden=true;
     $("doctorMainView").hidden=false;
+    if (refreshAttention !== false) window.CockpitHomeAttention?.refresh();
     if(window.location?.hash==="#icloud-mail" || window.location?.hash==="#office-cases"){
       if(window.location.origin!=="null" &&
          window.location.pathname?.startsWith("/static/cockpit/"))
@@ -1242,6 +1248,7 @@
     if (officeOverview) officeOverview.textContent = s
       ? "Χειρουργεία · " + s.total + " εκκρεμή. " + surgeryAttentionLines(s).replace(/\n/g, " · ")
       : "Χειρουργεία · Η σύνοψη δεν είναι διαθέσιμη.";
+    if (window.CockpitHomeAttention) { window.CockpitHomeAttention.draw(); return; }
     target.append(action(
       s ? "Χειρουργεία · " + s.total + " εκκρεμή" : "Χειρουργεία · Μη διαθέσιμα",
       s ? surgeryAttentionLines(s) : "Άνοιγμα προστατευμένης λίστας",
@@ -1272,7 +1279,7 @@
   $("doctorClinicalInboxBack").addEventListener("click",showHome);
   $("doctorIcloudInboxBack").addEventListener("click",showHome);
   window.addEventListener("cockpit:clinical-updates-changed",()=>{if(state.panel==="inbox")inbox();else if(state.panel==="tasks")tasks();});
-  window.addEventListener("clinical:unauthenticated",()=>{showHome();});
+  window.addEventListener("clinical:unauthenticated",()=>{showHome(false);});
   buttons.tasks.addEventListener("click",()=>openPanel("tasks",buttons.tasks));
   buttons.notion.addEventListener("click",()=>openPanel("notion",buttons.notion));
   $("doctorObligationsBack").addEventListener("click",showHome);
@@ -1383,6 +1390,8 @@
     maybeRefreshUnread(true);
   });
   window.addEventListener("clinical:unauthenticated",()=>{
+    ++rfGeneration;
+    state.rf = null;
     ++homeAgendaGeneration;
     if ($("homeAgendaFreshness")) $("homeAgendaFreshness").textContent = "";
     $("homeAgendaRows")?.replaceChildren(text("Απαιτείται σύνδεση για το πρόγραμμα."));
@@ -1416,5 +1425,14 @@
   window.addEventListener("hashchange",openOfficeCasesRoute);
   openIcloudRoute();
   openOfficeCasesRoute();
+  window.CockpitHomeAttentionNavigation = {
+    cases(tab, id) {
+      showLibrary("cases", true);
+      if (tab === "rf" && id) window.CockpitOfficeCases?.openRF?.(id);
+      else window.CockpitOfficeCases?.selectTab?.(tab);
+    },
+    obligations(id) { showObligations(id); },
+    calls() { openPanel("calls", buttons.calls); }
+  };
   loadRfAttention();
 })();

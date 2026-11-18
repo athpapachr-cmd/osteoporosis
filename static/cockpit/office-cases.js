@@ -8,7 +8,7 @@
     rejected:"Απορρίφθηκε", scheduled:"Προγραμματίστηκε", performed:"Πραγματοποιήθηκε"};
   let activeTab = "surgery", generation = 0, detailGeneration = 0,
     caseRows = [], caseOffset = 0, selectedCase = null;
-  let rfRows = [], rfCursor = "", rfTransferGeneration = 0,
+  let rfRows = [], rfCursor = "", rfTransferGeneration = 0, rfHomeGeneration = 0,
     pendingPaymentId = "", pendingPaymentCaseId = "";
   let needsPaymentReconciliation = false;
 
@@ -73,6 +73,7 @@
     ++generation;
     ++detailGeneration;
     ++rfTransferGeneration;
+    ++rfHomeGeneration;
     caseRows = []; caseOffset = 0; selectedCase = null; rfRows = []; rfCursor = "";
     pendingPaymentId = ""; pendingPaymentCaseId = "";
     resetAccidentForm();
@@ -88,7 +89,7 @@
       ? "Η προηγούμενη πληρωμή ίσως καταχωρίστηκε. Μετά τη σύνδεση, άνοιξε το περιστατικό και έλεγξε το ιστορικό πριν από νέα καταχώριση."
       : "");
   }
-  function selectTab(tab, conflict=false) {
+  function selectTab(tab, conflict=false, skipLoad=false) {
     if (!["surgery","accidents","rf"].includes(tab)) return;
     if (tab !== activeTab) { ++generation; ++detailGeneration; }
     activeTab = tab;
@@ -100,6 +101,7 @@
     document.querySelectorAll("[data-office-tab-panel]").forEach(item => {
       item.hidden = item.dataset.officeTabPanel !== tab;
     });
+    if (skipLoad) return;
     if (tab === "accidents") return loadAccidents();
     if (tab === "rf") return loadRF(true, conflict);
   }
@@ -348,6 +350,28 @@
   });
   window.addEventListener("clinical:unauthenticated", clear);
   window.CockpitOfficeCases = {open, selectTab,
+    cancelRFOpen() { ++rfHomeGeneration; },
+    async openRF(applicationId) {
+      if (typeof applicationId !== "string" || !applicationId) return;
+      $("officeRfQuery").value = ""; $("officeRfStage").value = "";
+      selectTab("rf", false, true);
+      const token = ++generation, homeToken = ++rfHomeGeneration;
+      rfRows = []; rfCursor = ""; $("officeRfList").replaceChildren(); $("officeRfNext").hidden = true;
+      show("officeRfState", "Φόρτωση επιλεγμένης RF…");
+      try {
+        const card = await api("/clinical/office-cases/rf/" + encodeURIComponent(applicationId));
+        if (token !== generation || homeToken !== rfHomeGeneration || activeTab !== "rf") return;
+        if (!card || card.id !== applicationId || typeof card.patient_name !== "string") throw new Error("Η επιλεγμένη RF δεν επιβεβαιώθηκε.");
+        rfRows = [card];
+        drawRF();
+        show("officeRfState", "Επιλεγμένη RF");
+        show("officeRfNote", "Εμφανίζεται η επιλεγμένη RF με τα τρέχοντα στοιχεία της.");
+      } catch (error) {
+        if (token === generation && homeToken === rfHomeGeneration && activeTab === "rf") {
+          show("officeRfState", "Μη διαθέσιμο"); show("officeRfNote", errorText(error));
+        }
+      }
+    },
     refreshRF() { if (activeTab === "rf") loadRF(true); },
     async showRFConflict(applicationId) {
       const refresh = selectTab("rf", true);

@@ -1,0 +1,3 @@
+# Day Home attention — independent final closure
+
+Corrected substantive target `a23930b4a03f82c757fca0217bd02cb35894ff40`: PASS / COMPLETE_FOR_DECLARED_SCOPE=YES / ALL_MATERIAL_FINDINGS_CLOSED=YES / P0:P1:P2=0:0:0. The independent reviewer confirmed the active Home refresh supersedes an older in-flight surgery GET, old success/failure cannot replace the latest generation, drafts and auth/logout fencing remain intact, and auth/bootstrap avoid duplicating the existing owner's initial read. The targeted regression executes the held-old/new-source/late-old sequence. Prior original and affected findings are closed. Runtime/tests are frozen; next PR final-head CI and guarded release, not another product review.

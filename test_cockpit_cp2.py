@@ -715,6 +715,11 @@ def test_patient_task_groups_and_incoming_sources_remain_separate(setup,tmp_path
                 page.locator('#ceGlobalKey').click();page.locator('#ceGlobalKeyInput').fill(KEY)
                 page.locator('#ceGlobalLoginForm button[type=submit]').click();expect(page.locator('#ceGlobalAuthStatus')).to_contain_text('Συνδέθηκες');page.keyboard.press('Escape')
                 expect(page.locator('#visitRecentRows .clinical-patient-row')).to_have_count(2)
+                # Day Home now independently loads its own obligation projection.
+                # Isolate the inbox click, which must not load patient tasks itself.
+                home_tasks=page.locator('#doctorAttentionList section').filter(has=page.get_by_role('heading',name='Υποχρεώσεις ασθενών'))
+                expect(home_tasks).not_to_contain_text('Φόρτωση…')
+                reads.clear()
                 page.locator('#doctorInboxButton').click();expect(page.locator('#doctorPopoverTitle')).to_have_text('Κλινικά εισερχόμενα')
                 # This fixture omits preference/source adapters: stop at the first unqualified gate.
                 expect(page.locator('#doctorPopoverContent')).to_contain_text('Οι κατηγορίες δεν επιβεβαιώθηκαν')

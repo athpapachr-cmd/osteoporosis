@@ -76,6 +76,7 @@ function deferred() {
 }
 const ok = value => ({ok: true, status: 200, json: async () => value});
 const denied = status => ({ok: false, status, json: async () => ({detail: "Unauthorized"})});
+let statusResponse = denied(401);
 const surgeryResponses = [], rfResponses = [], writeResponses = [];
 const CONTEXT = {
   generated_at: "2026-10-14T20:00:00Z", source_updated_at: null,
@@ -83,6 +84,7 @@ const CONTEXT = {
 };
 async function fakeFetch(url, options = {}) {
   calls.push({url, method: options.method || "GET", options});
+  if (url === "/clinical/status") return statusResponse;
   if (url === "/clinical/calendar/cockpit-context") return ok(CONTEXT);
   if (url === "/clinical/surgeries") {
     assert.ok(surgeryResponses.length, "missing synthetic surgery response");
@@ -101,9 +103,10 @@ async function fakeFetch(url, options = {}) {
   }
   throw Error("Unexpected endpoint " + url);
 }
+let currentTime = "2026-10-14T22:30:00Z";
 class CyprusClock extends Date {
-  constructor(...args) { super(...(args.length ? args : ["2026-10-14T22:30:00Z"])); }
-  static now() { return Date.parse("2026-10-14T22:30:00Z"); }
+  constructor(...args) { super(...(args.length ? args : [currentTime])); }
+  static now() { return Date.parse(currentTime); }
 }
 function surgery(id, name, date, procedure = "Δοκιμαστική επέμβαση") {
   return {
@@ -268,5 +271,43 @@ async function refresh(surgeryResponse, rfResponse) {
   assert.ok(calls.filter(c => c.method === "POST" && c.url.includes("/rf/"))
     .every(c => c.url === "/clinical/clinic-utilities/rf/api/outcomes/search"));
   assert.ok(calls.every(c => !c.url.includes("patient_id") && !c.url.includes("identity_number")));
+  // Reproject the actual protected owner at a Cyprus date boundary, without a second read.
+  surgeryResponses.length = 0; rfResponses.length = 0;
+  const future = surgery("s7", "Συνθετικός ορίζοντας", "2026-10-23");
+  await refresh(ok([future]), ok(rf));
+  assert.equal(win.CockpitSurgerySummary.attention.length, 0);
+  $("surgeryFullName").value = "Συνθετικό μη αποθηκευμένο πρόχειρο";
+  $("surgeryEditorDetails").open = true;
+  currentTime = "2026-10-15T22:30:00Z";
+  surgeryResponses.push(ok([future]));
+  win.CockpitSurgeryQueue.refreshAttention();
+  await settle();
+  assert.equal(win.CockpitSurgerySummary.attention[0].name, "Συνθετικός ορίζοντας");
+  assert.equal($("surgeryFullName").value, "Συνθετικό μη αποθηκευμένο πρόχειρο");
+  assert.equal($("surgeryEditorDetails").open, true);
+  // A changed source from another client replaces the cached summary on Home refresh.
+  surgeryResponses.push(ok([surgery("s8", "Νεότερο χειρουργείο", "2026-10-16")]));
+  win.CockpitSurgeryQueue.refreshAttention(); await settle();
+  assert.equal(win.CockpitSurgerySummary.attention[0].name, "Νεότερο χειρουργείο");
+  assert.equal($("surgeryFullName").value, "Συνθετικό μη αποθηκευμένο πρόχειρο");
+  // Home refresh supersedes an in-flight older read after another client changed the source.
+  const inFlight = deferred(); surgeryResponses.push(inFlight.promise);
+  win.CockpitSurgeryQueue.refreshAttention(); await tick();
+  surgeryResponses.push(ok([surgery("s9", "Τρέχουσα αλλαγή", "2026-10-16")]));
+  win.CockpitSurgeryQueue.refreshAttention(); await settle();
+  assert.equal(win.CockpitSurgerySummary.attention[0].name, "Τρέχουσα αλλαγή");
+  inFlight.resolve(ok([future])); await settle();
+  assert.equal(win.CockpitSurgerySummary.attention[0].name, "Τρέχουσα αλλαγή");
+  assert.equal($("surgeryFullName").value, "Συνθετικό μη αποθηκευμένο πρόχειρο");
+  // A failed Home status bootstrap broadcasts revocation to the actual surgery owner.
+  const oldSurgery = deferred();
+  surgeryResponses.push(oldSurgery.promise); rfResponses.push(ok(rf)); notifyAuth();
+  statusResponse = denied(403);
+  env.Event = win.CustomEvent;
+  vm.runInNewContext(fs.readFileSync("static/cockpit/home-attention.js", "utf8"), env);
+  await settle();
+  oldSurgery.resolve(ok([rows[0]])); await settle();
+  assert.equal(win.CockpitSurgerySummary, null, "status denial must fence the real surgery producer");
+  assert.doesNotMatch(content($("surgeryTableBody")), /Συνθετικός/);
   console.log("PASS Cockpit Attention: surgery singleton/privacy, Cyprus dates, races, RF semantics/truncation, post-write guard");
 })().catch(error => {console.error(error);process.exitCode = 1;});

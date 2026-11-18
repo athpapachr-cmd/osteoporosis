@@ -27,6 +27,7 @@ JS = [(ROOT / part).read_text(encoding="utf-8") for part in (
     "static/cockpit/obligations-view.js",
     "static/cockpit/icloud-inbox.js",
     "static/cockpit/doctor-shell.js",
+    "static/cockpit/home-attention.js",
     "static/cockpit/shared-nav.js",
 )]
 RECENT = [
@@ -966,7 +967,7 @@ def browser_suite(width, screenshot_name):
             "linked": False, "confirmations": 0}
     call_source = {"status": 200, "handled": False, "write_status": 200}
     notion_source = {"writes": 0}
-    rf_bridge = {"linked": False, "exact_reads": 0}
+    rf_bridge = {"linked": False, "exact_reads": 0, "home_exact_reads": 0}
     with sync_playwright() as pw:
         executable = shutil.which("google-chrome") or shutil.which("chromium")
         browser = pw.chromium.launch(headless=True, executable_path=executable or None, args=["--no-sandbox"])
@@ -988,6 +989,12 @@ def browser_suite(width, screenshot_name):
                 return route.fulfill(status=code,
                     json=source if code == 200 else {"detail": "Unavailable"})
             if "/clinical/office-cases/rf?" in url:
+                if "stage=approved" in url:
+                    return route.fulfill(status=200 if auth["authenticated"] else 401,
+                        json={"applications":[{"id":"synthetic-approved", "stage":"approved",
+                            "patient_name":"RF Συνθετική", "surgery_id":None}],
+                            "next_cursor":None, "has_more":False, "snapshot_consistent":False}
+                        if auth["authenticated"] else {"detail":"Unauthorized"})
                 return route.fulfill(status=200 if auth["authenticated"] else 401,
                     json={"applications": [{"id":"synthetic-rf-office-01", "revision":2,
                         "stage":"scheduled", "patient_name":"RF Συνθετικός",
@@ -1017,6 +1024,11 @@ def browser_suite(width, screenshot_name):
                             "surgery_date":"2026-11-01", "room_entry_time":"09:30",
                             "status":"deleted"}})
                 return route.fulfill(status=200, json=current)
+            if url.endswith("/clinical/office-cases/rf/synthetic-approved"):
+                rf_bridge["home_exact_reads"] += 1
+                return route.fulfill(status=200, json={"id":"synthetic-approved", "revision":1,
+                    "stage":"approved", "patient_name":"RF Συνθετική", "identity_number":"SYN",
+                    "indication_code":"SYN", "laterality":"left", "surgery_id":None})
             if "/clinical/office-cases/surgeries/from-rf/" in url:
                 rf_bridge["linked"] = True
                 return route.fulfill(status=409, json={"detail":"RF already linked to surgery"})
@@ -1261,11 +1273,49 @@ def browser_suite(width, screenshot_name):
         exercise_day_navigation(page,width)
         exercise_obligations(page,width)
         exercise_notion_tasks(page,width,notion_source)
+        attention = page.locator("#doctorAttentionList")
+        expect(attention).to_contain_text("RF Συνθετική")
+        attention.get_by_role("button", name="Απόκρυψη ονομάτων εδώ").click()
+        expect(attention).not_to_contain_text("RF Συνθετική")
+        expect(attention).not_to_contain_text("Εργαστηριακές εξετάσεις")
+        attention.get_by_role("button", name="Εμφάνιση ονομάτων εδώ").click()
+        page.evaluate("""() => { document.getElementById('officeRfQuery').value = 'παλιό φίλτρο';
+          document.getElementById('officeRfStage').value = 'performed'; }""")
+        attention.get_by_role("button", name="Εγκεκριμένη RF · RF Συνθετική").click()
+        expect(page.locator("#doctorLibraryView")).to_be_visible()
+        expect(page.locator("#officeRfList")).to_contain_text("RF Συνθετική")
+        assert page.locator("#officeRfQuery").input_value() == ""
+        assert rf_bridge["home_exact_reads"] == 1
+        page.locator("#doctorBackHome").click()
+        expect(attention).to_contain_text("RF Συνθετική")
+        if width == 1280:
+            page.evaluate("""() => { const original = window.fetch.bind(window); window.__homeOriginalFetch = original;
+              window.fetch = (url, options) => String(url).endsWith('/clinical/office-cases/rf/synthetic-approved')
+                ? new Promise(resolve => { window.__releaseOldRF = () => resolve(new Response(JSON.stringify({
+                    id:'synthetic-approved', patient_name:'RF STALE SYNTHETIC', stage:'approved',
+                    identity_number:'SYN', indication_code:'SYN', laterality:'left', surgery_id:null
+                  }), {status:200, headers:{'Content-Type':'application/json'}})); })
+                : original(url, options); }""")
+            attention.get_by_role("button", name="Εγκεκριμένη RF · RF Συνθετική").click()
+            page.wait_for_function("typeof window.__releaseOldRF === 'function'")
+            page.locator("#doctorBackHome").click()
+            page.evaluate("""async () => { window.__releaseOldRF();
+              await new Promise(r => setTimeout(r, 0)); }""")
+            expect(page.locator("#officeRfList")).not_to_contain_text("RF STALE SYNTHETIC")
+            expect(attention).to_contain_text("RF Συνθετική")
+            page.evaluate("delete window.__releaseOldRF")
+            attention.get_by_role("button", name="Εγκεκριμένη RF · RF Συνθετική").click()
+            page.wait_for_function("typeof window.__releaseOldRF === 'function'")
+            page.evaluate("""async () => { window.dispatchEvent(new Event('clinical:unauthenticated'));
+              window.__releaseOldRF(); await new Promise(r => setTimeout(r, 0)); }""")
+            expect(page.locator("#officeRfList")).not_to_contain_text("RF STALE SYNTHETIC")
+            page.evaluate("""() => { window.fetch = window.__homeOriginalFetch;
+              window.dispatchEvent(new Event('clinical:authenticated')); }""")
+            expect(attention).to_contain_text("RF Συνθετική")
         if width <= 620:
-            expect(page.locator("#doctorAttentionList .doctor-action-row")).to_have_count(4)
             expect(page.locator("#doctorAttentionList")).to_contain_text("Συνθετικός Ασθενής Β")
-            expect(page.locator("#doctorAttentionList")).to_contain_text("Εκδοθείσες αιτήσεις")
-            expect(page.locator("#doctorAttentionList")).to_contain_text("Δεν υπάρχει ακόμη αξιόπιστη καταμέτρηση")
+            expect(page.locator("#doctorAttentionList")).to_contain_text("RF Συνθετική")
+            expect(page.locator("#doctorAttentionList")).to_contain_text("Εκθέσεις · Τροχαία")
             assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1")
             # Actual Chromium: hidden registry and Dia details are removed on auth loss.
             exercise_icloud_mail_peek(page, width)
@@ -1302,9 +1352,8 @@ def browser_suite(width, screenshot_name):
             expect(page.locator("#visitRecentRows")).to_be_hidden()
         assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1"), "calendar swap horizontal overflow"
 
-        expect(page.locator("#doctorAttentionList .doctor-action-row")).to_have_count(4)
         expect(page.locator("#doctorAttentionList")).to_contain_text("Συνθετικός Ασθενής Β")
-        expect(page.locator("#doctorAttentionList")).to_contain_text("Αναμένουν απόφαση")
+        expect(page.locator("#doctorAttentionList")).to_contain_text("RF Συνθετική")
         expect(page.locator("#doctorAttentionList")).not_to_contain_text("Υποβλήθηκαν")
         expect(page.locator("#doctorTasksBadge")).to_be_hidden()  # surgery count is not the patient obligation badge
         page.screenshot(path=str(OUT / screenshot_name), full_page=True)
