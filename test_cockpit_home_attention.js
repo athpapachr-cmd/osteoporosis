@@ -68,7 +68,7 @@ async function run() {
   let output = text(target);
   assert.match(output, /Συνθετικός νέος/); assert.match(output, /Περασμένη ημερομηνία/);
   assert.match(text(buttons(target).find(b => text(b).includes("Συνθετικός νέος"))), /Συνθετικός νέος/);
-  assert.match(output, /Να γίνουν · 4 από 8 στην προβολή/);
+  assert.match(output, /Να γίνουν · 4 από 8/);
   const expander = buttons(target).find(b => text(b).includes("Δες όλα τα 8"));
   expander.focus(); expander.click();
   assert.notEqual(document.activeElement, expander);
@@ -151,6 +151,30 @@ async function run() {
   emit("cockpit:surgery-counts", {attention:[],total:1,undated:0,invalid:0});
   assert.match(text(target), /1 χειρουργείο μετά το επταήμερο/);
   buttons(target).find(b => text(b).includes("μετά το επταήμερο")).click(); assert.equal(actions.pop(), "surgery");
+  // Mixed-age obligations of one confirmed patient stay together in the main group.
+  fixtures.tasks.items = [
+    {patient_id:"mixed",patient_name:"Δοκιμή Μικτή",description:"Παλιό",pending_id:"mixed-old",status:"open",review_date:"2026-07-01"},
+    {patient_id:"mixed",patient_name:"Δοκιμή Μικτή",description:"Μελλοντικό",pending_id:"mixed-new",status:"open",review_date:"2026-11-20"},
+    {patient_id:"other",patient_name:"Άλλη Δοκιμή",description:"Παλιό μόνο",pending_id:"old-only",status:"open",review_date:"2026-07-02"}
+  ];
+  fixtures.reports.cases=[{patient_name:"Παλιά Έκθεση",writing_started_date:"2026-07-03",report_sent_date:null}];
+  fixtures.rf.applications=[{id:"rf-old",patient_name:"Παλιά RF",stage:"approved",surgery_id:null,decision_date:"2026-07-04"}];
+  emit("clinical:unauthenticated"); emit("clinical:authenticated"); await flush();
+  assert.match(text(target), /2 υποχρεώσεις · 1 εκπρόθεσμη/);
+  buttons(target).find(b=>text(b).includes("Δες όλα τα 4"))?.click();
+  // The compact threshold is >4: add one more report to enable filters.
+  fixtures.reports.cases.push({patient_name:"Νέα Έκθεση",writing_started_date:"2026-11-01",report_sent_date:null});
+  window.CockpitHomeAttention.refresh();await flush();
+  buttons(target).find(b=>text(b).includes("Δες όλα τα 5")).click();
+  assert.match(text(target), /Παλιότερη ημερομηνία/);
+  assert.match(text(target), /Μελλοντικό/, "mixed-age group remains in main list");
+  buttons(target).find(b=>text(b).includes("Μελλοντικό")).click();assert.equal(actions.pop(),"mixed-new");
+  assert.doesNotMatch(text(target), /Παλιό μόνο/, "entirely old group is collapsed");
+  buttons(target).find(b=>text(b).includes("Παλιότερη ημερομηνία")).click();
+  assert.match(text(target), /Παλιό μόνο/);
+  buttons(target).find(b=>text(b).includes("Υποχρεώσεις 2")).click();
+  assert.doesNotMatch(text(target), /Παλιά Έκθεση/);
+  assert.match(text(target), /3 ενεργές εγγραφές στην προβολή έως 100/);
   console.log("PASS Home attention: source truth, partial coverage, privacy, navigation, revocation, races and refresh");
 }
 run().catch(e => { console.error(e); process.exitCode = 1; });

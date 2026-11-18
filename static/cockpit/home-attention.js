@@ -15,7 +15,7 @@
   });
   const state = {authorized: false, epoch: 0, load: 0, hidden: false,
     surgeries: null, rf: null, reports: null, tasks: null, calls: null, updated: 0, day: null,
-    showAll: false, showAllSurgery: false};
+    showAll: false, showAllSurgery: false, filter: "all", showOld: false};
   const focusKeys = new WeakMap();
   let focusTargets = new Map();
   function trackFocus(element, key) {
@@ -36,7 +36,12 @@
   }
   const pretty = value => dateLabel.format(new Date(value + "T12:00:00Z"));
   const shortDate = value => shortDateLabel.format(new Date(value + "T12:00:00Z"));
-  const name = value => state.hidden ? "Απόκρυψη ονόματος" : value;
+  function tidy(value) {
+    const s = String(value || "");
+    return s && s === s.toLocaleUpperCase("el") && s !== s.toLocaleLowerCase("el")
+      ? s.toLocaleLowerCase("el").replace(/(^|[\s-])(\p{L})/gu, (_m,a,b) => a + b.toLocaleUpperCase("el")) : s;
+  }
+  const name = value => state.hidden ? "Απόκρυψη ονόματος" : tidy(value);
   const node = (tag, cls, value) => {
     const el = document.createElement(tag);
     if (cls) el.className = cls;
@@ -72,8 +77,9 @@
     outer.append(node("span", "ha-tag", "Υποχρέωση"));
     const body = node("span", "ha-txt");
     const overdue = group.items.filter(x => validDate(x.review_date) && x.review_date < now).length;
-    const status = overdue ? overdue + (overdue === 1 ? " εκπρόθεσμη" : " εκπρόθεσμες")
-      : group.items.length === 1 ? "ανοικτή" : group.items.length + " ανοικτές";
+    const count = group.items.length;
+    const status = count + (count === 1 ? " υποχρέωση" : " υποχρεώσεις") +
+      (overdue ? " · " + overdue + (overdue === 1 ? " εκπρόθεσμη" : " εκπρόθεσμες") : "");
     const label = name(group.name) + " · " + status;
     if (actionsAvailable) {
       const main = actionButton(label, "ha-task-name", () => nav().obligations?.(
@@ -116,6 +122,15 @@
       group.date = sourceDate(group.items[0].review_date);
     }
     return [...groups.values()];
+  }
+  function oldItem(item, now) {
+    if (item.kind === "task") return item.items.every(x => validDate(x.review_date) && dayValue(now) - dayValue(x.review_date) > 90);
+    return !!item.date && dayValue(now) - dayValue(item.date) > 90;
+  }
+  function age(date, now, label) {
+    if (!date) return "";
+    const days=dayValue(now)-dayValue(date);
+    return days < 0 ? label + " " + pretty(date) : label + " · " + days + " ημ.";
   }
   function draw() {
     const active = document.activeElement, previousFocus = active ? focusKeys.get(active) : null;
@@ -166,22 +181,46 @@
     items.sort((a,b) => (a.date || "9999-99-99").localeCompare(b.date || "9999-99-99"));
     const list = node("section", "ha-section");
     const selected = state.showAll ? items : items.slice(0, 4);
-    list.append(node("h3", "ha-label", "Να γίνουν · " + (items.length > 4 ? selected.length + " από " : "") + items.length + " στην προβολή"));
+    list.append(node("h3", "ha-label", "Να γίνουν · " + (items.length > 4 ? selected.length + " από " : "") + items.length));
     if (!items.length) list.append(node("p", "ha-note", "Δεν βρέθηκαν στοιχεία στην τρέχουσα προβολή."));
-    for (const item of selected) {
-      const x = item.value;
+    const kinds = [["all","Όλα"],["task","Υποχρεώσεις"],["report","Εκθέσεις"],["rf","RF"],["surgery","Χειρουργεία"]];
+    if (state.showAll) {
+      const filters=node("div","ha-filters");
+      for (const [kind,label] of kinds) {
+        const count=kind === "all" ? items.length : items.filter(x=>x.kind===kind).length;
+        if (kind !== "all" && !count) continue;
+        const b=actionButton(label + " " + count,"ha-filter",()=>{state.filter=kind;draw();},"filter:"+kind);
+        b.setAttribute("aria-pressed",String(state.filter===kind));filters.append(b);
+      }
+      list.append(filters);
+      if (state.tasks) list.append(node("p","ha-note","Υποχρεώσεις: " + state.tasks.items.length + " ενεργές εγγραφές στην προβολή έως 100 · οι αριθμοί φίλτρων είναι γραμμές."));
+    }
+    function addItem(item) {
+      const x=item.value;
       if (item.kind === "task") list.append(taskRow(item, now, state.tasks.actionsAvailable));
-      else if (item.kind === "rf") list.append(basicRow("RF", name(x.patient_name), "Χωρίς σύνδεση με χειρουργείο",
-        item.date ? "Εγκρίθηκε " + pretty(item.date) : "Εγκεκριμένη", () => nav().cases?.("rf", x.id),
-        {aria:"Εγκεκριμένη RF · " + name(x.patient_name), focusKey:"rf:" + x.id}));
-      else if (item.kind === "report") list.append(basicRow("Έκθεση", name(x.patient_name),
-        x.writing ? "Σε σύνταξη" : "Σταλμένη με υπόλοιπο", item.date ? (x.writing ? "Έναρξη " : "Αποστολή ") + pretty(item.date) : "", go("accidents")));
-      else list.append(basicRow("Χειρουργείο", name(x.name),
-        (state.hidden ? "" : x.procedure + (x.date < now ? " · " : "")) + (x.date < now ? "Περασμένη ημερομηνία" : ""),
-        pretty(x.date), go("surgery")));
+      else if (item.kind === "rf") {
+        const b=basicRow("RF",name(x.patient_name),"Χωρίς σύνδεση με χειρουργείο",age(item.date,now,"Έγκριση") || "Εγκεκριμένη",()=>nav().cases?.("rf",x.id),
+          {aria:"Εγκεκριμένη RF · " + name(x.patient_name),focusKey:"rf:"+x.id});
+        if(item.date && dayValue(now)-dayValue(item.date)>=30)b.className += " ha-aged";list.append(b);
+      } else if (item.kind === "report") {
+        const b=basicRow("Έκθεση",name(x.patient_name),x.writing?"Σε σύνταξη":"Σταλμένη με υπόλοιπο",age(item.date,now,x.writing?"Έναρξη":"Αποστολή"),go("accidents"));
+        if(item.date && dayValue(now)-dayValue(item.date)>=30)b.className += " ha-aged";list.append(b);
+      } else list.append(basicRow("Χειρουργείο",name(x.name),
+        (state.hidden ? "" : x.procedure + (x.date < now ? " · " : "")) + (x.date < now ? "Περασμένη ημερομηνία" : ""),pretty(x.date),go("surgery")));
+    }
+    if (!state.showAll) selected.forEach(addItem);
+    else {
+      const filtered=items.filter(x=>state.filter==="all" || x.kind===state.filter);
+      const recent=filtered.filter(x=>!oldItem(x,now)),old=filtered.filter(x=>oldItem(x,now));
+      recent.forEach(addItem);
+      if (old.length) {
+        const oldToggle=actionButton((state.showOld?"Απόκρυψη":"Παλιότερη ημερομηνία · πάνω από 90 ημέρες") + " ("+old.length+")","ha-ghost",()=>{state.showOld=!state.showOld;draw();},"old-items");
+        oldToggle.setAttribute("aria-expanded",String(state.showOld));list.append(oldToggle);
+        if(state.showOld)old.forEach(addItem);
+      }
     }
     if (items.length > 4) {
-      const more = actionButton(state.showAll ? "Δες λιγότερα" : "Δες όλα τα " + items.length, "ha-ghost", () => { state.showAll = !state.showAll; draw(); }, "more-items");
+      const more = actionButton(state.showAll ? "Δες λιγότερα" : "Δες όλα τα " + items.length, "ha-ghost", () => { state.showAll = !state.showAll; if(!state.showAll){state.filter="all";state.showOld=false;} draw(); }, "more-items");
       more.setAttribute("aria-expanded", String(state.showAll)); list.append(more);
     }
     root.append(list);
@@ -204,14 +243,16 @@
     const coverage = [];
     if (state.tasks) coverage.push("έως 100 πρόσφατες υποχρεώσεις");
     if (state.calls) coverage.push("έως 200 καταγεγραμμένες κλήσεις");
-    if (coverage.length) footer.append(node("p", "ha-note", "Κάλυψη: " + coverage.join(" και ") + "."));
+    if (coverage.length) {
+      const details=node("details","ha-coverage");details.append(node("summary","", "ⓘ Κάλυψη"),node("p","ha-note","Η προβολή περιλαμβάνει " + coverage.join(" και ") + "."));footer.append(details);
+    }
     root.append(footer);
     restoreFocus();
   }
   function revoke() {
     state.authorized = false; ++state.epoch; ++state.load;
     state.surgeries = state.rf = state.reports = state.tasks = state.calls = null;
-    state.updated = 0; state.day = null; state.showAll = state.showAllSurgery = false; draw();
+    state.updated = 0; state.day = null; state.showAll = state.showAllSurgery = state.showOld = false; state.filter = "all"; draw();
   }
   async function request(path, epoch, load) {
     const response = await fetch(url(path), {credentials: "same-origin", cache: "no-store", headers: {Accept: "application/json"}});

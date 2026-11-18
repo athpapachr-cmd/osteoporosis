@@ -76,6 +76,7 @@
     const root = $("homeAgendaRows");
     if (!root) return;
     const generation = ++homeAgendaGeneration;
+    window.CockpitHomeAgenda?.clear();
     const requestedDay = dayKey();
     if ($("homeAgendaFreshness")) $("homeAgendaFreshness").textContent = "";
     root.replaceChildren(text("Φόρτωση προγράμματος…"));
@@ -85,6 +86,8 @@
       const response = await fetch(clinicalURL("/clinical/calendar/agenda?" + q), {
         credentials:"same-origin", cache:"no-store", headers:{"Accept":"application/json"}
       });
+      if (generation !== homeAgendaGeneration) return;
+      if (response.status === 401 || response.status === 403) { window.dispatchEvent(new Event("clinical:unauthenticated")); return; }
       if (!response.ok) throw new Error("unavailable");
       const rows = await response.json();
       if (generation !== homeAgendaGeneration) return;
@@ -92,7 +95,8 @@
       if (!Array.isArray(rows)) throw new Error("invalid");
       root.replaceChildren();
       if ($("homeAgendaFreshness")) $("homeAgendaFreshness").textContent =
-        "Πρόγραμμα " + dateLabel.format(new Date()) + " · Ανάγνωση " + timeLabel.format(new Date());
+        "Έλεγχος " + timeLabel.format(new Date());
+      if (window.CockpitHomeAgenda) { window.CockpitHomeAgenda.render(rows, {day: requestedDay, reload: loadHomeAgenda}); return; }
       if (!rows.length) root.append(text("Δεν υπάρχουν ραντεβού στην διαθέσιμη προβολή της ημέρας."));
       rows.sort((a,b)=>String(a.start_at).localeCompare(String(b.start_at))).slice(0,6).forEach(row=>{
         const start = new Date(/(?:Z|[+-]\d{2}:?\d{2})$/.test(row.start_at) ? row.start_at : row.start_at + "Z");
