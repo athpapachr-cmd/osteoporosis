@@ -76,23 +76,30 @@
     const root = $("homeAgendaRows");
     if (!root) return;
     const generation = ++homeAgendaGeneration;
+    const preserveAgendaFocus = window.CockpitHomeAgenda?.prepareReload();
+    window.CockpitHomeAgenda?.clear(true);
     const requestedDay = dayKey();
     if ($("homeAgendaFreshness")) $("homeAgendaFreshness").textContent = "";
-    root.replaceChildren(text("Φόρτωση προγράμματος…"));
+    const loading = text("Φόρτωση προγράμματος…"); loading.tabIndex = -1;
+    root.replaceChildren(loading);
+    if (preserveAgendaFocus) window.CockpitHomeAgenda?.markLoading(loading);
     try {
       const range = todayRange();
       const q = new URLSearchParams({start:range.start,end:range.end});
       const response = await fetch(clinicalURL("/clinical/calendar/agenda?" + q), {
         credentials:"same-origin", cache:"no-store", headers:{"Accept":"application/json"}
       });
+      if (generation !== homeAgendaGeneration) return;
+      if (response.status === 401 || response.status === 403) { window.dispatchEvent(new Event("clinical:unauthenticated")); return; }
       if (!response.ok) throw new Error("unavailable");
       const rows = await response.json();
       if (generation !== homeAgendaGeneration) return;
       if (requestedDay !== dayKey()) { void loadHomeAgenda(); return; }
       if (!Array.isArray(rows)) throw new Error("invalid");
-      root.replaceChildren();
       if ($("homeAgendaFreshness")) $("homeAgendaFreshness").textContent =
-        "Πρόγραμμα " + dateLabel.format(new Date()) + " · Ανάγνωση " + timeLabel.format(new Date());
+        "Έλεγχος " + timeLabel.format(new Date());
+      if (window.CockpitHomeAgenda) { window.CockpitHomeAgenda.render(rows, {day: requestedDay, reload: loadHomeAgenda}); return; }
+      root.replaceChildren();
       if (!rows.length) root.append(text("Δεν υπάρχουν ραντεβού στην διαθέσιμη προβολή της ημέρας."));
       rows.sort((a,b)=>String(a.start_at).localeCompare(String(b.start_at))).slice(0,6).forEach(row=>{
         const start = new Date(/(?:Z|[+-]\d{2}:?\d{2})$/.test(row.start_at) ? row.start_at : row.start_at + "Z");
@@ -109,7 +116,10 @@
       });
       if (rows.length > 6) root.append(action("Προβολή και των " + rows.length + " ραντεβού", "Άνοιγμα προγράμματος ημέρας", () => openPanel("day", buttons.day)));
     } catch (_) {
-      if (generation === homeAgendaGeneration) root.replaceChildren(text("Το πρόγραμμα δεν είναι διαθέσιμο. Δοκίμασε ανανέωση."));
+      if (generation === homeAgendaGeneration) {
+        if (window.CockpitHomeAgenda) window.CockpitHomeAgenda.failure("Το πρόγραμμα δεν είναι διαθέσιμο. Δοκίμασε ανανέωση.");
+        else root.replaceChildren(text("Το πρόγραμμα δεν είναι διαθέσιμο. Δοκίμασε ανανέωση."));
+      }
     }
   }
   function text(message) {

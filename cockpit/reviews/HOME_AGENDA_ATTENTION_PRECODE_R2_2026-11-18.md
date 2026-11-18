@@ -1,0 +1,3 @@
+# Day Home agenda and attention: pre-code R2 closure
+
+Corrected design blob `fbd7998ea6518916dd5322aea951671127a40ec6` on base `0120ea5e0924823c956753b1f28fbfef0fb03ad2`: independent affected closure **PASS**, COMPLETE_FOR_DECLARED_SCOPE=YES, ALL_MATERIAL_FINDINGS_CLOSED=YES, P0:P1:P2=0:0:0. Source-proven corrections cover start-in-day rather than universal availability, 503 versus successful malformed rows, bounded counts and check time, mixed-age patient groups, and five-minute/return/day freshness. Targeted synthetic and actual-browser proof and one exact-code R2 remain required. No production patient/provider actions.

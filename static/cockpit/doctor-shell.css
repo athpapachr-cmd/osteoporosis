@@ -586,3 +586,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
 .clinical-full-record{margin-top:18px;border-top:1px solid #dce6e7;padding-top:12px}
 .clinical-full-record>summary,.completed-obligations>summary{cursor:pointer;color:#267875;font-weight:600}
 .completed-obligations{margin-top:14px}
+
+/* Compact day agenda; the source offers starts within the local day. */
+.today-context-strip[hidden],#calendarNote[hidden],#calendarState[hidden],#visitHomeNote[hidden]{display:none!important}
+.home-orientation{padding:10px 14px;margin-bottom:12px}.home-orientation p:not(.home-orientation-kicker){display:none}.home-orientation h2{font-size:15px}.home-orientation-kicker{margin-bottom:2px}
+.home-agenda{margin-top:0;padding-top:0;border-top:0}.home-agenda-heading h3{font-size:12px}
+.hg-agenda{display:flex;flex-direction:column;gap:7px;color:#1b302c}.hg-label,.hg-empty,.hg-warning,.hg-now{margin:3px 0;font-size:12px;color:#5c706a}.hg-warning{color:#975a27}.hg-now{padding:7px;border-left:3px solid #1f6f5c}
+.hg-row{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:9px;align-items:center;border:0;border-radius:8px;background:transparent;width:100%;padding:9px 8px;text-align:left;font:inherit;color:inherit;cursor:pointer}
+.hg-row:hover{background:#f1f7f4}.hg-row.next{background:#e8f3ee}.hg-row.current{background:#1f6f5c;color:#fff}.hg-row.current .hg-why{color:#e6f2ee}.hg-row.past{color:#62766f}
+.hg-time{font-weight:700;font-variant-numeric:tabular-nums}.hg-text{display:flex;flex-direction:column;min-width:0}.hg-name,.hg-why{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hg-name{font-size:13px}.hg-why{font-size:11px;color:#5c706a}.hg-right{font-size:11px;white-space:nowrap}
+.hg-list{max-height:280px;overflow:auto;overscroll-behavior:contain}.hg-more,.hg-surgery{border:1px solid #d5dedb;border-radius:8px;background:#fff;color:#31584e;font:inherit;font-size:11px;padding:8px 10px;cursor:pointer;text-align:left;align-self:flex-start}.hg-tomorrow{display:flex;flex-direction:column;gap:5px;padding-top:9px;border-top:1px solid #e3e9e7}.hg-row:focus-visible,.hg-more:focus-visible,.hg-surgery:focus-visible{outline:2px solid #1f6f5c;outline-offset:2px}
+.ha-row{align-items:start}.ha-tag{margin-top:1px}.ha-sub-desc{flex:1 1 auto}.ha-aged .ha-meta{font-weight:700}.ha-filters{display:flex;flex-wrap:wrap;gap:5px;padding:4px 8px}.ha-filter{border:1px solid #d5dedb;border-radius:8px;background:#fff;color:#31584e;font:inherit;font-size:11px;padding:6px 8px;cursor:pointer}.ha-filter[aria-pressed="true"]{background:#e3f1eb;border-color:#8bb9a9}.ha-filter:focus-visible,.ha-coverage summary:focus-visible{outline:2px solid #1f6f5c;outline-offset:2px}.ha-coverage{font-size:11px;color:#637b73;margin:4px 8px}.ha-coverage summary{cursor:pointer}
+.ha-task-name{white-space:normal;overflow-wrap:anywhere;line-height:1.3}

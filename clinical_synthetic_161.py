@@ -227,6 +227,9 @@ def build_synthetic_161_router(engine):
         text = text.replace("Έλεγξα ανεξάρτητα τα στοιχεία αυτού του προσώπου στον προστατευμένο φάκελο. Το όνομα ή το UID του ραντεβού δεν αρκούν.",
                             "Έλεγξα το όνομα και την ημερομηνία γέννησης του επιλεγμένου δοκιμαστικού ασθενούς. Αυτή είναι μόνο δοκιμαστική επιβεβαίωση.")
         text = text.replace('<p class="clinical-muted">Πλήρης κλινική σύνοψη και προηγούμενο σχέδιο εμφανίζονται μόνο μετά από επιβεβαιωμένη σύνδεση με τον προστατευμένο φάκελο.</p>', "")
+        # This dedicated fixture intentionally uses its fixed previous/current/next
+        # synthetic scenario; ordinary Home uses the start-in-day agenda.
+        text = text.replace('<div class="today-context-strip" hidden>', '<div class="today-context-strip">', 1)
         text = text.replace("</body>", '<script src="/static/cockpit/synthetic-161.js"></script></body>')
         return HTMLResponse(text, headers={"Cache-Control": "no-store"})
 

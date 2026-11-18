@@ -60,7 +60,7 @@ assert.match(shell, /PEEK_ITEMS_LIMIT/);
 assert.match(ui, /data\.filter!=="all"/);
 assert.match(ui, /LIST_ITEMS_LIMIT/);
 assert.match(html, /icloud-triage-20261031/);
-assert.match(html, /doctor-shell\.js\?v=home-attention-20261118/);
+assert.match(html, /doctor-shell\.js\?v=agenda-refinement-20261118/);
 assert.doesNotMatch(shell, /console\.error\(error\)|localStorage|sessionStorage/);
 assert.match(ui, /Παλαιότερα/);
 assert.match(ui, /δεν έχουν ελεγχθεί για κακόβουλα/);

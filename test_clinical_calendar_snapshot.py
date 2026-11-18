@@ -922,3 +922,18 @@ def test_full_agenda_qualified_empty_and_source_failure_never_use_snapshot(monke
     assert client.get('/clinical/calendar/agenda',headers=CLINICAL_HEADERS,params=params).status_code==503
     body['coverage_end']='2026-10-08';body['fetched_at']=(now-timedelta(minutes=6)).replace(tzinfo=timezone.utc).isoformat()
     assert client.get('/clinical/calendar/agenda',headers=CLINICAL_HEADERS,params=params).status_code==503
+
+
+def test_agenda_start_in_day_excludes_yesterday_overlapping_midnight(monkeypatch):
+    """An empty start-in-day agenda is not proof that no visit is in progress."""
+    client, _ = _client(monkeypatch)
+    now = datetime(2026, 10, 6, 0, 0)
+    monkeypatch.setattr(clinical_calendar, 'utcnow', lambda: now)
+    crossing = _appointment('overnight', start=datetime(2026, 10, 5, 20, 50),
+                            minutes=250, label='Other')
+    _set_actual_source(monkeypatch, [crossing], now)
+    start = datetime(2026, 10, 6, tzinfo=ZoneInfo('Asia/Nicosia'))
+    response = client.get('/clinical/calendar/agenda', headers=CLINICAL_HEADERS,
+                          params={'start': start.isoformat(), 'end': (start + timedelta(days=1)).isoformat()})
+    assert response.status_code == 200
+    assert response.json() == []

@@ -16,7 +16,10 @@ on:
       - "static/baseline-audit/index.html"
       - "static/baseline-audit/g4-workspace-ergonomics.js"
       - "test_cockpit_home.py"
+      - "test_clinical_calendar_snapshot.py"
       - "test_cockpit_home_attention.js"
+      - "test_cockpit_home_agenda.js"
+      - "test_cockpit_home_agenda_browser.py"
       - "test_cockpit_doctor_shell.js"
       - "test_cockpit_icloud_ui.js"
       - "test_cockpit_shared_navigation.js"
@@ -39,7 +42,10 @@ on:
       - "static/baseline-audit/index.html"
       - "static/baseline-audit/g4-workspace-ergonomics.js"
       - "test_cockpit_home.py"
+      - "test_clinical_calendar_snapshot.py"
       - "test_cockpit_home_attention.js"
+      - "test_cockpit_home_agenda.js"
+      - "test_cockpit_home_agenda_browser.py"
       - "test_cockpit_doctor_shell.js"
       - "test_cockpit_icloud_ui.js"
       - "test_cockpit_shared_navigation.js"
@@ -70,16 +76,18 @@ jobs:
           node --check static/cockpit/obligations-view.js
           node --check static/cockpit/doctor-shell.js
           node --check static/cockpit/home-attention.js
+          node --check static/cockpit/home-agenda.js
           node --check static/cockpit/icloud-inbox.js
           node --check static/cockpit/icloud-triage.js
           node --check static/cockpit/shared-nav.js
           node --check static/baseline-audit/g4-workspace-ergonomics.js
       - name: Cockpit Home deterministic tests
-        run: pytest -q test_cockpit_home.py test_clinical_reception_calls.py test_clinical_icloud_mail.py test_clinical_icloud_actions.py test_icloud_triage_rules.py test_clinical_notion_tasks.py
+        run: pytest -q test_clinical_calendar_snapshot.py::test_agenda_start_in_day_excludes_yesterday_overlapping_midnight test_cockpit_home.py test_clinical_reception_calls.py test_clinical_icloud_mail.py test_clinical_icloud_actions.py test_icloud_triage_rules.py test_clinical_notion_tasks.py
       - name: Cockpit Doctor Shell synthetic workflow
         run: |
           node test_cockpit_doctor_shell.js
           node test_cockpit_home_attention.js
+          node test_cockpit_home_agenda.js
           node test_cockpit_icloud_ui.js
       - name: Shared navigation and key login synthetic flow
         run: node test_cockpit_shared_navigation.js
@@ -90,7 +98,9 @@ jobs:
             python -m playwright install --with-deps chromium
           fi
       - name: Chromium desktop and half-width user-experience smoke
-        run: python test_cockpit_doctor_browser.py
+        run: |
+          python test_cockpit_doctor_browser.py
+          pytest -q test_cockpit_home_agenda_browser.py
       - name: Publish synthetic visual smoke screenshots
         if: always()
         uses: actions/upload-artifact@v4

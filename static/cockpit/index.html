@@ -8,7 +8,7 @@
   <meta name="description" content="Κεντρική αρχική σελίδα του Clinical Excellence Cockpit." />
   <link rel="stylesheet" href="/static/cockpit/styles.css" />
   <link rel="stylesheet" href="/static/cockpit/clinical-workspace.css" />
-  <link rel="stylesheet" href="/static/cockpit/doctor-shell.css?v=home-compact-20261118" />
+  <link rel="stylesheet" href="/static/cockpit/doctor-shell.css?v=agenda-refinement-20261118" />
   <link rel="stylesheet" href="/static/cockpit/clinical-inbox.css?v=icloud-triage-20261031" />
   <link rel="stylesheet" href="/static/cockpit/shared-nav.css" />
   <script src="/static/cockpit/start-page.js?v=20261112"></script>
@@ -75,10 +75,10 @@
         <div class="clinical-two-panels">
           <section class="clinical-mini-panel cockpit-appointment-panel" aria-label="Προηγούμενο, τωρινό και επόμενο ραντεβού">
             <div class="clinical-mini-title">
-              <h2>Ραντεβού <small id="todayHeading">Σήμερα</small></h2>
-              <span id="calendarState" class="status-chip">Φόρτωση…</span>
+              <h2>Ραντεβού σήμερα <small id="todayHeading">Σήμερα</small></h2>
+              <span id="calendarState" class="status-chip" hidden>Φόρτωση…</span>
             </div>
-            <div class="today-context-strip">
+            <div class="today-context-strip" hidden>
               <button id="visitSidebarPrevious" type="button" class="context-slot" aria-label="Σύνοψη: Προηγούμενο" aria-haspopup="dialog">
                 <span class="context-label">Προηγούμενο</span>
                 <strong id="previousAppointmentTime" class="context-time">—</strong>
@@ -98,13 +98,13 @@
                 <span id="nextAppointmentType" class="context-type"></span>
               </button>
             </div>
-            <p id="calendarNote" class="panel-note">Φορτώνεται το πρόγραμμα ραντεβού. Ενημερώνεται καθημερινά.</p>
+            <p id="calendarNote" class="panel-note" hidden>Φορτώνεται το πρόγραμμα ραντεβού. Ενημερώνεται καθημερινά.</p>
             <div class="home-agenda">
-              <div class="home-agenda-heading"><h3>Το πρόγραμμα σήμερα</h3>
+              <div class="home-agenda-heading"><h3>Πρόγραμμα ημέρας</h3>
                 <button id="homeAgendaRefresh" type="button">Ανανέωση</button></div>
               <p id="homeAgendaFreshness" class="clinical-muted"></p>
               <div id="homeAgendaRows" aria-live="polite"><p class="clinical-muted">Φόρτωση προγράμματος…</p></div>
-              <p class="clinical-muted">Προβολή από τη διαθέσιμη πηγή της Γραμματείας. Για πλήρη διαθεσιμότητα και κρατήσεις άνοιξε τη Γραμματεία.</p>
+              <p class="clinical-muted">Η πηγή δείχνει τα ραντεβού με έναρξη στην επιλεγμένη ημέρα. Για διαθεσιμότητα και κρατήσεις άνοιξε τη Γραμματεία.</p>
             </div>
             <div class="clinical-calendar-actions">
               <button type="button" id="cockpitCalendarRetry" class="clinical-calendar-retry" hidden>↻ Ανανέωση</button>
@@ -118,7 +118,7 @@
             </div>
           </section>
         </div>
-        <p id="visitHomeNote" class="clinical-muted" role="status">Τα ραντεβού προέρχονται από τη διαθέσιμη προβολή της Γραμματείας, η οποία μπορεί να μην καλύπτει ολόκληρη την ημέρα. Η ημερομηνία πάνω δεξιά δείχνει μέρος του προγράμματος· για όλες τις κρατήσεις άνοιξε από εκεί τη Γραμματεία.</p>
+        <p id="visitHomeNote" class="clinical-muted" role="status" hidden>Τα ραντεβού προέρχονται από τη διαθέσιμη προβολή της Γραμματείας, η οποία μπορεί να μην καλύπτει ολόκληρη την ημέρα. Η ημερομηνία πάνω δεξιά δείχνει μέρος του προγράμματος· για όλες τις κρατήσεις άνοιξε από εκεί τη Γραμματεία.</p>
         <details class="clinical-muted"><summary>Δοκιμαστικές λειτουργίες</summary>
           <p><a class="clinical-sidebar-link" href="/static/cockpit/pending-one-tap-synthetic.html">Δοκιμή εκκρεμότητας · Demo</a></p>
           <p><a class="clinical-sidebar-link" href="/clinical/synthetic-161/">Δοκιμή #161 · αποθηκευμένο ραντεβού και Visit Brief</a></p>
@@ -628,7 +628,7 @@ ENCOUNTER DETAIL
 
 Μην περιλαμβάνεις ονοματεπώνυμο, τηλέφωνο ή άλλα αναγνωριστικά ασθενούς. Επέστρεψε μόνο τη σύνοψη σε απλό κείμενο, χωρίς JSON ή υποχρεωτικές ειδικές επικεφαλίδες.</template>
 
-  <script src="/static/cockpit/clinical-workspace.js?v=chart-continuity-20261018" defer></script>
+  <script src="/static/cockpit/clinical-workspace.js?v=agenda-refinement-20261118" defer></script>
   <script src="/static/cockpit/visit-brief.js?v=visit-amendments-20261018" defer></script>
   <script src="/static/cockpit/app.js?v=home-attention-20261118" defer></script>
   <script src="/static/cockpit/office-cases.js?v=home-attention-20261118" defer></script>
@@ -638,8 +638,9 @@ ENCOUNTER DETAIL
   <script src="/static/cockpit/clinical-inbox.js?v=one-tap-source-review-20261024" defer></script>
   <script src="/static/cockpit/icloud-triage.js?v=triage-coverage-20261101" defer></script>
   <script src="/static/cockpit/icloud-inbox.js?v=home-experience-20261113" defer></script>
-  <script src="/static/cockpit/doctor-shell.js?v=home-attention-20261118" defer></script>
-  <script src="/static/cockpit/home-attention.js?v=compact-20261118" defer></script>
+  <script src="/static/cockpit/doctor-shell.js?v=agenda-refinement-20261118" defer></script>
+  <script src="/static/cockpit/home-agenda.js?v=agenda-20261118" defer></script>
+  <script src="/static/cockpit/home-attention.js?v=agenda-refinement-20261118" defer></script>
   <script src="/static/cockpit/shared-nav.js" defer></script>
 </body>
 </html>

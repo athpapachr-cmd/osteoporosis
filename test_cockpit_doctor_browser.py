@@ -27,6 +27,7 @@ JS = [(ROOT / part).read_text(encoding="utf-8") for part in (
     "static/cockpit/obligations-view.js",
     "static/cockpit/icloud-inbox.js",
     "static/cockpit/doctor-shell.js",
+    "static/cockpit/home-agenda.js",
     "static/cockpit/home-attention.js",
     "static/cockpit/shared-nav.js",
 )]
@@ -1224,7 +1225,7 @@ def browser_suite(width, screenshot_name):
         expect(page.locator("#ceGlobalAccessPanel")).to_be_hidden()
         # End-to-end source-only → protected registry → independently checked
         # explicit confirmation → brief → reopen booking-only, at all 3 widths.
-        page.locator("#visitSidebarNext").click()
+        page.locator("#homeAgendaRows .hg-row").first.click()
         expect(page.locator("#visitBriefOverlay")).to_be_visible()
         expect(page.locator("#visitBriefIdentity")).to_contain_text("Δεν υπάρχει επιβεβαιωμένη σύνδεση")
         expect(page.locator("#visitBriefClinical")).to_be_hidden()
@@ -1261,12 +1262,12 @@ def browser_suite(width, screenshot_name):
         assert not page.locator("#visitBookingIndependentCheck").is_checked()
         expect(page.locator("#visitBookingConfirmation")).to_be_hidden()
         page.locator("#visitBackHome").click()
-        page.locator("#visitSidebarNext").click()
+        page.locator("#homeAgendaRows .hg-row").first.click()
         expect(page.locator("#visitBriefIdentity")).to_contain_text("νέα ανεξάρτητη επιβεβαίωση")
         expect(page.locator("#visitBriefClinical")).to_be_hidden()
         page.evaluate("window.CockpitStaffRole='secretary'")
         page.locator("#visitBriefClose").click()
-        page.locator("#visitSidebarNext").click()
+        page.locator("#homeAgendaRows .hg-row").first.click()
         expect(page.locator("#visitBriefUnlink")).to_be_hidden()
         page.evaluate("window.CockpitStaffRole='clinician'")
         assert auth["confirmations"] == 1
@@ -1364,7 +1365,11 @@ def browser_suite(width, screenshot_name):
         assert page.locator("#visitRecentRows").evaluate("(el) => el.closest('#visitSidebar') !== null")
         assert page.locator("#visitSidebarNext").evaluate("(el) => el.closest('#visitWorkspaceHome') !== null")
         for slot in ("Previous","Current","Next"):
-            expect(page.locator("#visitSidebar"+slot)).to_be_visible()
+            expect(page.locator("#visitSidebar"+slot)).to_be_hidden()
+        expect(page.locator("#homeAgendaRows .hg-row")).to_have_count(2)
+        page.locator("#homeAgendaRows .hg-row").first.focus()
+        page.evaluate("document.getElementById('homeAgendaRefresh').click()")
+        expect(page.locator("#homeAgendaRows .hg-row").first).to_be_focused()
         expect(page.locator("#nextAppointmentPatient")).to_contain_text("Ασθενής Δοκιμής Α")
         if width <= 990:
             expect(page.locator("#visitSidebar")).to_be_hidden()
@@ -1431,7 +1436,7 @@ def browser_suite(width, screenshot_name):
             expect(page.locator("#visitSidebar")).to_be_hidden()
             expect(page.locator("#visitWorkspacePatient")).to_be_visible()
             page.locator("#visitBackHome").click()
-            expect(page.locator("#visitSidebarNext")).to_be_visible()
+            expect(page.locator("#homeAgendaRows .hg-row")).to_have_count(2)
         else:
             expect(page.locator("#visitSidebarPrevious")).to_be_disabled()
             expect(page.locator("#visitBriefOverlay")).to_be_hidden()

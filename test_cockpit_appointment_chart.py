@@ -127,6 +127,7 @@ def test_chart_read_returns_available_fresh_reason_and_honest_limit(fixture):
 
 def test_browser_single_login_booking_link_latest_and_independent_session(fixture,tmp_path):
     import socket,threading,shutil,json
+    from urllib.parse import urlparse,parse_qs
     import uvicorn
     from playwright.sync_api import sync_playwright,expect
     app,engine,c,p,state=fixture
@@ -144,6 +145,12 @@ def test_browser_single_login_booking_link_latest_and_independent_session(fixtur
             for width in [1280,390]:
                 context=browser.new_context(viewport={'width':width,'height':950});page=context.new_page();page.set_default_timeout(8000);errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
                 page.route('**/clinical/calendar/cockpit-context',lambda route:route.fulfill(json=home))
+                def agenda_for_date(route):
+                    start=parse_qs(urlparse(route.request.url).query)['start'][0]
+                    requested=datetime.fromisoformat(start.replace('Z','+00:00')).astimezone(ZoneInfo('Asia/Nicosia')).date()
+                    actual=source.start_at.astimezone(ZoneInfo('Asia/Nicosia')).date()
+                    route.fulfill(json=[record] if requested==actual else [])
+                page.route('**/clinical/calendar/agenda?*',agenda_for_date)
                 # Deferred entry may download after a fast status response on URL arrival.
                 def slow_entry(route):
                     import time
@@ -151,7 +158,7 @@ def test_browser_single_login_booking_link_latest_and_independent_session(fixtur
                 page.route('**/static/cockpit/patient-entry.js?*',slow_entry)
                 page.goto(url);page.locator('#ceGlobalKey').click();page.locator('#ceGlobalKeyInput').fill(KEY)
                 page.locator('#ceGlobalLoginForm button[type=submit]').click();expect(page.locator('#ceGlobalAuthStatus')).to_contain_text('Συνδέθηκες');page.keyboard.press('Escape')
-                page.locator('#visitSidebarNext').click();overlay=page.locator('#visitBriefOverlay');expect(overlay).to_be_visible()
+                page.locator('#homeAgendaRows .hg-row.tomorrow').filter(has_text='Συνθετικός Ραντεβού').click();overlay=page.locator('#visitBriefOverlay');expect(overlay).to_be_visible()
                 if width==1280:
                     expect(page.locator('#visitBriefClinical')).not_to_be_visible()
                     page.locator('#visitBriefPatientEntry').click();expect(page.locator('#patientEntry')).to_be_visible()
@@ -161,7 +168,7 @@ def test_browser_single_login_booking_link_latest_and_independent_session(fixtur
                     expect(target).to_have_count(1)
                     target.get_by_role('button',name='Σύνδεση και άνοιγμα').click()
                     expect(page.locator('#patientChart')).to_contain_text('Κλινική συνέχεια')
-                    page.locator('#visitBackHome').click();page.reload();page.locator('#visitSidebarNext').click()
+                    page.locator('#visitBackHome').click();page.reload();page.locator('#homeAgendaRows .hg-row.tomorrow').filter(has_text='Συνθετικός Ραντεβού').click()
                 expect(page.locator('#visitBriefIdentity')).to_contain_text('Συνδεδεμένη καρτέλα')
                 expect(page.locator('#visitBriefOpenLatest')).to_be_visible()
                 expect(page.locator('#visitBriefPrevious')).to_contain_text('Επανέλεγχος γόνατος')

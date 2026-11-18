@@ -123,7 +123,7 @@
        // supplies it; never relabel a generic visit type as a clinical summary.
        const excerpt=typeof r.summary_excerpt==="string"&&r.summary_excerpt.trim()
          ?r.summary_excerpt.trim():r.visit_type&&r.visit_type!=="Κλινική επίσκεψη"
-           ?r.visit_type:"Η σύντομη κλινική σύνοψη δεν είναι ακόμη διαθέσιμη";
+           ?r.visit_type:"";
        const context=[r.encounter_date,excerpt].filter(Boolean).join(" · ");
        addRow(target,name,context,"↶",()=>{
          // Selecting a recent encounter from the collapsed split-width rail
