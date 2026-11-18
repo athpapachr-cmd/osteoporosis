@@ -19,12 +19,13 @@ const window = {addEventListener(n, f) { if (!handlers.has(n)) handlers.set(n, [
   dispatchEvent(e) { for (const f of handlers.get(e.type) || []) f(e); },
   CockpitHomeAttentionNavigation: {cases(t) { actions.push(t); }, obligations(t) { actions.push(t || "tasks"); }, calls() { actions.push("calls"); }} };
 const actions = [];
-class Clock extends Date { constructor(...a) { super(...(a.length ? a : ["2026-11-18T08:00:00Z"])); } static now() { return Date.parse("2026-11-18T08:00:00Z"); } }
+let now = "2026-11-18T08:00:00Z";
+class Clock extends Date { constructor(...a) { super(...(a.length ? a : [now])); } static now() { return Date.parse(now); } }
 const pending = [], requests = [];
 const ok = data => ({status: 200, ok: true, json: async () => data});
 const bad = status => ({status, ok: false, json: async () => ({})});
 const fixtures = {
-  rf: {applications:[{patient_name:"Συνθετικός RF",stage:"approved",surgery_id:null}],has_more:true,snapshot_consistent:false},
+  rf: {applications:[{id:"rf-1",patient_name:"Συνθετικός RF",stage:"approved",surgery_id:null}],has_more:true,snapshot_consistent:false},
   reports: {cases:[{patient_name:"Συνθετική Έκθεση",writing_started_date:"2026-11-17",report_sent_date:null},
     {patient_name:"Χωρίς Αίτημα",writing_started_date:null,report_sent_date:null,visit_date:"2026-09-01"}],has_more:false},
   tasks: {items:[{patient_name:"Συνθετικός Ασθενής",description:"Ιδιωτικό όνομα Συνθετικός",pending_id:"task-1",status:"open",review_date:"2026-11-17"}]},
@@ -59,10 +60,12 @@ async function run() {
   mode = "normal"; emit("clinical:authenticated"); await flush();
   emit("cockpit:surgery-counts", {attention:[
     {date:"2026-11-17",name:"Συνθετικός παλιός",procedure:"Επέμβαση",time:""},
+    ...[1,2,3,4].map(i => ({date:"2026-11-1" + i,name:"Παλαιός " + i,procedure:"Επέμβαση",time:""})),
     {date:"2026-11-19",name:"Συνθετικός νέος",procedure:"Επέμβαση",time:"08:00"}
   ],undated:0,invalid:0});
   let output = text(target);
   assert.match(output, /Συνθετικός νέος/); assert.match(output, /Περασμένη ημερομηνία/);
+  assert.match(text(buttons(target).find(b => text(b).includes("Συνθετικός νέος"))), /Συνθετικός νέος/);
   assert.match(output, /Συνθετικός RF/); assert.match(output, /Μερική κάλυψη/);
   assert.match(output, /Έκθεση σε σύνταξη/); assert.doesNotMatch(output, /Χωρίς Αίτημα/);
   assert.match(output, /Ιδιωτικό όνομα/); assert.match(output, /2/);
@@ -90,6 +93,15 @@ async function run() {
   window.CockpitHomeAttention.refresh(); await flush();
   assert.doesNotMatch(text(target), /Συνθετικός RF/, "return/refresh invalidates old data");
   assert.match(text(target), /Μερική κάλυψη/); assert.doesNotMatch(text(target), /Τίποτα επείγον/);
+  let reprojections = 0;
+  window.CockpitSurgeryQueue = {refreshAttention() {
+    reprojections++;
+    emit("cockpit:surgery-counts", {attention:[{date:"2026-11-26",name:"Νέα ημέρα",procedure:"Επέμβαση",time:""}],undated:0,invalid:0});
+  }};
+  now = "2026-11-19T00:05:00Z";
+  emit("focus"); await flush();
+  assert.ok(reprojections > 0, "return across midnight reprojects the existing surgery source");
+  assert.match(text(target), /Νέα ημέρα/);
   console.log("PASS Home attention: source truth, partial coverage, privacy, navigation, revocation, races and refresh");
 }
 run().catch(e => { console.error(e); process.exitCode = 1; });

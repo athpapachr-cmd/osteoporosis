@@ -348,6 +348,24 @@
   });
   window.addEventListener("clinical:unauthenticated", clear);
   window.CockpitOfficeCases = {open, selectTab,
+    async openRF(applicationId) {
+      if (typeof applicationId !== "string" || !applicationId) return;
+      $("officeRfQuery").value = ""; $("officeRfStage").value = "";
+      const refresh = selectTab("rf");
+      const token = generation;
+      if (refresh) await refresh;
+      if (token !== generation || activeTab !== "rf") return;
+      try {
+        const card = await api("/clinical/office-cases/rf/" + encodeURIComponent(applicationId));
+        if (token !== generation || activeTab !== "rf") return;
+        if (!card || card.id !== applicationId || typeof card.patient_name !== "string") throw new Error("Η επιλεγμένη RF δεν επιβεβαιώθηκε.");
+        rfRows = [card, ...rfRows.filter(row => row.id !== card.id)];
+        drawRF();
+        show("officeRfNote", "Εμφανίζεται η επιλεγμένη RF με τα τρέχοντα στοιχεία της.");
+      } catch (error) {
+        if (token === generation && activeTab === "rf") show("officeRfNote", errorText(error));
+      }
+    },
     refreshRF() { if (activeTab === "rf") loadRF(true); },
     async showRFConflict(applicationId) {
       const refresh = selectTab("rf", true);

@@ -1129,7 +1129,7 @@
     },pendingId);
     $("doctorObligationsSearch").focus();
   }
-  function showLibrary(category="cases") {
+  function showLibrary(category="cases", skipCaseOpen = false) {
     close();
     window.CockpitClinicalInbox?.close();
     $("doctorClinicalInboxView").hidden=true;
@@ -1145,7 +1145,7 @@
       const selected=b.dataset.doctorLibraryTab===category;
       b.classList.toggle("selected",selected);b.setAttribute("aria-pressed",String(selected));
     });
-    if(category === "cases") window.CockpitOfficeCases?.open?.();
+    if(category === "cases" && !skipCaseOpen) window.CockpitOfficeCases?.open?.();
     if(window.location?.origin && window.location.origin!=="null" &&
        window.location.pathname?.startsWith("/static/cockpit/")){
       if(category==="cases" && window.location.hash!=="#office-cases")
@@ -1421,7 +1421,11 @@
   openIcloudRoute();
   openOfficeCasesRoute();
   window.CockpitHomeAttentionNavigation = {
-    cases(tab) { showLibrary("cases"); window.CockpitOfficeCases?.selectTab?.(tab); },
+    cases(tab, id) {
+      showLibrary("cases", true);
+      if (tab === "rf" && id) window.CockpitOfficeCases?.openRF?.(id);
+      else window.CockpitOfficeCases?.selectTab?.(tab);
+    },
     obligations(id) { showObligations(id); },
     calls() { openPanel("calls", buttons.calls); }
   };

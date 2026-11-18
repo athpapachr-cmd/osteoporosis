@@ -629,6 +629,7 @@
   });
   resetSurgeryForm();
   window.CockpitSurgeryQueue = {
+    refreshAttention() { publishSurgeryCounts(); },
     prefillFromRF(card) {
       if (!surgeryReady || !card || !card.id || !Number.isInteger(card.revision) ||
           !["approved", "scheduled"].includes(card.stage) || card.surgery_id ||

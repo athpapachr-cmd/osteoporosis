@@ -11,7 +11,7 @@
     timeZone: "UTC", weekday: "short", day: "numeric", month: "short"
   });
   const state = {authorized: false, epoch: 0, load: 0, hidden: false,
-    surgeries: null, rf: null, reports: null, tasks: null, calls: null, updated: 0};
+    surgeries: null, rf: null, reports: null, tasks: null, calls: null, updated: 0, day: null};
   const nav = () => window.CockpitHomeAttentionNavigation || {};
   const today = () => {
     const p = Object.fromEntries(dayParts.formatToParts(new Date())
@@ -64,14 +64,18 @@
     root.append(toggle);
     const now = today(), go = tab => () => nav().cases?.(tab);
     const s = state.surgeries;
-    const surgeries = s ? s.attention.map(x => row(
+    const surgeries = s ? [...s.attention].sort((a,b) => {
+      const aPast = a.date < now, bPast = b.date < now;
+      if (aPast !== bPast) return aPast ? 1 : -1;
+      return aPast ? b.date.localeCompare(a.date) : a.date.localeCompare(b.date) || a.time.localeCompare(b.time);
+    }).map(x => row(
       (x.date < now ? "Περασμένη ημερομηνία" : x.date === now ? "Σήμερα" : pretty(x.date)) + " · " + name(x.name),
       state.hidden ? "Χειρουργείο" : x.procedure + (x.time ? " · " + x.time : "") + (x.date < now ? " · Παραμένει εκκρεμές" : ""),
       go("surgery"), x.date <= now)) : [];
     if (s && (s.undated || s.invalid)) surgeries.push(row("Χειρουργεία χωρίς έγκυρη ημερομηνία · " + (s.undated + s.invalid), "Έλεγχος λίστας", go("surgery")));
     section("Χειρουργεία", s, surgeries, go("surgery"), "Δεν υπάρχουν εκκρεμή χειρουργεία στο επόμενο επταήμερο.");
     const rf = state.rf;
-    const rfRows = rf ? rf.items.map(x => row("Εγκεκριμένη RF · " + name(x.patient_name), "Χωρίς σύνδεση με χειρουργείο", go("rf"))) : [];
+    const rfRows = rf ? rf.items.map(x => row("Εγκεκριμένη RF · " + name(x.patient_name), "Χωρίς σύνδεση με χειρουργείο", () => nav().cases?.("rf", x.id))) : [];
     section("RF", rf, rfRows, go("rf"), "Δεν βρέθηκαν ασύνδετες εγκεκριμένες RF στην προβολή.",
       rf && (rf.partial ? "Μερική κάλυψη· άνοιξε τη λίστα για περισσότερα." : "Στιγμιότυπο των διαθέσιμων εγγραφών."));
     const rep = state.reports;
@@ -100,7 +104,7 @@
   function revoke() {
     state.authorized = false; ++state.epoch; ++state.load;
     state.surgeries = state.rf = state.reports = state.tasks = state.calls = null;
-    state.updated = 0; draw();
+    state.updated = 0; state.day = null; draw();
   }
   async function request(path, epoch, load) {
     const response = await fetch(url(path), {credentials: "same-origin", cache: "no-store", headers: {Accept: "application/json"}});
@@ -126,11 +130,13 @@
   function refresh() {
     if (!state.authorized) return;
     const epoch = state.epoch, load = ++state.load;
+    state.day = today();
     state.rf = state.reports = state.tasks = state.calls = undefined;
     state.updated = Date.now(); draw();
+    window.CockpitSurgeryQueue?.refreshAttention?.();
     void loadSource("rf", "/clinical/office-cases/rf?query=&stage=approved&cursor=", d => {
       if (!d || !Array.isArray(d.applications) || typeof d.has_more !== "boolean" ||
-          d.applications.some(x => !x || x.stage !== "approved" || typeof x.patient_name !== "string" ||
+          d.applications.some(x => !x || typeof x.id !== "string" || !x.id || x.stage !== "approved" || typeof x.patient_name !== "string" ||
             !(x.surgery_id === null || typeof x.surgery_id === "string"))) throw Error("invalid");
       return {items: d.applications.filter(x => x.surgery_id === null), partial: d.has_more};
     }, epoch, load);
@@ -178,16 +184,21 @@
   window.addEventListener("clinical:unauthenticated", revoke);
   window.addEventListener("cockpit:surgery-counts", event => receiveSurgery(event.detail));
   const maybeRefresh = () => {
-    if (state.authorized && !document.hidden && Date.now() - state.updated > 300000) refresh();
+    if (state.authorized && !document.hidden && (state.day !== today() || Date.now() - state.updated > 300000)) refresh();
   };
   document.addEventListener("visibilitychange", maybeRefresh);
   window.addEventListener("focus", maybeRefresh);
+  if (typeof window.setInterval === "function") window.setInterval(maybeRefresh, 60000);
   window.CockpitHomeAttention = {draw, refresh};
   draw();
   const bootstrap = state.epoch;
   fetch("/clinical/status", {credentials: "same-origin", cache: "no-store"}).then(response => {
     if (bootstrap !== state.epoch) return;
-    if (!response.ok) { revoke(); return; }
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) window.dispatchEvent(new Event("clinical:unauthenticated"));
+      else revoke();
+      return;
+    }
     state.authorized = true; state.surgeries = undefined;
     if (window.CockpitSurgerySummary) receiveSurgery(window.CockpitSurgerySummary);
     refresh();

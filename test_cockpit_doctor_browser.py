@@ -967,7 +967,7 @@ def browser_suite(width, screenshot_name):
             "linked": False, "confirmations": 0}
     call_source = {"status": 200, "handled": False, "write_status": 200}
     notion_source = {"writes": 0}
-    rf_bridge = {"linked": False, "exact_reads": 0}
+    rf_bridge = {"linked": False, "exact_reads": 0, "home_exact_reads": 0}
     with sync_playwright() as pw:
         executable = shutil.which("google-chrome") or shutil.which("chromium")
         browser = pw.chromium.launch(headless=True, executable_path=executable or None, args=["--no-sandbox"])
@@ -1024,6 +1024,11 @@ def browser_suite(width, screenshot_name):
                             "surgery_date":"2026-11-01", "room_entry_time":"09:30",
                             "status":"deleted"}})
                 return route.fulfill(status=200, json=current)
+            if url.endswith("/clinical/office-cases/rf/synthetic-approved"):
+                rf_bridge["home_exact_reads"] += 1
+                return route.fulfill(status=200, json={"id":"synthetic-approved", "revision":1,
+                    "stage":"approved", "patient_name":"RF Συνθετική", "identity_number":"SYN",
+                    "indication_code":"SYN", "laterality":"left", "surgery_id":None})
             if "/clinical/office-cases/surgeries/from-rf/" in url:
                 rf_bridge["linked"] = True
                 return route.fulfill(status=409, json={"detail":"RF already linked to surgery"})
@@ -1274,10 +1279,31 @@ def browser_suite(width, screenshot_name):
         expect(attention).not_to_contain_text("RF Συνθετική")
         expect(attention).not_to_contain_text("Εργαστηριακές εξετάσεις")
         attention.get_by_role("button", name="Εμφάνιση ονομάτων εδώ").click()
+        page.evaluate("""() => { document.getElementById('officeRfQuery').value = 'παλιό φίλτρο';
+          document.getElementById('officeRfStage').value = 'performed'; }""")
         attention.get_by_role("button", name="Εγκεκριμένη RF · RF Συνθετική").click()
         expect(page.locator("#doctorLibraryView")).to_be_visible()
+        expect(page.locator("#officeRfList")).to_contain_text("RF Συνθετική")
+        assert page.locator("#officeRfQuery").input_value() == ""
+        assert rf_bridge["home_exact_reads"] == 1
         page.locator("#doctorBackHome").click()
         expect(attention).to_contain_text("RF Συνθετική")
+        if width == 1280:
+            page.evaluate("""() => { const original = window.fetch.bind(window); window.__homeOriginalFetch = original;
+              window.fetch = (url, options) => String(url).endsWith('/clinical/office-cases/rf/synthetic-approved')
+                ? new Promise(resolve => { window.__releaseOldRF = () => resolve(new Response(JSON.stringify({
+                    id:'synthetic-approved', patient_name:'RF STALE SYNTHETIC', stage:'approved',
+                    identity_number:'SYN', indication_code:'SYN', laterality:'left', surgery_id:null
+                  }), {status:200, headers:{'Content-Type':'application/json'}})); })
+                : original(url, options); }""")
+            attention.get_by_role("button", name="Εγκεκριμένη RF · RF Συνθετική").click()
+            page.wait_for_function("typeof window.__releaseOldRF === 'function'")
+            page.evaluate("""async () => { window.dispatchEvent(new Event('clinical:unauthenticated'));
+              window.__releaseOldRF(); await new Promise(r => setTimeout(r, 0)); }""")
+            expect(page.locator("#officeRfList")).not_to_contain_text("RF STALE SYNTHETIC")
+            page.evaluate("""() => { window.fetch = window.__homeOriginalFetch;
+              window.dispatchEvent(new Event('clinical:authenticated')); }""")
+            expect(attention).to_contain_text("RF Συνθετική")
         if width <= 620:
             expect(page.locator("#doctorAttentionList")).to_contain_text("Συνθετικός Ασθενής Β")
             expect(page.locator("#doctorAttentionList")).to_contain_text("RF Συνθετική")
