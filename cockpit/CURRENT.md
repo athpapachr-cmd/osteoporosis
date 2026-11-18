@@ -1,3 +1,5 @@
+> **2026-11-18 COMPACT DAY HOME — MERGED / AUTO DEPLOY BUILDING:** PR #303 passed 14/14 final workflows and independent R2, merged `baf4de29f9aa933484601b4b4e49070f08e316f9`. Native Render `dep-dbultp0u01pc73f5c700` is building exact source; no duplicate deploy. Next terminal live and no-PHI smoke. Writer `codex/cockpit-home-compact-release-20261118`; no patient/provider writes.
+
 > **2026-11-18 COMPACT DAY HOME — PR #303 / FINAL CI:** [PR #303](https://github.com/athpapachr-cmd/osteoporosis/pull/303) contains the independently reviewed compact panel. R2 closure PASS0:0:0; exact-head CI and authorized release next. No patient/provider write; NOT DEPLOYED. Writer `codex/cockpit-home-compact-20261118`.
 
 > **2026-11-18 COMPACT DAY HOME — INDEPENDENT R2 CLOSED / PR NEXT:** Substantive candidate `b07f13b54faa950eaff3adc607db6d8c937817f4`; independent affected closure PASS, all material findings closed, P0:P1:P2=0:0:0. [Receipt](reviews/HOME_ATTENTION_COMPACT_POSTCODE_R2_CLOSED_2026-11-18.md). Writer `codex/cockpit-home-compact-20261118`; exact-head CI and authorized release next. No patient/provider write. NOT DEPLOYED.
