@@ -1,0 +1,3 @@
+# Day Home attention — remaining concurrent refresh finding
+
+Independent affected review of `1c2faed`: BLOCK / COMPLETE_FOR_DECLARED_SCOPE=YES. Both preceding RF-exit and ordinary source-freshness P2s are closed. One new P2 remains: if a surgery GET is already in flight when Home requests refresh, the loading guard skips a fresh read; a later old response can therefore be shown as current after another client changed the source. Replace/invalidate the earlier generation on actual Home return or stale refresh; do not repeat the already-owned initial auth/bootstrap read. Preserve editor and logout guards. Synthetic proof: delayed old GET, changed source, Home refresh, late old success leaves the new data visible.
