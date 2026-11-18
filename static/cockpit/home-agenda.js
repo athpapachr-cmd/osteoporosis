@@ -52,6 +52,7 @@
       future:valid.filter(x=>x.start>now),unknown:all.filter(x=>!x.valid)};
   }
   const state={rows:null,day:null,checked:0,generation:0,tomorrow:null,pastOpen:false,tomorrowOpen:false, reload:null,surgery:null};
+  let pendingFocus=null;
   const focusKeys=new WeakMap(); let targets=new Map();
   function el(tag,cls,value) {const e=document.createElement(tag); if(cls)e.className=cls;if(value!==undefined)e.textContent=value;return e;}
   function track(e,key){if(key){focusKeys.set(e,key);targets.set(key,e);}return e;}
@@ -74,7 +75,17 @@
     const why=cleanReason(r.reason,rawName); if(why) {const line=el("span","hg-why",why);line.title=String(r.reason);body.append(line);}
     b.append(el("span","hg-time",clock(item.start)),body,el("span","hg-right",clinic(r.clinic) || "›"));return b;
   }
-  function clear(){state.generation++;state.rows=null;state.day=null;state.checked=0;state.tomorrow=null;state.surgery=null;state.pastOpen=false;state.tomorrowOpen=false;}
+  function clear(preserveFocus=false){state.generation++;state.rows=null;state.day=null;state.checked=0;state.tomorrow=null;state.surgery=null;if(!preserveFocus){state.pastOpen=false;state.tomorrowOpen=false;pendingFocus=null;}}
+  function prepareReload(){
+    const active=document.activeElement;
+    if (!active || !root.contains(active)) {pendingFocus=null;return false;}
+    pendingFocus={key:focusKeys.get(active) || pendingFocus?.key || "heading", loading:null};return true;
+  }
+  function markLoading(loading){if(pendingFocus){pendingFocus.loading=loading;loading.focus({preventScroll:true});}}
+  function failure(message){
+    const restore=!!(pendingFocus && document.activeElement===pendingFocus.loading), element=el("p","doctor-help",message);
+    element.tabIndex=-1;root.replaceChildren(element);pendingFocus=null;if(restore)element.focus({preventScroll:true});
+  }
   function readTomorrow(info) {
     const gen=state.generation;state.tomorrow={key:info.key,info,loading:true,rows:null};
     const q=new URLSearchParams({start:info.start,end:info.end});
@@ -93,16 +104,14 @@
     const t=state.tomorrow, box=el("section","hg-tomorrow");box.append(el("h3","hg-label","Αύριο · "+info.label));
     if(t.loading)box.append(el("p","hg-empty","Φόρτωση αυριανού προγράμματος…"));
     else if(!t.rows)box.append(el("p","hg-empty","Το αυριανό πρόγραμμα δεν είναι διαθέσιμο. Δεν σημαίνει ότι δεν υπάρχουν ραντεβού."));
-    else {
-      const surgeries=state.surgery && Array.isArray(state.surgery.attention) ? state.surgery.attention.filter(x=>x.date===info.key) : [];
-      const items=t.rows.map(x=>({sort:x.start===null?"99:99":clock(x.start),node:()=>row(x,"tomorrow")}));
-      surgeries.forEach((s,i)=>{const time=/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(s.time)?s.time:"";
-        items.push({sort:time||"99:99",node:()=>button((time?time+" · ":"")+tidy(s.name)+" · Χειρουργείο", "hg-surgery",()=>window.CockpitHomeAttentionNavigation?.cases?.("surgery"),"surgery:"+i)});});
-      items.sort((a,b)=>a.sort.localeCompare(b.sort));const shown=state.tomorrowOpen?items:items.slice(0,4);shown.forEach(x=>box.append(x.node()));
-      if(!t.rows.length)box.append(el("p","hg-empty","Δεν βρέθηκαν ραντεβού αύριο στη διαθέσιμη πηγή."));
-      if(!state.surgery)box.append(el("p","hg-empty","Τα αυριανά χειρουργεία δεν επιβεβαιώθηκαν εδώ."));
-      if(items.length>4){const more=button(state.tomorrowOpen?"Λιγότερα":"Δες και τα "+items.length,"hg-more",()=>{state.tomorrowOpen=!state.tomorrowOpen;draw();},"tomorrow-more");more.setAttribute("aria-expanded",String(state.tomorrowOpen));box.append(more);}
-    }
+    const surgeries=state.surgery && Array.isArray(state.surgery.attention) ? state.surgery.attention.filter(x=>x.date===info.key) : [];
+    const items=(t.rows || []).map(x=>({sort:x.start===null?"99:99":clock(x.start),node:()=>row(x,"tomorrow")}));
+    surgeries.forEach((s,i)=>{const time=/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(s.time)?s.time:"";
+      items.push({sort:time||"99:99",node:()=>button((time?time+" · ":"")+tidy(s.name)+" · Χειρουργείο", "hg-surgery",()=>window.CockpitHomeAttentionNavigation?.cases?.("surgery"),"surgery:"+i)});});
+    items.sort((a,b)=>a.sort.localeCompare(b.sort));const shown=state.tomorrowOpen?items:items.slice(0,4);shown.forEach(x=>box.append(x.node()));
+    if(Array.isArray(t.rows) && !t.rows.length)box.append(el("p","hg-empty","Δεν βρέθηκαν ραντεβού αύριο στη διαθέσιμη πηγή."));
+    if(!state.surgery)box.append(el("p","hg-empty","Τα αυριανά χειρουργεία δεν επιβεβαιώθηκαν εδώ."));
+    if(items.length>4){const more=button(state.tomorrowOpen?"Λιγότερα":"Δες και τα "+items.length,"hg-more",()=>{state.tomorrowOpen=!state.tomorrowOpen;draw();},"tomorrow-more");more.setAttribute("aria-expanded",String(state.tomorrowOpen));box.append(more);}
     return box;
   }
   function draw(){
@@ -124,11 +133,16 @@
     const target=(previous&&targets.get(previous))||(inside&&targets.get("heading"));target?.focus?.({preventScroll:true});
   }
   function validSurgery(d){return !!d && !d.unavailable && Array.isArray(d.attention) && d.attention.every(x=>x && typeof x.date === "string" && typeof x.name === "string" && typeof x.procedure === "string" && typeof x.time === "string");}
-  function render(rows,options){clear();state.rows=rows;state.day=options.day;state.checked=Date.now();state.reload=options.reload;state.surgery=validSurgery(window.CockpitSurgerySummary)?window.CockpitSurgerySummary:null;draw();}
+  function render(rows,options){
+    const restore=!!(pendingFocus && document.activeElement===pendingFocus.loading), key=pendingFocus?.key;
+    clear(true);state.rows=rows;state.day=options.day;state.checked=Date.now();state.reload=options.reload;
+    state.surgery=validSurgery(window.CockpitSurgerySummary)?window.CockpitSurgerySummary:null;draw();
+    if(restore) (targets.get(key) || targets.get("heading"))?.focus?.({preventScroll:true});pendingFocus=null;
+  }
   function tick(){if(!state.rows||document.hidden)return;if(dayKey(Date.now())!==state.day||Date.now()-state.checked>=300000){state.reload?.();return;}draw();}
-  window.addEventListener("clinical:unauthenticated",clear);
+  window.addEventListener("clinical:unauthenticated",()=>clear());
   window.addEventListener("cockpit:surgery-counts",e=>{if(state.rows){state.surgery=validSurgery(e.detail)?e.detail:null;if(state.tomorrow)draw();}});
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)tick();});window.addEventListener("focus",tick);
   window.setInterval(tick,30000);
-  window.CockpitHomeAgenda={render,clear,classify,tomorrowRange,cleanReason};
+  window.CockpitHomeAgenda={render,clear,prepareReload,markLoading,failure,classify,tomorrowRange,cleanReason};
 })();

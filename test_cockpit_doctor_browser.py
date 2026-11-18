@@ -1367,6 +1367,9 @@ def browser_suite(width, screenshot_name):
         for slot in ("Previous","Current","Next"):
             expect(page.locator("#visitSidebar"+slot)).to_be_hidden()
         expect(page.locator("#homeAgendaRows .hg-row")).to_have_count(2)
+        page.locator("#homeAgendaRows .hg-row").first.focus()
+        page.evaluate("document.getElementById('homeAgendaRefresh').click()")
+        expect(page.locator("#homeAgendaRows .hg-row").first).to_be_focused()
         expect(page.locator("#nextAppointmentPatient")).to_contain_text("Ασθενής Δοκιμής Α")
         if width <= 990:
             expect(page.locator("#visitSidebar")).to_be_hidden()

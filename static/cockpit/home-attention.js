@@ -214,13 +214,13 @@
       const recent=filtered.filter(x=>!oldItem(x,now)),old=filtered.filter(x=>oldItem(x,now));
       recent.forEach(addItem);
       if (old.length) {
-        const oldToggle=actionButton((state.showOld?"Απόκρυψη":"Παλιότερη ημερομηνία · πάνω από 90 ημέρες") + " ("+old.length+")","ha-ghost",()=>{state.showOld=!state.showOld;draw();},"old-items");
+        const oldToggle=actionButton("Παλιότερη ημερομηνία · πάνω από 90 ημέρες ("+old.length+")" + (state.showOld ? " · Απόκρυψη" : ""),"ha-ghost",()=>{state.showOld=!state.showOld;draw();},"old-items");
         oldToggle.setAttribute("aria-expanded",String(state.showOld));list.append(oldToggle);
         if(state.showOld)old.forEach(addItem);
       }
     }
     if (items.length > 4) {
-      const more = actionButton(state.showAll ? "Δες λιγότερα" : "Δες όλα τα " + items.length, "ha-ghost", () => { state.showAll = !state.showAll; if(!state.showAll){state.filter="all";state.showOld=false;} draw(); }, "more-items");
+      const more = actionButton(state.showAll ? "Δες λιγότερα" : "Δες όλα τα " + items.length, "ha-ghost", () => { state.showAll = !state.showAll; if(state.showAll)state.showOld=items.slice(0,4).some(x=>oldItem(x,now)); else {state.filter="all";state.showOld=false;} draw(); }, "more-items");
       more.setAttribute("aria-expanded", String(state.showAll)); list.append(more);
     }
     root.append(list);

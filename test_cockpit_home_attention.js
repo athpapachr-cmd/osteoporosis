@@ -169,12 +169,20 @@ async function run() {
   assert.match(text(target), /Παλιότερη ημερομηνία/);
   assert.match(text(target), /Μελλοντικό/, "mixed-age group remains in main list");
   buttons(target).find(b=>text(b).includes("Μελλοντικό")).click();assert.equal(actions.pop(),"mixed-new");
-  assert.doesNotMatch(text(target), /Παλιό μόνο/, "entirely old group is collapsed");
+  assert.match(text(target), /Παλιό μόνο/, "expansion preserves already visible old rows");
   buttons(target).find(b=>text(b).includes("Παλιότερη ημερομηνία")).click();
-  assert.match(text(target), /Παλιό μόνο/);
+  assert.doesNotMatch(text(target), /Παλιό μόνο/, "old rows collapse explicitly");
+  buttons(target).find(b=>text(b).includes("Παλιότερη ημερομηνία")).click();
   buttons(target).find(b=>text(b).includes("Υποχρεώσεις 2")).click();
   assert.doesNotMatch(text(target), /Παλιά Έκθεση/);
   assert.match(text(target), /3 ενεργές εγγραφές στην προβολή έως 100/);
+  // All five old groups: expansion cannot hide any already visible row.
+  fixtures.tasks.items=Array.from({length:5},(_,i)=>({patient_id:"old-"+i,patient_name:"Παλιός "+i,description:"Παλιά "+i,pending_id:"id-"+i,status:"open",review_date:"2026-07-0"+(i+1)}));
+  fixtures.reports.cases=[];fixtures.rf.applications=[];
+  emit("clinical:unauthenticated");emit("clinical:authenticated");await flush();
+  assert.match(text(target),/Παλιός 0/);assert.match(text(target),/Παλιός 3/);assert.doesNotMatch(text(target),/Παλιός 4/);
+  buttons(target).find(b=>text(b).includes("Δες όλα τα 5")).click();
+  assert.match(text(target),/Παλιός 0/);assert.match(text(target),/Παλιός 3/);assert.match(text(target),/Παλιός 4/);
   console.log("PASS Home attention: source truth, partial coverage, privacy, navigation, revocation, races and refresh");
 }
 run().catch(e => { console.error(e); process.exitCode = 1; });
