@@ -16,6 +16,12 @@
   const state = {authorized: false, epoch: 0, load: 0, hidden: false,
     surgeries: null, rf: null, reports: null, tasks: null, calls: null, updated: 0, day: null,
     showAll: false, showAllSurgery: false};
+  const focusKeys = new WeakMap();
+  let focusTargets = new Map();
+  function trackFocus(element, key) {
+    if (key) { focusKeys.set(element, key); focusTargets.set(key, element); }
+    return element;
+  }
   const nav = () => window.CockpitHomeAttentionNavigation || {};
   const today = () => {
     const p = Object.fromEntries(dayParts.formatToParts(new Date())
@@ -47,9 +53,9 @@
     if (validDate(item.review_date)) return "Προθεσμία " + shortDate(item.review_date);
     return item.review_date ? "Μη έγκυρη ημερομηνία" : "Χωρίς ημερομηνία";
   }
-  function actionButton(label, cls, handler) {
+  function actionButton(label, cls, handler, focusKey = null) {
     const button = node("button", cls, label); button.type = "button";
-    button.addEventListener("click", handler); return button;
+    button.addEventListener("click", handler); return trackFocus(button, focusKey);
   }
   function basicRow(tag, title, detail, meta, handler, opts = {}) {
     const b = node("button", "ha-row" + (opts.focus ? " ha-focus" : "") + (opts.footer ? " ha-counter" : "")); b.type = "button";
@@ -59,7 +65,7 @@
     body.append(node("strong", "ha-line", title));
     if (detail) body.append(node("span", "ha-sub", detail));
     b.append(body, node("span", "ha-meta", meta || ""));
-    b.addEventListener("click", handler); return b;
+    b.addEventListener("click", handler); return trackFocus(b, opts.focusKey);
   }
   function taskRow(group, now, actionsAvailable) {
     const outer = node("div", "ha-row ha-task-row");
@@ -71,20 +77,20 @@
     const label = name(group.name) + " · " + status;
     if (actionsAvailable) {
       const main = actionButton(label, "ha-task-name", () => nav().obligations?.(
-        group.items.length === 1 ? group.items[0].pending_id : undefined));
+        group.items.length === 1 ? group.items[0].pending_id : undefined), "task-group:" + group.key);
       main.setAttribute("aria-label", "Υποχρέωση · " + label); body.append(main);
     } else body.append(node("strong", "ha-line", label));
     for (const item of group.items.slice(0, 2)) {
       const description = state.hidden ? "Υποχρέωση ασθενούς" : item.description;
       const line = actionsAvailable
-        ? actionButton("", "ha-sub ha-task-detail", () => nav().obligations?.(item.pending_id))
+        ? actionButton("", "ha-sub ha-task-detail", () => nav().obligations?.(item.pending_id), "task:" + group.key + ":" + item.pending_id)
         : node("span", "ha-sub");
       line.append(node("span", "ha-sub-desc", description), node("span", "ha-sub-date", " · " + dueLabel(item)));
       body.append(line);
     }
     if (group.items.length > 2) {
       const more = "+" + (group.items.length - 2) + " ακόμη";
-      if (actionsAvailable) body.append(actionButton(more, "ha-more-tasks", () => nav().obligations?.()));
+      if (actionsAvailable) body.append(actionButton(more, "ha-more-tasks", () => nav().obligations?.(), "task-more:" + group.key));
       else body.append(node("span", "ha-sub", more));
     }
     outer.append(body);
@@ -102,7 +108,7 @@
     items.forEach((item, index) => {
       const id = typeof item.patient_id === "string" && item.patient_id.trim() ? item.patient_id : null;
       const key = id ? "patient:" + id : "unknown:" + index;
-      if (!groups.has(key)) groups.set(key, {kind: "task", name: item.patient_name, items: [], date: null});
+      if (!groups.has(key)) groups.set(key, {kind: "task", key, name: item.patient_name, items: [], date: null});
       groups.get(key).items.push(item);
     });
     for (const group of groups.values()) {
@@ -112,16 +118,24 @@
     return [...groups.values()];
   }
   function draw() {
+    const active = document.activeElement, previousFocus = active ? focusKeys.get(active) : null;
+    const wasInside = Boolean(active && typeof root.contains === "function" && root.contains(active));
+    focusTargets = new Map();
+    const restoreFocus = () => {
+      const target = (previousFocus && focusTargets.get(previousFocus)) || (wasInside && focusTargets.get("heading"));
+      if (target && typeof target.focus === "function") target.focus({preventScroll:true});
+    };
     root.replaceChildren(); root.className = "doctor-attention-list ha-root";
     const header = node("div", "ha-header");
-    header.append(node("h2", "ha-title", "Σήμερα και αύριο"));
+    const heading = node("h2", "ha-title", "Σήμερα και αύριο"); heading.setAttribute("tabindex", "-1");
+    header.append(trackFocus(heading, "heading"));
     if (state.authorized) {
-      const toggle = actionButton(state.hidden ? "◉ Ονόματα κρυφά" : "◉ Ονόματα", "ha-toggle", () => { state.hidden = !state.hidden; draw(); });
+      const toggle = actionButton(state.hidden ? "◉ Ονόματα κρυφά" : "◉ Ονόματα", "ha-toggle", () => { state.hidden = !state.hidden; draw(); }, "privacy");
       toggle.setAttribute("aria-label", state.hidden ? "Εμφάνιση ονομάτων εδώ" : "Απόκρυψη ονομάτων εδώ");
       toggle.setAttribute("aria-pressed", String(state.hidden)); header.append(toggle);
     }
     root.append(header);
-    if (!state.authorized) { root.append(node("p", "ha-note", "Συνδέσου για να δεις τις εκκρεμότητες.")); return; }
+    if (!state.authorized) { root.append(node("p", "ha-note", "Συνδέσου για να δεις τις εκκρεμότητες.")); restoreFocus(); return; }
     const now = today(), tomorrow = nextDay(now), go = tab => () => nav().cases?.(tab);
     const s = state.surgeries, focusSurgeries = s ? s.attention.filter(x => x.date === now || x.date === tomorrow) : [];
     focusSurgeries.sort((a,b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
@@ -137,7 +151,10 @@
         section.append(basicRow("Χειρουργείο", (item.time ? item.time + " · " : "") + name(item.name),
           state.hidden ? "" : item.procedure, item.time ? "Αίθουσα " + item.time : "", go("surgery"), {focus:true}));
       }
-      if (focusSurgeries.length > 3) section.append(actionButton(state.showAllSurgery ? "Λιγότερα χειρουργεία" : "Δες όλα τα " + focusSurgeries.length + " χειρουργεία", "ha-ghost", () => { state.showAllSurgery = !state.showAllSurgery; draw(); }));
+      if (focusSurgeries.length > 3) {
+        const more = actionButton(state.showAllSurgery ? "Λιγότερα χειρουργεία" : "Δες όλα τα " + focusSurgeries.length + " χειρουργεία", "ha-ghost", () => { state.showAllSurgery = !state.showAllSurgery; draw(); }, "more-surgeries");
+        more.setAttribute("aria-expanded", String(state.showAllSurgery)); section.append(more);
+      }
       root.append(section);
     }
     const items = [];
@@ -156,19 +173,23 @@
       if (item.kind === "task") list.append(taskRow(item, now, state.tasks.actionsAvailable));
       else if (item.kind === "rf") list.append(basicRow("RF", name(x.patient_name), "Χωρίς σύνδεση με χειρουργείο",
         item.date ? "Εγκρίθηκε " + pretty(item.date) : "Εγκεκριμένη", () => nav().cases?.("rf", x.id),
-        {aria:"Εγκεκριμένη RF · " + name(x.patient_name)}));
+        {aria:"Εγκεκριμένη RF · " + name(x.patient_name), focusKey:"rf:" + x.id}));
       else if (item.kind === "report") list.append(basicRow("Έκθεση", name(x.patient_name),
         x.writing ? "Σε σύνταξη" : "Σταλμένη με υπόλοιπο", item.date ? (x.writing ? "Έναρξη " : "Αποστολή ") + pretty(item.date) : "", go("accidents")));
       else list.append(basicRow("Χειρουργείο", name(x.name),
         (state.hidden ? "" : x.procedure + (x.date < now ? " · " : "")) + (x.date < now ? "Περασμένη ημερομηνία" : ""),
         pretty(x.date), go("surgery")));
     }
-    if (items.length > 4) list.append(actionButton(state.showAll ? "Δες λιγότερα" : "Δες όλα τα " + items.length, "ha-ghost", () => { state.showAll = !state.showAll; draw(); }));
+    if (items.length > 4) {
+      const more = actionButton(state.showAll ? "Δες λιγότερα" : "Δες όλα τα " + items.length, "ha-ghost", () => { state.showAll = !state.showAll; draw(); }, "more-items");
+      more.setAttribute("aria-expanded", String(state.showAll)); list.append(more);
+    }
     root.append(list);
     const footer = node("section", "ha-section ha-footer");
-    if (s && s.undated) footer.append(basicRow("", s.undated + (s.undated === 1 ? " χειρουργείο" : " χειρουργεία") + " χωρίς ημερομηνία", "", "Άνοιγμα", go("surgery"), {footer:true}));
-    if (s && s.invalid) footer.append(basicRow("", s.invalid + (s.invalid === 1 ? " χειρουργείο" : " χειρουργεία") + " με μη έγκυρη ημερομηνία", "", "Άνοιγμα", go("surgery"), {footer:true}));
-    if (state.calls && state.calls.count > 0) footer.append(basicRow("", state.calls.count + (state.calls.count === 1 ? " κλήση" : " κλήσεις") + " χωρίς σήμανση διεκπεραίωσης", "", "Άνοιγμα", () => nav().calls?.(), {footer:true}));
+    if (s && s.undated) footer.append(basicRow("", s.undated + (s.undated === 1 ? " χειρουργείο" : " χειρουργεία") + " χωρίς ημερομηνία", "", "Άνοιγμα", go("surgery"), {footer:true,focusKey:"surgery-undated"}));
+    if (s && s.invalid) footer.append(basicRow("", s.invalid + (s.invalid === 1 ? " χειρουργείο" : " χειρουργεία") + " με μη έγκυρη ημερομηνία", "", "Άνοιγμα", go("surgery"), {footer:true,focusKey:"surgery-invalid"}));
+    if (s && s.later) footer.append(basicRow("", s.later + (s.later === 1 ? " χειρουργείο" : " χειρουργεία") + " μετά το επταήμερο", "", "Άνοιγμα", go("surgery"), {footer:true,focusKey:"surgery-later"}));
+    if (state.calls && state.calls.count > 0) footer.append(basicRow("", state.calls.count + (state.calls.count === 1 ? " κλήση" : " κλήσεις") + " χωρίς σήμανση διεκπεραίωσης", "", "Άνοιγμα", () => nav().calls?.(), {footer:true,focusKey:"calls"}));
     const sources = [["Χειρουργεία", s], ["RF", state.rf], ["Εκθέσεις", state.reports], ["Υποχρεώσεις", state.tasks], ["Κλήσεις", state.calls]];
     const loading = sources.filter(([,value]) => value === undefined).map(([label]) => label);
     const missing = sources.filter(([,value]) => value === null).map(([label]) => label);
@@ -185,6 +206,7 @@
     if (state.calls) coverage.push("έως 200 καταγεγραμμένες κλήσεις");
     if (coverage.length) footer.append(node("p", "ha-note", "Κάλυψη: " + coverage.join(" και ") + "."));
     root.append(footer);
+    restoreFocus();
   }
   function revoke() {
     state.authorized = false; ++state.epoch; ++state.load;
@@ -254,10 +276,13 @@
   function receiveSurgery(detail) {
     if (!state.authorized) return;
     if (!detail || detail.unavailable || !Array.isArray(detail.attention) ||
-        !Number.isInteger(detail.undated) || !Number.isInteger(detail.invalid) ||
+        !Number.isInteger(detail.total) || !Number.isInteger(detail.undated) || !Number.isInteger(detail.invalid) ||
+        detail.undated < 0 || detail.invalid < 0 || detail.total < detail.undated + detail.invalid + detail.attention.length ||
         detail.attention.some(x => !x || !validDate(x.date) || typeof x.name !== "string" ||
           typeof x.procedure !== "string" || typeof x.time !== "string")) state.surgeries = null;
-    else state.surgeries = {attention: detail.attention, undated: detail.undated, invalid: detail.invalid};
+    else state.surgeries = {attention: detail.attention.map(x => ({...x, time:/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(x.time) ? x.time : ""})),
+      undated: detail.undated, invalid: detail.invalid,
+      later: detail.total - detail.undated - detail.invalid - detail.attention.length};
     draw();
   }
   function authenticated() {

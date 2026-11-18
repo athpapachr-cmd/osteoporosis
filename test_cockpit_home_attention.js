@@ -10,6 +10,8 @@ class Element {
   setAttribute(k, v) { this.attributes[k] = v; }
   addEventListener(k, v) { this.events[k] = v; }
   click() { this.events.click?.(); }
+  focus() { document.activeElement = this; }
+  contains(other) { return this === other || this.children.some(x => x.contains(other)); }
 }
 class SyntheticEvent { constructor(type, options = {}) { this.type = type; this.detail = options.detail; } }
 const target = new Element(), document = {hidden: false,
@@ -62,21 +64,31 @@ async function run() {
     {date:"2026-11-17",name:"Συνθετικός παλιός",procedure:"Επέμβαση",time:""},
     ...[1,2,3,4].map(i => ({date:"2026-11-1" + i,name:"Παλαιός " + i,procedure:"Επέμβαση",time:""})),
     {date:"2026-11-19",name:"Συνθετικός νέος",procedure:"Επέμβαση",time:"08:00"}
-  ],undated:0,invalid:0});
+  ],total:6,undated:0,invalid:0});
   let output = text(target);
   assert.match(output, /Συνθετικός νέος/); assert.match(output, /Περασμένη ημερομηνία/);
   assert.match(text(buttons(target).find(b => text(b).includes("Συνθετικός νέος"))), /Συνθετικός νέος/);
   assert.match(output, /Να γίνουν · 4 από 8 στην προβολή/);
-  buttons(target).find(b => text(b).includes("Δες όλα τα 8")).click();
+  const expander = buttons(target).find(b => text(b).includes("Δες όλα τα 8"));
+  expander.focus(); expander.click();
+  assert.notEqual(document.activeElement, expander);
+  assert.equal(document.activeElement.attributes["aria-expanded"], "true");
+  assert.match(text(document.activeElement), /Δες λιγότερα/);
   output = text(target);
   assert.match(output, /Συνθετικός RF/); assert.match(output, /Μερική κάλυψη/);
   assert.match(output, /Συνθετική Έκθεση Σε σύνταξη/); assert.doesNotMatch(output, /Χωρίς Αίτημα/);
   assert.match(output, /Ιδιωτικό όνομα/); assert.match(output, /2/);
-  buttons(target).find(b => b.attributes["aria-label"] === "Απόκρυψη ονομάτων εδώ").click();
+  const privacy = buttons(target).find(b => b.attributes["aria-label"] === "Απόκρυψη ονομάτων εδώ");
+  privacy.focus(); privacy.click();
+  assert.equal(document.activeElement.attributes["aria-label"], "Εμφάνιση ονομάτων εδώ");
   output = text(target); assert.doesNotMatch(output, /Συνθετικός|Συνθετική|Ιδιωτικό όνομα|Επέμβαση/);
   assert.match(output, /Απόκρυψη ονόματος/);
   buttons(target).find(b => b.attributes["aria-label"] === "Εμφάνιση ονομάτων εδώ").click();
-  buttons(target).find(b => text(b).includes("Συνθετικός RF")).click(); assert.equal(actions.pop(), "rf");
+  const focusedRF = buttons(target).find(b => text(b).includes("Συνθετικός RF"));
+  focusedRF.focus();
+  emit("cockpit:surgery-counts", {attention:[{date:"2026-11-19",name:"Συνθετικός νέος",procedure:"Επέμβαση",time:"08:00"}],total:1,undated:0,invalid:0});
+  assert.equal(document.activeElement.attributes["aria-label"], "Εγκεκριμένη RF · Συνθετικός RF", "source redraw restores the same RF control");
+  document.activeElement.click(); assert.equal(actions.pop(), "rf");
   buttons(target).find(b => text(b).includes("Συνθετικός Ασθενής")).click(); assert.equal(actions.pop(), "task-1");
   mode = "fail-calls"; window.CockpitHomeAttention.refresh(); await flush();
   assert.match(text(target), /Μη διαθέσιμο/); assert.doesNotMatch(text(target), /Τίποτα επείγον/);
@@ -126,12 +138,19 @@ async function run() {
   let reprojections = 0;
   window.CockpitSurgeryQueue = {refreshAttention() {
     reprojections++;
-    emit("cockpit:surgery-counts", {attention:[{date:"2026-11-26",name:"Νέα ημέρα",procedure:"Επέμβαση",time:""}],undated:0,invalid:0});
+    emit("cockpit:surgery-counts", {attention:[{date:"2026-11-26",name:"Νέα ημέρα",procedure:"Επέμβαση",time:""}],total:1,undated:0,invalid:0});
   }};
   now = "2026-11-19T00:05:00Z";
   emit("focus"); await flush();
   assert.ok(reprojections > 0, "return across midnight reprojects the existing surgery source");
   assert.match(text(target), /Νέα ημέρα/);
+  // A surgery outside the seven-day projection still has an explicit list link.
+  fixtures.tasks.items = []; fixtures.rf.applications = []; fixtures.reports.cases = [];
+  fixtures.rf.has_more = false; fixtures.calls.unhandled_count = 0;
+  window.CockpitSurgeryQueue = undefined; window.CockpitHomeAttention.refresh(); await flush();
+  emit("cockpit:surgery-counts", {attention:[],total:1,undated:0,invalid:0});
+  assert.match(text(target), /1 χειρουργείο μετά το επταήμερο/);
+  buttons(target).find(b => text(b).includes("μετά το επταήμερο")).click(); assert.equal(actions.pop(), "surgery");
   console.log("PASS Home attention: source truth, partial coverage, privacy, navigation, revocation, races and refresh");
 }
 run().catch(e => { console.error(e); process.exitCode = 1; });
