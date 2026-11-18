@@ -2054,3 +2054,7 @@ Day Home presents source-backed surgery, unlinked approved RF, recorded report s
 ## 2026-11-18 — Compact Day Home attention
 
 PR #303, independent R2 closed and 14/14 final workflows passed. Native Render source `baf4de29f9aa933484601b4b4e49070f08e316f9` is live; bounded no-PHI smoke passed. The panel groups obligations by validated patient identity, orders available real dates oldest first, keeps exact action links and privacy controls, and exposes undated and later surgeries without invented urgency. See `cockpit/releases/HOME_ATTENTION_COMPACT_RELEASE_2026-11-18.md`. No patient/provider writes or configuration/schema changes.
+
+## 2026-11-18 — Refined Day Home agenda and attention
+
+PR #305 passed all 15 final workflows and independent R2 closure. Native Render source `db2a88a08a112a32d1521bec7feddc94e05dd821` is live; bounded no-PHI smoke passed. The Day Home shows start-in-day current/upcoming appointments, past entries on demand and an anytime tomorrow toggle using the existing protected source. Attention adds filters, source-date age and older-date grouping with patient-identity and coverage safeguards. See `cockpit/releases/HOME_AGENDA_ATTENTION_RELEASE_2026-11-18.md`. No patient/provider writes or schema/config changes.
