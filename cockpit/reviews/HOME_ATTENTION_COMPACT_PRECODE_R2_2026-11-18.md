@@ -1,0 +1,3 @@
+# Compact Day Home — independent pre-code R2
+
+Base `8dc92f962675530e383b12f0c2cea8d908de3e87`, corrected design blob `34bb9e87d1e75c994b33a8c21ba52f37492b13ad`. Verdict PASS / COMPLETE_FOR_DECLARED_SCOPE=YES / ALL_MATERIAL_FINDINGS_CLOSED=YES / P0:P1:P2=0:0:0. Independent review confirms the explicit contracts for identity-only grouping, mixed malformed source, each obligation's own date, neutral missing dates, full bounded projection, exact RF, unchanged report/payment owner, visible coverage, privacy and logout. Focused synthetic/browser evidence and independent final-code R2 remain required. No live patient/provider access.
