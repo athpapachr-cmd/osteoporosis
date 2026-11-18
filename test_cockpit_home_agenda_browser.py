@@ -37,6 +37,20 @@ def test_agenda_lifecycle_and_navigation():
             expect(root).to_contain_text('Επόμενο με επιβεβαιωμένη ώρα σε 48 λεπτά')
             expect(root.locator('.hg-row.next')).to_contain_text('Νεο Ονομα')
             expect(root.locator('.hg-row.unknown')).to_be_disabled()
+            # Explicit tomorrow selection works while today still has bookings.
+            toggle=root.get_by_role('button',name='Αύριο',exact=True)
+            toggle.focus();page.keyboard.press('Enter')
+            expect(root).to_contain_text('Φόρτωση αυριανού')
+            assert page.evaluate("document.activeElement.getAttribute('aria-expanded')") == 'true'
+            root.get_by_role('button',name='Απόκρυψη αυριανού').click()
+            expect(root).not_to_contain_text('Φόρτωση αυριανού')
+            root.get_by_role('button',name='Αύριο',exact=True).click()
+            page.evaluate("""() => window.__pending.at(-2)({ok:true,status:200,json:async()=>[{appointment_id:'stale',patient_display_name:'STALE-CLOSED',start_at:'2026-11-19T09:00:00Z',end_at:'2026-11-19T09:20:00Z'}]})""")
+            page.wait_for_timeout(50);expect(root).not_to_contain_text('STALE-CLOSED')
+            page.evaluate("""() => window.__pending.at(-1)({ok:true,status:200,json:async()=>[{appointment_id:'tomorrow-selected',patient_display_name:'Αυριανός Δοκιμής',start_at:'2026-11-19T09:00:00Z',end_at:'2026-11-19T09:20:00Z'}]})""")
+            root.locator('.hg-row.tomorrow').click()
+            assert page.evaluate('window.__selected.uid') == 'tomorrow-selected'
+            root.get_by_role('button',name='Απόκρυψη αυριανού').click()
             root.locator('.hg-row.next').click()
             assert page.evaluate('window.__selected.uid') == 'a'
             assert page.evaluate('window.__selected.name') == 'ΝΕΟ ΟΝΟΜΑ'

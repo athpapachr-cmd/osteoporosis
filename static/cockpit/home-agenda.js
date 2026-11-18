@@ -51,8 +51,8 @@
     return {past:valid.filter(x=>x.end<=now),current:valid.filter(x=>x.start<=now&&now<x.end),
       future:valid.filter(x=>x.start>now),unknown:all.filter(x=>!x.valid)};
   }
-  const state={rows:null,day:null,checked:0,generation:0,tomorrow:null,pastOpen:false,tomorrowOpen:false, reload:null,surgery:null};
-  let pendingFocus=null;
+  const state={rows:null,day:null,checked:0,generation:0,tomorrow:null,pastOpen:false,tomorrowOpen:false,showTomorrow:false, reload:null,surgery:null};
+  let pendingFocus=null,tomorrowGeneration=0;
   const focusKeys=new WeakMap(); let targets=new Map();
   function el(tag,cls,value) {const e=document.createElement(tag); if(cls)e.className=cls;if(value!==undefined)e.textContent=value;return e;}
   function track(e,key){if(key){focusKeys.set(e,key);targets.set(key,e);}return e;}
@@ -75,7 +75,7 @@
     const why=cleanReason(r.reason,rawName); if(why) {const line=el("span","hg-why",why);line.title=String(r.reason);body.append(line);}
     b.append(el("span","hg-time",clock(item.start)),body,el("span","hg-right",clinic(r.clinic) || "›"));return b;
   }
-  function clear(preserveFocus=false){state.generation++;state.rows=null;state.day=null;state.checked=0;state.tomorrow=null;state.surgery=null;if(!preserveFocus){state.pastOpen=false;state.tomorrowOpen=false;pendingFocus=null;}}
+  function clear(preserveFocus=false){state.generation++;tomorrowGeneration++;state.rows=null;state.day=null;state.checked=0;state.tomorrow=null;state.surgery=null;if(!preserveFocus){state.pastOpen=false;state.tomorrowOpen=false;state.showTomorrow=false;pendingFocus=null;}}
   function prepareReload(){
     const active=document.activeElement;
     if (!active || !root.contains(active)) {pendingFocus=null;return false;}
@@ -87,17 +87,17 @@
     element.tabIndex=-1;root.replaceChildren(element);pendingFocus=null;if(restore)element.focus({preventScroll:true});
   }
   function readTomorrow(info) {
-    const gen=state.generation;state.tomorrow={key:info.key,info,loading:true,rows:null};
+    const gen=state.generation, tomorrowGen=++tomorrowGeneration;state.tomorrow={key:info.key,info,loading:true,rows:null};
     const q=new URLSearchParams({start:info.start,end:info.end});
     fetch(url("/clinical/calendar/agenda?"+q),{credentials:"same-origin",cache:"no-store",headers:{Accept:"application/json"}})
       .then(async response=>{
-        if(gen!==state.generation || !state.rows) return;
+        if(gen!==state.generation || tomorrowGen!==tomorrowGeneration || !state.rows) return;
         if(response.status===401||response.status===403){window.dispatchEvent(new Event("clinical:unauthenticated"));return;}
         if(!response.ok)throw Error("unavailable");
-        const data=await response.json();if(gen!==state.generation||!state.rows)return;
+        const data=await response.json();if(gen!==state.generation||tomorrowGen!==tomorrowGeneration||!state.rows)return;
         if(!Array.isArray(data))throw Error("invalid");
         state.tomorrow={key:info.key,info,loading:false,rows:data.map(normalise).sort((a,b)=>(a.start??Infinity)-(b.start??Infinity))};draw();
-      }).catch(()=>{if(gen===state.generation&&state.rows){state.tomorrow={key:info.key,info,loading:false,rows:null};draw();}});
+      }).catch(()=>{if(gen===state.generation&&tomorrowGen===tomorrowGeneration&&state.rows){state.tomorrow={key:info.key,info,loading:false,rows:null};draw();}});
   }
   function tomorrowBlock(info){
     if(!state.tomorrow || state.tomorrow.key!==info.key)readTomorrow(info);
@@ -125,10 +125,17 @@
       if(!view.current.length)wrap.append(el("p","hg-now",clock(now)+" · Επόμενο με επιβεβαιωμένη ώρα σε "+minutes+" λεπτά"));
       wrap.append(row(next,"next"));if(rest.length){const list=el("div","hg-list");list.tabIndex=0;list.setAttribute("aria-label","Υπόλοιπα σημερινά ραντεβού");rest.forEach(x=>list.append(row(x)));wrap.append(list);}}
     if(view.unknown.length){wrap.append(el("p","hg-warning","Ραντεβού με μη επιβεβαιωμένη ώρα: "+view.unknown.length));view.unknown.forEach(x=>wrap.append(row(x,"unknown")));}
-    if(!view.current.length&&!view.future.length&&!view.unknown.length){
-      wrap.append(el("p","hg-empty",state.rows.length?"Δεν απομένουν άλλα ραντεβού με έναρξη σήμερα στη διαθέσιμη πηγή.":"Δεν βρέθηκαν ραντεβού με έναρξη σήμερα στη διαθέσιμη πηγή."));
-      wrap.append(tomorrowBlock(tomorrowRange(now)));
+    const finished=!view.current.length&&!view.future.length&&!view.unknown.length;
+    if (finished) wrap.append(el("p","hg-empty",state.rows.length?"Δεν απομένουν άλλα ραντεβού με έναρξη σήμερα στη διαθέσιμη πηγή.":"Δεν βρέθηκαν ραντεβού με έναρξη σήμερα στη διαθέσιμη πηγή."));
+    else {
+      const toggle=button(state.showTomorrow?"Απόκρυψη αυριανού":"Αύριο","hg-more",()=>{
+        state.showTomorrow=!state.showTomorrow;
+        if(!state.showTomorrow){tomorrowGeneration++;state.tomorrow=null;state.tomorrowOpen=false;}
+        draw();
+      },"toggle-tomorrow");
+      toggle.setAttribute("aria-expanded",String(state.showTomorrow));wrap.append(toggle);
     }
+    if(finished || state.showTomorrow)wrap.append(tomorrowBlock(tomorrowRange(now)));
     root.replaceChildren(wrap);const list=root.querySelector(".hg-list");if(list)list.scrollTop=priorScroll;
     const target=(previous&&targets.get(previous))||(inside&&targets.get("heading"));target?.focus?.({preventScroll:true});
   }

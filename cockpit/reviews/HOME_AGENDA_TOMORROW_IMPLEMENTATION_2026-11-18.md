@@ -1,0 +1,5 @@
+# Anytime tomorrow selector — implementation evidence
+
+The Day Home agenda adds an accessible explicit tomorrow toggle while today's appointments remain; the prior automatic tomorrow view after the start-in-day list is exhausted remains. The existing protected agenda owner is used; no direct dashboard login or new provider write. Closing invalidates its pending response; reopening starts a new request. Synthetic real Chromium desktop/mobile proves open/close/reopen with a late first response, exact tomorrow booking selection, 503 and logout, beside prior DST, independent surgery, five-minute focus and full Cockpit three-width proof. Node Home/attention/doctor-shell/iCloud PASS; Home and previous-day overlap 13 PASS.
+
+Initial final-head CI corrections are scoped to the old hard-coded cache version assertion and preserving the dedicated #161 static fixture's context strip only on its synthetic page; its actual three-width persistent-browser test passed, alongside the dedicated two-width agenda test (2 passed). New exact-head affected independent R2 and fresh CI remain.
