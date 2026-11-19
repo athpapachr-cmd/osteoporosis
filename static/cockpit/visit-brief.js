@@ -4,13 +4,18 @@
   const $=id=>document.getElementById(id);
   const state={
     ticket:0, view:null, ready:false, revision:0, linked:false,
-    pending:null, chosen:null, patientId:null, inFlight:false, chartMode:false, replaceRequired:false
+    pending:null, chosen:null, patientId:null, inFlight:false, chartMode:false, replaceRequired:false, prepController:null, openDay:null
   };
   const endpoint=(window.CockpitClinicalBase||"/clinical")+"/calendar/visit-brief/";
+  const cyprusDay=()=>new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Nicosia",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+  function checkDay(){if(state.view && state.openDay!==cyprusDay()){state.prepController?.abort();$("visitBriefClose").click();return false;}return true;}
+  window.setInterval(checkDay,10000);
+  window.addEventListener("focus",checkDay);
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden)checkDay();});
 
-  async function request(action,body){
+  async function request(action,body,signal){
     const response=await fetch(endpoint+action,{
-      method:"POST",credentials:"same-origin",cache:"no-store",
+      method:"POST",credentials:"same-origin",cache:"no-store",signal,
       headers:{"Content-Type":"application/json","Accept":"application/json"},
       body:JSON.stringify(body)
     });
@@ -18,6 +23,51 @@
       const err=new Error("HTTP "+response.status);err.status=response.status;throw err;
     }
     return response.json();
+  }
+  async function loadPreparation(ticket){
+    const view=state.view;if(!view?.uid||!view.date)return;
+    const fmt=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Nicosia",year:"numeric",month:"2-digit",day:"2-digit"});
+    const today=fmt.format(new Date()), next=new Date(today+"T12:00:00Z");next.setUTCDate(next.getUTCDate()+1);
+    const tomorrow=next.toISOString().slice(0,10);
+    if(view.date!==today&&view.date!==tomorrow)return;
+    const box=document.createElement("section");box.id="visitBriefPreparation";
+    const heading=document.createElement("h3");heading.textContent="Προετοιμασία επίσκεψης";
+    const body=document.createElement("div");body.textContent="Έλεγχος αποθηκευμένης προετοιμασίας…";
+    box.append(heading,body);$("visitBriefClinical").append(box);
+    const intent={booking_uid:view.uid,target_date:view.date};
+    const still=()=>checkDay()&&ticket===state.ticket&&!$("visitBriefOverlay").hidden&&box.isConnected;
+    async function retrieve(){
+      try{
+        const data=await request("prepare-read",intent);if(!still())return;
+        body.replaceChildren();
+        if(data.state!=="ready"){
+          const message=document.createElement("p");message.textContent=data.state==="stale"?
+            "Τα στοιχεία άλλαξαν από την προετοιμασία. Χρειάζεται νέα προετοιμασία.":"Δεν υπάρχει αποθηκευμένη προετοιμασία.";body.append(message);
+        }else{
+          const facts=document.createElement("h4");facts.textContent="Καταγεγραμμένα στοιχεία";body.append(facts);
+          const list=document.createElement("ul");(data.items||[]).forEach(item=>{const li=document.createElement("li");
+            const flags=[];if(item.certainty && item.certainty!=="certain")flags.push("Βεβαιότητα: "+({uncertain:"αβέβαιο",conflicting:"αντικρουόμενα στοιχεία"}[item.certainty]||item.certainty));
+            if(item.verification && item.verification!=="clinician_confirmed")flags.push("Αναφέρεται στην πηγή · χωρίς ιατρική επιβεβαίωση");
+            if(item.status)flags.push("Κατάσταση: "+item.status);if(item.review_date)flags.push("Επανέλεγχος: "+item.review_date);
+            li.textContent=(item.source_date?item.source_date+" · ":"")+item.label+": "+item.text+(flags.length?" · "+flags.join(" · "):"");list.append(li);});body.append(list);
+          if(data.partial){const note=document.createElement("p");note.textContent="Μερικά στοιχεία δεν ήταν διαθέσιμα ή δεν συμπεριλήφθηκαν.";body.append(note);}
+          const title=document.createElement("h4");title.textContent="Πιθανές ερωτήσεις από το AI · για δικό σας έλεγχο";body.append(title);
+          const questions=document.createElement("ul");(data.questions||[]).forEach(item=>{const li=document.createElement("li");const refs=(item.source_ids||[]).map(id=>{const match=(data.items||[]).find(x=>x.source_id===id);return match?(match.label+(match.source_date?" · "+match.source_date:"")):null;}).filter(Boolean);
+            li.textContent=item.text+(refs.length?" (Πηγές: "+refs.join(", ")+")":"");questions.append(li);});body.append(questions);
+          if(!data.questions?.length){const note=document.createElement("p");note.textContent=data.ai_status==="insufficient_context"?"Ανεπαρκή στοιχεία · το AI δεν εκτελέστηκε.":data.ai_status==="incomplete_source"?"Ατελής πηγή · το AI δεν εκτελέστηκε.":"Το AI δεν πρότεινε ερωτήσεις για τα διαθέσιμα στοιχεία.";body.append(note);}
+        }
+        const button=document.createElement("button");button.type="button";button.textContent="Νέα προετοιμασία";
+        button.onclick=async()=>{const controller=new AbortController();state.prepController=controller;button.disabled=true;body.textContent="Προετοιμασία…";
+          try{await request("prepare-tomorrow",{...intent,first_batch:false},controller.signal);if(still()&&!controller.signal.aborted)await retrieve();}
+          catch(e){if(still()&&!controller.signal.aborted){if(e.status===401||e.status===403){identityDenied();return;}body.textContent="Η προετοιμασία δεν είναι διαθέσιμη. Δοκιμάστε ξανά.";}}
+          finally{if(state.prepController===controller)state.prepController=null;}};body.append(button);
+        if(data.state==="ready"||data.state==="stale"){
+          const remove=document.createElement("button");remove.type="button";remove.textContent="Διαγραφή προετοιμασίας";
+          remove.onclick=async()=>{remove.disabled=true;try{await request("prepare-delete",intent);if(still())await retrieve();}catch(e){if(still()){if(e.status===401||e.status===403){identityDenied();return;}body.textContent="Η διαγραφή δεν ολοκληρώθηκε. Δοκιμάστε ξανά.";}}};body.append(remove);
+        }
+      }catch(e){if(!still())return;if(e.status===401||e.status===403){identityDenied();return;}body.textContent="Η προετοιμασία δεν είναι διαθέσιμη αυτή τη στιγμή.";}
+    }
+    await retrieve();
   }
   function evidence(id,values,empty){
     const el=$(id);el.replaceChildren();
@@ -46,6 +96,7 @@
   }
   function clearProtected(){
     state.patientId=null;
+    $("visitBriefPreparation")?.remove();
     $("visitBriefClinical").hidden=true;
     $("visitBriefOpenChart").hidden=true;
     document.getElementById("visitBriefOpenLatest")?.remove?.();
@@ -63,6 +114,7 @@
   }
   function invalidate(){
     state.ticket++;
+    state.prepController?.abort();state.prepController=null;
     state.ready=false;state.view=null;state.pending=null;state.chosen=null;
     state.revision=0;state.linked=false;state.inFlight=false;state.chartMode=false;state.replaceRequired=false;
     clearProtected();
@@ -97,7 +149,7 @@
     if(window.CockpitStoredChart?.canLeave&&!window.CockpitStoredChart.canLeave())return;
     invalidate();
     const ticket=state.ticket;
-    state.view={...view};
+    state.view={...view};state.openDay=cyprusDay();
     $("visitBriefName").textContent=view.name;
     $("visitBriefWhen").textContent=view.time;
     $("visitBriefReason").textContent=view.reason;
@@ -128,7 +180,7 @@
           state.chartMode=true;
           const data=await request('chart-read',{booking_uid:view.uid,target_date:view.date||null});
           if(ticket!==state.ticket||$('visitBriefOverlay').hidden)return;
-          renderChart(data);return;
+          renderChart(data);if(data.mode==='chart_linked')loadPreparation(ticket);return;
         }
       }
       const data=await request("read",{booking_uid:view.uid});
