@@ -61,7 +61,11 @@ def _marker(db, signing):
 
 
 def _now(db):
-    value = db.scalar(select(func.clock_timestamp() if db.bind.dialect.name == "postgresql" else func.current_timestamp()))
+    # SQLite only supports a millisecond SQL clock; use the local process UTC
+    # clock for synthetic SQLite so newly saved microsecond timestamps survive.
+    if db.bind.dialect.name == "sqlite":
+        return datetime.now(timezone.utc).replace(tzinfo=None)
+    value = db.scalar(select(func.clock_timestamp()))
     if isinstance(value, str):
         value = datetime.fromisoformat(value)
     return value.astimezone(timezone.utc).replace(tzinfo=None) if value.tzinfo else value
@@ -112,11 +116,13 @@ def cancel(engine, key, token):
                    PreparationDraft.pending_token == token).values(pending_token=None, pending_until=None))
 
 
-def publish(engine, key, token, payload):
+def publish(engine, key, token, payload, started_day):
     encryption, signing = keys()
     with Session(engine) as db, db.begin():
         _marker(db, signing)
         now = _now(db)
+        if now.replace(tzinfo=timezone.utc).astimezone(ZONE).date() != started_day:
+            raise HTTPException(409, 'Local day changed during preparation')
         row = db.get(PreparationDraft, key, with_for_update=True)
         if not row or row.pending_token != token or row.expires_at <= now or not row.pending_until or row.pending_until <= now:
             raise HTTPException(409, 'Preparation changed or expired')
@@ -127,6 +133,9 @@ def publish(engine, key, token, payload):
         row.pending_token = None
         row.pending_until = None
         db.flush()
+        final_now = _now(db)
+        if final_now.replace(tzinfo=timezone.utc).astimezone(ZONE).date() != started_day or row.expires_at <= final_now:
+            raise HTTPException(409, 'Local day changed during preparation')
 
 
 def read(engine, uid, day):

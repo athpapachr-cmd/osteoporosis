@@ -403,3 +403,57 @@ def test_server_rejects_generation_crossing_local_midnight(fixture,monkeypatch):
     monkeypatch.setattr(prep,'prepare_questions',fake)
     assert c.post(PATH+'prepare-tomorrow',json=body).status_code==409
     assert store.read(engine,'cal.com:chart-fixture',target) is None
+
+
+def test_rollover_after_source_check_before_publication_is_rejected(fixture,monkeypatch):
+    app,engine,c,p,state=fixture;link(c,state);body={**request_body(state),'first_batch':False}
+    async def fake(_):return 'ready',[]
+    monkeypatch.setattr(prep,'prepare_questions',fake)
+    original=store.publish
+    def late_publish(engine,key,token,payload,started_day):
+        tomorrow=datetime.combine(started_day+timedelta(days=1),datetime.min.time(),tzinfo=ZoneInfo('Asia/Nicosia'))
+        monkeypatch.setattr(store,'_now',lambda db:tomorrow.astimezone(timezone.utc).replace(tzinfo=None))
+        return original(engine,key,token,payload,started_day)
+    monkeypatch.setattr(store,'publish',late_publish)
+    assert c.post(PATH+'prepare-tomorrow',json=body).status_code==409
+    target=state['source'].start_at.astimezone(ZoneInfo('Asia/Nicosia')).date()
+    assert store.read(engine,'cal.com:chart-fixture',target) is None
+
+
+def test_new_signed_visit_after_initial_projection_is_detected(fixture,monkeypatch):
+    app,engine,c,p,state=fixture;link(c,state);body=request_body(state)
+    async def fake(_):return 'ready',[]
+    monkeypatch.setattr(prep,'prepare_questions',fake)
+    assert c.post(PATH+'prepare-tomorrow',json=body).status_code==200
+    original=store.read
+    def insert_new(*args):
+        out=original(*args);now=datetime.now(timezone.utc);day=now.astimezone(ZoneInfo('Asia/Nicosia')).date().isoformat()
+        with Session(engine) as db:
+            old=db.get(EncounterORM,p['source_encounter_id']);payload=deepcopy(old.payload_json)
+            payload['_visit_capture_v1']['signed_at']=now.isoformat()
+            payload['_visit_capture_v1']['candidate']['encounter_date']=day
+            db.add(EncounterORM(id='synthetic-committed-before-fence',patient_id=old.patient_id,encounter_date=day,
+                status='completed',payload_json=payload,created_at=now.replace(tzinfo=None),updated_at=now.replace(tzinfo=None)))
+            db.commit()
+        return out
+    monkeypatch.setattr(store,'read',insert_new)
+    assert c.post(PATH+'prepare-read',json=body).json()=={'state':'stale'}
+
+
+def test_read_crossing_midnight_is_rejected_but_fresh_request_works(fixture,monkeypatch):
+    app,engine,c,p,state=fixture;link(c,state);body=request_body(state)
+    async def fake(_):return 'ready',[]
+    monkeypatch.setattr(prep,'prepare_questions',fake)
+    assert c.post(PATH+'prepare-tomorrow',json=body).status_code==200
+    original=store.read
+    target=state['source'].start_at.astimezone(ZoneInfo('Asia/Nicosia')).date()
+    next_morning=datetime.combine(target,datetime.min.time(),tzinfo=ZoneInfo('Asia/Nicosia'))+timedelta(hours=1)
+    def crosses(*args):
+        out=original(*args)
+        monkeypatch.setattr(store,'_now',lambda db:next_morning.astimezone(timezone.utc).replace(tzinfo=None))
+        return out
+    monkeypatch.setattr(store,'read',crosses)
+    assert c.post(PATH+'prepare-read',json=body).json()=={'state':'stale'}
+    monkeypatch.setattr(store,'read',original)
+    monkeypatch.setattr(brief,'_utcnow',lambda:next_morning.astimezone(timezone.utc))
+    assert c.post(PATH+'prepare-read',json=body).json()['state']=='ready'

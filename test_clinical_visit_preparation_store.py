@@ -23,9 +23,9 @@ def db(tmp_path, monkeypatch):
 def test_ciphertext_restart_tamper_and_independent_bookings(db):
     day=date.today()+timedelta(days=1)
     k,t=store.reserve(db,'cal.com:one',day)
-    store.publish(db,k,t,{'message':'Συνθετικό δεδομένο','generation':t})
+    store.publish(db,k,t,{'message':'Συνθετικό δεδομένο','generation':t},datetime.now(store.ZONE).date())
     other,u=store.reserve(db,'cal.com:two',day)
-    store.publish(db,other,u,{'message':'Άλλο','generation':u})
+    store.publish(db,other,u,{'message':'Άλλο','generation':u},datetime.now(store.ZONE).date())
     assert store.read(db,'cal.com:one',day)['message']=='Συνθετικό δεδομένο'
     with Session(db) as session:
         row=session.get(store.PreparationDraft,k);second=session.get(store.PreparationDraft,other)
@@ -41,14 +41,14 @@ def test_deletion_cannot_resurrect_old_attempt(db):
     key,old=store.reserve(db,'cal.com:one',day)
     store.remove(db,'cal.com:one')
     key,new=store.reserve(db,'cal.com:one',day)
-    with pytest.raises(HTTPException):store.publish(db,key,old,{'generation':old})
-    store.publish(db,key,new,{'generation':new})
+    with pytest.raises(HTTPException):store.publish(db,key,old,{'generation':old},datetime.now(store.ZONE).date())
+    store.publish(db,key,new,{'generation':new},datetime.now(store.ZONE).date())
     assert store.read(db,'cal.com:one',day)['generation']==new
 
 
 def test_failing_attempt_preserves_last_draft(db):
     day=date.today()+timedelta(days=1)
-    key,old=store.reserve(db,'cal.com:one',day);store.publish(db,key,old,{'generation':old})
+    key,old=store.reserve(db,'cal.com:one',day);store.publish(db,key,old,{'generation':old},datetime.now(store.ZONE).date())
     _,new=store.reserve(db,'cal.com:one',day);store.cancel(db,key,new)
     assert store.read(db,'cal.com:one',day)['generation']==old
 

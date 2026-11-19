@@ -819,7 +819,7 @@ def attach_chart_booking_routes(router,engine,protected):
                      'revision':revision,'observation':observation,'source':projection_digest(projection),
                      'ai_status':status,'questions':questions,'generation':token,
                      'created_at':at_end.isoformat()}
-            publish(engine,key,token,payload)
+            publish(engine,key,token,payload,_utc(at_start).astimezone(CYPRUS).date())
             return {'ready':True,'ai_status':status}
         except BaseException:
             try: cancel(engine,key,token)
@@ -830,6 +830,7 @@ def attach_chart_booking_routes(router,engine,protected):
     async def read_preparation(req:ChartPreparationIntent, actor:StaffActor=Depends(clinician)):
         from clinical_visit_preparation import projection_digest
         from clinical_visit_preparation_store import read, check_available_in_session
+        import clinical_visit_preparation_store as preparation_store
         source=await booking(req);now=_utcnow();require_preparation_day(req,source,now)
         patient_id,revision,projection=preparation_snapshot(req,source,now,actor,'visit_preparation_check')
         payload=read(engine,req.booking_uid,req.target_date)
@@ -842,7 +843,7 @@ def attach_chart_booking_routes(router,engine,protected):
         # Re-resolve booking after decrypting. Lock existing link and clinical
         # source rows while rebuilding the final source view and checking draft
         # generation; no async call or provider work occurs in this section.
-        latest=await booking(req);final_instant=_utcnow();require_preparation_day(req,latest,final_instant)
+        latest=await booking(req);require_preparation_day(req,latest,_utcnow())
         if not hmac.compare_digest(_booking_observation(latest),_booking_observation(source)):
             return {'state':'stale'}
         from clinical_visit_preparation import source_projection
@@ -863,12 +864,20 @@ def attach_chart_booking_routes(router,engine,protected):
                     return {'state':'stale'}
                 db.scalars(select(EncounterORM).where(EncounterORM.patient_id==patient_id).with_for_update()).all()
                 db.scalars(select(ClinicalPendingORM).where(ClinicalPendingORM.patient_id==patient_id).with_for_update()).all()
+                # Take the source cutoff only after every writer fence is held.
+                final_instant=preparation_store._now(db).replace(tzinfo=timezone.utc)
+                if _utc(now).astimezone(CYPRUS).date()!=final_instant.astimezone(CYPRUS).date():
+                    return {'state':'stale'}
+                require_preparation_day(req,latest,final_instant)
                 final_projection=source_projection(db,patient_id,latest,final_instant)
                 if not hmac.compare_digest(payload.get('source',''),projection_digest(final_projection)):
                     return {'state':'stale'}
                 if not check_available_in_session(db,req.booking_uid,req.target_date,payload.get('generation')):
                     return {'state':'missing'}
-                require_preparation_day(req,latest,_utcnow())
+                final_clock=preparation_store._now(db).replace(tzinfo=timezone.utc)
+                if _utc(now).astimezone(CYPRUS).date()!=final_clock.astimezone(CYPRUS).date():
+                    return {'state':'stale'}
+                require_preparation_day(req,latest,final_clock)
                 result={'state':'ready','previous':final_projection['previous'],'items':final_projection['items'],
                         'partial':final_projection['partial'],'ai_status':payload['ai_status'],
                         'questions':payload['questions'],'created_at':payload['created_at']}
