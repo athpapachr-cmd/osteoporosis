@@ -64,7 +64,7 @@ def _now(db):
     value = db.scalar(select(func.clock_timestamp() if db.bind.dialect.name == "postgresql" else func.current_timestamp()))
     if isinstance(value, str):
         value = datetime.fromisoformat(value)
-    return value.replace(tzinfo=None) if value.tzinfo else value
+    return value.astimezone(timezone.utc).replace(tzinfo=None) if value.tzinfo else value
 
 
 def _opaque(signing, uid):

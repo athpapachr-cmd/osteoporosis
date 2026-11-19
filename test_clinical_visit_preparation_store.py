@@ -64,3 +64,17 @@ def test_missing_and_wrong_marker_fail_closed_and_cleanup_keeps_marker(db,monkey
 def test_expiry_uses_cyprus_dst_midnight():
     assert store._expiry(date(2026,3,28)).isoformat()=='2026-03-28T22:00:00'
     assert store._expiry(date(2026,3,29)).isoformat()=='2026-03-29T21:00:00'
+
+
+def test_database_aware_clock_is_normalised_to_utc():
+    from datetime import timezone
+    class Dialect: name='postgresql'
+    class Bind: dialect=Dialect()
+    class DB:
+        bind=Bind()
+        def __init__(self,value):self.value=value
+        def scalar(self,_):return self.value
+    target=datetime(2026,11,18,12,0,tzinfo=timezone.utc)
+    for offset in (-8,3,11):
+        observed=target.astimezone(timezone(timedelta(hours=offset)))
+        assert store._now(DB(observed))==datetime(2026,11,18,12,0)

@@ -88,7 +88,8 @@ def source_projection(db: Session, patient_id: str, booking: Any, at: datetime) 
 
     def add(kind: str, value: str | None, label: str, source_date: str | None,
             certainty: str = "certain", verification: str = "source_stated",
-            allow_ai: bool = True, max_chars: int = MAX_FACT_CHARS) -> None:
+            allow_ai: bool = True, max_chars: int = MAX_FACT_CHARS,
+            review_date: str | None = None, status: str | None = None) -> None:
         nonlocal partial, byte_count
         if not isinstance(value, str) or not value.strip():
             return
@@ -100,13 +101,14 @@ def source_projection(db: Session, patient_id: str, booking: Any, at: datetime) 
         source_id = len(visible) + 1
         item = {"source_id": source_id, "kind": kind, "text": value, "label": label,
                 "source_date": source_date, "certainty": certainty, "verification": verification,
-                "ai_eligible": allow_ai}
+                "ai_eligible": allow_ai, "review_date": review_date, "status": status}
         visible.append(item)
         byte_count += size
         if allow_ai:
             facts.append({"source_id": source_id, "kind": kind, "excerpt": value,
                           "source_date": source_date, "certainty": certainty,
-                          "verification": verification, "source_label": label})
+                          "verification": verification, "source_label": label,
+                          "review_date": review_date, "status": status})
 
     reason = booking.reason if isinstance(booking.reason, str) else ""
     # Reception/Visit Brief can cap booking reason at 1,000 characters. At the
@@ -161,10 +163,11 @@ def source_projection(db: Session, patient_id: str, booking: Any, at: datetime) 
         source_ok = item.source_encounter_id in eligible_ids
         pending.append({"description": item.description, "status": item.status,
                         "review_date": item.review_date, "source_verified": source_ok})
-        if source_ok:
-            add("obligation_other", item.description, "Ανοιχτή υποχρέωση · τελευταία καταγραφή",
-                item.review_date, allow_ai=True)
-        else:
+        add("obligation_other", item.description,
+            "Ανοιχτή υποχρέωση" if source_ok else "Ανοιχτή υποχρέωση · μη επαληθευμένη πηγή",
+            updated.astimezone(CYPRUS).date().isoformat(), allow_ai=source_ok,
+            review_date=item.review_date, status=item.status)
+        if not source_ok:
             partial = True
     return {"previous": previous, "items": visible, "pending": pending,
             "partial": partial, "ai_facts": facts}

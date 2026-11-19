@@ -68,8 +68,12 @@
           method:"POST",credentials:"same-origin",cache:"no-store",signal:controller.signal,
           headers:{"Content-Type":"application/json","Accept":"application/json"},
           body:JSON.stringify({booking_uid:uid,target_date:info.key})});
+        if(controller.signal.aborted||prep.controller!==controller||dayKey(Date.now())!==state.day)break;
         if(response.status===401||response.status===403){window.dispatchEvent(new Event("clinical:unauthenticated"));break;}
-        prep.results.set(uid,response.ok?"Έτοιμη":response.status===409?"Χρειάζεται έλεγχο σύνδεσης ή στοιχείων":"Μη διαθέσιμη · δοκιμάστε ξανά");
+        let label=response.status===409?"Χρειάζεται έλεγχο σύνδεσης ή στοιχείων":"Μη διαθέσιμη · δοκιμάστε ξανά";
+        if(response.ok){const data=await response.json();if(controller.signal.aborted||prep.controller!==controller||dayKey(Date.now())!==state.day)break;
+          label=data.ai_status==="ready"?"Έτοιμη":data.ai_status==="insufficient_context"?"Ανεπαρκή στοιχεία · το AI δεν εκτελέστηκε":"Ατελής πηγή · το AI δεν εκτελέστηκε";}
+        prep.results.set(uid,label);
       }catch(e){if(controller.signal.aborted)break;prep.results.set(uid,"Μη διαθέσιμη · δοκιμάστε ξανά");}
       draw();
     }
@@ -99,7 +103,7 @@
     const why=cleanReason(r.reason,rawName); if(why) {const line=el("span","hg-why",why);line.title=String(r.reason);body.append(line);}
     b.append(el("span","hg-time",clock(item.start)),body,el("span","hg-right",clinic(r.clinic) || "›"));return b;
   }
-  function clear(preserveFocus=false){state.generation++;tomorrowGeneration++;state.rows=null;state.day=null;state.checked=0;state.tomorrow=null;state.surgery=null;if(!preserveFocus){state.pastOpen=false;state.tomorrowOpen=false;state.showTomorrow=false;pendingFocus=null;}}
+  function clear(preserveFocus=false){stopPreparation();prep.results.clear();state.generation++;tomorrowGeneration++;state.rows=null;state.day=null;state.checked=0;state.tomorrow=null;state.surgery=null;if(!preserveFocus){state.pastOpen=false;state.tomorrowOpen=false;state.showTomorrow=false;pendingFocus=null;}}
   function prepareReload(){
     const active=document.activeElement;
     if (!active || !root.contains(active)) {pendingFocus=null;return false;}
@@ -176,8 +180,9 @@
     state.surgery=validSurgery(window.CockpitSurgerySummary)?window.CockpitSurgerySummary:null;draw();
     if(restore) (targets.get(key) || targets.get("heading"))?.focus?.({preventScroll:true});pendingFocus=null;
   }
-  function tick(){if(!state.rows||document.hidden)return;if(dayKey(Date.now())!==state.day||Date.now()-state.checked>=300000){state.reload?.();return;}draw();}
-  window.addEventListener("clinical:unauthenticated",()=>{stopPreparation();prep.results.clear();clear();});
+  function tick(){if(!state.rows||document.hidden)return;if(dayKey(Date.now())!==state.day||Date.now()-state.checked>=300000){stopPreparation();state.reload?.();return;}draw();}
+  window.addEventListener("clinical:unauthenticated",()=>clear());
+  window.addEventListener("clinical:authenticated",()=>clear());
   window.addEventListener("pagehide",stopPreparation);
   window.addEventListener("cockpit:surgery-counts",e=>{if(state.rows){state.surgery=validSurgery(e.detail)?e.detail:null;if(state.tomorrow)draw();}});
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)tick();});window.addEventListener("focus",tick);

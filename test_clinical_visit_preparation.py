@@ -51,7 +51,7 @@ def test_booking_link_date_and_no_patient_identifiers_in_model(fixture, monkeypa
     link(c,state)
     response=c.post(PATH+'prepare-tomorrow',json=body)
     assert response.status_code==200, response.text
-    assert response.json()=={'ready':True}
+    assert response.json()=={'ready':True,'ai_status':'ready'}
     out=c.post(PATH+'prepare-read',json=body).json()
     assert out['state']=='ready' and out['ai_status']=='ready'
     assert out['previous']['source_encounter_id']==p['source_encounter_id']
@@ -210,7 +210,7 @@ def test_two_bookings_same_patient_keep_independent_preparations(fixture,monkeyp
     for uid in (first.uid,second.uid):
         response=c.post(PATH+'prepare-tomorrow',json={'booking_uid':uid,'target_date':target})
         assert response.status_code==200,response.text
-        assert response.json()=={'ready':True}
+        assert response.json()=={'ready':True,'ai_status':'ready'}
         assert c.post(PATH+'prepare-read',json={'booking_uid':uid,'target_date':target}).json()['state']=='ready'
     assert calls[0][0]['excerpt']!=calls[1][0]['excerpt']
     with Session(engine) as db:
@@ -269,3 +269,104 @@ def test_browser_prepares_and_reopens_after_reload(fixture,monkeypatch):
             context.close();browser.close()
     finally:
         server.should_exit=True;thread.join(10);sock.close()
+
+
+def test_interleaved_source_or_link_change_never_returns_old_preparation(fixture,monkeypatch):
+    app,engine,c,p,state=fixture;link(c,state);body=request_body(state)
+    async def fake(_):return 'ready',[]
+    monkeypatch.setattr(prep,'prepare_questions',fake)
+    assert c.post(PATH+'prepare-tomorrow',json=body).status_code==200
+    original=store.read
+    def relink(*args):
+        out=original(*args)
+        with Session(engine) as db:
+            row=db.get(brief.BookingPatientLinkORM,(brief.NAMESPACE,'cal.com:chart-fixture'))
+            row.state='revoked';row.revision+=1;db.commit()
+        return out
+    monkeypatch.setattr(store,'read',relink)
+    result=c.post(PATH+'prepare-read',json=body)
+    assert result.status_code==200 and result.json()=={'state':'stale'}
+
+
+def test_pending_deadline_and_unverified_source_are_distinct(fixture):
+    app,engine,c,p,state=fixture
+    with Session(engine) as db:
+        item=db.get(ClinicalPendingORM,p['pending_id']);item.review_date='2099-12-31';item.source_encounter_id='unknown';db.commit()
+        projection=prep.source_projection(db,'outside-synthetic-scope',state['source'],datetime.now(timezone.utc))
+        visible=next(x for x in projection['items'] if x['kind']=='obligation_other')
+        assert visible['review_date']=='2099-12-31' and visible['source_date']!='2099-12-31'
+        assert visible['ai_eligible'] is False and 'μη επαληθευμένη' in visible['label']
+        assert not any(f['kind']=='obligation_other' for f in projection['ai_facts'])
+
+
+def test_insufficient_context_is_disclosed(fixture,monkeypatch):
+    app,engine,c,p,state=fixture;link(c,state);body=request_body(state)
+    async def fake(_):return 'insufficient_context',[]
+    monkeypatch.setattr(prep,'prepare_questions',fake)
+    assert c.post(PATH+'prepare-tomorrow',json=body).json()['ai_status']=='insufficient_context'
+    result=c.post(PATH+'prepare-read',json=body).json()
+    assert result['state']=='ready' and result['ai_status']=='insufficient_context'
+
+
+def test_browser_cancels_batch_and_individual_on_context_change(fixture,monkeypatch):
+    import socket,threading,shutil
+    from urllib.parse import urlparse,parse_qs
+    import uvicorn
+    from playwright.sync_api import sync_playwright,expect
+    from test_cockpit_appointment_chart import KEY
+    app,engine,c,p,state=fixture;link(c,state);source=state['source']
+    for route in app.routes:
+        if getattr(route,'path',None)=='/static':route.app.html=True
+    record={'appointment_id':source.uid,'start_at':source.start_at.isoformat(),'end_at':source.end_at.isoformat(),
+            'clinic':'test','category':'other','patient_display_name':source.patient_display_name,'reason':source.reason}
+    records=[record,{**record,'appointment_id':'cal.com:other-synthetic'}]
+    sock=socket.socket();sock.bind(('127.0.0.1',0));port=sock.getsockname()[1]
+    server=uvicorn.Server(uvicorn.Config(app,log_level='error'));thread=threading.Thread(target=server.run,kwargs={'sockets':[sock]},daemon=True);thread.start()
+    try:
+        with sync_playwright() as pw:
+            browser=pw.chromium.launch(executable_path=shutil.which('google-chrome') or shutil.which('chromium'))
+            context=browser.new_context();page=context.new_page();page.set_default_timeout(10000)
+            page.add_init_script('''(() => {const native=window.fetch.bind(window);window.__held=[];window.__denied=0;
+              window.addEventListener('clinical:unauthenticated',()=>window.__denied++);
+              window.fetch=(url,options)=>String(url).includes('/visit-brief/prepare-tomorrow')?
+                new Promise(resolve=>window.__held.push({resolve,signal:options.signal})):native(url,options); })();''')
+            def agenda(route):
+                start=parse_qs(urlparse(route.request.url).query)['start'][0]
+                day=datetime.fromisoformat(start.replace('Z','+00:00')).astimezone(ZoneInfo('Asia/Nicosia')).date()
+                route.fulfill(json=records if day==source.start_at.astimezone(ZoneInfo('Asia/Nicosia')).date() else [])
+            page.route('**/clinical/calendar/agenda?*',agenda)
+            page.goto(f'http://localhost:{port}/static/cockpit/')
+            page.locator('#ceGlobalKey').click();page.locator('#ceGlobalKeyInput').fill(KEY)
+            page.locator('#ceGlobalLoginForm button[type=submit]').click();expect(page.locator('#ceGlobalAuthStatus')).to_contain_text('Συνδέθηκες');page.keyboard.press('Escape')
+            page.get_by_role('button',name='Προετοιμασία αυριανών επισκέψεων').click()
+            page.wait_for_function('window.__held.length===1')
+            page.evaluate("window.dispatchEvent(new Event('clinical:authenticated'))")
+            assert page.evaluate('window.__held[0].signal.aborted')
+            denied_before=page.evaluate('window.__denied')
+            page.evaluate("window.__held[0].resolve(new Response('{}',{status:401}))")
+            page.wait_for_timeout(200)
+            assert page.evaluate('window.__held.length')==1 and page.evaluate('window.__denied')==denied_before
+            page.locator('#homeAgendaRows .hg-row.tomorrow').filter(has_text='Συνθετικός Ραντεβού').first.click()
+            expect(page.locator('#visitBriefPreparation')).to_contain_text('Δεν υπάρχει αποθηκευμένη προετοιμασία')
+            page.get_by_role('button',name='Νέα προετοιμασία').click();page.wait_for_function('window.__held.length===2')
+            page.locator('#visitBriefClose').click()
+            assert page.evaluate('window.__held[1].signal.aborted')
+            context.close();browser.close()
+    finally:
+        server.should_exit=True;thread.join(10);sock.close()
+
+
+def test_interleaved_clinical_change_never_returns_old_preparation(fixture,monkeypatch):
+    app,engine,c,p,state=fixture;link(c,state);body=request_body(state)
+    async def fake(_):return 'ready',[]
+    monkeypatch.setattr(prep,'prepare_questions',fake)
+    assert c.post(PATH+'prepare-tomorrow',json=body).status_code==200
+    original=store.read
+    def change(*args):
+        out=original(*args)
+        with Session(engine) as db:
+            db.get(ClinicalPendingORM,p['pending_id']).description='Συνθετική ενδιάμεση αλλαγή';db.commit()
+        return out
+    monkeypatch.setattr(store,'read',change)
+    result=c.post(PATH+'prepare-read',json=body)
+    assert result.status_code==200 and result.json()=={'state':'stale'}

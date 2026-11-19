@@ -818,7 +818,7 @@ def attach_chart_booking_routes(router,engine,protected):
                      'ai_status':status,'questions':questions,'generation':token,
                      'created_at':at_end.isoformat()}
             publish(engine,key,token,payload)
-            return {'ready':True}
+            return {'ready':True,'ai_status':status}
         except BaseException:
             try: cancel(engine,key,token)
             except Exception: pass
@@ -837,12 +837,32 @@ def attach_chart_booking_routes(router,engine,protected):
                 or not hmac.compare_digest(payload.get('observation',''),_booking_observation(source))
                 or not hmac.compare_digest(payload.get('source',''),projection_digest(projection))):
             return {'state':'stale'}
-        if not check_available(engine,req.booking_uid,req.target_date,payload.get('generation')):
-            return {'state':'missing'}
-        require_preparation_day(req,source,_utcnow())
-        return {'state':'ready','previous':projection['previous'],'items':projection['items'],
-                'partial':projection['partial'],'ai_status':payload['ai_status'],
-                'questions':payload['questions'],'created_at':payload['created_at']}
+        # Re-resolve booking after decrypting. Lock existing link and clinical
+        # source rows while rebuilding the final source view and checking draft
+        # generation; no async call or provider work occurs in this section.
+        latest=await booking(req);final_instant=_utcnow();require_preparation_day(req,latest,final_instant)
+        if not hmac.compare_digest(_booking_observation(latest),_booking_observation(source)):
+            return {'state':'stale'}
+        from clinical_visit_preparation import source_projection
+        with Session(engine) as db, db.begin():
+            final_link=db.scalar(select(BookingPatientLinkORM).where(
+                BookingPatientLinkORM.namespace==NAMESPACE,
+                BookingPatientLinkORM.booking_uid==req.booking_uid).with_for_update())
+            if (not final_link or final_link.state!='chart_linked' or final_link.patient_id!=patient_id
+                    or final_link.revision!=revision or not hmac.compare_digest(final_link.evidence_type,_chart_reference(latest))):
+                return {'state':'stale'}
+            db.scalars(select(EncounterORM).where(EncounterORM.patient_id==patient_id).with_for_update()).all()
+            db.scalars(select(ClinicalPendingORM).where(ClinicalPendingORM.patient_id==patient_id).with_for_update()).all()
+            final_projection=source_projection(db,patient_id,latest,final_instant)
+            if not hmac.compare_digest(payload.get('source',''),projection_digest(final_projection)):
+                return {'state':'stale'}
+            if not check_available(engine,req.booking_uid,req.target_date,payload.get('generation')):
+                return {'state':'missing'}
+            require_preparation_day(req,latest,_utcnow())
+            result={'state':'ready','previous':final_projection['previous'],'items':final_projection['items'],
+                    'partial':final_projection['partial'],'ai_status':payload['ai_status'],
+                    'questions':payload['questions'],'created_at':payload['created_at']}
+        return result
 
     @router.post('/visit-brief/prepare-delete',dependencies=prep_secured)
     async def delete_preparation(req:ChartPreparationIntent,actor:StaffActor=Depends(clinician)):
