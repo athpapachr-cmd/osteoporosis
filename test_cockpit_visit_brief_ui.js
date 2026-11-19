@@ -21,7 +21,7 @@ function element(id=""){
     click(){return el.fire("click");},
     append(...nodes){el.children.push(...nodes);},
     replaceChildren(...parts){el.children=[...parts];},
-    focus(){},setAttribute(){},
+    focus(){},setAttribute(){},remove(){},
   };
   return el;
 }
@@ -38,6 +38,7 @@ get("visitBriefUnlink").hidden=true;
 const listeners={};
 const win={
   CockpitStaffRole:"clinician",
+  setInterval(){},
   addEventListener(kind,cb){listeners[kind]=cb;},
   dispatchEvent(event){emitted.push(event.type);}
 };
@@ -83,7 +84,7 @@ const fetch=async(url,options)=>{
   }));
   throw Error("Unknown action "+action);
 };
-const context={document:{getElementById:get,createElement:()=>element()},window:win,Event:class Event{constructor(type){this.type=type}},fetch,console};
+const context={document:{getElementById:get,createElement:()=>element(),addEventListener(){}},window:win,Event:class Event{constructor(type){this.type=type}},fetch,console};
 vm.runInNewContext(js,context,{filename:"visit-brief.js"});
 const controller=win.CockpitVisitBrief;
 assert.equal(typeof controller.open,"function");
