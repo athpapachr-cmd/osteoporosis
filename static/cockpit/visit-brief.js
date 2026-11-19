@@ -4,9 +4,14 @@
   const $=id=>document.getElementById(id);
   const state={
     ticket:0, view:null, ready:false, revision:0, linked:false,
-    pending:null, chosen:null, patientId:null, inFlight:false, chartMode:false, replaceRequired:false, prepController:null
+    pending:null, chosen:null, patientId:null, inFlight:false, chartMode:false, replaceRequired:false, prepController:null, openDay:null
   };
   const endpoint=(window.CockpitClinicalBase||"/clinical")+"/calendar/visit-brief/";
+  const cyprusDay=()=>new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Nicosia",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+  function checkDay(){if(state.view && state.openDay!==cyprusDay()){state.prepController?.abort();$("visitBriefClose").click();return false;}return true;}
+  window.setInterval(checkDay,10000);
+  window.addEventListener("focus",checkDay);
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden)checkDay();});
 
   async function request(action,body,signal){
     const response=await fetch(endpoint+action,{
@@ -30,7 +35,7 @@
     const body=document.createElement("div");body.textContent="Έλεγχος αποθηκευμένης προετοιμασίας…";
     box.append(heading,body);$("visitBriefClinical").append(box);
     const intent={booking_uid:view.uid,target_date:view.date};
-    const still=()=>ticket===state.ticket&&!$("visitBriefOverlay").hidden&&box.isConnected;
+    const still=()=>checkDay()&&ticket===state.ticket&&!$("visitBriefOverlay").hidden&&box.isConnected;
     async function retrieve(){
       try{
         const data=await request("prepare-read",intent);if(!still())return;
@@ -54,11 +59,11 @@
         const button=document.createElement("button");button.type="button";button.textContent="Νέα προετοιμασία";
         button.onclick=async()=>{const controller=new AbortController();state.prepController=controller;button.disabled=true;body.textContent="Προετοιμασία…";
           try{await request("prepare-tomorrow",{...intent,first_batch:false},controller.signal);if(still()&&!controller.signal.aborted)await retrieve();}
-          catch(e){if(still()&&!controller.signal.aborted)body.textContent="Η προετοιμασία δεν είναι διαθέσιμη. Δοκιμάστε ξανά.";}
+          catch(e){if(still()&&!controller.signal.aborted){if(e.status===401||e.status===403){identityDenied();return;}body.textContent="Η προετοιμασία δεν είναι διαθέσιμη. Δοκιμάστε ξανά.";}}
           finally{if(state.prepController===controller)state.prepController=null;}};body.append(button);
         if(data.state==="ready"||data.state==="stale"){
           const remove=document.createElement("button");remove.type="button";remove.textContent="Διαγραφή προετοιμασίας";
-          remove.onclick=async()=>{remove.disabled=true;try{await request("prepare-delete",intent);if(still())await retrieve();}catch(e){if(still())body.textContent="Η διαγραφή δεν ολοκληρώθηκε. Δοκιμάστε ξανά.";}};body.append(remove);
+          remove.onclick=async()=>{remove.disabled=true;try{await request("prepare-delete",intent);if(still())await retrieve();}catch(e){if(still()){if(e.status===401||e.status===403){identityDenied();return;}body.textContent="Η διαγραφή δεν ολοκληρώθηκε. Δοκιμάστε ξανά.";}}};body.append(remove);
         }
       }catch(e){if(!still())return;if(e.status===401||e.status===403){identityDenied();return;}body.textContent="Η προετοιμασία δεν είναι διαθέσιμη αυτή τη στιγμή.";}
     }
@@ -144,7 +149,7 @@
     if(window.CockpitStoredChart?.canLeave&&!window.CockpitStoredChart.canLeave())return;
     invalidate();
     const ticket=state.ticket;
-    state.view={...view};
+    state.view={...view};state.openDay=cyprusDay();
     $("visitBriefName").textContent=view.name;
     $("visitBriefWhen").textContent=view.time;
     $("visitBriefReason").textContent=view.reason;

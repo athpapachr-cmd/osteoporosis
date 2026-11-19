@@ -148,13 +148,12 @@ def read(engine, uid, day):
         raise HTTPException(503, 'Preparation storage unavailable') from None
 
 
-def check_available(engine, uid, day, generation):
+def check_available_in_session(db, uid, day, generation):
     _, signing = keys()
-    with Session(engine) as db, db.begin():
-        _marker(db, signing)
-        row = db.get(PreparationDraft, _opaque(signing, uid), with_for_update=True)
-        return bool(row and row.booking_date == day.isoformat() and row.expires_at > _now(db)
-                    and row.generation == generation and row.ciphertext)
+    _marker(db, signing)
+    row = db.get(PreparationDraft, _opaque(signing, uid), with_for_update=True)
+    return bool(row and row.booking_date == day.isoformat() and row.expires_at > _now(db)
+                and row.generation == generation and row.ciphertext)
 
 
 def remove(engine, uid):

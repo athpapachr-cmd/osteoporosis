@@ -266,6 +266,16 @@ def test_browser_prepares_and_reopens_after_reload(fixture,monkeypatch):
             page.reload();page.locator('#homeAgendaRows .hg-row.tomorrow').click()
             expect(page.locator('#visitBriefPreparation')).to_contain_text('Καταγεγραμμένα στοιχεία')
             expect(page.locator('#visitBriefPreparation')).to_contain_text('για δικό σας έλεγχο')
+            page.route('**/visit-brief/prepare-delete',lambda route:route.fulfill(status=403,json={'detail':'expired'}))
+            page.get_by_role('button',name='Διαγραφή προετοιμασίας').click()
+            expect(page.locator('#visitBriefOverlay')).not_to_be_visible()
+            page.locator('#ceGlobalKeyInput').fill(KEY)
+            page.locator('#ceGlobalLoginForm button[type=submit]').click();expect(page.locator('#ceGlobalAuthStatus')).to_contain_text('Συνδέθηκες');page.keyboard.press('Escape')
+            page.locator('#homeAgendaRows .hg-row.tomorrow').click()
+            expect(page.locator('#visitBriefPreparation')).to_contain_text('Καταγεγραμμένα στοιχεία')
+            page.route('**/visit-brief/prepare-tomorrow',lambda route:route.fulfill(status=401,json={'detail':'expired'}))
+            page.get_by_role('button',name='Νέα προετοιμασία').click()
+            expect(page.locator('#visitBriefOverlay')).not_to_be_visible()
             context.close();browser.close()
     finally:
         server.should_exit=True;thread.join(10);sock.close()
@@ -351,6 +361,15 @@ def test_browser_cancels_batch_and_individual_on_context_change(fixture,monkeypa
             page.get_by_role('button',name='Νέα προετοιμασία').click();page.wait_for_function('window.__held.length===2')
             page.locator('#visitBriefClose').click()
             assert page.evaluate('window.__held[1].signal.aborted')
+            today=datetime.now(ZoneInfo('Asia/Nicosia')).date()
+            before=datetime.combine(today,datetime.min.time(),tzinfo=ZoneInfo('Asia/Nicosia'))+timedelta(hours=23,minutes=59)
+            page.clock.set_fixed_time(before)
+            page.locator('#homeAgendaRows .hg-row.tomorrow').filter(has_text='Συνθετικός Ραντεβού').first.click()
+            expect(page.locator('#visitBriefPreparation')).to_contain_text('Δεν υπάρχει αποθηκευμένη προετοιμασία')
+            page.get_by_role('button',name='Νέα προετοιμασία').click();page.wait_for_function('window.__held.length===3')
+            page.clock.set_fixed_time(before+timedelta(minutes=2));page.evaluate("window.dispatchEvent(new Event('focus'))")
+            assert page.evaluate('window.__held[2].signal.aborted')
+            expect(page.locator('#visitBriefOverlay')).not_to_be_visible()
             context.close();browser.close()
     finally:
         server.should_exit=True;thread.join(10);sock.close()
@@ -370,3 +389,17 @@ def test_interleaved_clinical_change_never_returns_old_preparation(fixture,monke
     monkeypatch.setattr(store,'read',change)
     result=c.post(PATH+'prepare-read',json=body)
     assert result.status_code==200 and result.json()=={'state':'stale'}
+
+
+def test_server_rejects_generation_crossing_local_midnight(fixture,monkeypatch):
+    app,engine,c,p,state=fixture;link(c,state);body={**request_body(state),'first_batch':False}
+    target=state['source'].start_at.astimezone(ZoneInfo('Asia/Nicosia')).date()
+    start=datetime.combine(target-timedelta(days=1),datetime.min.time(),tzinfo=ZoneInfo('Asia/Nicosia'))+timedelta(hours=23,minutes=59)
+    clock={'now':start.astimezone(timezone.utc)}
+    monkeypatch.setattr(brief,'_utcnow',lambda:clock['now'])
+    async def fake(_):
+        clock['now']=(start+timedelta(minutes=2)).astimezone(timezone.utc)
+        return 'ready',[]
+    monkeypatch.setattr(prep,'prepare_questions',fake)
+    assert c.post(PATH+'prepare-tomorrow',json=body).status_code==409
+    assert store.read(engine,'cal.com:chart-fixture',target) is None

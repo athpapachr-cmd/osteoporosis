@@ -19,10 +19,10 @@ from zoneinfo import ZoneInfo
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, Field, ConfigDict, UUID4, field_validator
-from sqlalchemy import Column, DateTime, Integer, String, select, update, inspect
+from sqlalchemy import Column, DateTime, Integer, String, select, update, inspect, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from clinical_data import (
     ClinicalPendingORM, EncounterORM, PatientORM, VisitCaptureCandidateV1,
@@ -804,6 +804,8 @@ def attach_chart_booking_routes(router,engine,protected):
                 raise HTTPException(503, 'Preparation temporarily unavailable')
             fresh = await booking(req)
             at_end = _utcnow()
+            if _utc(at_start).astimezone(CYPRUS).date() != _utc(at_end).astimezone(CYPRUS).date():
+                raise HTTPException(409, 'Local day changed during preparation')
             require_preparation_day(req,fresh,at_end,first=req.first_batch)
             observation=_booking_observation(fresh)
             if not hmac.compare_digest(_booking_observation(first),observation):
@@ -827,7 +829,7 @@ def attach_chart_booking_routes(router,engine,protected):
     @router.post('/visit-brief/prepare-read',dependencies=prep_secured)
     async def read_preparation(req:ChartPreparationIntent, actor:StaffActor=Depends(clinician)):
         from clinical_visit_preparation import projection_digest
-        from clinical_visit_preparation_store import read, check_available
+        from clinical_visit_preparation_store import read, check_available_in_session
         source=await booking(req);now=_utcnow();require_preparation_day(req,source,now)
         patient_id,revision,projection=preparation_snapshot(req,source,now,actor,'visit_preparation_check')
         payload=read(engine,req.booking_uid,req.target_date)
@@ -844,24 +846,34 @@ def attach_chart_booking_routes(router,engine,protected):
         if not hmac.compare_digest(_booking_observation(latest),_booking_observation(source)):
             return {'state':'stale'}
         from clinical_visit_preparation import source_projection
-        with Session(engine) as db, db.begin():
-            final_link=db.scalar(select(BookingPatientLinkORM).where(
-                BookingPatientLinkORM.namespace==NAMESPACE,
-                BookingPatientLinkORM.booking_uid==req.booking_uid).with_for_update())
-            if (not final_link or final_link.state!='chart_linked' or final_link.patient_id!=patient_id
-                    or final_link.revision!=revision or not hmac.compare_digest(final_link.evidence_type,_chart_reference(latest))):
-                return {'state':'stale'}
-            db.scalars(select(EncounterORM).where(EncounterORM.patient_id==patient_id).with_for_update()).all()
-            db.scalars(select(ClinicalPendingORM).where(ClinicalPendingORM.patient_id==patient_id).with_for_update()).all()
-            final_projection=source_projection(db,patient_id,latest,final_instant)
-            if not hmac.compare_digest(payload.get('source',''),projection_digest(final_projection)):
-                return {'state':'stale'}
-            if not check_available(engine,req.booking_uid,req.target_date,payload.get('generation')):
-                return {'state':'missing'}
-            require_preparation_day(req,latest,_utcnow())
-            result={'state':'ready','previous':final_projection['previous'],'items':final_projection['items'],
-                    'partial':final_projection['partial'],'ai_status':payload['ai_status'],
-                    'questions':payload['questions'],'created_at':payload['created_at']}
+        try:
+            with Session(engine) as db, db.begin():
+                # PostgreSQL SHARE blocks writers including new rows, which row locks
+                # alone cannot do. Keep this transaction short and fail on contention.
+                if engine.dialect.name=='postgresql':
+                    db.execute(text("SET LOCAL lock_timeout = '2s'"))
+                    db.execute(text('LOCK TABLE clinical_encounters, clinical_pending_items IN SHARE MODE'))
+                final_link=db.scalar(select(BookingPatientLinkORM).where(
+                    BookingPatientLinkORM.namespace==NAMESPACE,
+                    BookingPatientLinkORM.booking_uid==req.booking_uid).with_for_update())
+                if (not final_link or final_link.state!='chart_linked' or final_link.patient_id!=patient_id
+                        or final_link.revision!=revision or not hmac.compare_digest(final_link.evidence_type,_chart_reference(latest))):
+                    return {'state':'stale'}
+                if not db.scalar(select(PatientORM).where(PatientORM.patient_id==patient_id).with_for_update()):
+                    return {'state':'stale'}
+                db.scalars(select(EncounterORM).where(EncounterORM.patient_id==patient_id).with_for_update()).all()
+                db.scalars(select(ClinicalPendingORM).where(ClinicalPendingORM.patient_id==patient_id).with_for_update()).all()
+                final_projection=source_projection(db,patient_id,latest,final_instant)
+                if not hmac.compare_digest(payload.get('source',''),projection_digest(final_projection)):
+                    return {'state':'stale'}
+                if not check_available_in_session(db,req.booking_uid,req.target_date,payload.get('generation')):
+                    return {'state':'missing'}
+                require_preparation_day(req,latest,_utcnow())
+                result={'state':'ready','previous':final_projection['previous'],'items':final_projection['items'],
+                        'partial':final_projection['partial'],'ai_status':payload['ai_status'],
+                        'questions':payload['questions'],'created_at':payload['created_at']}
+        except SQLAlchemyError:
+            raise HTTPException(503, 'Preparation temporarily unavailable') from None
         return result
 
     @router.post('/visit-brief/prepare-delete',dependencies=prep_secured)
