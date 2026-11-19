@@ -2058,3 +2058,8 @@ PR #303, independent R2 closed and 14/14 final workflows passed. Native Render s
 ## 2026-11-18 — Refined Day Home agenda and attention
 
 PR #305 passed all 15 final workflows and independent R2 closure. Native Render source `db2a88a08a112a32d1521bec7feddc94e05dd821` is live; bounded no-PHI smoke passed. The Day Home shows start-in-day current/upcoming appointments, past entries on demand and an anytime tomorrow toggle using the existing protected source. Attention adds filters, source-date age and older-date grouping with patient-identity and coverage safeguards. See `cockpit/releases/HOME_AGENDA_ATTENTION_RELEASE_2026-11-18.md`. No patient/provider writes or schema/config changes.
+
+
+## 2026-11-19 — Next-day visit preparation released (#307)
+
+The clinician can explicitly prepare linked tomorrow appointments and reopen encrypted, expiring preparations on the appointment day. Dated chart facts remain separate from optional AI questions; missing or changed sources are not portrayed as completed. Independent R2 and 16 final CI checks passed; merge `c4bfe3fabe7f8e64651dd99f19bb0a2cdeb05acc` is LIVE on `dep-dbvalh2jnfac739s23pg`. Reviewed temporary table, scoped grant, key and restored network access; no-PHI asset/auth/health smoke passed. Actual patient/provider use and clinical quality are not yet verified. See `cockpit/releases/AI_VISIT_PREPARATION_RELEASE_2026-11-19.md`.
