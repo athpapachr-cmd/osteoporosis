@@ -30,8 +30,8 @@
   }
   function tidy(value) {
     const s=String(value || "");
-    return s && s === s.toLocaleUpperCase("el") && s !== s.toLocaleLowerCase("el")
-      ? s.toLocaleLowerCase("el").replace(/(^|[\s-])(\p{L})/gu,(_m,a,b)=>a+b.toLocaleUpperCase("el")) : s;
+    return s.toLocaleLowerCase("el")
+      .replace(/(^|[\s-])(\p{L})/gu,(_m,a,b)=>a+b.toUpperCase());
   }
   const norm = s => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase("el").trim();
   function cleanReason(reason, name) {
@@ -97,7 +97,7 @@
     if (typeof r.appointment_id !== "string" || !r.appointment_id.trim()) {
       b.disabled=true; b.title="Δεν υπάρχει επιβεβαιωμένο αναγνωριστικό ραντεβού";
     }
-    const body=el("span","hg-text");body.append(el("strong","hg-name",tidy(rawName)));
+    const body=el("span","hg-text");body.append(el("strong","hg-name",r.patient_display_name ? tidy(rawName) : rawName));
     const rawId=String(r.appointment_id||"");const id=rawId.startsWith("cal.com:")?rawId:"cal.com:"+rawId;
     if(style==="tomorrow" && prep.day===dayKey(item.start) && prep.results.has(id))body.append(el("span","hg-why",prep.results.get(id)));
     const why=cleanReason(r.reason,rawName); if(why) {const line=el("span","hg-why",why);line.title=String(r.reason);body.append(line);}

@@ -38,8 +38,8 @@
   const shortDate = value => shortDateLabel.format(new Date(value + "T12:00:00Z"));
   function tidy(value) {
     const s = String(value || "");
-    return s && s === s.toLocaleUpperCase("el") && s !== s.toLocaleLowerCase("el")
-      ? s.toLocaleLowerCase("el").replace(/(^|[\s-])(\p{L})/gu, (_m,a,b) => a + b.toLocaleUpperCase("el")) : s;
+    return s.toLocaleLowerCase("el")
+      .replace(/(^|[\s-])(\p{L})/gu, (_m,a,b) => a + b.toUpperCase());
   }
   const name = value => state.hidden ? "Απόκρυψη ονόματος" : tidy(value);
   const node = (tag, cls, value) => {

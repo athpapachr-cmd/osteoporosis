@@ -47,7 +47,7 @@ const upcoming=[
  {appointment_id:"AP3",patient_display_name:"Ελένη Τρίτη",start_at:"2026-10-10T09:00:00Z",reason:"Αξιολόγηση"}
 ];
 const recent=[
- {patient_id:"P001",patient_display_name:"Ιωάννης Πρώτος",encounter_date:"2026-10-09",visit_type:"Επανέλεγχος"},
+ {patient_id:"P001",patient_display_name:"ιωάννης πΡΏΤΟΣ",encounter_date:"2026-10-09",visit_type:"Επανέλεγχος"},
  {patient_id:"P002",patient_display_name:"Άννα Δεύτερη",encounter_date:"2026-10-08",visit_type:"Οστεοπόρωση"},
  {patient_id:"P003",patient_display_name:"Γιώργος Τρίτος",encounter_date:"2026-10-07",visit_type:"Ανασκόπηση"}
 ];
@@ -99,6 +99,7 @@ const tick=()=>new Promise(ok=>setImmediate(ok));
 (async()=>{
  await tick();await tick();
  assert.equal($("visitRecentRows").children.length,3,"three recent completed visits");
+ assert.equal($("visitRecentRows").children[0].children[1].children[0].textContent,"Ιωάννης Πρώτος");
  assert.ok(!requests.some(([url])=>url==="/clinical/calendar/cockpit-context"),
    "the main worklist does not duplicate a daily calendar fetch");
  $("previousAppointmentPatient").dataset.appointmentId="AP0";
@@ -141,6 +142,7 @@ const tick=()=>new Promise(ok=>setImmediate(ok));
  assert.equal($("visitDiaText").value,"","patient switch clears candidate");
  $("visitRecentRows").children[0].fire("click");
  assert.equal($("visitIdentityStatus").textContent,"Υπάρχει κλινικός φάκελος");
+ assert.equal($("visitSelectedName").textContent,"ιωάννης πΡΏΤΟΣ", "original name remains the navigation input");
  $("visitBackHome").fire("click");
  $("visitPatientSearch").value="Μαρία";
  $("visitPatientSearch").fire("input");
