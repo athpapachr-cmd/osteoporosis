@@ -66,8 +66,8 @@ async function run() {
     {date:"2026-11-19",name:"Συνθετικός νέος",procedure:"Επέμβαση",time:"08:00"}
   ],total:6,undated:0,invalid:0});
   let output = text(target);
-  assert.match(output, /Συνθετικός νέος/); assert.match(output, /Περασμένη ημερομηνία/);
-  assert.match(text(buttons(target).find(b => text(b).includes("Συνθετικός νέος"))), /Συνθετικός νέος/);
+  assert.match(output, /Συνθετικός Νέος/); assert.match(output, /Περασμένη ημερομηνία/);
+  assert.match(text(buttons(target).find(b => text(b).includes("Συνθετικός Νέος"))), /Συνθετικός Νέος/);
   assert.match(output, /Να γίνουν · 4 από 8/);
   const expander = buttons(target).find(b => text(b).includes("Δες όλα τα 8"));
   expander.focus(); expander.click();
@@ -75,7 +75,7 @@ async function run() {
   assert.equal(document.activeElement.attributes["aria-expanded"], "true");
   assert.match(text(document.activeElement), /Δες λιγότερα/);
   output = text(target);
-  assert.match(output, /Συνθετικός RF/); assert.match(output, /Μερική κάλυψη/);
+  assert.match(output, /Συνθετικός Rf/); assert.match(output, /Μερική κάλυψη/);
   assert.match(output, /Συνθετική Έκθεση Σε σύνταξη/); assert.doesNotMatch(output, /Χωρίς Αίτημα/);
   assert.match(output, /Ιδιωτικό όνομα/); assert.match(output, /2/);
   const privacy = buttons(target).find(b => b.attributes["aria-label"] === "Απόκρυψη ονομάτων εδώ");
@@ -84,10 +84,10 @@ async function run() {
   output = text(target); assert.doesNotMatch(output, /Συνθετικός|Συνθετική|Ιδιωτικό όνομα|Επέμβαση/);
   assert.match(output, /Απόκρυψη ονόματος/);
   buttons(target).find(b => b.attributes["aria-label"] === "Εμφάνιση ονομάτων εδώ").click();
-  const focusedRF = buttons(target).find(b => text(b).includes("Συνθετικός RF"));
+  const focusedRF = buttons(target).find(b => text(b).includes("Συνθετικός Rf"));
   focusedRF.focus();
   emit("cockpit:surgery-counts", {attention:[{date:"2026-11-19",name:"Συνθετικός νέος",procedure:"Επέμβαση",time:"08:00"}],total:1,undated:0,invalid:0});
-  assert.equal(document.activeElement.attributes["aria-label"], "Εγκεκριμένη RF · Συνθετικός RF", "source redraw restores the same RF control");
+  assert.equal(document.activeElement.attributes["aria-label"], "Εγκεκριμένη RF · Συνθετικός Rf", "source redraw restores the same RF control");
   document.activeElement.click(); assert.equal(actions.pop(), "rf");
   buttons(target).find(b => text(b).includes("Συνθετικός Ασθενής")).click(); assert.equal(actions.pop(), "task-1");
   mode = "fail-calls"; window.CockpitHomeAttention.refresh(); await flush();
@@ -103,10 +103,10 @@ async function run() {
   mode = "hold"; emit("clinical:authenticated"); await tick(); const stale = pending.splice(0);
   mode = "normal"; emit("clinical:authenticated"); await flush();
   stale.forEach(p => p.resolve(bad(403))); await flush();
-  assert.match(text(target), /Συνθετικός RF/, "old denial must not revoke a new session");
+  assert.match(text(target), /Συνθετικός Rf/, "old denial must not revoke a new session");
   fixtures.rf.applications = [];
   window.CockpitHomeAttention.refresh(); await flush();
-  assert.doesNotMatch(text(target), /Συνθετικός RF/, "return/refresh invalidates old data");
+  assert.doesNotMatch(text(target), /Συνθετικός Rf/, "return/refresh invalidates old data");
   assert.match(text(target), /Μερική κάλυψη/); assert.doesNotMatch(text(target), /Τίποτα επείγον/);
   // Only proven patient ids group; each task retains its own date and exact target.
   fixtures.tasks.items = [
@@ -124,7 +124,7 @@ async function run() {
   assert.equal(visible.length,4); assert.match(text(visible[0]), /Πρώτη δοκιμή/);
   assert.match(text(visible[0]), /Δεύτερη δοκιμή/); assert.match(text(visible[0]), /\+1 ακόμη/);
   assert.match(text(visible[0]), /Νοε/); assert.match(text(visible[1]), /Συνθετική Έκθεση/);
-  assert.match(text(visible[2]), /Άλλος ασθενής/); assert.match(text(visible[3]), /Νέα RF/);
+  assert.match(text(visible[2]), /Άλλος ασθενής/); assert.match(text(visible[3]), /Νέα Rf/);
   buttons(visible[0]).find(b => text(b).includes("Δεύτερη δοκιμή")).click(); assert.equal(actions.pop(), "p2");
   buttons(target).find(b => text(b).includes("Δες όλα τα 5")).click();
   assert.match(text(target), /Άκυρη ημερομηνία/); assert.match(text(target), /Μη έγκυρη ημερομηνία/);
@@ -143,7 +143,7 @@ async function run() {
   now = "2026-11-19T00:05:00Z";
   emit("focus"); await flush();
   assert.ok(reprojections > 0, "return across midnight reprojects the existing surgery source");
-  assert.match(text(target), /Νέα ημέρα/);
+  assert.match(text(target), /Νέα Ημέρα/);
   // A surgery outside the seven-day projection still has an explicit list link.
   fixtures.tasks.items = []; fixtures.rf.applications = []; fixtures.reports.cases = [];
   fixtures.rf.has_more = false; fixtures.calls.unhandled_count = 0;

@@ -118,6 +118,8 @@
      if(!list.length)return info(target,"Δεν υπάρχουν ολοκληρωμένες επισκέψεις στο μητρώο.");
      list.slice(0,3).forEach(r=>{
        const name=r.patient_display_name||"Ασθενής χωρίς καταχωρισμένο όνομα";
+       const displayName=r.patient_display_name ? String(name).toLocaleLowerCase("el")
+         .replace(/(^|[\s-])(\p{L})/gu,(_m,a,b)=>a+b.toUpperCase()) : name;
        // The protected projection has metadata, not a genuine clinical summary.
        // Render an explicit excerpt only if the server's reviewed read owner
        // supplies it; never relabel a generic visit type as a clinical summary.
@@ -125,7 +127,7 @@
          ?r.summary_excerpt.trim():r.visit_type&&r.visit_type!=="Κλινική επίσκεψη"
            ?r.visit_type:"";
        const context=[r.encounter_date,excerpt].filter(Boolean).join(" · ");
-       addRow(target,name,context,"↶",()=>{
+       addRow(target,displayName,context,"↶",()=>{
          // Selecting a recent encounter from the collapsed split-width rail
          // should reveal the patient workspace instead of covering it.
          document.body?.classList?.toggle("doctor-rail-open",false);

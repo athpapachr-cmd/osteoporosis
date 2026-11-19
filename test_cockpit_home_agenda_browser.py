@@ -24,7 +24,7 @@ def test_agenda_lifecycle_and_navigation():
             page.add_script_tag(content=SCRIPT)
             page.evaluate('''() => {window.__rows=[
               {appointment_id:'p',patient_display_name:'ΠΑΛΑΙΟ ΟΝΟΜΑ',start_at:'2026-11-18T09:00:00Z',end_at:'2026-11-18T09:20:00Z'},
-              {appointment_id:'a',patient_display_name:'ΝΕΟ ΟΝΟΜΑ',start_at:'2026-11-18T11:40:00Z',end_at:'2026-11-18T12:00:00Z',reason:'Πόνος Ραντεβού για: ΝΕΟ ΟΝΟΜΑ'},
+              {appointment_id:'a',patient_display_name:'συνθετικός άΝΘΡΩΠΟΣ',start_at:'2026-11-18T11:40:00Z',end_at:'2026-11-18T12:00:00Z',reason:'Πόνος Ραντεβού για: συνθετικός άΝΘΡΩΠΟΣ'},
               {appointment_id:'b',patient_display_name:'Συνθετικός Δεύτερος',start_at:'2026-11-18T12:20:00Z',end_at:'2026-11-18T12:40:00Z'},
               {patient_display_name:'Ασαφές',start_at:'2026-11-18T12:30:00Z'}
             ];window.__reload=()=>{window.__reloads++;const keep=CockpitHomeAgenda.prepareReload();CockpitHomeAgenda.clear(true);
@@ -35,7 +35,7 @@ def test_agenda_lifecycle_and_navigation():
             root=page.locator('#homeAgendaRows')
             expect(root).to_contain_text('1 περασμένα ραντεβού')
             expect(root).to_contain_text('Επόμενο με επιβεβαιωμένη ώρα σε 48 λεπτά')
-            expect(root.locator('.hg-row.next')).to_contain_text('Νεο Ονομα')
+            expect(root.locator('.hg-row.next')).to_contain_text('Συνθετικός Άνθρωπος')
             expect(root.locator('.hg-row.unknown')).to_be_disabled()
             # Explicit tomorrow selection works while today still has bookings.
             toggle=root.get_by_role('button',name='Αύριο',exact=True)
@@ -53,8 +53,8 @@ def test_agenda_lifecycle_and_navigation():
             root.get_by_role('button',name='Απόκρυψη αυριανού').click()
             root.locator('.hg-row.next').click()
             assert page.evaluate('window.__selected.uid') == 'a'
-            assert page.evaluate('window.__selected.name') == 'ΝΕΟ ΟΝΟΜΑ'
-            assert page.evaluate('window.__selected.reason') == 'Πόνος Ραντεβού για: ΝΕΟ ΟΝΟΜΑ'
+            assert page.evaluate('window.__selected.name') == 'συνθετικός άΝΘΡΩΠΟΣ'
+            assert page.evaluate('window.__selected.reason') == 'Πόνος Ραντεβού για: συνθετικός άΝΘΡΩΠΟΣ'
             past=root.get_by_role('button',name='1 περασμένα ραντεβού')
             past.focus(); page.keyboard.press('Enter')
             expect(root.locator('.hg-row.past')).to_have_count(1)

@@ -8,7 +8,7 @@
   <meta name="description" content="Κεντρική αρχική σελίδα του Clinical Excellence Cockpit." />
   <link rel="stylesheet" href="/static/cockpit/styles.css" />
   <link rel="stylesheet" href="/static/cockpit/clinical-workspace.css" />
-  <link rel="stylesheet" href="/static/cockpit/doctor-shell.css?v=agenda-refinement-20261118" />
+  <link rel="stylesheet" href="/static/cockpit/doctor-shell.css?v=quiet-home-20261119" />
   <link rel="stylesheet" href="/static/cockpit/clinical-inbox.css?v=icloud-triage-20261031" />
   <link rel="stylesheet" href="/static/cockpit/shared-nav.css" />
   <script src="/static/cockpit/start-page.js?v=20261112"></script>
@@ -104,7 +104,7 @@
                 <button id="homeAgendaRefresh" type="button">Ανανέωση</button></div>
               <p id="homeAgendaFreshness" class="clinical-muted"></p>
               <div id="homeAgendaRows" aria-live="polite"><p class="clinical-muted">Φόρτωση προγράμματος…</p></div>
-              <p class="clinical-muted">Η πηγή δείχνει τα ραντεβού με έναρξη στην επιλεγμένη ημέρα. Για διαθεσιμότητα και κρατήσεις άνοιξε τη Γραμματεία.</p>
+              <details class="home-agenda-coverage clinical-muted"><summary>ⓘ Πληροφορίες προγράμματος</summary><p>Η πηγή δείχνει τα ραντεβού με έναρξη στην επιλεγμένη ημέρα. Για διαθεσιμότητα και κρατήσεις άνοιξε τη Γραμματεία.</p></details>
             </div>
             <div class="clinical-calendar-actions">
               <button type="button" id="cockpitCalendarRetry" class="clinical-calendar-retry" hidden>↻ Ανανέωση</button>
@@ -628,7 +628,7 @@ ENCOUNTER DETAIL
 
 Μην περιλαμβάνεις ονοματεπώνυμο, τηλέφωνο ή άλλα αναγνωριστικά ασθενούς. Επέστρεψε μόνο τη σύνοψη σε απλό κείμενο, χωρίς JSON ή υποχρεωτικές ειδικές επικεφαλίδες.</template>
 
-  <script src="/static/cockpit/clinical-workspace.js?v=agenda-refinement-20261118" defer></script>
+  <script src="/static/cockpit/clinical-workspace.js?v=quiet-home-20261119" defer></script>
   <script src="/static/cockpit/visit-brief.js?v=visit-preparation-20261118" defer></script>
   <script src="/static/cockpit/app.js?v=home-attention-20261118" defer></script>
   <script src="/static/cockpit/office-cases.js?v=home-attention-20261118" defer></script>
@@ -638,9 +638,9 @@ ENCOUNTER DETAIL
   <script src="/static/cockpit/clinical-inbox.js?v=one-tap-source-review-20261024" defer></script>
   <script src="/static/cockpit/icloud-triage.js?v=triage-coverage-20261101" defer></script>
   <script src="/static/cockpit/icloud-inbox.js?v=home-experience-20261113" defer></script>
-  <script src="/static/cockpit/doctor-shell.js?v=agenda-refinement-20261118" defer></script>
-  <script src="/static/cockpit/home-agenda.js?v=preparation-20261118" defer></script>
-  <script src="/static/cockpit/home-attention.js?v=agenda-refinement-20261118" defer></script>
+  <script src="/static/cockpit/doctor-shell.js?v=quiet-home-20261119" defer></script>
+  <script src="/static/cockpit/home-agenda.js?v=quiet-home-20261119" defer></script>
+  <script src="/static/cockpit/home-attention.js?v=quiet-home-20261119" defer></script>
   <script src="/static/cockpit/shared-nav.js" defer></script>
 </body>
 </html>

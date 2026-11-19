@@ -1277,7 +1277,7 @@ def browser_suite(width, screenshot_name):
         exercise_obligations(page,width)
         exercise_notion_tasks(page,width,notion_source)
         attention = page.locator("#doctorAttentionList")
-        expect(attention).to_contain_text("RF Συνθετική")
+        expect(attention).to_contain_text("Rf Συνθετική")
         more = attention.get_by_role("button", name="Δες όλα τα 5")
         more.focus(); page.keyboard.press("Shift+Tab"); page.keyboard.press("Tab")
         expect(more).to_be_focused(); page.keyboard.press("Enter")
@@ -1296,18 +1296,18 @@ def browser_suite(width, screenshot_name):
           return ok;
         }"""), "A truncated task description must leave its own due date visible"
         attention.get_by_role("button", name="Απόκρυψη ονομάτων εδώ").click()
-        expect(attention).not_to_contain_text("RF Συνθετική")
+        expect(attention).not_to_contain_text("Rf Συνθετική")
         expect(attention).not_to_contain_text("Εργαστηριακές εξετάσεις")
         attention.get_by_role("button", name="Εμφάνιση ονομάτων εδώ").click()
         page.evaluate("""() => { document.getElementById('officeRfQuery').value = 'παλιό φίλτρο';
           document.getElementById('officeRfStage').value = 'performed'; }""")
-        attention.get_by_role("button", name="Εγκεκριμένη RF · RF Συνθετική").click()
+        attention.get_by_role("button", name="Εγκεκριμένη RF · Rf Συνθετική").click()
         expect(page.locator("#doctorLibraryView")).to_be_visible()
         expect(page.locator("#officeRfList")).to_contain_text("RF Συνθετική")
         assert page.locator("#officeRfQuery").input_value() == ""
         assert rf_bridge["home_exact_reads"] == 1
         page.locator("#doctorBackHome").click()
-        expect(attention).to_contain_text("RF Συνθετική")
+        expect(attention).to_contain_text("Rf Συνθετική")
         if width == 1280:
             page.evaluate("""() => { const original = window.fetch.bind(window); window.__homeOriginalFetch = original;
               window.fetch = (url, options) => String(url).endsWith('/clinical/office-cases/rf/synthetic-approved')
@@ -1316,25 +1316,25 @@ def browser_suite(width, screenshot_name):
                     identity_number:'SYN', indication_code:'SYN', laterality:'left', surgery_id:null
                   }), {status:200, headers:{'Content-Type':'application/json'}})); })
                 : original(url, options); }""")
-            attention.get_by_role("button", name="Εγκεκριμένη RF · RF Συνθετική").click()
+            attention.get_by_role("button", name="Εγκεκριμένη RF · Rf Συνθετική").click()
             page.wait_for_function("typeof window.__releaseOldRF === 'function'")
             page.locator("#doctorBackHome").click()
             page.evaluate("""async () => { window.__releaseOldRF();
               await new Promise(r => setTimeout(r, 0)); }""")
             expect(page.locator("#officeRfList")).not_to_contain_text("RF STALE SYNTHETIC")
-            expect(attention).to_contain_text("RF Συνθετική")
+            expect(attention).to_contain_text("Rf Συνθετική")
             page.evaluate("delete window.__releaseOldRF")
-            attention.get_by_role("button", name="Εγκεκριμένη RF · RF Συνθετική").click()
+            attention.get_by_role("button", name="Εγκεκριμένη RF · Rf Συνθετική").click()
             page.wait_for_function("typeof window.__releaseOldRF === 'function'")
             page.evaluate("""async () => { window.dispatchEvent(new Event('clinical:unauthenticated'));
               window.__releaseOldRF(); await new Promise(r => setTimeout(r, 0)); }""")
             expect(page.locator("#officeRfList")).not_to_contain_text("RF STALE SYNTHETIC")
             page.evaluate("""() => { window.fetch = window.__homeOriginalFetch;
               window.dispatchEvent(new Event('clinical:authenticated')); }""")
-            expect(attention).to_contain_text("RF Συνθετική")
+            expect(attention).to_contain_text("Rf Συνθετική")
         if width <= 620:
             expect(page.locator("#doctorAttentionList")).to_contain_text("Συνθετικός Ασθενής Β")
-            expect(page.locator("#doctorAttentionList")).to_contain_text("RF Συνθετική")
+            expect(page.locator("#doctorAttentionList")).to_contain_text("Rf Συνθετική")
             expect(page.locator("#doctorAttentionList")).to_contain_text("Να γίνουν")
             assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1")
             # Actual Chromium: hidden registry and Dia details are removed on auth loss.
@@ -1377,7 +1377,7 @@ def browser_suite(width, screenshot_name):
         assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1"), "calendar swap horizontal overflow"
 
         expect(page.locator("#doctorAttentionList")).to_contain_text("Συνθετικός Ασθενής Β")
-        expect(page.locator("#doctorAttentionList")).to_contain_text("RF Συνθετική")
+        expect(page.locator("#doctorAttentionList")).to_contain_text("Rf Συνθετική")
         expect(page.locator("#doctorAttentionList")).not_to_contain_text("Υποβλήθηκαν")
         expect(page.locator("#doctorTasksBadge")).to_be_hidden()  # surgery count is not the patient obligation badge
         page.screenshot(path=str(OUT / screenshot_name), full_page=True)

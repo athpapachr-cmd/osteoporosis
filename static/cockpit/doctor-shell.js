@@ -97,7 +97,7 @@
       if (requestedDay !== dayKey()) { void loadHomeAgenda(); return; }
       if (!Array.isArray(rows)) throw new Error("invalid");
       if ($("homeAgendaFreshness")) $("homeAgendaFreshness").textContent =
-        "Έλεγχος " + timeLabel.format(new Date());
+        "Ελέγχθηκε " + timeLabel.format(new Date());
       if (window.CockpitHomeAgenda) { window.CockpitHomeAgenda.render(rows, {day: requestedDay, reload: loadHomeAgenda}); return; }
       root.replaceChildren();
       if (!rows.length) root.append(text("Δεν υπάρχουν ραντεβού στην διαθέσιμη προβολή της ημέρας."));
