@@ -152,14 +152,49 @@ def test_browser_capture_edit_reject_save_refresh_and_second_session(setup,monke
                     page.get_by_role('button',name='Προετοιμασία καταγραφής',exact=True).click()
                     expect(page.locator('#captureSave')).to_be_visible(timeout=15000)
                     expect(page.locator('#captureReview')).to_be_hidden()
-                    page.locator('#captureAudioSummary').get_by_role('button',name='Επεξεργασία',exact=True).click()
-                    finding=page.locator('#captureReview section').filter(has=page.get_by_role('heading',name='Ιστορικό και ευρήματα',exact=True))
-                    finding.locator('textarea').fill('Διορθωμένο εύρημα από τον γιατρό')
-                    pending=page.locator('#captureReview section').filter(has=page.get_by_role('heading',name='Προτεινόμενες υποχρεώσεις',exact=True))
-                    pending.get_by_role('button',name='Αφαίρεση').last.click()
-                    assess=page.locator('#captureReview section').filter(has=page.get_by_role('heading',name='Προς αξιολόγηση',exact=True))
+                    composer=page.locator('#captureComposer')
+                    result=page.locator('#captureAudioSummary')
+                    editor=page.locator('#captureReview')
+                    expect(result).to_contain_text('Να προσκομιστεί το CD')
+                    expect(result.locator('.clinical-full-record')).not_to_have_attribute('open','')
+                    expect(page.locator('#captureText')).to_be_hidden()
+                    expect(page.locator('#captureSave')).to_be_in_viewport()
+                    held_previews=[]
+                    page.route('**/visit-capture/preview',lambda route: held_previews.append(route))
+                    with page.expect_request('**/visit-capture/preview'):
+                        page.locator('#captureSave').click()
+                    page.wait_for_function("() => document.querySelector('#captureSave').disabled")
+                    composer.get_by_role('button',name='Κλείσιμο',exact=True).click()
+                    page.locator('#captureOpen').click()
+                    page.locator('#captureModeAI').click()
+                    page.locator('#captureText').fill(TEXT)
+                    composer.get_by_role('button',name='Προετοιμασία καταγραφής',exact=True).click()
+                    expect(result).to_be_visible()
+                    with page.expect_response('**/visit-capture/preview'):
+                        held_previews[0].fulfill(json={'can_save': True})
+                    page.evaluate("() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))")
+                    expect(page.locator('#captureStatus')).to_contain_text('Η καταγραφή είναι έτοιμη')
+                    page.unroute('**/visit-capture/preview')
+                    def edit_section(label):
+                        result.get_by_role('button',name='Διόρθωση · '+label,exact=True).click()
+                        expect(editor).to_be_visible()
+                    def finish_section():
+                        editor.get_by_role('button',name='Επιστροφή στην καταγραφή',exact=True).click()
+                        expect(editor).to_be_hidden()
+                    edit_section('Ευρήματα')
+                    expect(editor.locator('section[data-field]')).to_have_count(1)
+                    editor.locator('textarea').fill('Διορθωμένο εύρημα από τον γιατρό')
+                    finish_section()
+                    expect(result.get_by_role('button',name='Διόρθωση · Ευρήματα')).to_be_focused()
+                    edit_section('Υποχρεώσεις')
+                    editor.locator('section[data-field=pending]').get_by_role('button',name='Αφαίρεση',exact=True).last.click()
+                    finish_section()
+                    edit_section('Επόμενη επαφή')
+                    assess=editor.locator('section[data-field=assess]')
                     assess.locator('input').fill('Αφαιρεθέν στοιχείο')
                     assess.get_by_role('button',name='Αφαίρεση').click()
+                    finish_section()
+                    expect(result).to_contain_text('Διορθωμένο εύρημα από τον γιατρό')
                     page.locator('#captureSave').click();expect(page.locator('#captureComposer')).to_be_hidden()
                 expect(page.locator('#patientChart')).to_contain_text('Ενεργή υποχρέωση: Να προσκομιστεί το CD')
                 page.reload();expect(page.locator('#patientChart')).to_contain_text('Να προσκομιστεί το CD')
@@ -193,6 +228,7 @@ def test_complete_user_case_visible_before_save_and_after_reload(setup, monkeypa
         "schema_version": "visit_capture_candidate_v1", "source_identity_state": "consistent",
         "encounter_date": "2026-10-28", "reason_for_visit": fact(pain),
         "history": [fact(fracture)], "findings": [fact(tscore)],
+        "safety_net": [fact('Επανεπικοινωνία για νέο σύμπτωμα.'), fact('Επανεπικοινωνία αν η κατάσταση επιδεινωθεί.')],
         "recommendations": [{**fact(therapy), "type": "therapy"}],
         "source_bindings": [{"source_ref": "dia_summary", "role": "dia_summary"}],
         "comparison_basis": {"type": "unavailable"},
@@ -228,6 +264,7 @@ def test_complete_user_case_visible_before_save_and_after_reload(setup, monkeypa
             expect(page.locator("#captureReview")).to_be_hidden()
             for text in expected_texts:
                 expect(summary).to_contain_text(text)
+            expect(summary.locator('.clinical-compact-overview').get_by_text('Επανεπικοινωνία αν η κατάσταση επιδεινωθεί.',exact=True)).to_be_visible()
             with Session(engine) as db:
                 assert db.scalar(select(func.count()).select_from(EncounterORM)) == 0
             summary.screenshot(path=str(tmp_path / "complete-draft-1280.png"))

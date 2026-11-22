@@ -9,6 +9,10 @@
   let audioStarted=0,audioDiscard=false,audioDraft=false,audioReady=false,audioReviewUnits=[],audioSuggestions=[],audioSuggestionDraft='',audioConsiderations=[],audioConsiderationsStatus='complete',audioToken=0,audioPreviewed=null,audioContextExpiresAt='';
   let audioTranscript='',audioRecoveryBinding='',audioProcessingFailure=null,audioView='closed';
   let captureMode='direct',directTimer=null,directCollapse=false;
+  let editorField=null;
+  let saveAttempt=null;
+  let reviewedTaskEffects='';
+  let taskEffectsKey='';
   const MAX_AUDIO_BYTES=23*1024*1024;
   const session=crypto.randomUUID();
   const el=(parent,tag,value,cls)=>{const n=document.createElement(tag);if(value)n.textContent=value;if(cls)n.className=cls;parent.append(n);return n;};
@@ -35,9 +39,9 @@
   const modeTools=el(composer,'div','','capture-input-modes');modeTools.setAttribute('role','group');modeTools.setAttribute('aria-label','Τρόπος εισαγωγής');
   const directModeButton=button(modeTools,'Έτοιμο κείμενο · χωρίς AI',()=>setCaptureMode('direct'));directModeButton.id='captureModeDirect';
   const aiModeButton=button(modeTools,'Ηχογράφηση / επεξεργασία AI',()=>setCaptureMode('ai'));aiModeButton.id='captureModeAI';
-  const modeHelp=el(composer,'p','','clinical-muted');
+  const modeHelp=el(composer,'p','','clinical-muted capture-input-help');
 
-  const dateLabel=el(composer,'label','Ημερομηνία επίσκεψης');
+  const dateLabel=el(composer,'label','Ημερομηνία επίσκεψης','capture-input-date');
   const visitDate=el(dateLabel,'input');visitDate.type='date';visitDate.id='captureDate';
   const audioPanel=el(composer,'section','','capture-web-audio');audioPanel.id='captureWebAudio';
   el(audioPanel,'h4','Καταγραφή επίσκεψης με μικρόφωνο');
@@ -66,20 +70,35 @@
   const audioTranscriptText=el(audioTranscriptPanel,'pre','');audioTranscriptText.id='captureAudioTranscriptText';audioTranscriptText.tabIndex=0;
   const audioProcessedUnavailable=el(audioReview,'p','Το επεξεργασμένο κλινικό κείμενο δεν είναι διαθέσιμο. Η μεταγραφή παραμένει ασφαλής σε αυτή την ανοιχτή σελίδα.','clinical-muted');audioProcessedUnavailable.id='captureAudioProcessedUnavailable';audioProcessedUnavailable.hidden=true;
   const audioSummary=el(composer,'section','','capture-audio-summary');audioSummary.id='captureAudioSummary';audioSummary.hidden=true;
-  el(audioSummary,'h4','Σύνοψη επίσκεψης');
+  const resultHeading=el(audioSummary,'h4','Σύνοψη επίσκεψης');
   const audioSummaryText=el(audioSummary,'div','','patient-chart-grid');audioSummaryText.id='captureAudioSummaryText';
-  button(audioSummary,'Επεξεργασία',()=>{inputLabel.hidden=false;extractButton.hidden=captureMode==='direct';if(candidate?.prepared_note){input.focus();return;}if(audioDraft)showAudioView('processed');else review.hidden=false;});
+  const editSummary=button(audioSummary,'Επεξεργασία',()=>{inputLabel.hidden=false;extractButton.hidden=captureMode==='direct';if(candidate?.prepared_note){input.focus();return;}if(audioDraft)showAudioView('processed');});
+  const sourceToggle=button(audioSummary,'Κείμενο εισόδου και ημερομηνία',toggleStructuredSource);
+  sourceToggle.hidden=true;
+  sourceToggle.setAttribute('aria-expanded','false');
   const audioFocused=el(audioReview,'div','','capture-audio-focused');
-  const inputLabel=el(composer,'label','Σύνοψη επίσκεψης');
+  const inputLabel=el(composer,'label','Σύνοψη επίσκεψης','capture-source-input');
   const input=el(inputLabel,'textarea');input.id='captureText';input.rows=7;
   input.placeholder='Επικόλλησε το φυσικό κείμενο της σύνοψης. Δεν χρειάζονται ειδικές επικεφαλίδες.';
   const extractButton=button(composer,'Προετοιμασία καταγραφής',extract);
-  const feedback=el(composer,'p');feedback.id='captureStatus';feedback.setAttribute('role','status');
   const review=el(composer,'div');review.id='captureReview';
   const previews=el(composer,'div');
-  const saveButton=button(composer,'Αποθήκευση επίσκεψης και υποχρεώσεων',save);saveButton.id='captureSave';saveButton.hidden=true;
-  const closeComposer=button(composer,'Κλείσιμο',()=>{const previous=amendment;resetDraft();composer.hidden=true;chart.hidden=false;if(previous)showVisit(patientId,previous.encounter_id);});
+  const captureActions=el(composer,'div','','capture-actions');
+  const taskEffects=el(captureActions,'details','','capture-amendment-effects');
+  taskEffects.hidden=true;
+  const taskEffectsLabel=el(taskEffects,'summary','Αλλαγές στις υποχρεώσεις');
+  const taskEffectsList=el(taskEffects,'ul');
+  taskEffects.ontoggle=()=>{
+    if(!taskEffects.open||taskEffects.hidden||!taskEffectsKey)return;
+    reviewedTaskEffects=taskEffectsKey;
+    if(!busy)saveButton.disabled=false;
+  };
+  const feedback=el(captureActions,'p');feedback.id='captureStatus';feedback.setAttribute('role','status');
+  const saveButton=button(captureActions,'Αποθήκευση επίσκεψης και υποχρεώσεων',save);saveButton.id='captureSave';saveButton.hidden=true;
+  const recoverSave=button(captureActions,'Έλεγχος αποθηκευμένης καρτέλας',()=>open(patientId));recoverSave.hidden=true;
+  const closeComposer=button(captureActions,'Κλείσιμο',()=>{const previous=amendment;resetDraft();composer.hidden=true;chart.hidden=false;if(previous)showVisit(patientId,previous.encounter_id);});
   function updateCaptureMode(){
+    resetStructuredDisplay();
     const direct=captureMode==='direct';
     directModeButton.setAttribute('aria-pressed',String(direct));aiModeButton.setAttribute('aria-pressed',String(!direct));
     readyPromptTools.hidden=!direct;promptTools.hidden=direct;audioPanel.hidden=direct||Boolean(amendment);
@@ -146,9 +165,31 @@
   // Shared *non-authoritative* suggestion helper for chart and Obligations UI.
   window.CockpitObligationDateSuggestion=dateSuggestion;
   function pendingControls(disabled){for(const b of chart.querySelectorAll('.pending-checkpoint-actions button,.pending-checkpoint-actions select,.pending-stage button,.pending-open,.pending-metadata-editor input,.pending-metadata-editor select,.pending-metadata-editor button'))b.disabled=disabled;}
-  function resetDraft(){for(const c of composer.querySelectorAll('button,input,textarea,select'))c.disabled=false;clearTimeout(directTimer);captureMode='direct';directCollapse=false;discardAudio();amendment=null;pendingBindings=new Map();composerTitle.textContent='Νέα επίσκεψη';amendmentNote.hidden=true;saveButton.textContent='Αποθήκευση επίσκεψης και υποχρεώσεων';closeComposer.disabled=false;chart.hidden=false;promptStatus.textContent='';readyPromptStatus.textContent='';pendingControls(false);draftGeneration++;contextId=null;candidate=null;source='';busy=false;input.value='';inputLabel.hidden=false;extractButton.hidden=false;review.replaceChildren();review.hidden=false;previews.replaceChildren();feedback.textContent='';saveButton.hidden=true;extractButton.disabled=false;input.disabled=false;visitDate.disabled=false;audioPanel.hidden=false;audioReview.hidden=true;audioFocused.replaceChildren();audioFocused.hidden=false;audioDraft=false;audioReviewUnits=[];audioSuggestions=[];audioSuggestionDraft='';audioConsiderations=[];audioConsiderationsStatus='complete';audioPreviewed=null;audioContextExpiresAt='';audioReady=false;audioStart.disabled=true;audioStop.disabled=true;informed.checked=false;audioStatus.textContent='Έλεγχος διαθεσιμότητας…';updateCaptureMode();}
+  function resetDraft(){saveAttempt=null;for(const c of composer.querySelectorAll('button,input,textarea,select'))c.disabled=false;clearTimeout(directTimer);captureMode='direct';directCollapse=false;discardAudio();amendment=null;pendingBindings=new Map();composerTitle.textContent='Νέα επίσκεψη';amendmentNote.hidden=true;saveButton.textContent='Αποθήκευση επίσκεψης και υποχρεώσεων';closeComposer.disabled=false;chart.hidden=false;promptStatus.textContent='';readyPromptStatus.textContent='';pendingControls(false);draftGeneration++;contextId=null;candidate=null;source='';busy=false;input.value='';inputLabel.hidden=false;extractButton.hidden=false;review.replaceChildren();review.hidden=false;previews.replaceChildren();feedback.textContent='';saveButton.hidden=true;extractButton.disabled=false;input.disabled=false;visitDate.disabled=false;audioPanel.hidden=false;audioReview.hidden=true;audioFocused.replaceChildren();audioFocused.hidden=false;audioDraft=false;audioReviewUnits=[];audioSuggestions=[];audioSuggestionDraft='';audioConsiderations=[];audioConsiderationsStatus='complete';audioPreviewed=null;audioContextExpiresAt='';audioReady=false;audioStart.disabled=true;audioStop.disabled=true;informed.checked=false;audioStatus.textContent='Έλεγχος διαθεσιμότητας…';updateCaptureMode();}
   function reset(){for(const dialog of chart.querySelectorAll('dialog[open]'))dialog.close();pendingBusy=false;chartPending=[];chartScroll=0;chartReturnPoint=null;journeyObserver?.disconnect();journeyObserver=null;generation++;patientId=null;chart.replaceChildren();resetDraft();composer.hidden=true;}
-  function facts(parent,title,items){if(!items?.length)return;el(parent,'h4',title);const list=el(parent,'ul');for(const i of items)el(list,'li',typeof i==='string'?i:i.text);}
+  function factList(parent,items){const list=el(parent,'ul');for(const item of items)el(list,'li',typeof item==='string'?item:item.text);}
+  function facts(parent,title,items){if(!items?.length)return;el(parent,'h4',title);factList(parent,items);}
+  function compactFacts(parent,title,items,limit,edit,key,foldLong=true){
+    if(!items.length&&!edit)return;
+    const section=el(parent,'section','','capture-result-section');
+    const header=el(section,'div','','capture-result-heading');
+    el(header,'h4',title);
+    if(edit){
+      const control=button(header,'Διόρθωση',edit);
+      control.setAttribute('aria-label','Διόρθωση · '+title);
+      control.dataset.editField=key;
+    }
+    if(!items.length)return section;
+    // Keep complete statements together, including qualifications and negation.
+    const first=items.slice(0,limit).filter(item=>!foldLong||(typeof item==='string'?item:item.text)?.length<=320);
+    if(first.length)factList(section,first);
+    if(first.length<items.length){
+      const details=el(section,'details');
+      el(details,'summary','Όλα τα στοιχεία ('+items.length+')');
+      factList(details,items);
+    }
+    return section;
+  }
   function clinicalFull(parent,v){
     if(v.prepared_note){
       preparedNoteDisplay(parent,v.prepared_note.text);
@@ -181,7 +222,7 @@
     if(!whole&&/^(?:\d+[.)]|[-*•])\s/.test(first))first=first.split(/\n(?=(?:\d+[.)]|[-*•])\s)/).slice(0,limit).join('\n');
     return first&&first.length<=1500?first:null;
   }
-  function clinicalSummary(parent,v){
+  function clinicalSummary(parent,v,edit){
     const compact=el(parent,'div','','clinical-compact-overview');
     if(v.prepared_note){
       const sections=preparedSections(v.prepared_note.text),shown=new Set();
@@ -199,16 +240,19 @@
       show('Προτάσεις AI για την επόμενη επίσκεψη · δεν αποτελούν αποφάσεις',['προτασεις για την επομενη επισκεψη'],3);
       for(const s of sections)if(['ποτε χρειαζεται νωριτερη επικοινωνια','οδηγιες επανεπικοινωνιας','safety-net'].includes(s.key)&&s.text){el(compact,'h4','Οδηγίες επανεπικοινωνίας');el(compact,'p',s.text,'compact-note-text');}
     }else{
-      if(!v.reason_is_unspecified)facts(compact,'Σκοπός',v.reason_for_visit?[v.reason_for_visit]:[]);
-      for(const [key,label,limit] of [['history','Κλινική κατάσταση',1],['clinical_impression','Εκτίμηση',2],['decisions','Αποφάσεις',2],['recommendations','Θεραπεία / οδηγίες',2],['follow_up','Επόμενη επίσκεψη',3]]){
-        facts(compact,label,(v[key]||[]).filter(item=>item.text?.length<=1500).slice(0,limit));
+      const show=(key,title,items,limit=1)=>compactFacts(compact,title,items,limit,edit&&(items.length||key==='reason_for_visit')?()=>edit(key):null,key);
+      show('reason_for_visit','Σκοπός',!v.reason_is_unspecified&&v.reason_for_visit?[v.reason_for_visit]:[]);
+      for(const [key,title] of [['clinical_impression','Εκτίμηση'],['decisions','Αποφάσεις'],['recommendations','Θεραπεία / οδηγίες'],['findings','Ευρήματα'],['follow_up','Παρακολούθηση']]){
+        show(key,title,v[key]||[]);
       }
-      const bonePurpose=/οστεοπορ|osteopor/i.test(v.reason_for_visit?.text||'');
-      const selectedFindings=(v.findings||[]).filter(f=>f.text?.length<=1500&&(!bonePurpose||/DEXA|DXA|T.score|οστικ|κ[αά]ταγμ/i.test(f.text)));
-      facts(compact,'Επιλεγμένα ευρήματα',selectedFindings.slice(0,2));
-      facts(compact,'Αγωγή',(v.medications||[]).slice(0,3).map(m=>[m.name,({prescribed:'Έναρξη',continued:'Συνέχιση',stopped:'Διακοπή'})[m.action],m.dose,m.frequency].filter(Boolean).join(' · ')));
-      if(v.next_contact)facts(compact,'Επόμενη επαφή',[[v.next_contact.when,v.next_contact.purpose,...(v.next_contact.assess||[])].filter(Boolean).join(' · ')]);
-      facts(compact,'Οδηγίες επανεπικοινωνίας',v.safety_net||[]);
+      show('medications','Αγωγή',(v.medications||[]).map(m=>[m.name,enums.action[m.action],m.dose,m.frequency,m.route,m.duration?m.duration.value+' '+m.duration.unit:null].filter(Boolean).join(' · ')),2);
+      if(v.next_contact){
+        const {when,time,purpose,assess}=v.next_contact;
+        show('next_contact','Επόμενη επαφή',[[when,time].filter(Boolean).join(' · '),purpose,...(assess||[])].filter(Boolean),2);
+      }
+      const safety=v.safety_net||[];
+      compactFacts(compact,'Οδηγίες επανεπικοινωνίας',safety,safety.length,edit&&safety.length?()=>edit('safety_net'):null,'safety_net',false);
+      show('uncertainties','Αβεβαιότητες',v.uncertainties||[]);
     }
     if(!compact.textContent.trim())el(compact,'p','Η πλήρης σημείωση είναι διαθέσιμη παρακάτω.');
     renderNextFocus(compact,v);
@@ -240,7 +284,8 @@
     button(body,'Αντιγραφή πλήρους σημείωσης',async()=>{const status=el(body,'p','','clinical-muted');if(await window.CockpitHome.copyDiaPrompt(text,status))status.textContent='Αντιγράφηκε η πλήρης σημείωση.';});
   }
   function showDraftSummary(){
-    if(!candidate||(amendment&&!candidate.prepared_note)||candidate.source_identity_state!=='consistent')return;
+    if(!candidate||candidate.source_identity_state!=='consistent')return;
+    if(isStructuredDraft()){showStructuredDraft();return;}
     audioSummaryText.replaceChildren();
     const clinical=el(audioSummaryText,'section','','patient-chart-card');el(clinical,'h3','Κλινική εικόνα');clinicalSummary(clinical,candidate);
     const pending=el(audioSummaryText,'section','','patient-chart-card');el(pending,'h3','Προτεινόμενες υποχρεώσεις');
@@ -248,6 +293,81 @@
     if(!candidate.pending?.length)el(pending,'p','Δεν καταγράφηκαν νέες υποχρεώσεις.');
     if(!audioSummary.querySelector('.draft-summary-note'))el(audioSummary,'p','Προσχέδιο για τον εμφανιζόμενο ασθενή — αποθηκεύεται μόνο με «Αποθήκευση».','clinical-muted').classList.add('draft-summary-note');
     audioSummary.hidden=false;chart.hidden=true;audioPanel.hidden=true;if(!candidate.prepared_note||directCollapse)inputLabel.hidden=true;extractButton.hidden=true;
+  }
+  function isStructuredDraft(){
+    return candidate && !candidate.prepared_note && !audioDraft && candidate.source_identity_state==='consistent';
+  }
+  function resetStructuredDisplay(){
+    editorField=null;
+    composer.classList.remove('capture-result-ready','capture-show-source');
+    resultHeading.textContent='Σύνοψη επίσκεψης';
+    resultHeading.hidden=false;
+    audioSummaryText.hidden=false;
+    editSummary.hidden=false;
+    sourceToggle.hidden=true;
+    sourceToggle.setAttribute('aria-expanded','false');
+    recoverSave.hidden=true;
+    taskEffects.hidden=true;
+    taskEffects.open=false;
+    taskEffectsList.replaceChildren();
+    taskEffectsKey='';
+    reviewedTaskEffects='';
+  }
+  function toggleStructuredSource(){
+    if(busy||!isStructuredDraft())return;
+    const visible=composer.classList.toggle('capture-show-source');
+    sourceToggle.setAttribute('aria-expanded',String(visible));
+    inputLabel.hidden=!visible;
+    extractButton.hidden=!visible;
+    if(visible)input.focus();
+  }
+  function openSectionEditor(key){
+    if(busy)return;
+    editorField=key;
+    audioSummary.hidden=true;
+    drawReview();
+    review.querySelector('h4')?.focus();
+  }
+  function closeSectionEditor(){
+    if(busy)return;
+    const key=editorField;
+    editorField=null;
+    showStructuredDraft();
+    const primary=audioSummaryText.querySelector('[data-edit-field="'+key+'"]');
+    (primary?.getClientRects().length?primary:audioSummaryText.querySelector('.capture-more-fields > summary'))?.focus();
+  }
+  function showStructuredDraft(){
+    if(editorField)return;
+    composer.classList.add('capture-result-ready');
+    resultHeading.textContent='Καταγραφή · '+date(candidate.encounter_date);
+    resultHeading.hidden=Boolean(amendment);
+    if(amendment){
+      composerTitle.textContent='Επεξεργασία επίσκεψης · '+date(candidate.encounter_date);
+      amendmentNote.hidden=true;
+    }
+    audioSummaryText.replaceChildren();
+    const obligations=(candidate.pending||[]).map(p=>[p.description,p.trigger,p.review_date,roles[p.responsible_role]].filter(Boolean).join(' · '));
+    const taskSection=compactFacts(audioSummaryText,'Υποχρεώσεις',obligations,2,()=>openSectionEditor('pending'),'pending');
+    if(!obligations.length)el(taskSection,'p','Καμία νέα υποχρέωση.','clinical-muted');
+    clinicalSummary(audioSummaryText,candidate,openSectionEditor);
+    const more=el(audioSummaryText,'details','','capture-more-fields');
+    el(more,'summary','Περισσότερα πεδία');
+    const directlyEditable=new Set([...audioSummaryText.querySelectorAll('[data-edit-field]')].map(control=>control.dataset.editField));
+    for(const key of Object.keys(labels)){
+      if(!Object.hasOwn(candidate,key)||directlyEditable.has(key))continue;
+      button(more,labels[key],()=>openSectionEditor(key)).dataset.editField=key;
+    }
+    sourceToggle.hidden=false;
+    editSummary.hidden=true;
+    audioSummary.hidden=false;
+    chart.hidden=true;
+    audioPanel.hidden=true;
+    const sourceVisible=composer.classList.contains('capture-show-source');
+    inputLabel.hidden=!sourceVisible;
+    extractButton.hidden=!sourceVisible;
+    review.replaceChildren();
+    review.hidden=true;
+    showAmendmentEffects();
   }
   function showPending(id,item,editMetadata=false){
     if(!composer.hidden||pendingBusy||patientId!==id)return;
@@ -667,10 +787,11 @@
   const labels={reason_for_visit:'Λόγος επίσκεψης',visit_type:'Τύπος επίσκεψης',specialty:'Ειδικότητα',what_changed:'Μεταβολές',findings:'Ιστορικό και ευρήματα',history:'Ιστορικό',clinical_impression:'Κλινική εκτίμηση',options_discussed:'Επιλογές που συζητήθηκαν',recommendations:'Συστάσεις',completed_actions:'Ενέργειες που ολοκληρώθηκαν',patient_preferences:'Προτιμήσεις ασθενούς',follow_up:'Παρακολούθηση',administrative_notes:'Διοικητικές σημειώσεις',coding:'Κωδικοποίηση',gesy_coded:'Κωδικοί',coding_complete:'Πλήρης κωδικοποίηση',decisions:'Αποφάσεις',medications:'Φάρμακα',pending:'Προτεινόμενες υποχρεώσεις',next_contact:'Επόμενη επαφή',safety_net:'Οδηγίες επανεπικοινωνίας',uncertainties:'Αβεβαιότητες',text:'Περιγραφή',type:'Είδος',responsible_role:'Υπεύθυνος',certainty:'Βεβαιότητα',region:'Περιοχή',name:'Φάρμακο',action:'Ενέργεια',dose:'Δόση',frequency:'Συχνότητα',route:'Οδός',duration:'Διάρκεια',value:'Τιμή',unit:'Μονάδα',approximate:'Κατά προσέγγιση',item_type:'Είδος υποχρέωσης',description:'Περιγραφή',trigger:'Προϋπόθεση',status:'Κατάσταση',external_dependency:'Εξωτερική εξάρτηση',actor:'Από ποιον',condition:'Προϋπόθεση',review_date:'Ημερομηνία επανελέγχου',when:'Ημερομηνία',time:'Ώρα',purpose:'Σκοπός',assess:'Προς αξιολόγηση',code:'Κωδικός',system:'Σύστημα',title:'Τίτλος',direction:'Μεταβολή'};
   const audioLabels={history:'Ιστορικό και συμπτώματα',findings:'Ευρήματα / εξέταση',recommendations:'Θεραπεία και συστάσεις',decisions:'Αποφάσεις / πλάνο',pending:'Επόμενα βήματα / υποχρεώσεις',follow_up:'Παρακολούθηση / επόμενος έλεγχος'};
   const enums={responsible_role:roles,item_type:{investigation:'Εξέταση',test:'Εξέταση',result:'Αποτέλεσμα',document:'Έγγραφο',follow_up:'Επανέλεγχος',referral:'Παραπομπή',other:'Άλλο'},certainty:{certain:'Βέβαιο',uncertain:'Αβέβαιο',conflicting:'Αντικρουόμενο'},action:{prescribed:'Έναρξη',continued:'Συνέχιση',stopped:'Διακοπή'},status:{open:statuses.open,awaiting_patient:statuses.awaiting_patient,awaiting_result:statuses.awaiting_result},type:{therapy:'Θεραπεία',referral:'Παραπομπή',medication:'Αγωγή',investigation:'Εξέταση',advice:'Οδηγία',sick_leave:'Άδεια ασθενείας',admin:'Διοικητικό'}};
-  function edited(obj){if(obj===candidate?.reason_for_visit||(candidate?.reason_is_unspecified&&candidate.reason_for_visit.text!=='Κλινική καταγραφή'))candidate.reason_is_unspecified=false;if(obj&&typeof obj==='object'&&!Array.isArray(obj)&&obj.provenance){if(!obj.provenance.includes('clinician_edit'))obj.provenance.push('clinician_edit');if('verification'in obj)obj.verification='clinician_confirmed';}if(candidate?.next_visit_focus?.length){const texts=['reason_for_visit','history','findings','clinical_impression','recommendations','decisions','options_discussed','follow_up','safety_net','uncertainties','completed_actions','administrative_notes','patient_preferences','pending','next_contact','what_changed'].flatMap(key=>(Array.isArray(candidate[key])?candidate[key]:[candidate[key]]).filter(Boolean).flatMap(f=>[f.text,f.source_excerpt,f.description,f.purpose]).filter(Boolean));candidate.next_visit_focus=candidate.next_visit_focus.filter(item=>!candidate.reason_is_unspecified&&item.purpose===candidate.reason_for_visit.text&&item.source_excerpts.every(excerpt=>texts.some(text=>text.includes(excerpt))));}previews.replaceChildren();if(!amendment)audioSummary.hidden=true;if(audioDraft){audioPreviewed=null;saveButton.disabled=false;}}
-  function fields(parent,obj){
+  function edited(obj){if(obj===candidate?.reason_for_visit||(candidate?.reason_is_unspecified&&candidate.reason_for_visit.text!=='Κλινική καταγραφή'))candidate.reason_is_unspecified=false;if(obj&&typeof obj==='object'&&!Array.isArray(obj)&&obj.provenance){if(!obj.provenance.includes('clinician_edit'))obj.provenance.push('clinician_edit');if('verification'in obj)obj.verification='clinician_confirmed';}if(candidate?.next_visit_focus?.length){const texts=['reason_for_visit','history','findings','clinical_impression','recommendations','decisions','options_discussed','follow_up','safety_net','uncertainties','completed_actions','administrative_notes','patient_preferences','pending','next_contact','what_changed'].flatMap(key=>(Array.isArray(candidate[key])?candidate[key]:[candidate[key]]).filter(Boolean).flatMap(f=>[f.text,f.source_excerpt,f.description,f.purpose]).filter(Boolean));candidate.next_visit_focus=candidate.next_visit_focus.filter(item=>!candidate.reason_is_unspecified&&item.purpose===candidate.reason_for_visit.text&&item.source_excerpts.every(excerpt=>texts.some(text=>text.includes(excerpt))));}previews.replaceChildren();if(isStructuredDraft())showAmendmentEffects();else if(!amendment)audioSummary.hidden=true;if(audioDraft){audioPreviewed=null;saveButton.disabled=false;}}
+  function fields(parent,obj,only){
     let extra=null;
     for(const [key,value] of Object.entries(obj)){
+      if(only&&key!==only)continue;
       if(['schema_version','source_identity_state','source_bindings','comparison_basis','encounter_date','provenance','verification','reason_is_unspecified','next_visit_focus'].includes(key))continue;
       if(key==='source_excerpt'){if(value)el(parent,'blockquote',value);continue;}
       if(Array.isArray(value)){const group=el(parent,key==='uncertainties'&&audioDraft?'details':'section');group.dataset.field=key;el(group,key==='uncertainties'&&audioDraft?'summary':'h4',labels[key]||key);const rows=el(group,'div');
@@ -793,6 +914,15 @@
   }
   function drawReview(){
     review.replaceChildren();
+    if(isStructuredDraft()){
+      review.hidden=!editorField;
+      if(editorField){
+        const heading=el(review,'h4',labels[editorField],'capture-editor-heading');heading.tabIndex=-1;
+        fields(review,candidate,editorField);
+        button(review,'Επιστροφή στην καταγραφή',closeSectionEditor);
+      }
+      return;
+    }
     if(candidate?.prepared_note){el(review,'p','Διόρθωσε τη σημείωση στο πλαίσιο κειμένου. Όλες οι ενότητες διατηρούνται.','clinical-muted');return;}
     if(audioDraft){compactAudioFields(review,candidate);renderAudioSuggestions(review);renderAudioConsiderations(review);}else {fields(review,candidate);renderNextFocus(review,candidate);}
     button(review,'Προεπισκόπηση καταγραφής',preview);
@@ -815,6 +945,32 @@
     for(const [id,description] of amendment.descriptions)if(!kept.has(id))el(section,'p','Στις διαγραμμένες: '+description);
     if(!candidate.pending.length&&!amendment.descriptions.size)el(section,'p','Δεν υπάρχουν υποχρεώσεις.');
   }
+  function showAmendmentEffects(){
+    if(!amendment||!isStructuredDraft())return;
+    const kept=new Set();
+    const lines=[];
+    const changes=[];
+    for(const item of candidate.pending){
+      const id=pendingBindings.get(item);
+      const serialized=JSON.stringify(item);
+      if(id&&amendment.originals.get(id)===serialized){kept.add(id);continue;}
+      changes.push([id,serialized]);
+      lines.push((id?'Αντικατάσταση με νέα εκκρεμότητα: ':'Νέα εκκρεμότητα: ')+item.description);
+    }
+    for(const [id,description] of amendment.descriptions){
+      if(kept.has(id))continue;
+      changes.push([id,null]);
+      lines.push('Στις διαγραμμένες: '+description);
+    }
+    const key=changes.length?JSON.stringify(changes):'';
+    if(key!==taskEffectsKey)taskEffects.open=false;
+    taskEffectsKey=key;
+    taskEffects.hidden=!key;
+    taskEffectsLabel.textContent='Αλλαγές στις υποχρεώσεις ('+lines.length+')';
+    taskEffectsList.replaceChildren();
+    for(const line of lines)el(taskEffectsList,'li',line);
+    saveButton.disabled=busy||Boolean(key&&reviewedTaskEffects!==key);
+  }
   async function beginAmend(encounter){
     if(!patientId||pendingBusy||!canLeave())return;
     const id=patientId,ticket=generation,draftTicket=++draftGeneration;
@@ -825,16 +981,21 @@
       candidate.pending.forEach((item,index)=>{const pid=result.pending_bindings[index];pendingBindings.set(item,pid);amendment.originals.set(pid,JSON.stringify(item));amendment.descriptions.set(pid,item.description);});
       bindClinician();composerTitle.textContent='Επεξεργασία επίσκεψης · '+date(candidate.encounter_date);
       audioPanel.hidden=true;
-      amendmentNote.hidden=false;amendmentNote.textContent='Διόρθωσε την υπάρχουσα καταγραφή ή επικόλλησε ξανά τη σύνοψη και πάτησε «Προετοιμασία καταγραφής». Αμετάβλητες υποχρεώσεις διατηρούν την κατάστασή τους. Αφαιρούμενες πηγαίνουν στις διαγραμμένες· τροποποιημένες αντικαθίστανται ως νέες εκκρεμότητες.';
+      amendmentNote.hidden=false;amendmentNote.textContent='Επίλεξε το σημείο που θέλεις να διορθώσεις.';
       visitDate.value=candidate.encounter_date;saveButton.textContent='Αποθήκευση διορθώσεων';saveButton.hidden=false;saveButton.disabled=false;
       captureMode=candidate.prepared_note?'direct':'ai';input.value=candidate.prepared_note?.text||'';updateCaptureMode();if(candidate.prepared_note)amendmentNote.textContent='Διόρθωσε το πλήρες κείμενο. Η νέα μορφή εμφανίζεται αυτόματα χωρίς AI. Οι αμετάβλητες υποχρεώσεις διατηρούν την κατάστασή τους.';
       composer.hidden=false;chart.hidden=true;pendingControls(true);drawReview();feedback.textContent='Η αποθηκευμένη επίσκεψη είναι έτοιμη για επεξεργασία. Δεν έχει αλλάξει τίποτα ακόμη.';
+      if(isStructuredDraft()){
+        feedback.textContent='';
+        showStructuredDraft();
+      }
       if(candidate.prepared_note){await preview();showDraftSummary();}
       composer.scrollIntoView({block:'start'});
     }catch(e){if(ticket===generation&&draftTicket===draftGeneration){const status=el(chart,'p',e.message);status.setAttribute('role','status');}}
   }
   async function extract(){
     if(busy||!patientId||input.value.trim().length<10||!visitDate.value)return;
+    resetStructuredDisplay();
     // Manual text is a separate draft owner. Invalidate audio callbacks while
     // keeping its recovery data until extraction actually succeeds.
     if(!amendment){audioToken++;audioAbort?.abort();audioReview.hidden=true;audioSummary.hidden=true;review.hidden=false;}
@@ -844,10 +1005,21 @@
       const context=await request('/visit-capture/context',{patient_id:patientId,client_session_id:recovering?session+'-manual-'+crypto.randomUUID():session});if(ticket!==generation||draftTicket!==draftGeneration)return;
       const result=await request('/visit-capture/extract',{context_id:context.context_id,text:source,encounter_date:visitDate.value});if(ticket!==generation||draftTicket!==draftGeneration)return;
       contextId=context.context_id;candidate=result.candidate;if(!amendment){audioDraft=false;discardAudio();}pendingBindings=new Map();bindClinician();
-      drawReview();if(!amendment){showDraftSummary();review.hidden=candidate.source_identity_state==='consistent';}feedback.textContent=candidate.source_identity_state==='consistent'?'Διόρθωσε ό,τι χρειάζεται και αφαίρεσε όποια υποχρέωση δεν αποδέχεσαι.':'Η σύνοψη περιέχει ασυμφωνία ή αβεβαιότητα ταυτότητας. Διόρθωσε το αρχικό κείμενο και προετοίμασε ξανά.';
-      saveButton.hidden=candidate.source_identity_state!=='consistent';saveButton.disabled=false;await preview();
+      drawReview();showDraftSummary();
+      feedback.textContent=candidate.source_identity_state==='consistent'?'Η καταγραφή είναι έτοιμη για έλεγχο και αποθήκευση.':'Η σύνοψη περιέχει ασυμφωνία ή αβεβαιότητα ταυτότητας. Διόρθωσε το αρχικό κείμενο και προετοίμασε ξανά.';
+      saveButton.hidden=candidate.source_identity_state!=='consistent';saveButton.disabled=false;
+      if(isStructuredDraft()){
+        showAmendmentEffects();
+        audioSummaryText.tabIndex=-1;
+        audioSummaryText.focus();
+      }else await preview();
     }catch(e){if(ticket===generation&&draftTicket===draftGeneration){feedback.textContent=e.message;if(audioTranscript){audioReview.hidden=false;if(audioDraft){drawReview();renderAudioFocused();audioSummary.hidden=false;saveButton.hidden=false;saveButton.disabled=false;feedback.textContent+=' Η προηγούμενη σύνοψη παραμένει διαθέσιμη.';}showAudioView('closed');updateAudioRescue();}}}
-    finally{if(ticket===generation&&draftTicket===draftGeneration){busy=false;extractButton.disabled=false;input.disabled=false;visitDate.disabled=false;}}
+    finally{
+      if(ticket===generation&&draftTicket===draftGeneration){
+        busy=false;extractButton.disabled=false;input.disabled=false;visitDate.disabled=false;
+        if(composer.classList.contains('capture-result-ready'))showAmendmentEffects();
+      }
+    }
   }
   function scheduleDirectImport(){
     clearTimeout(directTimer);const draftTicket=++draftGeneration,ticket=generation,id=patientId;
@@ -898,19 +1070,54 @@
     if(amendment&&!contextId){const ticket=generation,draftTicket=draftGeneration;try{const c=await request('/visit-capture/context',{patient_id:patientId,client_session_id:session});if(ticket!==generation||draftTicket!==draftGeneration)return;contextId=c.context_id;}catch(e){if(ticket===generation&&draftTicket===draftGeneration)feedback.textContent=e.message;return;}}
     const ticket=generation,draftTicket=draftGeneration,id=patientId,usedContext=contextId;if(!candidate)return;const submitted=JSON.stringify(candidate);try{
     const p=await request('/visit-capture/preview',{context_id:usedContext,candidate,recording_patient_confirmed:audioDraft&&explicitSaveAcceptance});if(ticket!==generation||draftTicket!==draftGeneration||id!==patientId||usedContext!==contextId||JSON.stringify(candidate)!==submitted||p.patient_id!==id||p.context_id!==usedContext)return;
+    if(isStructuredDraft()){showAmendmentEffects();return p;}
     previews.replaceChildren();taskReview();for(const [key,label]of [['snapshot','Συνοπτική εικόνα'],['brief','Προετοιμασία επίσκεψης'],['detail','Πλήρης καταγραφή']]){const d=el(previews,'details');el(d,'summary',label);el(d,'p',p[key],'clinical-preview-text');}
     if(audioDraft)audioPreviewed=explicitSaveAcceptance&&p.can_save?submitted:null;if(!amendment)showDraftSummary();
     return p;
   }catch(e){if(ticket===generation&&draftTicket===draftGeneration)feedback.textContent=e.message;}}
   input.onpaste=()=>{directCollapse=true;};
-  input.oninput=()=>{if(captureMode==='direct'){scheduleDirectImport();return;}draftGeneration++;if(amendment){saveButton.hidden=true;previews.replaceChildren();feedback.textContent='Πάτησε «Προετοιμασία καταγραφής» για να χρησιμοποιήσεις το νέο κείμενο.';return;}if(audioDraft){saveButton.hidden=true;audioPreviewed=null;previews.replaceChildren();feedback.textContent='Πάτησε «Προετοιμασία καταγραφής» για να χρησιμοποιήσεις το επικολλημένο κείμενο. Η προηγούμενη σύνοψη διατηρείται μέχρι να πετύχει.';return;}candidate=null;audioSummary.hidden=true;saveButton.hidden=true;review.replaceChildren();previews.replaceChildren();};visitDate.oninput=()=>{if(captureMode==='direct'){scheduleDirectImport();return;}if(amendment){candidate.encounter_date=visitDate.value;previews.replaceChildren();}else input.oninput();};
+  input.oninput=()=>{
+    if(captureMode==='direct'){scheduleDirectImport();return;}
+    draftGeneration++;
+    if(amendment){
+      saveButton.hidden=true;previews.replaceChildren();
+      feedback.textContent='Πάτησε «Προετοιμασία καταγραφής» για να χρησιμοποιήσεις το νέο κείμενο.';
+      return;
+    }
+    if(audioDraft){
+      saveButton.hidden=true;audioPreviewed=null;previews.replaceChildren();
+      feedback.textContent='Πάτησε «Προετοιμασία καταγραφής» για να χρησιμοποιήσεις το επικολλημένο κείμενο. Η προηγούμενη σύνοψη διατηρείται μέχρι να πετύχει.';
+      return;
+    }
+    candidate=null;
+    resetStructuredDisplay();
+    audioSummary.hidden=true;saveButton.hidden=true;review.replaceChildren();previews.replaceChildren();
+  };
+  visitDate.oninput=()=>{
+    if(captureMode==='direct'){scheduleDirectImport();return;}
+    if(amendment){
+      candidate.encounter_date=visitDate.value;
+      previews.replaceChildren();
+      if(isStructuredDraft()&&visitDate.value)showStructuredDraft();
+    }else input.oninput();
+  };
   async function save(){if(amendment)return saveAmendment();if(busy||!candidate||!contextId)return;
+    const attempt={};
+    saveAttempt=attempt;
     const ticket=generation,draftTicket=draftGeneration,id=patientId,submitted=JSON.stringify(candidate),wasAudio=audioDraft;
     const current=()=>ticket===generation&&draftTicket===draftGeneration&&id===patientId&&JSON.stringify(candidate)===submitted&&audioDraft===wasAudio;
     busy=true;saveButton.disabled=true;extractButton.disabled=true;
-    if(wasAudio||candidate.prepared_note){
+    if(wasAudio||candidate.prepared_note||isStructuredDraft()){
       const p=await preview(true);
-      if(!current()||!p?.can_save||(wasAudio&&audioPreviewed!==submitted)){if(ticket===generation&&id===patientId){busy=false;saveButton.disabled=false;extractButton.disabled=false;feedback.textContent='Η σύνοψη άλλαξε ή δεν μπορεί να αποθηκευτεί. Δες τις αλλαγές και πάτησε ξανά Αποθήκευση.';}return;}
+      if(!current()||!p?.can_save||(wasAudio&&audioPreviewed!==submitted)){
+        // A closed or replaced draft must not unlock the next draft's controls.
+        if(saveAttempt===attempt&&ticket===generation&&id===patientId){
+          saveAttempt=null;
+          busy=false;saveButton.disabled=false;extractButton.disabled=false;
+          feedback.textContent='Η σύνοψη άλλαξε ή δεν μπορεί να αποθηκευτεί. Δες τις αλλαγές και πάτησε ξανά Αποθήκευση.';
+        }
+        return;
+      }
     }
     feedback.textContent='Αποθήκευση…';
     try{await request('/visit-capture/save',{context_id:contextId,candidate,recording_patient_confirmed:wasAudio});if(ticket!==generation||draftTicket!==draftGeneration)return;await open(id);window.dispatchEvent(new Event('cockpit:clinical-updates-changed'));
@@ -918,16 +1125,26 @@
       // A lost response may follow a committed save. Never offer a fresh write
       // blindly; the user can inspect the authoritative chart first.
       feedback.textContent=e.message+' Έλεγξε την καρτέλα πριν επαναλάβεις την καταγραφή.';
-      button(review,'Έλεγχος αποθηκευμένης καρτέλας',()=>open(id));
+      recoverSave.hidden=false;
     }
   }
   async function saveAmendment(){
     if(busy||!candidate)return;
     const ticket=generation,draftTicket=draftGeneration,id=patientId,editing=amendment;
     const active=()=>ticket===generation&&draftTicket===draftGeneration&&id===patientId&&editing===amendment&&!composer.hidden;
-    if(!contextId){await preview();if(!active()||!contextId)return;}
-    // First click reviews the task effects; the same button then explicitly saves.
-    if(!previews.querySelector('.amendment-task-review')){await preview();if(active())feedback.textContent='Έλεγξε τις υποχρεώσεις και πάτησε ξανά «Αποθήκευση διορθώσεων».';return;}
+    if(isStructuredDraft()){
+      if(taskEffectsKey&&taskEffectsKey!==reviewedTaskEffects)return;
+      // Validate the already reviewed draft before the existing audited write.
+      const snapshot=JSON.stringify(candidate);
+      busy=true;saveButton.disabled=true;
+      const checked=await preview();
+      if(editing!==amendment||id!==patientId)return;
+      busy=false;showAmendmentEffects();
+      if(!active()||!checked||!contextId||snapshot!==JSON.stringify(candidate))return;
+    }else{
+      if(!contextId){await preview();if(!active()||!contextId)return;}
+      if(!previews.querySelector('.amendment-task-review')){await preview();if(active())feedback.textContent='Έλεγξε τις υποχρεώσεις και πάτησε ξανά «Αποθήκευση διορθώσεων».';return;}
+    }
     if(!active())return;
     const body={context_id:contextId,expected_token:editing.expected_token,request_id:editing.request_id,candidate,pending_bindings:candidate.pending.map(p=>pendingBindings.get(p)||null)};
     const serialized=JSON.stringify(body);
