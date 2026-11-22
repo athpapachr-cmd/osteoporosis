@@ -603,3 +603,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
 .home-agenda-coverage{margin:8px 0;font-size:11px}
 .home-agenda-coverage summary{cursor:pointer;color:#637b73}
 .home-agenda-coverage summary:focus-visible{outline:2px solid #1f6f5c;outline-offset:2px}
+
+/* One readable visit with a focused editor for the selected section. */
+.capture-result-section {margin:0 0 10px;min-width:0;overflow-wrap:anywhere}
+.capture-result-heading {display:flex;align-items:center;justify-content:space-between;gap:8px}
+.capture-result-heading h4,.patient-chart-card .capture-result-heading h4,.patient-visit-body .capture-result-heading h4 {margin:0}
+.capture-result-section ul {margin:3px 0 0;padding-inline-start:20px}
+.capture-result-section details,.capture-more-fields {margin:5px 0;color:#315e61}
+.capture-result-section summary,.capture-more-fields summary {cursor:pointer}
+#captureComposer.capture-result-ready #captureAudioSummaryText {display:block}
+#captureComposer.capture-result-ready .capture-actions {position:sticky;bottom:0;z-index:2;background:#fff;border-top:1px solid #dce6e8;padding:3px 0}
+#captureComposer.capture-result-ready:not(.capture-show-source) :is(.capture-input-modes,.capture-input-help,.capture-input-date,.capture-dia-prompt) {display:none}
+#captureComposer .capture-result-heading button {margin:2px 0;padding:4px 8px;font-size:.8rem;white-space:nowrap}
+#captureComposer .capture-editor-heading {margin-bottom:8px}
+#captureComposer .capture-editor-heading:focus {outline:none}
+#captureStatus:empty {display:none}
+.capture-amendment-effects summary {cursor:pointer;color:#315e61;font-weight:600}
+.capture-amendment-effects ul {max-height:25vh;overflow:auto;margin:6px 0;padding-inline-start:20px;overflow-wrap:anywhere}
