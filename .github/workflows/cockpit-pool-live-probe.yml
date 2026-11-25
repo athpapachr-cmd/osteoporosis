@@ -1,0 +1,108 @@
+name: Cockpit pool live probe
+
+on:
+  push:
+    branches: [codex/cockpit-pool-baseline-probe, codex/cockpit-pool-after-probe]
+    paths: [.github/workflows/cockpit-pool-live-probe.yml]
+
+permissions: {}
+
+jobs:
+  concurrent-reads:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Exercise concurrent clinical reads
+        env:
+          COCKPIT_SMOKE_KEY: ${{ secrets.CLINICAL_DATA_KEY }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import threading
+          import time
+          from concurrent.futures import ThreadPoolExecutor
+          from datetime import datetime, timezone
+          from urllib.error import HTTPError, URLError
+          from urllib.parse import urlencode
+          from urllib.request import HTTPRedirectHandler, Request, build_opener
+
+          host = "https://ortho-reception-backend.onrender.com"
+          key = os.environ.get("COCKPIT_SMOKE_KEY")
+          if not key:
+              raise SystemExit("Existing clinical credential unavailable")
+
+          class NoRedirect(HTTPRedirectHandler):
+              def redirect_request(self, *args, **kwargs):
+                  return None
+
+          def get(path):
+              request = Request(host + path, headers={"X-Clinical-Key": key}, method="GET")
+              try:
+                  with build_opener(NoRedirect()).open(request, timeout=20) as response:
+                      return response.status, json.load(response)
+              except HTTPError as error:
+                  return error.code, None
+              except (URLError, TimeoutError, ValueError) as error:
+                  return type(error).__name__, None
+
+          fixtures = (("cockpit-cp1-test", "cockpit-cp1-v1"),
+                      ("cockpit-synthetic-161-1", "cockpit-161-v1"))
+          for patient, marker in fixtures:
+              chart_path = "/clinical/patient/" + patient + "/chart"
+              code, payload = get(chart_path)
+              if code == 404:
+                  continue
+              if code != 200 or payload.get("demographics", {}).get("synthetic_scenario") != marker:
+                  raise SystemExit(f"Synthetic chart preflight failed with {code}")
+              break
+          else:
+              raise SystemExit("No existing synthetic chart")
+
+          agenda_path = "/clinical/calendar/agenda?" + urlencode({
+              "start": "2026-11-25T00:00:00+02:00",
+              "end": "2026-11-25T23:59:59+02:00",
+          })
+          paths = {"agenda": agenda_path, "chart": chart_path,
+                   "updates": "/clinical/clinical-updates?scope=test&active_only=true"}
+
+          def verify(kind, payload):
+              if kind == "agenda":
+                  return isinstance(payload, list), bool(payload)
+              if kind == "chart":
+                  valid = (payload.get("patient_id") == patient
+                           and payload.get("demographics", {}).get("synthetic_scenario") == marker
+                           and isinstance(payload.get("visits"), list)
+                           and isinstance(payload.get("pending"), list))
+                  return valid, bool(payload.get("visits") or payload.get("pending"))
+              rows = payload.get("items")
+              valid = (isinstance(rows, list) and len(rows) == payload.get("shown")
+                       and all(row.get("patient_id") == "cockpit-cp1-test" for row in rows))
+              return valid, bool(rows)
+
+          def read(wave, kind, barrier):
+              barrier.wait(timeout=4)
+              start = datetime.now(timezone.utc)
+              tick = time.perf_counter()
+              code, payload = get(paths[kind])
+              elapsed = round((time.perf_counter() - tick) * 1000)
+              valid, populated = verify(kind, payload) if code == 200 else (False, False)
+              return {"wave": wave, "route": kind, "start": start.isoformat(),
+                      "duration_ms": elapsed, "status": code, "valid": valid, "populated": populated}
+
+          time.sleep(15)
+          measurements = []
+          wave_routes = ("agenda", "chart", "updates")
+          with ThreadPoolExecutor(max_workers=5) as executor:
+              for wave in range(1, 6):
+                  routes = wave_routes if wave < 5 else (*wave_routes, "chart", "updates")
+                  barrier = threading.Barrier(len(routes))
+                  jobs = [executor.submit(read, wave, kind, barrier) for kind in routes]
+                  batch = [job.result() for job in jobs]
+                  for result in batch:
+                      print("POOL_PROBE", json.dumps(result), flush=True)
+                  measurements.extend(batch)
+                  time.sleep(1)
+          if not all(result["valid"] for result in measurements):
+              raise SystemExit("Concurrent route smoke reported a failure")
+          PY
