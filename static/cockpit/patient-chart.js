@@ -72,7 +72,7 @@
   const audioSummary=el(composer,'section','','capture-audio-summary');audioSummary.id='captureAudioSummary';audioSummary.hidden=true;
   const resultHeading=el(audioSummary,'h4','Σύνοψη επίσκεψης');
   const audioSummaryText=el(audioSummary,'div','','patient-chart-grid');audioSummaryText.id='captureAudioSummaryText';
-  const editSummary=button(audioSummary,'Επεξεργασία κειμένου',()=>{if(candidate?.prepared_note){focusPreparedSource();return;}inputLabel.hidden=false;extractButton.hidden=captureMode==='direct';if(audioDraft)showAudioView('processed');});
+  const editSummary=button(audioSummary,'Επεξεργασία',()=>{if(candidate?.prepared_note){focusPreparedSource();return;}inputLabel.hidden=false;extractButton.hidden=captureMode==='direct';if(audioDraft)showAudioView('processed');});
   const sourceToggle=button(audioSummary,'Κείμενο εισόδου και ημερομηνία',toggleStructuredSource);
   sourceToggle.hidden=true;
   sourceToggle.setAttribute('aria-expanded','false');
