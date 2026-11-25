@@ -1,0 +1,89 @@
+name: Cockpit PR 315 live smoke
+
+on:
+  push:
+    branches: [codex/cockpit-315-live-smoke]
+    paths: [.github/workflows/cockpit-pr315-live-smoke.yml]
+
+permissions: {}
+
+jobs:
+  synthetic-read:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Read the public health and protected synthetic routes
+        env:
+          COCKPIT_SMOKE_KEY: ${{ secrets.CLINICAL_DATA_KEY }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from concurrent.futures import ThreadPoolExecutor
+          from urllib.error import HTTPError, URLError
+          from urllib.request import HTTPRedirectHandler, Request, build_opener
+
+          host = "https://ortho-reception-backend.onrender.com"
+          key = os.environ.get("COCKPIT_SMOKE_KEY")
+          if not key:
+              raise SystemExit("Existing clinical credential is not available")
+
+          class NoRedirect(HTTPRedirectHandler):
+              def redirect_request(self, *args, **kwargs):
+                  return None
+
+          def get(path, *, authenticated=False, parse_json=False):
+              headers = {"X-Clinical-Key": key} if authenticated else {}
+              request = Request(host + path, headers=headers, method="GET")
+              try:
+                  with build_opener(NoRedirect()).open(request, timeout=30) as response:
+                      payload = json.load(response) if parse_json else None
+                      return response.status, payload
+              except HTTPError as error:
+                  return error.code, None
+              except (URLError, TimeoutError, ValueError):
+                  raise SystemExit("Cockpit transport or JSON error") from None
+
+          def verify_chart():
+              candidates = (("cockpit-cp1-test", "cockpit-cp1-v1"),
+                            ("cockpit-synthetic-161-1", "cockpit-161-v1"))
+              for fixture, marker in candidates:
+                  path = "/clinical/patient/" + fixture + "/chart"
+                  code, data = get(path, authenticated=True, parse_json=True)
+                  if code == 404:
+                      continue
+                  if code != 200:
+                      raise SystemExit(f"Synthetic chart HTTP {code}")
+                  assert data.get("patient_id") == fixture
+                  assert data.get("demographics", {}).get("synthetic_scenario") == marker
+                  assert isinstance(data.get("visits"), list)
+                  assert isinstance(data.get("pending"), list)
+                  print("Synthetic patient chart HTTP 200; fixture and response shape verified")
+                  return
+              raise SystemExit("No existing synthetic patient chart")
+
+          def verify_updates():
+              code, data = get("/clinical/clinical-updates?scope=test&active_only=true",
+                               authenticated=True, parse_json=True)
+              if code != 200:
+                  raise SystemExit(f"Synthetic clinical updates HTTP {code}")
+              items = data.get("items")
+              assert isinstance(items, list) and data.get("shown") == len(items)
+              assert all(row.get("patient_id") == "cockpit-cp1-test" and
+                         "checkpoint_storage_ready" in row for row in items)
+              print(f"Synthetic clinical updates HTTP 200; response shape verified; populated={bool(items)}")
+
+          code, health = get("/health", parse_json=True)
+          assert code == 200 and health.get("status") == "ok"
+          print("Health HTTP 200")
+          assert get("/static/cockpit/")[0] == 200
+          print("Cockpit page HTTP 200")
+          assert get("/clinical/patient/cockpit-cp1-test/chart")[0] == 401
+          assert get("/clinical/clinical-updates?scope=test")[0] == 401
+          print("Both protected routes denied anonymous access")
+          with ThreadPoolExecutor(max_workers=2) as executor:
+              chart = executor.submit(verify_chart)
+              updates = executor.submit(verify_updates)
+              chart.result()
+              updates.result()
+          PY
