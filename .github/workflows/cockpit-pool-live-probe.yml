@@ -106,3 +106,5 @@ jobs:
           if not all(result["valid"] for result in measurements):
               raise SystemExit("Concurrent route smoke reported a failure")
           PY
+
+# Repeat the same probe after the production release becomes live.
