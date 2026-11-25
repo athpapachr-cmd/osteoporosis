@@ -1,14 +1,66 @@
 """CP1 contract + real browser/DB workflow; provider mocked only in local tests."""
 from copy import deepcopy
+import json
+from types import SimpleNamespace
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from clinical_data import EncounterORM, ClinicalPendingORM, VisitCaptureCandidateV1
-from clinical_capture_cp1 import TEST_ID, extract_candidate
+from clinical_capture_cp1 import HeidiVisitFacts, TEST_ID, extract_candidate
 from test_cockpit_synthetic_161 import setup, login, KEY
 
 TEXT='Επανέλεγχος γόνατος. Ήπιος πόνος στην κάμψη. Να προσκομιστεί το CD της μαγνητικής. Να σταλεί το πόρισμα.'
+HEIDI_REASON = 'Επανέλεγχος κινητικότητας γόνατος.'
+HEIDI_FINDING = 'Παραμένει δυσφορία όταν κατεβαίνει σκαλιά.'
+HEIDI_TEXT = f'Λόγος επίσκεψης:\n{HEIDI_REASON}\nΕυρήματα:\n{HEIDI_FINDING}\nΣημειώσεις:\nΣυνθετική πηγή δοκιμής.'
+HEIDI_QUESTION = 'Έχει αλλάξει η δυσκολία στα σκαλιά στην καθημερινότητα;'
+
+
+@pytest.fixture
+def heidi_provider(monkeypatch):
+    import openai
+
+    fact = lambda text: {"text": text, "provenance": ["heidi_today"]}
+    record = HeidiVisitFacts.model_validate({
+        "schema_version": "visit_capture_candidate_v1", "source_identity_state": "consistent",
+        "encounter_date": "2026-10-18", "reason_for_visit": fact(HEIDI_REASON),
+        "source_bindings": [{"source_ref": "heidi_today", "role": "heidi_today"}],
+        "comparison_basis": {"type": "unavailable"}, "findings": [fact(HEIDI_FINDING)],
+    })
+    hint = {
+        "category": "history_question", "text": HEIDI_QUESTION,
+        "rationale": "Βοηθά να εκτιμηθεί η λειτουργικότητα στην επόμενη επαφή.",
+        "source_ids": [2], "confidence": "moderate", "purpose_source_ids": [1],
+        "role_scope": "within_role", "impact": "continuity",
+    }
+    state = {"record": record, "calls": [],
+             "advisory": json.dumps({"contextual_clinical_considerations": [{"invalid": True}, hint, hint]})}
+
+    def parse(**kwargs):
+        state["calls"].append(("facts", kwargs))
+        return SimpleNamespace(status="completed", output_parsed=state["record"])
+
+    class Advisor:
+        def __init__(self, **kwargs):
+            self.responses = SimpleNamespace(create=self.create)
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *exc):
+            pass
+
+        async def create(self, **kwargs):
+            state["calls"].append(("advice", kwargs))
+            return SimpleNamespace(status="completed", output_text=state["advisory"])
+
+    monkeypatch.setenv("CLINICAL_DOCUMENTS_AI_ENABLED", "true")
+    monkeypatch.setenv("CLINICAL_DOCUMENTS_PHI_PROVIDER_APPROVED", "true")
+    monkeypatch.setenv("OPENAI_API_KEY", "synthetic-only")
+    monkeypatch.setattr(openai, "OpenAI", lambda **kwargs: SimpleNamespace(responses=SimpleNamespace(parse=parse)))
+    monkeypatch.setattr(openai, "AsyncOpenAI", Advisor)
+    return state
 
 def draft():
     fact=lambda s:{'text':s,'provenance':['dia_summary']}
@@ -23,6 +75,82 @@ def draft():
 
 def ctx(c,patient=TEST_ID):
     return c.post('/clinical/visit-capture/context',json={'patient_id':patient,'client_session_id':'cp1-browser-test-session'}).json()['context_id']
+
+
+def test_heidi_advice_is_generated_from_evidence_and_stays_out_of_tasks(setup, heidi_provider):
+    app, engine = setup
+    c = login(app)
+    c.post('/clinical/visit-capture/test-patient')
+    context = ctx(c)
+    body = {"context_id": context, "text": HEIDI_TEXT, "encounter_date": "2026-10-18", "source_kind": "heidi"}
+    raw = c.post('/clinical/visit-capture/extract', json=body)
+    assert raw.status_code == 200
+    result = raw.json()
+    candidate = result["candidate"]
+    assert result["visit_focus_status"] == "ready"
+    assert len(candidate["next_visit_focus"]) == 1
+    assert candidate["next_visit_focus"][0]["text"] == HEIDI_QUESTION and HEIDI_QUESTION not in HEIDI_TEXT
+    assert candidate["next_visit_focus"][0]["source_excerpts"] == [HEIDI_FINDING]
+    assert not candidate["pending"] and not candidate["recommendations"]
+    (facts_kind, facts), (advice_kind, advice) = heidi_provider["calls"]
+    assert (facts_kind, advice_kind) == ("facts", "advice")
+    assert facts["store"] is False and advice["store"] is False and facts["model"] == advice["model"]
+    schema = facts["text_format"].model_json_schema()["properties"]
+    assert schema["next_visit_focus"]["maxItems"] == schema["pending"]["maxItems"] == 0
+    evidence = advice["input"][1]["content"]
+    assert HEIDI_REASON in evidence and HEIDI_FINDING in evidence
+    assert "selected_identity" not in evidence and "Συνθετική πηγή δοκιμής" not in evidence
+    with Session(engine) as db:
+        assert db.scalar(select(func.count()).select_from(EncounterORM)) == 0
+
+    heidi_provider["advisory"] = "malformed"
+    recovered = c.post('/clinical/visit-capture/extract', json={
+        **body, "text": HEIDI_TEXT + "\nΠροτάσεις AI:\nΣυνθετική παλαιότερη σύσταση."
+        "\nΠροτάσεις του θεράποντος:\nΣυνθετική πρόταση γιατρού."
+        "\nΠροτάσεις ασθενούς:\nΣυνθετική πρόταση ασθενούς.",
+    }).json()
+    assert recovered["visit_focus_status"] == "unavailable"
+    assert recovered["candidate"]["findings"] == candidate["findings"]
+    assert recovered["candidate"]["next_visit_focus"] == []
+    facts_source = heidi_provider["calls"][-2][1]["input"][1]["content"]
+    assert "Συνθετική παλαιότερη σύσταση" not in facts_source
+    assert "Συνθετική πρόταση γιατρού" in facts_source and "Συνθετική πρόταση ασθενούς" in facts_source
+
+    negative = c.post('/clinical/visit-capture/extract', json={
+        **body, "text": HEIDI_TEXT.replace(HEIDI_FINDING, "Δεν ισχύει πλέον ότι: " + HEIDI_FINDING),
+    }).json()
+    assert negative["visit_focus_status"] == "insufficient_evidence"
+    assert negative["candidate"]["next_visit_focus"] == []
+
+    grouped = c.post('/clinical/visit-capture/extract', json={
+        **body, "text": HEIDI_TEXT.replace(HEIDI_FINDING, "Δεν ισχύει πλέον\n\n- " + HEIDI_FINDING),
+    }).json()
+    assert grouped["visit_focus_status"] == "insufficient_evidence"
+    assert grouped["candidate"]["next_visit_focus"] == []
+
+    heidi_provider["record"].source_identity_state = "conflict"
+    unmatched = c.post('/clinical/visit-capture/extract', json=body).json()
+    assert unmatched["candidate"]["source_identity_state"] == "conflict"
+    assert [name for name, _ in heidi_provider["calls"]] == ["facts", "advice", "facts", "advice", "facts", "facts", "facts"]
+
+    heidi_provider["record"].source_identity_state = "consistent"
+    bad_task = {"item_type": "investigation", "description": "επανάληψη της εξέτασης",
+                "status": "open", "responsible_role": "unspecified",
+                "provenance": ["heidi_today"], "source_excerpt": "επανάληψη της εξέτασης"}
+    heidi_provider["record"] = VisitCaptureCandidateV1.model_validate(
+        {**heidi_provider["record"].model_dump(), "pending": [bad_task]})
+    assert c.post('/clinical/visit-capture/extract', json={
+        **body, "text": HEIDI_TEXT + "\nΔεν συμφωνήθηκε επανάληψη της εξέτασης.",
+    }).status_code == 502
+    assert [name for name, _ in heidi_provider["calls"]][-2:] == ["facts", "facts"]
+
+    stale = deepcopy(candidate)
+    stale["findings"][0]["text"] = "Δεν ισχύει πλέον ότι " + HEIDI_FINDING
+    assert c.post('/clinical/visit-capture/preview', json={"context_id": context, "candidate": stale}).status_code == 422
+    assert c.post('/clinical/visit-capture/save', json={"context_id": context, "candidate": candidate}).status_code == 200
+    chart = c.get('/clinical/patient/' + TEST_ID + '/chart').json()
+    assert chart["visits"][0]["clinical"]["next_visit_focus"][0]["text"] == HEIDI_QUESTION
+    assert chart["pending"] == []
 
 def test_proposal_approval_atomic_persistence_and_exact_origin(setup,monkeypatch):
     app,engine=setup;c=login(app)
@@ -94,6 +222,67 @@ def test_provider_boundary_rejects_fabricated_excerpt_completion_and_failure(mon
     monkeypatch.setenv('CLINICAL_DOCUMENTS_PHI_PROVIDER_APPROVED','false')
     with pytest.raises(HTTPException) as error:extract_candidate(TEXT,'2026-10-18',{})
     assert error.value.status_code==503
+
+
+def test_browser_heidi_paste_runs_one_processing_action_and_edits_grounding(setup, heidi_provider):
+    import shutil
+    import socket
+    import threading
+
+    from playwright.sync_api import expect, sync_playwright
+    import uvicorn
+
+    app, engine = setup
+    sock = socket.socket()
+    sock.bind(("127.0.0.1", 0))
+    server = uvicorn.Server(uvicorn.Config(app, log_level="error"))
+    thread = threading.Thread(target=server.run, kwargs={"sockets": [sock]}, daemon=True)
+    thread.start()
+    try:
+        with sync_playwright() as pw:
+            browser = pw.chromium.launch(executable_path=shutil.which("google-chrome") or shutil.which("chromium"))
+            page = browser.new_page(viewport={"width": 390, "height": 950})
+            page.set_default_timeout(8000)
+            page.goto(f"http://localhost:{sock.getsockname()[1]}/static/cockpit/index.html")
+            page.locator('#ceGlobalKey').click()
+            page.locator('#ceGlobalKeyInput').fill(KEY)
+            page.locator('#ceGlobalLoginForm button[type=submit]').click()
+            expect(page.locator('#ceGlobalAuthStatus')).to_contain_text('Συνδέθηκες')
+            page.keyboard.press('Escape')
+            page.locator('#captureTestPatient').click()
+            page.locator('#captureOpen').click()
+            page.get_by_role("button", name="Σύνοψη Heidi με AI", exact=True).click()
+            expect(page.locator(".capture-input-help")).to_contain_text("στην OpenAI")
+            page.locator('#captureDate').fill('2026-10-18')
+            page.locator('#captureText').fill(HEIDI_TEXT)
+            expect(page.locator('#captureSave')).to_be_hidden()
+            assert not heidi_provider["calls"]
+
+            page.get_by_role("button", name="Επεξεργασία σύνοψης Heidi", exact=True).click()
+            summary = page.locator("#captureAudioSummary")
+            focus = summary.locator(".next-visit-focus")
+            expect(focus).to_contain_text(HEIDI_QUESTION)
+            focus.get_by_text("Σύνδεση με τον σκοπό", exact=True).click()
+            expect(focus.locator("blockquote")).to_have_text(HEIDI_FINDING)
+            assert [name for name, _ in heidi_provider["calls"]] == ["facts", "advice"]
+            assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+            with Session(engine) as db:
+                assert db.scalar(select(func.count()).select_from(EncounterORM)) == 0
+            summary.get_by_role("button", name="Διόρθωση · Ευρήματα", exact=True).click()
+            editor = page.locator("#captureReview")
+            editor.locator("textarea").fill("Δεν ισχύει πλέον ότι " + HEIDI_FINDING)
+            editor.get_by_role("button", name="Επιστροφή στην καταγραφή", exact=True).click()
+            expect(summary.locator(".next-visit-focus")).to_have_count(0)
+            page.locator("#captureSave").click()
+            expect(page.locator("#captureComposer")).to_be_hidden()
+            browser.close()
+    finally:
+        server.should_exit = True
+        thread.join(10)
+        sock.close()
+    with Session(engine) as db:
+        assert db.scalar(select(func.count()).select_from(EncounterORM)) == 1
+        assert db.scalar(select(func.count()).select_from(ClinicalPendingORM)) == 0
 
 
 def test_browser_capture_edit_reject_save_refresh_and_second_session(setup,monkeypatch,tmp_path):

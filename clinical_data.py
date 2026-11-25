@@ -653,6 +653,19 @@ def _render_gesy_copy(candidate: VisitCaptureCandidateV1) -> str:
     return "\n\n".join(f"{title}:\n{text}" for title, text in sections if text)
 
 
+def heidi_focus_fact_groups(candidate: VisitCaptureCandidateV1):
+    return (
+        ("reason", [candidate.reason_for_visit]),
+        ("finding", candidate.findings),
+        ("impression", candidate.clinical_impression),
+        ("decision", candidate.decisions),
+        ("follow_up", candidate.follow_up),
+        ("history", candidate.history),
+        ("uncertainty", candidate.uncertainties),
+        ("safety", candidate.safety_net),
+    )
+
+
 def _validate_visit_capture_candidate(candidate: VisitCaptureCandidateV1) -> None:
     if candidate.reason_is_unspecified and (
             candidate.reason_for_visit.text != 'Κλινική καταγραφή'
@@ -705,11 +718,18 @@ def _validate_visit_capture_candidate(candidate: VisitCaptureCandidateV1) -> Non
     grounded_text = [value for group in fact_groups for item in group
                      for value in [getattr(item, 'text', None), getattr(item, 'source_excerpt', None),
                                    getattr(item, 'description', None), getattr(item, 'purpose', None)] if value]
+    heidi_source = any(binding.role == "heidi_today" for binding in candidate.source_bindings)
+    exact_heidi_facts = {fact.text for _, group in heidi_focus_fact_groups(candidate) for fact in group} if heidi_source else set()
     for suggestion in candidate.next_visit_focus:
+        if heidi_source:
+            grounded = suggestion.provenance == ["heidi_today"] and all(
+                excerpt.strip() and excerpt in exact_heidi_facts for excerpt in suggestion.source_excerpts
+            )
+        else:
+            grounded = all(excerpt and len(excerpt) <= 4000 and any(excerpt in text for text in grounded_text)
+                           for excerpt in suggestion.source_excerpts)
         if (candidate.reason_is_unspecified or suggestion.purpose != candidate.reason_for_visit.text
-                or any(not excerpt or len(excerpt) > 4000
-                       or not any(excerpt in text for text in grounded_text)
-                       for excerpt in suggestion.source_excerpts)):
+                or not grounded):
             raise HTTPException(422, 'Planning suggestion source changed')
     fact_groups.append(candidate.next_visit_focus)
     fact_groups.append(candidate.coding.gesy_coded)
