@@ -126,13 +126,17 @@ if DATABASE_URL.startswith("postgresql://") and "+psycopg" not in DATABASE_URL a
         DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
 
 connect_args = {}
+pool_options = {}
 if DATABASE_URL.startswith("sqlite"):
     connect_args["check_same_thread"] = False
+elif DATABASE_URL.startswith(("postgresql://", "postgresql+")):
+    pool_options = {"pool_size": 3, "max_overflow": 1}
 
 engine = create_engine(
     DATABASE_URL,
     connect_args=connect_args,
     future=True,
+    **pool_options,
 )
 
 Base.metadata.create_all(bind=engine)
