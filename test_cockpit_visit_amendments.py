@@ -161,6 +161,9 @@ def test_browser_edit_existing_visit_cancel_reextract_save_and_independent_read(
     import uvicorn
     from playwright.sync_api import sync_playwright,expect
     app,engine,c,eid,path=seeded
+    mismatched=edit(c,path)
+    mismatched['candidate']['next_contact'].update(when='2027-05-01',purpose='Επόμενο ραντεβού στις 17 Μαΐου 2027')
+    assert c.post(path+'/amend',json=mismatched).status_code==200
     monkeypatch.setattr('clinical_capture_cp1.extract_candidate',lambda *a:draft().model_copy(update={'pending':[]}))
     sock=socket.socket();sock.bind(('127.0.0.1',0));port=sock.getsockname()[1]
     server=uvicorn.Server(uvicorn.Config(app,log_level='error'));thread=threading.Thread(target=server.run,kwargs={'sockets':[sock]},daemon=True);thread.start()
@@ -209,6 +212,15 @@ def test_browser_edit_existing_visit_cancel_reextract_save_and_independent_read(
                     page.wait_for_timeout(150);assert not writes
                     expect(summary).to_contain_text('Επανέλεγχος γόνατος')
                     page.unroute('**/visit-capture/preview')
+                    checks=summary.locator('.capture-draft-checks')
+                    use_date=checks.get_by_role('button',name='Χρήση',exact=False)
+                    expect(use_date).to_be_visible()
+                    use_date.click()
+                    expect(use_date).to_have_count(0)
+                    assert not writes
+                    edit_section('Επόμενη επαφή')
+                    expect(editor.get_by_label('Ημερομηνία',exact=True)).to_have_value('2027-05-17')
+                    finish_section()
                     edit_section('Υποχρεώσεις')
                     tasks=editor.locator('section[data-field=pending] .capture-field-group')
                     tasks.last.get_by_role('button',name='Αφαίρεση',exact=True).click()
@@ -251,6 +263,8 @@ def test_browser_edit_existing_visit_cancel_reextract_save_and_independent_read(
                 with page.expect_request(lambda r: r.url.endswith('/amend') and r.method=='POST'):
                     page.locator('#captureSave').click()
                 expect(page.locator('.patient-visit:visible')).to_contain_text('Διόρθωση '+str(width))
+                if width==1280:
+                    assert chart(login(app))['visits'][0]['clinical']['next_contact']['when']=='2027-05-17'
                 expect(page.locator('.visit-amendment-history')).to_be_visible()
                 page.reload();page.locator('.patient-journey-point').click();page.get_by_role('button',name='Άνοιγμα',exact=True).click()
                 expect(page.locator('.patient-visit:visible')).to_contain_text('Διόρθωση '+str(width))
@@ -264,6 +278,39 @@ def test_browser_edit_existing_visit_cancel_reextract_save_and_independent_read(
                     expect(page.locator('#captureSave')).to_be_enabled()
                     page.locator('#captureSave').click()
                     expect(page.locator('.patient-visit:visible')).to_contain_text('Επανέλεγχος γόνατος')
+                    page.get_by_role('button',name='Επεξεργασία επίσκεψης',exact=True).click()
+                    summary.get_by_role('button',name='Κείμενο εισόδου και ημερομηνία').click()
+                    composer.locator('#captureModeDirect').click()
+                    note=('Λόγος επίσκεψης:\nΣυνθετική σημείωση\n'
+                          'Επόμενη επαφή:\n01/05/2027\nΕπόμενη επίσκεψη:\n17 Μαΐου 2027\n'
+                          'Παρακολούθηση και επόμενη επίσκεψη:\nΕξέταση στις 10/05/2027. Ραντεβού στις 17/05/2027.\n'
+                          'Νέα αγωγή:\n- Συνθετικό Α 10 mg\n- Συνθετικό Β\n'
+                          'Προτάσεις AI για την επόμενη επίσκεψη:\nΕπανεξέταση του καταγεγραμμένου αποτελέσματος')
+                    page.locator('#captureText').fill(note)
+                    expect(summary.locator('.capture-draft-checks')).to_contain_text('αναφέρονται διαφορετικές ημερομηνίες')
+                    expect(summary.locator('.capture-draft-checks')).to_contain_text('συμφωνημένη δόση')
+                    expect(summary.locator('.capture-draft-checks')).to_contain_text('Συνθετικό Β')
+                    expect(summary.locator('.capture-draft-checks')).not_to_contain_text('Συνθετικό Α')
+                    expect(summary.locator('.clinical-compact-overview')).to_contain_text('Επανεξέταση του καταγεγραμμένου αποτελέσματος')
+                    with page.expect_request(lambda r:r.url.endswith('/amend') and r.method=='POST'):
+                        page.locator('#captureSave').click()
+                    expect(page.locator('.patient-visit:visible')).to_contain_text('Συνθετική σημείωση')
+                    page.get_by_role('button',name='Επεξεργασία επίσκεψης',exact=True).click()
+                    expect(page.locator('#captureText')).to_be_hidden()
+                    summary.get_by_role('button',name='Διόρθωση · Επόμενη επαφή',exact=False).click()
+                    expect(page.locator('#captureText')).to_be_focused()
+                    assert page.locator('#captureText').evaluate('n=>n.value.slice(n.selectionStart).startsWith("Επόμενη επαφή:")')
+                    corrected=note.replace('01/05/2027','17/05/2027')
+                    page.locator('#captureText').fill(corrected)
+                    expect(summary.locator('.capture-draft-checks')).not_to_contain_text('αναφέρονται διαφορετικές ημερομηνίες')
+                    expect(page.locator('#captureSave')).to_be_visible()
+                    expect(page.locator('#captureSave')).to_be_enabled()
+                    with page.expect_request(lambda r:r.url.endswith('/amend') and r.method=='POST'):
+                        page.locator('#captureSave').click()
+                    expect(page.locator('.patient-visit:visible')).to_contain_text('Συνθετική σημείωση')
+                    visit=chart(login(app))['visits'][0]
+                    assert visit['encounter_id']==eid and visit['clinical']['prepared_note']['text']==corrected
+                    assert '01/05/2027' in visit['amendments'][-1]['detail']
                 assert len(chart(login(app))['visits'])==1;context.close()
             browser.close()
     finally:server.should_exit=True;thread.join(10);sock.close()

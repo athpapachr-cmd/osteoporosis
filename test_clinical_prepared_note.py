@@ -181,12 +181,14 @@ def test_browser_direct_paste_one_save_full_chart_prompt_edit_and_mode_race(setu
                 assert page.evaluate('navigator.clipboard.readText()') == NOTE
                 assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
                 page.screenshot(path=str(tmp_path/f'direct-saved-note-{width}.png'), full_page=True)
-                # Stored prepared notes use the complete text editor and one amendment Save.
+                # Stored prepared notes open compactly, with one amendment Save after editing.
                 with Session(engine) as db:
                     eid = db.scalar(select(EncounterORM).order_by(EncounterORM.created_at.desc())).id
                     original_ids = list(db.scalars(select(ClinicalPendingORM.id).where(ClinicalPendingORM.source_encounter_id == eid)))
                 page.evaluate('(eid)=>window.CockpitStoredChart.openVisit("cockpit-cp1-test",eid)', eid)
                 page.locator('.patient-visit[open] .visit-edit').click()
+                expect(page.locator('#captureText')).to_be_hidden()
+                page.locator('#captureAudioSummary').get_by_role('button', name='Επεξεργασία κειμένου', exact=True).click()
                 expect(page.locator('#captureText')).to_have_value(NOTE)
                 changed = NOTE.replace('Βάρος 61 kg.', 'Βάρος 62 kg.')
                 page.locator('#captureText').fill(changed)
