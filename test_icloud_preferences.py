@@ -401,6 +401,10 @@ def test_projection_signed_shape_key_rotation_and_stream_limits(api, monkeypatch
     import hmac
     import json
     import time
+    from types import SimpleNamespace
+
+    now = int(time.time())
+    monkeypatch.setattr(mail_source, "time", SimpleNamespace(time=lambda: now))
     c, fake=api
     rows=captured(c)
     entry=rows[0]
@@ -412,7 +416,7 @@ def test_projection_signed_shape_key_rotation_and_stream_limits(api, monkeypatch
         return body.decode()+"."+hmac.new(b"synthetic-clinical-key",mail_source._PROJECTION_NAMESPACE+body,hashlib.sha256).hexdigest()
     fake.operations.clear()
     path=BASE+"/category-projection"
-    for invalid in ({**facts,"v":2},{**facts,"captured_at":True},{**facts,"captured_at":int(time.time())+61},
+    for invalid in ({**facts,"v":2},{**facts,"captured_at":True},{**facts,"captured_at":now+61},
                     {**facts,"display_subject":"x"*221},{**facts,"body":"Never allowed"},
                     {**facts,"sender":"x"*255},{**facts,"suggested":"unknown"}):
         response=c.post(path,json={"items":[{**entry,"projection_ref":signed(invalid)}]})
