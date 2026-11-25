@@ -1,7 +1,7 @@
 """Continuation uses one event owner across chart, updates and independent sessions."""
 from uuid import uuid4
 import pytest
-from sqlalchemy import select, func
+from sqlalchemy import event, select, func
 from sqlalchemy.orm import Session
 from fastapi.testclient import TestClient
 from clinical_data import ClinicalPendingORM, EncounterORM, PatientORM
@@ -18,6 +18,48 @@ def seed(app,engine):
     r=c.post('/clinical/visit-capture/save',json={'context_id':ctx(c),'candidate':candidate});assert r.status_code==200
     p=c.get('/clinical/patient/'+TEST_ID+'/chart').json()['pending'][0]
     return c,p,'/clinical/patient/'+TEST_ID+'/pending/'+p['pending_id']
+
+
+@pytest.mark.parametrize("storage_installed", [True, False])
+@pytest.mark.parametrize(("path", "collection"), [
+    (f"/clinical/patient/{TEST_ID}/chart", "pending"),
+    ("/clinical/clinical-updates?scope=test", "items"),
+], ids=["chart", "updates"])
+def test_checkpoint_reads_use_only_the_request_connection(setup, storage_installed, path, collection):
+    app, engine = setup
+    client, pending, action_path = seed(app, engine)
+    if storage_installed:
+        response = client.post(action_path + "/checkpoint-plan", json={
+            "template": "material_images",
+            "first_observation": "not_yet_observed",
+            "idempotency_key": uuid4().hex,
+        })
+        assert response.status_code == 200
+    else:
+        PendingEventBase.metadata.drop_all(engine)
+
+    checkouts = []
+
+    def record_checkout(_connection, record, _proxy):
+        checkouts.append(record)
+
+    event.listen(engine, "checkout", record_checkout)
+    try:
+        response = client.get(path)
+    finally:
+        event.remove(engine, "checkout", record_checkout)
+    assert response.status_code == 200
+    assert len(checkouts) == 1
+    item = response.json()[collection][0]
+    assert item["pending_id"] == pending["pending_id"]
+    assert item["checkpoint_storage_ready"] is storage_installed
+    if storage_installed:
+        assert item["checkpoints"]["next_checkpoint"]["key"] == "received"
+        assert item["checkpoints"]["next_checkpoint"]["state"] == "not_yet"
+        assert item["lifecycle"]["revision"] == 1
+    else:
+        assert item["checkpoints"] is None
+        assert item["lifecycle"] is None
 
 
 def test_persistent_independent_stages_reverse_replay_conflict_and_scope(setup):

@@ -187,7 +187,7 @@ def attach_cp1(router, engine, protected, context_for, ensure_patient):
                     "amendments":[{"date":h['previous']['date'],"amended_at":h['amended_at'],
                         "detail":_render_visit_capture(VisitCaptureCandidateV1.model_validate(h['previous']['signed']['candidate']))[2]}
                         for h in signed.get('amendment_history',[])]})
-            ready=installed(engine)
+            ready=installed(db.connection())
             pending=[pending_view(db,p,request,ready) for p in db.scalars(select(ClinicalPendingORM).where(ClinicalPendingORM.patient_id==patient_id,ClinicalPendingORM.status!="deleted").order_by(ClinicalPendingORM.created_at.desc()))]
             return {"patient_id":patient_id,"demographics":patient.demographics_json,"visits":visits,"pending":pending}
 
@@ -200,6 +200,6 @@ def attach_cp1(router, engine, protected, context_for, ensure_patient):
             stmt=stmt.where(PatientORM.patient_id==TEST_ID if scope=="test" else PatientORM.patient_id.not_in(test_ids))
             if active_only:stmt=stmt.where(ClinicalPendingORM.status.in_(("open","awaiting_patient","awaiting_result")))
             rows=db.execute(stmt.order_by(ClinicalPendingORM.updated_at.desc()).limit(100)).all()
-            ready=installed(engine)
+            ready=installed(db.connection())
             items=[{**pending_view(db,p,request,ready),"patient_name":(patient.demographics_json or {}).get("full_name") or "Κλινικός φάκελος"} for p,patient in rows]
             return {"items":items,"shown":len(items)}
