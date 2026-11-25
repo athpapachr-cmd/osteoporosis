@@ -2077,3 +2077,8 @@ A prepared or existing visit opens into a compact clinical record with per-secti
 ## 2026-11-25 — Source-based draft checks released (#313)
 
 Prepared and structured visit drafts show compact checks for explicitly stated appointment dates, medication documentation and unresolved obligations. The clinician can accept a source-backed exact date in the structured draft. The existing final amendment Save updates the same visit and keeps superseded versions in protected history. Independent R1 and 21 final reported checks passed, including the shared edit-label regression. Render `dep-dc3i4hgae00c73901o20` activated `24a27f80dc8594864070d75e62b9818dcaad232e` with checked tree `b7f6f2580a625889b7138ada1cc33acb2d5bb3fe`. Three assets matched, health returned 200, three protected anonymous routes returned 401 and bounded error queries returned no rows. Clinician production trial remains pending.
+
+
+## 2026-11-25 — Heidi summary advice released (#317)
+
+The explicit Heidi paste mode opens an editable clinical draft and separately generates optional, source-backed next-visit questions. Advice remains distinct from the record and operational tasks. The existing final Save remains authoritative. Independent R2 and all 17 final reported checks passed. A timing-only iCloud boundary fixture was stabilized and passed on SQLite and PostgreSQL. Native Render `dep-dc3l6hlbedkc73ch6kj0` reached live on `6fe2443f67b2738d7288c7deae60e4ca7c3af445` and checked tree `7c0deec9b5f20424d74c3d914269bf9f77fb6d6c`. Three assets matched, health returned 200, three protected anonymous routes returned 401, and bounded app error and relevant 5xx queries returned no rows. Real provider quality and clinician trial remain pending.
