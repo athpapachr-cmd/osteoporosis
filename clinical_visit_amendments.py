@@ -10,6 +10,7 @@ from sqlalchemy import select, update, delete
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, OperationalError
 from clinical_data import EncounterORM, PatientORM, ClinicalPendingORM, VisitCaptureContextORM, VisitCaptureCandidateV1, _validate_visit_capture_candidate, _render_visit_capture, utcnow
+from clinical_data import grounded_heidi_visit_focus
 from clinical_pending_one_tap import actor_for, installed, project_lifecycle, cancel_pending, pending_write_session
 
 class Amendment(BaseModel):
@@ -68,7 +69,15 @@ def attach_visit_amendments(router,engine,protected,context_for,ensure_patient):
                 if item is None:raise HTTPException(409,'Missing task source')
                 items.append(item);bindings.append(p.id)
             candidate['pending']=items
+            omitted_visit_focus=0
+            if candidate.get('next_visit_focus') and any(binding.get('role')=='heidi_today' for binding in candidate['source_bindings']):
+                draft=VisitCaptureCandidateV1.model_validate(candidate)
+                focus=grounded_heidi_visit_focus(draft)
+                omitted_visit_focus=len(draft.next_visit_focus)-len(focus)
+                if omitted_visit_focus:
+                    candidate['next_visit_focus']=[item.model_dump(mode='json') for item in focus]
             return {'patient_id':patient_id,'encounter_id':row.id,'candidate':candidate,'pending_bindings':bindings,
+                'omitted_visit_focus':omitted_visit_focus,
                 'expected_token':token(db,row,pending),'revision':signed.get('revision',0)}
 
     @router.post('/patient/{patient_id}/visit/{encounter_id}/amend',dependencies=protected)

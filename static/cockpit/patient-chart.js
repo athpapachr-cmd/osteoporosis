@@ -436,7 +436,8 @@
     audioSummaryText.replaceChildren();
     if(candidate.prepared_note){
       composer.classList.add('capture-result-ready');
-      amendmentNote.hidden=true;
+      amendmentNote.hidden=!amendment.omitted_visit_focus;
+      if(amendment.omitted_visit_focus)amendmentNote.textContent='Οι παλιότερες προτάσεις AI που χρειάζονται νέο έλεγχο της πηγής δεν περιλαμβάνονται στην προς αποθήκευση διόρθωση.';
       if(amendment)resultHeading.hidden=true;
     }
     renderDraftChecks(audioSummaryText);
@@ -509,7 +510,7 @@
     clinicalSummary(clinical,candidate,openSectionEditor,{showFocus:false});
     renderNextFocus(overview,candidate,heidi);
     if(heidi||candidate.next_visit_focus?.length)overview.classList.add('has-visit-focus');
-    renderDraftChecks(audioSummaryText,{taskChecks:false});
+    renderDraftChecks(audioSummaryText,{taskChecks:!heidi});
     const obligations=(candidate.pending||[]).map(p=>[p.description,p.trigger,p.review_date,roles[p.responsible_role]].filter(Boolean).join(' · '));
     if(obligations.length)compactFacts(audioSummaryText,'Υποχρεώσεις',obligations,0,()=>openSectionEditor('pending'),'pending');
     if(!amendment)saveButton.textContent=obligations.length?'Αποθήκευση επίσκεψης και υποχρεώσεων':'Αποθήκευση επίσκεψης';

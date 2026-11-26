@@ -1,7 +1,9 @@
 """CP1 contract + real browser/DB workflow; provider mocked only in local tests."""
 from copy import deepcopy
+from datetime import datetime, timedelta, timezone
 import json
 from types import SimpleNamespace
+from uuid import uuid4
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import select, func
@@ -175,14 +177,57 @@ def test_heidi_bold_bullet_headings_allow_grounded_advice_with_paraphrased_purpo
     sent = json.loads(heidi_provider["calls"][-1][1]["input"][1]["content"])
     assert sent["validated_facts"][0]["excerpt"] == excerpt
 
+    nested_headings = ("  **Συμπτώματα:**", "  ### Συμπτώματα", "  Συμπτώματα:")
     for qualified in (
         source.replace(excerpt, f"Δεν αναφέρει πλέον π.χ. {excerpt}"),
         source.replace("* Συζητήθηκε η βάδιση.", "Δεν τεκμηριώνεται το ακόλουθο"),
+        source.replace("* Συζητήθηκε η βάδιση.", "* Δεν ανέφερε τα εξής:\n  - Πρόσφατη πτώση."),
+        *(f"Ευρήματα:\n* Δεν ανέφερε τα εξής:\n{heading}\n  - {excerpt}" for heading in nested_headings),
     ):
         result = c.post('/clinical/visit-capture/extract', json={**body, "text": qualified}).json()
         assert result["visit_focus_status"] == "insufficient_evidence"
         assert not result["candidate"]["next_visit_focus"]
-    assert [name for name, _ in heidi_provider["calls"]] == ["facts", "advice", "facts", "facts"]
+    assert [name for name, _ in heidi_provider["calls"]] == ["facts", "advice"] + ["facts"] * 6
+
+
+def test_signed_legacy_heidi_advice_does_not_hide_visit_or_block_an_amendment(setup, heidi_provider):
+    from clinical_pending_one_tap import PendingEventBase
+    from clinical_visit_preparation import _signed_candidates
+
+    app, engine = setup
+    PendingEventBase.metadata.create_all(engine)
+    c = login(app)
+    c.post('/clinical/visit-capture/test-patient')
+    context = ctx(c)
+    candidate = c.post('/clinical/visit-capture/extract', json={
+        "context_id": context, "encounter_date": "2026-10-18", "source_kind": "heidi", "text": HEIDI_TEXT,
+    }).json()["candidate"]
+    saved = c.post('/clinical/visit-capture/save', json={"context_id": context, "candidate": candidate})
+    encounter = saved.json()["encounter"]["encounter_id"]
+    path = f'/clinical/patient/{TEST_ID}/visit/{encounter}'
+    legacy = deepcopy(candidate["next_visit_focus"][0])
+    legacy["source_excerpts"].append(HEIDI_REASON)
+    with Session(engine) as db:
+        row = db.get(EncounterORM, encounter)
+        payload = deepcopy(row.payload_json)
+        payload["_visit_capture_v1"]["candidate"]["next_visit_focus"].append(legacy)
+        row.payload_json = payload
+        db.commit()
+        visits, partial = _signed_candidates(db, TEST_ID, datetime.now(timezone.utc) + timedelta(seconds=10))
+        assert not partial and len(visits) == 1
+        assert visits[0][3].findings[0].text == HEIDI_FINDING
+
+    edit = c.get(path + '/edit').json()
+    assert edit["omitted_visit_focus"] == 1
+    assert edit["candidate"]["next_visit_focus"] == candidate["next_visit_focus"]
+    edited = c.post(path + '/amend', json={
+        "context_id": ctx(c), "expected_token": edit["expected_token"], "request_id": str(uuid4()),
+        "candidate": edit["candidate"], "pending_bindings": edit["pending_bindings"],
+    })
+    assert edited.status_code == 200, edited.text
+    with Session(engine) as db:
+        current = db.get(EncounterORM, encounter).payload_json["_visit_capture_v1"]
+        assert current["amendment_history"][0]["previous"]["signed"]["candidate"]["next_visit_focus"][-1] == legacy
 
 
 def test_proposal_approval_atomic_persistence_and_exact_origin(setup,monkeypatch):
@@ -313,6 +358,10 @@ def test_browser_heidi_paste_runs_one_processing_action_and_edits_grounding(setu
             expect(focus.locator("blockquote")).to_have_text(HEIDI_FINDING)
             assert [name for name, _ in heidi_provider["calls"]] == ["facts", "facts", "advice"]
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+            page.set_viewport_size({"width": 1440, "height": 960})
+            clinical_box = summary.locator(".capture-result-clinical").bounding_box()
+            focus_box = focus.bounding_box()
+            assert clinical_box["y"] == focus_box["y"] and clinical_box["x"] < focus_box["x"]
             with Session(engine) as db:
                 assert db.scalar(select(func.count()).select_from(EncounterORM)) == 0
             summary.get_by_role("button", name="Διόρθωση · Ευρήματα", exact=True).click()

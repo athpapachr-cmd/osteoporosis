@@ -129,6 +129,11 @@ _HEIDI_CLINICAL_HEADINGS = {
 }
 _HEIDI_GENERATED_HEADINGS = {"προτασεις για την επομενη επισκεψη", "προτεινομενα σημεια επομενης επισκεψης"}
 _HEIDI_TOPIC_ID = 0
+_HEIDI_PEER_BULLET = re.compile(r"^(?:[-*+•]|\d+[.)])[ \t]+(\S.*)$")
+
+
+def _heidi_closed_line(line):
+    return bool(re.search(r"[.!?;;]$", line) and not re.search(r"(?:\b\w\.){2,}$", line))
 
 
 def _heidi_advice_heading(key):
@@ -141,23 +146,32 @@ def _heidi_advice_heading(key):
 
 
 def _heidi_recorded_sections(source):
-    from clinical_prepared_note import heading_key, note_sections
+    from clinical_prepared_note import heading, heading_key
 
-    lines = []
-    previous_content = ""
+    sections, body = [], []
+    title = ""
     for line in source.splitlines():
-        heading = re.fullmatch(r"[-*+•]\s+(\*\*|__)(.+?)\1\s*:?\s*", line)
-        # A nested bullet or a bullet following a qualifier belongs to its current evidence unit.
-        after_closed_peer = re.match(r"^[-*+•]\s+.*[.!?;]$", previous_content)
-        boundary = not previous_content or (lines and not lines[-1].strip() and after_closed_peer)
-        if heading and boundary:
-            key = heading_key(heading[2])
+        # Indented headings are part of the enclosing clinical statement or list.
+        proposed = heading(line) if line and not line[0].isspace() else None
+        bullet_heading = re.fullmatch(r"[-*+•]\s+(\*\*|__)(.+?)\1\s*:?\s*", line)
+        previous = [entry.rstrip() for entry in body if entry.strip()] if proposed or bullet_heading else []
+        boundary = not previous and (not title or heading_key(title) in _HEIDI_CLINICAL_HEADINGS)
+        peer_list = previous and all(_HEIDI_PEER_BULLET.match(entry) and _heidi_closed_line(entry) for entry in previous)
+        if previous and _heidi_closed_line(previous[-1]):
+            boundary = peer_list or all(not (entry[0].isspace() or _HEIDI_PEER_BULLET.match(entry)) for entry in previous)
+        if bullet_heading and boundary and (not previous or (peer_list and not body[-1].strip())):
+            key = heading_key(bullet_heading[2])
             if key in _HEIDI_CLINICAL_HEADINGS or _heidi_advice_heading(key):
-                line = heading[2].rstrip(":") + ":"
-        lines.append(line)
-        if line.strip():
-            previous_content = line.rstrip()
-    sections = note_sections("\n".join(lines))
+                proposed = (bullet_heading[2].strip().rstrip(":"), "")
+        if proposed and boundary:
+            if title or previous:
+                sections.append((title, "\n".join(body)))
+            title, inline = proposed
+            body = [inline] if inline else []
+        else:
+            body.append(line)
+    if title or any(line.strip() for line in body):
+        sections.append((title, "\n".join(body)))
     return [(title, text) for title, text in sections if not _heidi_advice_heading(heading_key(title))]
 
 
@@ -177,10 +191,9 @@ def _heidi_evidence(candidate, source):
         if title and heading_key(title) not in _HEIDI_CLINICAL_HEADINGS:
             continue
         lines = [line for line in section.splitlines() if line.strip()]
-        bullets = [re.match(r"^([ \t]*)(?:[-*+•]|\d+[.)])[ \t]+(\S.*)$", line) for line in lines]
-        if bullets and all(bullets) and len({item[1] for item in bullets}) == 1 and all(
-                item[2].rstrip().endswith((".", "!", "?", ";", ";")) for item in bullets):
-            units = [item[2].rstrip() for item in bullets]
+        bullets = [_HEIDI_PEER_BULLET.match(line) for line in lines]
+        if bullets and all(bullets) and all(_heidi_closed_line(item[1].rstrip()) for item in bullets):
+            units = [item[1].rstrip() for item in bullets]
         else:
             # Preambles, nested bullets, and abbreviations stay with the complete section.
             units = [section.strip()]
