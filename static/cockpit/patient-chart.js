@@ -436,8 +436,7 @@
     audioSummaryText.replaceChildren();
     if(candidate.prepared_note){
       composer.classList.add('capture-result-ready');
-      amendmentNote.hidden=!amendment.omitted_visit_focus;
-      if(amendment.omitted_visit_focus)amendmentNote.textContent='Οι παλιότερες προτάσεις AI που χρειάζονται νέο έλεγχο της πηγής δεν περιλαμβάνονται στην προς αποθήκευση διόρθωση.';
+      amendmentNote.hidden=true;
       if(amendment)resultHeading.hidden=true;
     }
     renderDraftChecks(audioSummaryText);
@@ -500,7 +499,8 @@
     resultHeading.hidden=Boolean(amendment);
     if(amendment){
       composerTitle.textContent='Επεξεργασία επίσκεψης · '+date(candidate.encounter_date);
-      amendmentNote.hidden=true;
+      amendmentNote.hidden=!amendment.omitted_visit_focus;
+      if(amendment.omitted_visit_focus)amendmentNote.textContent='Οι παλιότερες προτάσεις AI που χρειάζονται νέο έλεγχο της πηγής δεν περιλαμβάνονται στην προς αποθήκευση διόρθωση.';
     }
     audioSummaryText.replaceChildren();
     const heidi=captureMode==='heidi'||candidate.source_bindings.some(binding=>binding.role==='heidi_today');
