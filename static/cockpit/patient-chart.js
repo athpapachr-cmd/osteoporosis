@@ -512,8 +512,11 @@
     if(heidi||candidate.next_visit_focus?.length)overview.classList.add('has-visit-focus');
     renderDraftChecks(audioSummaryText,{taskChecks:!heidi});
     const obligations=(candidate.pending||[]).map(p=>[p.description,p.trigger,p.review_date,roles[p.responsible_role]].filter(Boolean).join(' · '));
-    if(obligations.length)compactFacts(audioSummaryText,'Υποχρεώσεις',obligations,0,()=>openSectionEditor('pending'),'pending');
-    if(!amendment)saveButton.textContent=obligations.length?'Αποθήκευση επίσκεψης και υποχρεώσεων':'Αποθήκευση επίσκεψης';
+    if(!heidi||obligations.length){
+      const tasks=compactFacts(audioSummaryText,'Υποχρεώσεις',obligations,heidi?0:2,()=>openSectionEditor('pending'),'pending');
+      if(!obligations.length)el(tasks,'p','Καμία νέα υποχρέωση.','clinical-muted');
+    }
+    if(!amendment)saveButton.textContent=heidi&&!obligations.length?'Αποθήκευση επίσκεψης':'Αποθήκευση επίσκεψης και υποχρεώσεων';
     const more=el(audioSummaryText,'details','','capture-more-fields');
     el(more,'summary','Περισσότερα πεδία');
     const directlyEditable=new Set([...audioSummaryText.querySelectorAll('[data-edit-field]')].map(control=>control.dataset.editField));
