@@ -396,8 +396,8 @@
   function renderNextFocus(parent,v,showStatus=false){
     if(!v.next_visit_focus?.length&&!showStatus)return;
     const section=el(parent,'section','','next-visit-focus');
-    el(section,'h4',showStatus||v.source_bindings?.some(binding=>binding.role==='heidi_today')
-      ?'Για την επόμενη επίσκεψη':'Προτεινόμενα σημεία επόμενης επίσκεψης');
+    const heidi=showStatus||v.source_bindings?.some(binding=>binding.role==='heidi_today');
+    el(section,'h4',heidi?'Για την επόμενη επίσκεψη':'Προτεινόμενα σημεία επόμενης επίσκεψης');
     if(!v.next_visit_focus?.length){
       const status=heidiFocusStatus==='unavailable'||heidiFocusStatus==='input_limit'
         ?'Οι προτάσεις AI δεν ήταν διαθέσιμες.'
@@ -406,7 +406,8 @@
           :'Δεν υπάρχουν προτάσεις AI για επανέλεγχο σε αυτή την καταγραφή.';
       el(section,'p',status,'clinical-muted');return;
     }
-    el(section,'p','Κλινικές προτάσεις AI · προς κρίση','clinical-muted');
+    el(section,'p',heidi?'Κλινικές προτάσεις AI · προς κρίση'
+      :'Προτάσεις AI με βάση τον σκοπό της επίσκεψης. Δεν είναι αποφάσεις ή υποχρεώσεις. Διατηρούνται με την τελική Αποθήκευση.','clinical-muted');
     for(const item of [...v.next_visit_focus]){
       const article=el(section,'article');el(article,'strong',item.text);
       el(article,'p',item.rationale);
