@@ -626,3 +626,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
 .capture-draft-checks li {display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;padding:4px 0}
 .capture-draft-checks li span {flex:1 1 16rem;min-width:0;overflow-wrap:anywhere}
 .capture-draft-checks li button {margin:0;padding:4px 8px;font-size:.8rem}
+.capture-result-overview {display:grid;gap:14px;align-items:start;margin:10px 0 16px}
+.capture-result-overview.has-visit-focus {grid-template-columns:repeat(auto-fit,minmax(min(100%,21rem),1fr))}
+.capture-result-overview > * {min-width:0;overflow-wrap:anywhere}
+.capture-result-clinical,.capture-result-overview .next-visit-focus {border:1px solid #dce6e8;border-radius:10px;padding:12px 14px}
+.capture-result-overview .next-visit-focus {margin:0;background:#f4faf8;border-color:#d2e7de}
+.capture-result-clinical > h4,.capture-result-overview .next-visit-focus > h4 {margin:0 0 9px;font-size:1rem}
+.capture-result-overview .next-visit-focus article {margin:10px 0 0;padding:10px 0 0;border-top:1px solid #d2e7de}
+.capture-result-overview .next-visit-focus article p {margin:5px 0;font-size:.9rem;line-height:1.45}
+.capture-result-overview .next-visit-focus summary {cursor:pointer;font-size:.85rem}
+.capture-identity-review {margin:10px 0 15px;padding:12px 14px;border:1px solid #e5c58d;border-radius:10px;background:#fff8e9}
+.capture-identity-review h4,.capture-identity-review p {margin:0}
+.capture-identity-review p {margin-top:5px}

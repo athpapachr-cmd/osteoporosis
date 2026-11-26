@@ -31,11 +31,12 @@ def heidi_provider(monkeypatch):
     hint = {
         "category": "history_question", "text": HEIDI_QUESTION,
         "rationale": "Βοηθά να εκτιμηθεί η λειτουργικότητα στην επόμενη επαφή.",
-        "source_ids": [2], "confidence": "moderate", "purpose_source_ids": [1],
+        "source_ids": [1], "confidence": "moderate", "purpose_source_ids": [0],
         "role_scope": "within_role", "impact": "continuity",
     }
+    topic_only = {**hint, "text": "Έχει αλλάξει ο σκοπός της επίσκεψης;", "source_ids": [0]}
     state = {"record": record, "calls": [],
-             "advisory": json.dumps({"contextual_clinical_considerations": [{"invalid": True}, hint, hint]})}
+             "advisory": json.dumps({"contextual_clinical_considerations": [{"invalid": True}, topic_only, hint, hint]})}
 
     def parse(**kwargs):
         state["calls"].append(("facts", kwargs))
@@ -99,6 +100,9 @@ def test_heidi_advice_is_generated_from_evidence_and_stays_out_of_tasks(setup, h
     assert schema["next_visit_focus"]["maxItems"] == schema["pending"]["maxItems"] == 0
     evidence = advice["input"][1]["content"]
     assert HEIDI_REASON in evidence and HEIDI_FINDING in evidence
+    source_payload = json.loads(evidence)
+    assert source_payload["review_topic"] == {"source_id": 0, "label": HEIDI_REASON}
+    assert [fact["excerpt"] for fact in source_payload["validated_facts"]] == [HEIDI_FINDING]
     assert "selected_identity" not in evidence and "Συνθετική πηγή δοκιμής" not in evidence
     with Session(engine) as db:
         assert db.scalar(select(func.count()).select_from(EncounterORM)) == 0
@@ -147,10 +151,39 @@ def test_heidi_advice_is_generated_from_evidence_and_stays_out_of_tasks(setup, h
     stale = deepcopy(candidate)
     stale["findings"][0]["text"] = "Δεν ισχύει πλέον ότι " + HEIDI_FINDING
     assert c.post('/clinical/visit-capture/preview', json={"context_id": context, "candidate": stale}).status_code == 422
+    uncertain = deepcopy(candidate)
+    uncertain["findings"][0]["certainty"] = "uncertain"
+    assert c.post('/clinical/visit-capture/save', json={"context_id": context, "candidate": uncertain}).status_code == 422
     assert c.post('/clinical/visit-capture/save', json={"context_id": context, "candidate": candidate}).status_code == 200
     chart = c.get('/clinical/patient/' + TEST_ID + '/chart').json()
     assert chart["visits"][0]["clinical"]["next_visit_focus"][0]["text"] == HEIDI_QUESTION
     assert chart["pending"] == []
+
+
+def test_heidi_bold_bullet_headings_allow_grounded_advice_with_paraphrased_purpose(setup, heidi_provider):
+    app, _ = setup
+    c = login(app)
+    c.post('/clinical/visit-capture/test-patient')
+    context = ctx(c)
+    excerpt = HEIDI_FINDING.replace("όταν κατεβαίνει", "όταν  κατεβαίνει").rstrip(".") + "."
+    source = f"* **Συμπτώματα:**\n* Συζητήθηκε η βάδιση.\n\n* **Εξετάσεις/Απεικονίσεις:**\n* {excerpt}"
+    assert HEIDI_REASON not in source
+    body = {"context_id": context, "encounter_date": "2026-10-18", "source_kind": "heidi"}
+    result = c.post('/clinical/visit-capture/extract', json={**body, "text": source}).json()
+    assert result["visit_focus_status"] == "ready"
+    assert result["candidate"]["next_visit_focus"][0]["source_excerpts"] == [HEIDI_FINDING]
+    sent = json.loads(heidi_provider["calls"][-1][1]["input"][1]["content"])
+    assert sent["validated_facts"][0]["excerpt"] == excerpt
+
+    for qualified in (
+        source.replace(excerpt, f"Δεν αναφέρει πλέον π.χ. {excerpt}"),
+        source.replace("* Συζητήθηκε η βάδιση.", "Δεν τεκμηριώνεται το ακόλουθο"),
+    ):
+        result = c.post('/clinical/visit-capture/extract', json={**body, "text": qualified}).json()
+        assert result["visit_focus_status"] == "insufficient_evidence"
+        assert not result["candidate"]["next_visit_focus"]
+    assert [name for name, _ in heidi_provider["calls"]] == ["facts", "advice", "facts", "facts"]
+
 
 def test_proposal_approval_atomic_persistence_and_exact_origin(setup,monkeypatch):
     app,engine=setup;c=login(app)
@@ -258,21 +291,36 @@ def test_browser_heidi_paste_runs_one_processing_action_and_edits_grounding(setu
             expect(page.locator('#captureSave')).to_be_hidden()
             assert not heidi_provider["calls"]
 
-            page.get_by_role("button", name="Επεξεργασία σύνοψης Heidi", exact=True).click()
+            action = page.get_by_role("button", name="Επεξεργασία σύνοψης Heidi", exact=True)
+            heidi_provider["record"].source_identity_state = "uncertain"
+            action.click()
+            expect(page.locator(".capture-identity-review")).to_contain_text("Χρειάζεται έλεγχος της καρτέλας")
+            expect(page.locator("#captureText")).to_have_value(HEIDI_TEXT)
+            expect(page.locator("#captureReview")).to_be_hidden()
+            expect(page.locator("#captureReview textarea")).to_have_count(0)
+            expect(page.locator("#captureSave")).to_be_hidden()
+            assert [name for name, _ in heidi_provider["calls"]] == ["facts"]
+
+            heidi_provider["record"].source_identity_state = "consistent"
+            action.click()
             summary = page.locator("#captureAudioSummary")
             focus = summary.locator(".next-visit-focus")
             expect(focus).to_contain_text(HEIDI_QUESTION)
+            expect(focus.get_by_text("Βοηθά να εκτιμηθεί η λειτουργικότητα στην επόμενη επαφή.")).to_be_visible()
+            expect(summary.get_by_role("heading", name="Υποχρεώσεις", exact=True)).to_have_count(0)
+            expect(page.locator("#captureSave")).to_have_text("Αποθήκευση επίσκεψης")
             focus.get_by_text("Σύνδεση με τον σκοπό", exact=True).click()
             expect(focus.locator("blockquote")).to_have_text(HEIDI_FINDING)
-            assert [name for name, _ in heidi_provider["calls"]] == ["facts", "advice"]
+            assert [name for name, _ in heidi_provider["calls"]] == ["facts", "facts", "advice"]
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
             with Session(engine) as db:
                 assert db.scalar(select(func.count()).select_from(EncounterORM)) == 0
             summary.get_by_role("button", name="Διόρθωση · Ευρήματα", exact=True).click()
             editor = page.locator("#captureReview")
-            editor.locator("textarea").fill("Δεν ισχύει πλέον ότι " + HEIDI_FINDING)
+            editor.get_by_text("Λεπτομέρειες", exact=True).click()
+            editor.get_by_label("Βεβαιότητα").select_option("uncertain")
             editor.get_by_role("button", name="Επιστροφή στην καταγραφή", exact=True).click()
-            expect(summary.locator(".next-visit-focus")).to_have_count(0)
+            expect(focus.locator("article")).to_have_count(0)
             page.locator("#captureSave").click()
             expect(page.locator("#captureComposer")).to_be_hidden()
             browser.close()

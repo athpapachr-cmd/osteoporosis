@@ -10,6 +10,7 @@
   let audioTranscript='',audioRecoveryBinding='',audioProcessingFailure=null,audioView='closed';
   let captureMode='direct',directTimer=null,directCollapse=false;
   let heidiRequest=null;
+  let heidiFocusStatus=null;
   let editorField=null;
   let saveAttempt=null;
   let reviewedTaskEffects='';
@@ -24,6 +25,9 @@
   const chart=el($('visitWorkspacePatient'),'section','','patient-chart');chart.id='patientChart';
   const composer=el($('visitWorkspacePatient'),'section','','clinical-dia-composer');composer.id='captureComposer';composer.hidden=true;
   const composerTitle=el(composer,'h3','Νέα επίσκεψη');
+  const captureIdentity=el(composer,'section','','capture-identity-review');
+  captureIdentity.hidden=true;
+  captureIdentity.setAttribute('role','alert');
   const amendmentNote=el(composer,'p','','clinical-muted');amendmentNote.hidden=true;
   const promptText=$('visitDiaNaturalPrompt').content.textContent.trim();
   const promptTools=el(composer,'section','','capture-dia-prompt');
@@ -119,6 +123,7 @@
   function setCaptureMode(mode){
     if(busy||audioRecorder||mode===captureMode)return;
     captureMode=mode;clearTimeout(directTimer);draftGeneration++;audioToken++;audioAbort?.abort();
+    captureIdentity.hidden=true;captureIdentity.replaceChildren();heidiFocusStatus=null;
     // Keep recovery data and a previous audio candidate until a replacement succeeds.
     audioPreviewed=null;saveButton.hidden=true;previews.replaceChildren();audioSummary.hidden=true;review.hidden=true;inputLabel.hidden=false;
     updateCaptureMode();
@@ -176,7 +181,7 @@
   // Shared *non-authoritative* suggestion helper for chart and Obligations UI.
   window.CockpitObligationDateSuggestion=dateSuggestion;
   function pendingControls(disabled){for(const b of chart.querySelectorAll('.pending-checkpoint-actions button,.pending-checkpoint-actions select,.pending-stage button,.pending-open,.pending-metadata-editor input,.pending-metadata-editor select,.pending-metadata-editor button'))b.disabled=disabled;}
-  function resetDraft(){heidiRequest?.abort();heidiRequest=null;saveAttempt=null;for(const c of composer.querySelectorAll('button,input,textarea,select'))c.disabled=false;clearTimeout(directTimer);captureMode='direct';directCollapse=false;discardAudio();amendment=null;pendingBindings=new Map();composerTitle.textContent='Νέα επίσκεψη';amendmentNote.hidden=true;saveButton.textContent='Αποθήκευση επίσκεψης και υποχρεώσεων';closeComposer.disabled=false;chart.hidden=false;promptStatus.textContent='';readyPromptStatus.textContent='';pendingControls(false);draftGeneration++;contextId=null;candidate=null;source='';busy=false;input.value='';inputLabel.hidden=false;extractButton.hidden=false;review.replaceChildren();review.hidden=false;previews.replaceChildren();feedback.textContent='';saveButton.hidden=true;extractButton.disabled=false;input.disabled=false;visitDate.disabled=false;audioPanel.hidden=false;audioReview.hidden=true;audioFocused.replaceChildren();audioFocused.hidden=false;audioDraft=false;audioReviewUnits=[];audioSuggestions=[];audioSuggestionDraft='';audioConsiderations=[];audioConsiderationsStatus='complete';audioPreviewed=null;audioContextExpiresAt='';audioReady=false;audioStart.disabled=true;audioStop.disabled=true;informed.checked=false;audioStatus.textContent='Έλεγχος διαθεσιμότητας…';updateCaptureMode();}
+  function resetDraft(){heidiRequest?.abort();heidiRequest=null;heidiFocusStatus=null;captureIdentity.hidden=true;captureIdentity.replaceChildren();saveAttempt=null;for(const c of composer.querySelectorAll('button,input,textarea,select'))c.disabled=false;clearTimeout(directTimer);captureMode='direct';directCollapse=false;discardAudio();amendment=null;pendingBindings=new Map();composerTitle.textContent='Νέα επίσκεψη';amendmentNote.hidden=true;saveButton.textContent='Αποθήκευση επίσκεψης και υποχρεώσεων';closeComposer.disabled=false;chart.hidden=false;promptStatus.textContent='';readyPromptStatus.textContent='';pendingControls(false);draftGeneration++;contextId=null;candidate=null;source='';busy=false;input.value='';inputLabel.hidden=false;extractButton.hidden=false;review.replaceChildren();review.hidden=false;previews.replaceChildren();feedback.textContent='';saveButton.hidden=true;extractButton.disabled=false;input.disabled=false;visitDate.disabled=false;audioPanel.hidden=false;audioReview.hidden=true;audioFocused.replaceChildren();audioFocused.hidden=false;audioDraft=false;audioReviewUnits=[];audioSuggestions=[];audioSuggestionDraft='';audioConsiderations=[];audioConsiderationsStatus='complete';audioPreviewed=null;audioContextExpiresAt='';audioReady=false;audioStart.disabled=true;audioStop.disabled=true;informed.checked=false;audioStatus.textContent='Έλεγχος διαθεσιμότητας…';updateCaptureMode();}
   function reset(){for(const dialog of chart.querySelectorAll('dialog[open]'))dialog.close();pendingBusy=false;chartPending=[];chartScroll=0;chartReturnPoint=null;journeyObserver?.disconnect();journeyObserver=null;generation++;patientId=null;chart.replaceChildren();resetDraft();composer.hidden=true;}
   function factList(parent,items){const list=el(parent,'ul');for(const item of items)el(list,'li',typeof item==='string'?item:item.text);}
   function facts(parent,title,items){if(!items?.length)return;el(parent,'h4',title);factList(parent,items);}
@@ -192,12 +197,14 @@
     }
     if(!items.length)return section;
     // Keep complete statements together, including qualifications and negation.
-    const first=items.slice(0,limit).filter(item=>!foldLong||(typeof item==='string'?item:item.text)?.length<=320);
+    const canShow=(item,index)=>index<limit&&(!foldLong||(typeof item==='string'?item:item.text)?.length<=320);
+    const first=items.filter(canShow);
     if(first.length)factList(section,first);
     if(first.length<items.length){
       const details=el(section,'details');
-      el(details,'summary','Όλα τα στοιχεία ('+items.length+')');
-      factList(details,items);
+      const remaining=items.filter((item,index)=>!canShow(item,index));
+      el(details,'summary',(key==='pending'?'Προβολή υποχρεώσεων':'Περισσότερα στοιχεία')+' ('+remaining.length+')');
+      factList(details,remaining);
     }
     return section;
   }
@@ -256,7 +263,7 @@
     input.focus();
     if(section)input.setSelectionRange(section.start,section.start);
   }
-  function renderDraftChecks(parent){
+  function renderDraftChecks(parent,{taskChecks=true}={}){
     const draft=candidate;
     const checks=[];
     const note=draft.prepared_note?.text;
@@ -306,7 +313,7 @@
     }
     const taskSection=sections.find(s=>s.key==='υποχρεωσεις');
     let unassignedReadyTasks=0;
-    for(const item of draft.pending||[]){
+    for(const item of taskChecks?(draft.pending||[]):[]){
       const binding=pendingBindings.get(item);
       const unchanged=binding&&amendment?.originals.get(binding)===JSON.stringify(item);
       const current=unchanged?chartPending.find(p=>p.pending_id===binding):item;
@@ -347,8 +354,9 @@
     if(!whole&&/^(?:\d+[.)]|[-*•])\s/.test(first))first=first.split(/\n(?=(?:\d+[.)]|[-*•])\s)/).slice(0,limit).join('\n');
     return first&&first.length<=1500?first:null;
   }
-  function clinicalSummary(parent,v,edit){
+  function clinicalSummary(parent,v,edit,{showFocus=true}={}){
     const compact=el(parent,'div','','clinical-compact-overview');
+    if(showFocus)renderNextFocus(compact,v);
     if(v.prepared_note){
       const sections=preparedSections(v.prepared_note.text),shown=new Set();
       const show=(label,keys,limit=2,whole=false)=>{const item=sections.find(s=>keys.includes(s.key)&&s.text);if(!item||shown.has(item))return;const text=compactSource(item.text,limit,whole);if(text){el(compact,'h4',label);el(compact,'p',text,'compact-note-text');shown.add(item);}else{el(compact,'p',label+': διαθέσιμο στην πλήρη καταγραφή.','clinical-muted');}};
@@ -380,19 +388,29 @@
       show('uncertainties','Αβεβαιότητες',v.uncertainties||[]);
     }
     if(!compact.textContent.trim())el(compact,'p','Η πλήρης σημείωση είναι διαθέσιμη παρακάτω.');
-    renderNextFocus(compact,v);
     const full=el(parent,'details','','clinical-full-record');el(full,'summary','Πλήρης κλινική καταγραφή');
     el(full,'p','Όλα τα στοιχεία διατηρούνται εδώ. Η κύρια προβολή δείχνει επιλεγμένα σημεία για γρήγορη ανάγνωση.','clinical-muted');
     if(v.reason_is_unspecified)el(full,'p','Ο σκοπός δεν ταξινομήθηκε αυτόματα. Ο τίτλος «Κλινική καταγραφή» είναι ουδέτερη ένδειξη.','clinical-muted');
     clinicalFull(full,v);
   }
-  function renderNextFocus(parent,v){
-    if(!v.next_visit_focus?.length)return;
-    const section=el(parent,'section','','next-visit-focus');el(section,'h4','Προτεινόμενα σημεία επόμενης επίσκεψης');
-    el(section,'p','Προτάσεις AI με βάση τον σκοπό της επίσκεψης. Δεν είναι αποφάσεις ή υποχρεώσεις. Διατηρούνται με την τελική Αποθήκευση.','clinical-muted');
+  function renderNextFocus(parent,v,showStatus=false){
+    if(!v.next_visit_focus?.length&&!showStatus)return;
+    const section=el(parent,'section','','next-visit-focus');
+    el(section,'h4',showStatus||v.source_bindings?.some(binding=>binding.role==='heidi_today')
+      ?'Για την επόμενη επίσκεψη':'Προτεινόμενα σημεία επόμενης επίσκεψης');
+    if(!v.next_visit_focus?.length){
+      const status=heidiFocusStatus==='unavailable'||heidiFocusStatus==='input_limit'
+        ?'Οι προτάσεις AI δεν ήταν διαθέσιμες.'
+        :heidiFocusStatus==='insufficient_evidence'
+          ?'Η σύνοψη δεν έδωσε αρκετά σαφή κλινικά στοιχεία για πρόταση.'
+          :'Δεν υπάρχουν προτάσεις AI για επανέλεγχο σε αυτή την καταγραφή.';
+      el(section,'p',status,'clinical-muted');return;
+    }
+    el(section,'p','Κλινικές προτάσεις AI · προς κρίση','clinical-muted');
     for(const item of [...v.next_visit_focus]){
       const article=el(section,'article');el(article,'strong',item.text);
-      const why=el(article,'details');el(why,'summary','Σύνδεση με τον σκοπό');el(why,'p',item.rationale);el(why,'p','Σκοπός: '+item.purpose,'clinical-muted');
+      el(article,'p',item.rationale);
+      const why=el(article,'details');el(why,'summary','Σύνδεση με τον σκοπό');el(why,'p','Σκοπός: '+item.purpose,'clinical-muted');
       if(item.provenance?.includes('heidi_today')){
         for(const excerpt of item.source_excerpts||[])el(why,'blockquote',excerpt,'clinical-preview-text');
       }
@@ -483,11 +501,17 @@
       amendmentNote.hidden=true;
     }
     audioSummaryText.replaceChildren();
-    renderDraftChecks(audioSummaryText);
+    const heidi=captureMode==='heidi'||candidate.source_bindings.some(binding=>binding.role==='heidi_today');
+    const overview=el(audioSummaryText,'div','','capture-result-overview');
+    const clinical=el(overview,'section','','capture-result-clinical');
+    el(clinical,'h4','Κλινική εικόνα');
+    clinicalSummary(clinical,candidate,openSectionEditor,{showFocus:false});
+    renderNextFocus(overview,candidate,heidi);
+    if(heidi||candidate.next_visit_focus?.length)overview.classList.add('has-visit-focus');
+    renderDraftChecks(audioSummaryText,{taskChecks:false});
     const obligations=(candidate.pending||[]).map(p=>[p.description,p.trigger,p.review_date,roles[p.responsible_role]].filter(Boolean).join(' · '));
-    const taskSection=compactFacts(audioSummaryText,'Υποχρεώσεις',obligations,2,()=>openSectionEditor('pending'),'pending');
-    if(!obligations.length)el(taskSection,'p','Καμία νέα υποχρέωση.','clinical-muted');
-    clinicalSummary(audioSummaryText,candidate,openSectionEditor);
+    if(obligations.length)compactFacts(audioSummaryText,'Υποχρεώσεις',obligations,0,()=>openSectionEditor('pending'),'pending');
+    if(!amendment)saveButton.textContent=obligations.length?'Αποθήκευση επίσκεψης και υποχρεώσεων':'Αποθήκευση επίσκεψης';
     const more=el(audioSummaryText,'details','','capture-more-fields');
     el(more,'summary','Περισσότερα πεδία');
     const directlyEditable=new Set([...audioSummaryText.querySelectorAll('[data-edit-field]')].map(control=>control.dataset.editField));
@@ -937,12 +961,12 @@
     if(candidate?.next_visit_focus?.length){
       const heidi=candidate.source_bindings.some(binding=>binding.role==='heidi_today');
       const fields=heidi
-        ?['reason_for_visit','findings','clinical_impression','decisions','follow_up','history','uncertainties','safety_net']
+        ?['findings','clinical_impression','decisions','follow_up','history','uncertainties','safety_net']
         :['reason_for_visit','history','findings','clinical_impression','recommendations','decisions','options_discussed',
           'follow_up','safety_net','uncertainties','completed_actions','administrative_notes','patient_preferences',
           'pending','next_contact','what_changed'];
       const texts=fields.flatMap(key=>[candidate[key]].flat()).filter(Boolean)
-        .flatMap(f=>heidi?[f.text]:[f.text,f.source_excerpt,f.description,f.purpose]).filter(Boolean);
+        .flatMap(f=>heidi?(f.certainty==='certain'?[f.text]:[]):[f.text,f.source_excerpt,f.description,f.purpose]).filter(Boolean);
       candidate.next_visit_focus=candidate.next_visit_focus.filter(item=>
         !candidate.reason_is_unspecified&&item.purpose===candidate.reason_for_visit.text&&
         item.source_excerpts.every(excerpt=>texts.some(text=>heidi?text===excerpt:text.includes(excerpt)))
@@ -1079,6 +1103,10 @@
   }
   function drawReview(){
     review.replaceChildren();
+    if(candidate&&candidate.source_identity_state!=='consistent'&&!audioDraft){
+      review.hidden=true;
+      return;
+    }
     if(isStructuredDraft()){
       review.hidden=!editorField;
       if(editorField){
@@ -1161,6 +1189,7 @@
   async function extract(){
     if(busy||!patientId||input.value.trim().length<10||!visitDate.value)return;
     resetStructuredDisplay();
+    captureIdentity.hidden=true;captureIdentity.replaceChildren();heidiFocusStatus=null;
     // Manual text is a separate draft owner. Invalidate audio callbacks while
     // keeping its recovery data until extraction actually succeeds.
     if(!amendment){audioToken++;audioAbort?.abort();audioReview.hidden=true;audioSummary.hidden=true;review.hidden=false;}
@@ -1176,14 +1205,19 @@
       if(ticket!==generation||draftTicket!==draftGeneration)return;
       if(heidi&&(result.patient_id!==patientId||result.context_id!==context.context_id))throw Error('Η σύνδεση της σύνοψης με την καρτέλα δεν επαληθεύτηκε.');
       contextId=context.context_id;candidate=result.candidate;if(!amendment){audioDraft=false;discardAudio();}pendingBindings=new Map();bindClinician();
-      drawReview();showDraftSummary();
-      feedback.textContent=candidate.source_identity_state==='consistent'?'Η καταγραφή είναι έτοιμη για έλεγχο και αποθήκευση.':'Η σύνοψη περιέχει ασυμφωνία ή αβεβαιότητα ταυτότητας. Διόρθωσε το αρχικό κείμενο και προετοίμασε ξανά.';
-      if(heidi&&candidate.source_identity_state==='consistent'&&!candidate.next_visit_focus?.length){
-        feedback.textContent=result.visit_focus_status==='ready'||result.visit_focus_status==='insufficient_evidence'
-          ?'Η καταγραφή είναι έτοιμη. Δεν προέκυψαν προτάσεις που να στηρίζονται επαρκώς στη σύνοψη.'
-          :'Η καταγραφή είναι έτοιμη. Οι προτάσεις AI δεν ήταν διαθέσιμες.';
+      if(candidate.source_identity_state!=='consistent'){
+        review.hidden=true;audioSummary.hidden=true;saveButton.hidden=true;feedback.textContent='';
+        inputLabel.hidden=false;
+        const title=candidate.source_identity_state==='conflict'?'Ασυμφωνία με την καρτέλα':'Χρειάζεται έλεγχος της καρτέλας';
+        el(captureIdentity,'h4',title);
+        el(captureIdentity,'p','Έλεγξε ότι η σύνοψη αφορά την επιλεγμένη καρτέλα. Το κείμενο παραμένει παρακάτω για διόρθωση και νέα επεξεργασία.');
+        captureIdentity.hidden=false;captureIdentity.tabIndex=-1;captureIdentity.focus();
+        return;
       }
-      saveButton.hidden=candidate.source_identity_state!=='consistent';saveButton.disabled=false;
+      heidiFocusStatus=heidi?result.visit_focus_status:null;
+      drawReview();showDraftSummary();
+      feedback.textContent='Η καταγραφή είναι έτοιμη για έλεγχο και αποθήκευση.';
+      saveButton.hidden=false;saveButton.disabled=false;
       if(isStructuredDraft()){
         showAmendmentEffects();
         audioSummaryText.tabIndex=-1;
