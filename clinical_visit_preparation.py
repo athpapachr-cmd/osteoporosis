@@ -58,6 +58,9 @@ def _signed_candidates(db: Session, patient_id: str, at: datetime) -> tuple[list
                 continue
             try:
                 candidate = VisitCaptureCandidateV1.model_validate(signed.get("candidate"))
+                if candidate.next_visit_focus and any(binding.role == "heidi_today" for binding in candidate.source_bindings):
+                    # This projection reads recorded clinical facts. Advisory compatibility must not drop a signed visit.
+                    candidate = candidate.model_copy(update={"next_visit_focus": []})
                 _validate_visit_capture_candidate(candidate)
             except (TypeError, ValueError, HTTPException):
                 partial = True

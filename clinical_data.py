@@ -666,6 +666,20 @@ def heidi_focus_fact_groups(candidate: VisitCaptureCandidateV1):
     )
 
 
+def grounded_heidi_visit_focus(candidate: VisitCaptureCandidateV1) -> list[VisitPlanningSuggestion]:
+    if candidate.reason_is_unspecified:
+        return []
+    exact_facts = {
+        fact.text for kind, group in heidi_focus_fact_groups(candidate) if kind != "reason"
+        for fact in group if fact.certainty == "certain"
+    }
+    return [
+        suggestion for suggestion in candidate.next_visit_focus
+        if suggestion.provenance == ["heidi_today"] and suggestion.purpose == candidate.reason_for_visit.text
+        and all(excerpt.strip() and excerpt in exact_facts for excerpt in suggestion.source_excerpts)
+    ]
+
+
 def _validate_visit_capture_candidate(candidate: VisitCaptureCandidateV1) -> None:
     if candidate.reason_is_unspecified and (
             candidate.reason_for_visit.text != 'Κλινική καταγραφή'
@@ -719,17 +733,12 @@ def _validate_visit_capture_candidate(candidate: VisitCaptureCandidateV1) -> Non
                      for value in [getattr(item, 'text', None), getattr(item, 'source_excerpt', None),
                                    getattr(item, 'description', None), getattr(item, 'purpose', None)] if value]
     heidi_source = any(binding.role == "heidi_today" for binding in candidate.source_bindings)
-    exact_heidi_facts = {fact.text for _, group in heidi_focus_fact_groups(candidate) for fact in group} if heidi_source else set()
-    for suggestion in candidate.next_visit_focus:
-        if heidi_source:
-            grounded = suggestion.provenance == ["heidi_today"] and all(
-                excerpt.strip() and excerpt in exact_heidi_facts for excerpt in suggestion.source_excerpts
-            )
-        else:
-            grounded = all(excerpt and len(excerpt) <= 4000 and any(excerpt in text for text in grounded_text)
-                           for excerpt in suggestion.source_excerpts)
-        if (candidate.reason_is_unspecified or suggestion.purpose != candidate.reason_for_visit.text
-                or not grounded):
+    if heidi_source and grounded_heidi_visit_focus(candidate) != candidate.next_visit_focus:
+        raise HTTPException(422, 'Planning suggestion source changed')
+    for suggestion in [] if heidi_source else candidate.next_visit_focus:
+        grounded = all(excerpt and len(excerpt) <= 4000 and any(excerpt in text for text in grounded_text)
+                       for excerpt in suggestion.source_excerpts)
+        if candidate.reason_is_unspecified or suggestion.purpose != candidate.reason_for_visit.text or not grounded:
             raise HTTPException(422, 'Planning suggestion source changed')
     fact_groups.append(candidate.next_visit_focus)
     fact_groups.append(candidate.coding.gesy_coded)
