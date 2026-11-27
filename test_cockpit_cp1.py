@@ -372,13 +372,50 @@ def test_browser_heidi_paste_runs_one_processing_action_and_edits_grounding(setu
             expect(focus.locator("article")).to_have_count(0)
             page.locator("#captureSave").click()
             expect(page.locator("#captureComposer")).to_be_hidden()
+
+            saved_chart = page.locator(".patient-chart-overview")
+            snapshot = saved_chart.locator(".patient-chart-snapshot")
+            full = saved_chart.locator(":scope > .clinical-full-record")
+            expect(snapshot.locator(".next-visit-focus")).to_contain_text(
+                "Δεν αποθηκεύτηκαν προτάσεις AI για αυτή την επίσκεψη.")
+            expect(snapshot.locator(".patient-chart-obligations")).to_have_count(0)
+            expect(full).not_to_have_attribute("open", "")
+            assert abs(snapshot.bounding_box()["width"] - snapshot.locator(".patient-chart-card").bounding_box()["width"]) < 1
+
+            page.locator("#captureOpen").click()
+            page.get_by_role("button", name="Σύνοψη Heidi με AI", exact=True).click()
+            heidi_provider["record"].encounter_date = "2026-10-19"
+            page.locator("#captureDate").fill("2026-10-19")
+            page.locator("#captureText").fill(HEIDI_TEXT)
+            action.click()
+            expect(focus).to_contain_text(HEIDI_QUESTION)
+            page.locator("#captureSave").click()
+            expect(page.locator("#captureComposer")).to_be_hidden()
+
+            advice_card = snapshot.locator(".patient-chart-next-visit")
+            expect(advice_card.get_by_text(HEIDI_QUESTION)).to_be_visible()
+            expect(advice_card.get_by_role("button", name="Αφαίρεση πρότασης")).to_have_count(0)
+            for width in (1440, 390):
+                page.set_viewport_size({"width": width, "height": 950})
+                overview_box = snapshot.locator(".patient-chart-card").first.bounding_box()
+                plan_box = advice_card.bounding_box()
+                if width == 1440:
+                    assert abs(overview_box["y"] - plan_box["y"]) < 1 and plan_box["x"] > overview_box["x"]
+                else:
+                    assert plan_box["y"] >= overview_box["y"] + overview_box["height"]
+                expect(full).not_to_have_attribute("open", "")
+                full.locator(":scope > summary").click()
+                expect(full.get_by_text(HEIDI_FINDING, exact=True)).to_be_visible()
+                assert abs(snapshot.bounding_box()["width"] - full.bounding_box()["width"]) < 1
+                assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+                full.locator(":scope > summary").click()
             browser.close()
     finally:
         server.should_exit = True
         thread.join(10)
         sock.close()
     with Session(engine) as db:
-        assert db.scalar(select(func.count()).select_from(EncounterORM)) == 1
+        assert db.scalar(select(func.count()).select_from(EncounterORM)) == 2
         assert db.scalar(select(func.count()).select_from(ClinicalPendingORM)) == 0
 
 
@@ -559,11 +596,15 @@ def test_complete_user_case_visible_before_save_and_after_reload(setup, monkeypa
             for width in (1280, 390):
                 page.set_viewport_size({"width": width, "height": 1000})
                 page.reload()
-                card = page.locator(".patient-chart-overview .patient-chart-card").first
+                saved_chart = page.locator(".patient-chart-overview")
+                card = saved_chart.locator(".patient-chart-snapshot .patient-chart-card").first
+                full = saved_chart.locator(":scope > .clinical-full-record")
                 expect(card).to_be_visible()
+                expect(full).not_to_have_attribute("open", "")
+                full.locator(":scope > summary").click()
                 for text in expected_texts:
-                    expect(card).to_contain_text(text)
-                expect(card).not_to_contain_text("Ξεκίνησε alendronate")
+                    expect(full.get_by_text(text, exact=True)).to_be_visible()
+                expect(full).not_to_contain_text("Ξεκίνησε alendronate")
                 assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
                 page.locator(".patient-chart-overview .patient-chart-grid").screenshot(path=str(tmp_path / f"complete-chart-{width}.png"))
             data = page.request.get(f"http://localhost:{port}/clinical/patient/{TEST_ID}/chart").json()
