@@ -357,6 +357,24 @@
   function isHeidiVisit(visit){
     return visit.source_bindings?.some(binding=>binding.role==='heidi_today');
   }
+  function heidiAdviceGrounded(visit,item){
+    const groups={finding:'findings',impression:'clinical_impression',decision:'decisions',
+      follow_up:'follow_up',history:'history',uncertainty:'uncertainties',safety:'safety_net',
+      recommendation:'recommendations',option:'options_discussed'};
+    const anchors=item.source_anchors||[];
+    const legacy=!anchors.length;
+    if(!legacy&&anchors.length!==item.source_excerpts.length)return false;
+    const facts=Object.entries(groups).flatMap(([kind,key])=>
+      (visit[key]||[]).filter(f=>f.certainty==='certain'||(!legacy&&kind==='uncertainty'))
+        .map(f=>({kind,certainty:f.certainty,text:f.text})));
+    return item.source_excerpts.every((excerpt,index)=>{
+      if(!excerpt?.trim())return false;
+      const matches=facts.filter(f=>f.text===excerpt);
+      if(legacy)return matches.some(f=>!['recommendation','option'].includes(f.kind));
+      const distinct=new Set(matches.map(f=>f.kind+'|'+f.certainty));
+      return distinct.size===1&&matches.some(f=>f.kind===anchors[index].kind&&f.certainty===anchors[index].certainty);
+    });
+  }
   function clinicalSummary(parent,v,edit,{showFocus=true,showEmptyFocus=false,detailParent=parent}={}){
     const compact=el(parent,'div','','clinical-compact-overview');
     if(showFocus)renderNextFocus(compact,v,{showEmpty:showEmptyFocus});
@@ -420,7 +438,10 @@
       const why=el(article,'details');el(why,'summary','Σύνδεση με τον σκοπό');el(why,'p','Σκοπός: '+item.purpose,'clinical-muted');
       if(item.evidence_basis==='saved_visit')el(why,'p','Από την αποθηκευμένη επίσκεψη','clinical-muted');
       if(item.provenance?.includes('heidi_today')){
-        for(const excerpt of item.source_excerpts||[])el(why,'blockquote',excerpt,'clinical-preview-text');
+        for(const [index,excerpt] of (item.source_excerpts||[]).entries()){
+          if(item.source_anchors?.[index]?.kind==='uncertainty')el(why,'small','Καταγεγραμμένη αβεβαιότητα');
+          el(why,'blockquote',excerpt,'clinical-preview-text');
+        }
       }
       if(draft)button(article,'Αφαίρεση πρότασης',()=>{v.next_visit_focus.splice(v.next_visit_focus.indexOf(item),1);edited();showDraftSummary();});
     }
@@ -569,10 +590,8 @@
           :'Δεν προέκυψαν διαθέσιμες προτάσεις. Η καταγραφή διατηρήθηκε.';
         return;
       }
-      const facts=['findings','clinical_impression','decisions','follow_up','history','uncertainties','safety_net']
-        .flatMap(key=>candidate[key]||[]).filter(f=>f.certainty==='certain').map(f=>f.text);
       const available=result.suggestions.filter(item=>item.evidence_basis==='saved_visit'&&
-        item.purpose===candidate.reason_for_visit.text&&item.source_excerpts.every(excerpt=>facts.includes(excerpt)));
+        item.purpose===candidate.reason_for_visit.text&&heidiAdviceGrounded(candidate,item));
       const existing=new Set(candidate.next_visit_focus.map(item=>item.text));
       for(const item of available){
         if(candidate.next_visit_focus.length>=3)break;
@@ -1021,16 +1040,14 @@
     }
     if(candidate?.next_visit_focus?.length){
       const heidi=candidate.source_bindings.some(binding=>binding.role==='heidi_today');
-      const fields=heidi
-        ?['findings','clinical_impression','decisions','follow_up','history','uncertainties','safety_net']
-        :['reason_for_visit','history','findings','clinical_impression','recommendations','decisions','options_discussed',
+      const fields=['reason_for_visit','history','findings','clinical_impression','recommendations','decisions','options_discussed',
           'follow_up','safety_net','uncertainties','completed_actions','administrative_notes','patient_preferences',
           'pending','next_contact','what_changed'];
       const texts=fields.flatMap(key=>[candidate[key]].flat()).filter(Boolean)
-        .flatMap(f=>heidi?(f.certainty==='certain'?[f.text]:[]):[f.text,f.source_excerpt,f.description,f.purpose]).filter(Boolean);
+        .flatMap(f=>[f.text,f.source_excerpt,f.description,f.purpose]).filter(Boolean);
       candidate.next_visit_focus=candidate.next_visit_focus.filter(item=>
         !candidate.reason_is_unspecified&&item.purpose===candidate.reason_for_visit.text&&
-        item.source_excerpts.every(excerpt=>texts.some(text=>heidi?text===excerpt:text.includes(excerpt)))
+        (heidi?heidiAdviceGrounded(candidate,item):item.source_excerpts.every(excerpt=>texts.some(text=>text.includes(excerpt))))
       );
     }
     previews.replaceChildren();

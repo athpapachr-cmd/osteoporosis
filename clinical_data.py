@@ -344,6 +344,13 @@ class PreparedClinicalNote(BaseModel):
     text: str = Field(min_length=1, max_length=30000)
 
 
+class VisitPlanningAnchor(BaseModel):
+    model_config = {'extra': 'forbid'}
+    kind: Literal['finding', 'impression', 'decision', 'follow_up', 'history', 'uncertainty',
+                  'safety', 'recommendation', 'option']
+    certainty: CertaintyState
+
+
 class VisitPlanningSuggestion(BaseModel):
     model_config = {'extra': 'forbid'}
     text: str = Field(min_length=1, max_length=240)
@@ -356,6 +363,7 @@ class VisitPlanningSuggestion(BaseModel):
     origin: Literal['ai_suggested'] = 'ai_suggested'
     status: Literal['suggestion'] = 'suggestion'
     evidence_basis: Literal['source_note', 'saved_visit'] = 'source_note'
+    source_anchors: List[VisitPlanningAnchor] = Field(default_factory=list, max_length=3)
 
 
 class VisitCaptureCandidateV1(BaseModel):
@@ -664,20 +672,45 @@ def heidi_focus_fact_groups(candidate: VisitCaptureCandidateV1):
         ("history", candidate.history),
         ("uncertainty", candidate.uncertainties),
         ("safety", candidate.safety_net),
+        ("recommendation", candidate.recommendations),
+        ("option", candidate.options_discussed),
     )
+
+
+def heidi_advice_facts(candidate: VisitCaptureCandidateV1, *, legacy: bool = False):
+    facts = []
+    for kind, group in heidi_focus_fact_groups(candidate):
+        if kind == 'reason' or (legacy and kind in {'recommendation', 'option'}):
+            continue
+        for fact in group:
+            if fact.certainty == 'certain' or (not legacy and kind == 'uncertainty'):
+                facts.append((kind, fact))
+    if legacy:
+        return facts
+    meanings = {}
+    for kind, fact in facts:
+        meanings.setdefault(fact.text, set()).add((kind, fact.certainty))
+    return [(kind, fact) for kind, fact in facts if len(meanings[fact.text]) == 1]
+
+
+def heidi_advice_grounded(candidate: VisitCaptureCandidateV1, suggestion: VisitPlanningSuggestion) -> bool:
+    if not suggestion.source_anchors:
+        texts = {fact.text for _, fact in heidi_advice_facts(candidate, legacy=True)}
+        return all(excerpt.strip() and excerpt in texts for excerpt in suggestion.source_excerpts)
+    if len(suggestion.source_anchors) != len(suggestion.source_excerpts):
+        return False
+    facts = {(kind, fact.certainty, fact.text) for kind, fact in heidi_advice_facts(candidate)}
+    return all((anchor.kind, anchor.certainty, excerpt) in facts
+               for anchor, excerpt in zip(suggestion.source_anchors, suggestion.source_excerpts))
 
 
 def grounded_heidi_visit_focus(candidate: VisitCaptureCandidateV1) -> list[VisitPlanningSuggestion]:
     if candidate.reason_is_unspecified:
         return []
-    exact_facts = {
-        fact.text for kind, group in heidi_focus_fact_groups(candidate) if kind != "reason"
-        for fact in group if fact.certainty == "certain"
-    }
     return [
         suggestion for suggestion in candidate.next_visit_focus
         if suggestion.provenance == ["heidi_today"] and suggestion.purpose == candidate.reason_for_visit.text
-        and all(excerpt.strip() and excerpt in exact_facts for excerpt in suggestion.source_excerpts)
+        and heidi_advice_grounded(candidate, suggestion)
     ]
 
 

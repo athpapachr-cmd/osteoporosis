@@ -10,7 +10,7 @@ from sqlalchemy import select, update, delete
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, OperationalError
 from clinical_data import EncounterORM, PatientORM, ClinicalPendingORM, VisitCaptureContextORM, VisitCaptureCandidateV1, _validate_visit_capture_candidate, _render_visit_capture, utcnow
-from clinical_data import grounded_heidi_visit_focus, heidi_focus_fact_groups
+from clinical_data import grounded_heidi_visit_focus, heidi_advice_facts, heidi_advice_grounded
 from clinical_pending_one_tap import actor_for, installed, project_lifecycle, cancel_pending, pending_write_session
 
 class Amendment(BaseModel):
@@ -106,13 +106,11 @@ def attach_visit_amendments(router,engine,protected,context_for,ensure_patient):
                     binding.role=='heidi_today' for binding in candidate.source_bindings):
                 raise HTTPException(422,'Η επίσκεψη δεν περιέχει κατάλληλη καταγραφή για έλεγχο.')
             facts=[];seen=set()
-            for kind,group in heidi_focus_fact_groups(candidate):
-                if kind=='reason':continue
-                for fact in group:
-                    if fact.certainty!='certain' or fact.text in seen:continue
-                    seen.add(fact.text)
-                    facts.append({'source_id':len(facts)+1,'kind':kind,'excerpt':fact.text,
-                                  'draft_text':fact.text,'verification':fact.verification})
+            for kind,fact in heidi_advice_facts(candidate):
+                if fact.text in seen:continue
+                seen.add(fact.text)
+                facts.append({'source_id':len(facts)+1,'kind':kind,'excerpt':fact.text,
+                              'draft_text':fact.text,'verification':fact.verification,'certainty':fact.certainty})
         status,suggestions=await connected_call(request,_visit_focus_from_facts(
             candidate,facts,'\n'.join(f['excerpt'] for f in facts),'saved_visit'))
         with Session(engine) as db:
@@ -138,6 +136,8 @@ def attach_visit_amendments(router,engine,protected,context_for,ensure_patient):
         for suggestion in fingerprint['candidate']['next_visit_focus']:
             if suggestion['evidence_basis']=='source_note':
                 del suggestion['evidence_basis']
+            if not suggestion['source_anchors']:
+                del suggestion['source_anchors']
         identity=digest({'patient':patient_id,'visit':encounter_id,'request':fingerprint})
         with pending_write_session(engine) as db:
             patient,actor,row,signed,pending=load(db,patient_id,encounter_id,request)
@@ -151,21 +151,17 @@ def attach_visit_amendments(router,engine,protected,context_for,ensure_patient):
             saved_advice=[s for s in req.candidate.next_visit_focus if s.evidence_basis=='saved_visit']
             if saved_advice:
                 signed_candidate=VisitCaptureCandidateV1.model_validate(signed['candidate'])
-                signed_facts={fact.text for kind,group in heidi_focus_fact_groups(signed_candidate)
-                              if kind!='reason' for fact in group if fact.certainty=='certain'}
-                draft_facts={fact.text for kind,group in heidi_focus_fact_groups(req.candidate)
-                             if kind!='reason' for fact in group if fact.certainty=='certain'}
                 for suggestion in saved_advice:
                     if (req.candidate.reason_is_unspecified or req.candidate.source_identity_state!='consistent'
                             or not any(b.role=='heidi_today' for b in req.candidate.source_bindings)
                             or suggestion.purpose!=req.candidate.reason_for_visit.text
-                            or not all(excerpt in draft_facts for excerpt in suggestion.source_excerpts)):
+                            or not heidi_advice_grounded(req.candidate,suggestion)):
                         raise HTTPException(422,'Planning suggestion source changed')
                     if suggestion in signed_candidate.next_visit_focus:continue
                     if (signed_candidate.reason_is_unspecified or signed_candidate.source_identity_state!='consistent'
                             or not any(b.role=='heidi_today' for b in signed_candidate.source_bindings)
                             or suggestion.purpose!=signed_candidate.reason_for_visit.text
-                            or not all(excerpt in signed_facts for excerpt in suggestion.source_excerpts)):
+                            or not heidi_advice_grounded(signed_candidate,suggestion)):
                         raise HTTPException(422,'Planning suggestion source changed')
             context=context_for(db,req.context_id)
             if context.patient_id!=patient_id:raise HTTPException(409,'Invalid patient context')
