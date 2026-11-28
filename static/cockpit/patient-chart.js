@@ -517,7 +517,7 @@
     el(clinical,'h4','Κλινική εικόνα');
     clinicalSummary(clinical,candidate,openSectionEditor,{showFocus:false});
     const focus=renderNextFocus(overview,candidate,{showEmpty:true,status:heidiFocusStatus});
-    if(heidi&&amendment){
+    if(heidi&&amendment&&!candidate.reason_is_unspecified){
       el(focus,'p','Ο έλεγχος στέλνει τα κλινικά στοιχεία της αποθηκευμένης επίσκεψης στο AI.','clinical-muted');
       const reviewButton=button(focus,'Έλεγχος επίσκεψης με AI',reviewSavedVisit);
       reviewButton.title='Χρησιμοποιεί τα κλινικά στοιχεία της αποθηκευμένης επίσκεψης για προτάσεις επανελέγχου.';
@@ -553,6 +553,7 @@
     if(busy||!amendment||!candidate||!patientId)return;
     const editing=amendment,id=patientId,ticket=generation,draftTicket=draftGeneration;
     const before=JSON.stringify(candidate),expected=editing.expected_token;
+    const controller=new AbortController();heidiRequest=controller;
     const active=()=>ticket===generation&&draftTicket===draftGeneration&&id===patientId&&
       amendment===editing&&JSON.stringify(candidate)===before;
     busy=true;
@@ -560,7 +561,7 @@
     if(control)control.disabled=true;
     feedback.textContent='Έλεγχος της αποθηκευμένης επίσκεψης με AI…';
     try{
-      const result=await request('/patient/'+encodeURIComponent(id)+'/visit/'+encodeURIComponent(editing.encounter_id)+'/review',{expected_token:expected});
+      const result=await request('/patient/'+encodeURIComponent(id)+'/visit/'+encodeURIComponent(editing.encounter_id)+'/review',{expected_token:expected},controller.signal);
       if(!active()||result.patient_id!==id||result.encounter_id!==editing.encounter_id||result.expected_token!==expected)return;
       if(result.status!=='ready'||!result.suggestions.length){
         feedback.textContent=result.status==='insufficient_evidence'
@@ -580,7 +581,7 @@
       showStructuredDraft();
       feedback.textContent=available.length?'Έλεγξε τις προτάσεις και αποθήκευσε όσες θέλεις.':'Τα στοιχεία άλλαξαν. Έλεγξε την καταγραφή και δοκίμασε ξανά.';
     }catch(e){if(active())feedback.textContent=e.message+' Η καταγραφή διατηρήθηκε.';}
-    finally{if(amendment===editing){busy=false;if(control?.isConnected)control.disabled=false;}}
+    finally{if(heidiRequest===controller)heidiRequest=null;if(amendment===editing){busy=false;if(control?.isConnected)control.disabled=false;showAmendmentEffects();}}
   }
   function showPending(id,item,editMetadata=false){
     if(!composer.hidden||pendingBusy||patientId!==id)return;

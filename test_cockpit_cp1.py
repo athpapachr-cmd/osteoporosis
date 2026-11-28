@@ -257,9 +257,47 @@ def test_saved_heidi_review_creates_only_unsaved_grounded_suggestions(setup, hei
     amendment = {'context_id': ctx(c), 'expected_token': edit['expected_token'], 'request_id': str(uuid4()),
                  'candidate': edit['candidate'], 'pending_bindings': edit['pending_bindings']}
     amendment['candidate']['next_visit_focus'] = [proposal]
+    forged = deepcopy(amendment)
+    forged['candidate']['findings'][0]['certainty'] = 'uncertain'
+    assert c.post(path + '/amend', json=forged).status_code == 422
+    forged = deepcopy(amendment)
+    forged['candidate']['findings'][0]['text'] = 'Δεν ισχύει ότι ' + HEIDI_FINDING
+    assert c.post(path + '/amend', json=forged).status_code == 422
+    forged = deepcopy(amendment)
+    forged['candidate']['source_bindings'][0] = {'source_ref': 'dia_summary', 'role': 'dia_summary'}
+    forged['candidate']['reason_for_visit']['provenance'] = ['dia_summary']
+    forged['candidate']['findings'][0]['provenance'] = ['dia_summary']
+    forged['candidate']['next_visit_focus'][0]['provenance'] = ['dia_summary']
+    assert c.post(path + '/amend', json=forged).status_code == 422
     assert c.post(path + '/amend', json=amendment).status_code == 200
     stored = c.get('/clinical/patient/' + TEST_ID + '/chart').json()
     assert stored['visits'][0]['clinical']['next_visit_focus'][0]['evidence_basis'] == 'saved_visit'
+
+
+def test_legacy_suggestion_amendment_fingerprint_keeps_old_replay(setup):
+    from clinical_pending_one_tap import PendingEventBase
+    from clinical_visit_amendments import digest
+    app, engine = setup
+    PendingEventBase.metadata.create_all(engine)
+    c = login(app)
+    c.post('/clinical/visit-capture/test-patient')
+    candidate = draft().model_dump(mode='json')
+    candidate['next_visit_focus'] = [{
+        'text': HEIDI_QUESTION, 'rationale': 'Συνθετική αιτιολόγηση.',
+        'purpose': candidate['reason_for_visit']['text'],
+        'source_excerpts': [candidate['findings'][0]['text']], 'provenance': ['dia_summary'],
+        'role_scope': 'within_role', 'impact': 'continuity', 'origin': 'ai_suggested', 'status': 'suggestion',
+    }]
+    encounter = c.post('/clinical/visit-capture/save', json={'context_id': ctx(c), 'candidate': candidate}).json()['encounter']['encounter_id']
+    path = f'/clinical/patient/{TEST_ID}/visit/{encounter}'
+    edit = c.get(path + '/edit').json()
+    body = {'context_id': ctx(c), 'expected_token': edit['expected_token'], 'request_id': str(uuid4()),
+            'candidate': edit['candidate'], 'pending_bindings': edit['pending_bindings']}
+    assert c.post(path + '/amend', json=body).status_code == 200
+    old = deepcopy(body)
+    for item in old['candidate']['next_visit_focus']:
+        item.pop('evidence_basis', None)
+    assert c.post(path + '/amend', json=old).json()['replayed'] is True
 
 
 def test_proposal_approval_atomic_persistence_and_exact_origin(setup,monkeypatch):

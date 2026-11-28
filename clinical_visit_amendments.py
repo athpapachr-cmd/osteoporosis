@@ -134,7 +134,11 @@ def attach_visit_amendments(router,engine,protected,context_for,ensure_patient):
         except Exception:raise HTTPException(422,'Έλεγξε τα πεδία και την ημερομηνία της επίσκεψης.') from None
         if req.candidate.source_identity_state!='consistent':raise HTTPException(409,'Resolve source identity before saving')
         if len(req.pending_bindings)!=len(req.candidate.pending):raise HTTPException(422,'Invalid task bindings')
-        identity=digest({'patient':patient_id,'visit':encounter_id,'request':req.model_dump(mode='json')})
+        fingerprint=req.model_dump(mode='json')
+        for suggestion in fingerprint['candidate']['next_visit_focus']:
+            if suggestion['evidence_basis']=='source_note':
+                del suggestion['evidence_basis']
+        identity=digest({'patient':patient_id,'visit':encounter_id,'request':fingerprint})
         with pending_write_session(engine) as db:
             patient,actor,row,signed,pending=load(db,patient_id,encounter_id,request)
             history=deepcopy(signed.get('amendment_history',[]))
@@ -144,16 +148,25 @@ def attach_visit_amendments(router,engine,protected,context_for,ensure_patient):
                     return {'encounter_id':row.id,'revision':signed.get('revision',0),'replayed':True}
             if token(db,row,pending)!=req.expected_token:raise HTTPException(409,'Visit or obligations changed; reopen editing')
             # Advice created from a saved visit must remain grounded in that signed version.
-            signed_candidate=VisitCaptureCandidateV1.model_validate(signed['candidate'])
-            signed_facts={fact.text for kind,group in heidi_focus_fact_groups(signed_candidate)
-                          if kind!='reason' for fact in group if fact.certainty=='certain'}
-            previous_focus=signed_candidate.next_visit_focus
-            for suggestion in req.candidate.next_visit_focus:
-                if suggestion.evidence_basis!='saved_visit' or suggestion in previous_focus:continue
-                if (signed_candidate.reason_is_unspecified
-                        or suggestion.purpose!=signed_candidate.reason_for_visit.text
-                        or not all(excerpt in signed_facts for excerpt in suggestion.source_excerpts)):
-                    raise HTTPException(422,'Planning suggestion source changed')
+            saved_advice=[s for s in req.candidate.next_visit_focus if s.evidence_basis=='saved_visit']
+            if saved_advice:
+                signed_candidate=VisitCaptureCandidateV1.model_validate(signed['candidate'])
+                signed_facts={fact.text for kind,group in heidi_focus_fact_groups(signed_candidate)
+                              if kind!='reason' for fact in group if fact.certainty=='certain'}
+                draft_facts={fact.text for kind,group in heidi_focus_fact_groups(req.candidate)
+                             if kind!='reason' for fact in group if fact.certainty=='certain'}
+                for suggestion in saved_advice:
+                    if (req.candidate.reason_is_unspecified or req.candidate.source_identity_state!='consistent'
+                            or not any(b.role=='heidi_today' for b in req.candidate.source_bindings)
+                            or suggestion.purpose!=req.candidate.reason_for_visit.text
+                            or not all(excerpt in draft_facts for excerpt in suggestion.source_excerpts)):
+                        raise HTTPException(422,'Planning suggestion source changed')
+                    if suggestion in signed_candidate.next_visit_focus:continue
+                    if (signed_candidate.reason_is_unspecified or signed_candidate.source_identity_state!='consistent'
+                            or not any(b.role=='heidi_today' for b in signed_candidate.source_bindings)
+                            or suggestion.purpose!=signed_candidate.reason_for_visit.text
+                            or not all(excerpt in signed_facts for excerpt in suggestion.source_excerpts)):
+                        raise HTTPException(422,'Planning suggestion source changed')
             context=context_for(db,req.context_id)
             if context.patient_id!=patient_id:raise HTTPException(409,'Invalid patient context')
             ids=[v for v in req.pending_bindings if v is not None]
