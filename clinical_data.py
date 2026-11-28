@@ -683,14 +683,16 @@ def heidi_advice_facts(candidate: VisitCaptureCandidateV1, *, legacy: bool = Fal
         if kind == 'reason' or (legacy and kind in {'recommendation', 'option'}):
             continue
         for fact in group:
-            if fact.certainty == 'certain' or (not legacy and kind == 'uncertainty'):
-                facts.append((kind, fact))
+            facts.append((kind, fact))
     if legacy:
-        return facts
+        return [(kind, fact) for kind, fact in facts if fact.certainty == 'certain']
+    def text_key(text):
+        return ' '.join(unicodedata.normalize('NFC', text).split()).removesuffix('.')
     meanings = {}
     for kind, fact in facts:
-        meanings.setdefault(fact.text, set()).add((kind, fact.certainty))
-    return [(kind, fact) for kind, fact in facts if len(meanings[fact.text]) == 1]
+        meanings.setdefault(text_key(fact.text), set()).add((kind, fact.certainty))
+    return [(kind, fact) for kind, fact in facts if fact.text.strip() and len(meanings[text_key(fact.text)]) == 1
+            and (fact.certainty == 'certain' or kind == 'uncertainty')]
 
 
 def heidi_advice_grounded(candidate: VisitCaptureCandidateV1, suggestion: VisitPlanningSuggestion) -> bool:
@@ -767,6 +769,8 @@ def _validate_visit_capture_candidate(candidate: VisitCaptureCandidateV1) -> Non
                      for value in [getattr(item, 'text', None), getattr(item, 'source_excerpt', None),
                                    getattr(item, 'description', None), getattr(item, 'purpose', None)] if value]
     heidi_source = any(binding.role == "heidi_today" for binding in candidate.source_bindings)
+    if not heidi_source and any(s.source_anchors for s in candidate.next_visit_focus):
+        raise HTTPException(422, 'Planning evidence requires a Heidi source')
     if heidi_source and grounded_heidi_visit_focus(candidate) != candidate.next_visit_focus:
         raise HTTPException(422, 'Planning suggestion source changed')
     for suggestion in [] if heidi_source else candidate.next_visit_focus:

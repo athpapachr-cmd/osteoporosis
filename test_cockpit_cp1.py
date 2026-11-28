@@ -342,6 +342,31 @@ def test_heidi_plan_and_uncertainty_keep_exact_recorded_role_and_certainty(setup
     assert not c.get('/clinical/patient/' + TEST_ID + '/chart').json()['pending']
 
 
+def test_heidi_advice_excludes_blank_and_ambiguous_roles_even_when_one_is_uncertain(heidi_provider):
+    from clinical_capture_cp1 import _heidi_evidence
+    from clinical_data import VisitPlanningSuggestion, heidi_advice_facts, heidi_advice_grounded
+    plan = 'Συζητήθηκε σταδιακή επανέναρξη άσκησης.'
+    for disputed in (plan, plan.replace('σταδιακή ', 'σταδιακή  ')):
+        record = heidi_provider['record'].model_dump(mode='json')
+        record['recommendations'] = [{'text': plan, 'type': 'therapy', 'provenance': ['heidi_today']}]
+        record['findings'].append({'text': disputed, 'certainty': 'conflicting', 'provenance': ['heidi_today']})
+        record['uncertainties'] = [{'text': '  ', 'provenance': ['heidi_today']}]
+        candidate = HeidiVisitFacts.model_validate(record)
+        eligible = heidi_advice_facts(candidate)
+        assert [(kind, item.text) for kind, item in eligible] == [('finding', HEIDI_FINDING)]
+        original = HEIDI_TEXT + '\nΣυστάσεις:\n' + plan
+        assert [item['draft_text'] for item in _heidi_evidence(candidate, original)] == [HEIDI_FINDING]
+        suggestion = VisitPlanningSuggestion.model_validate({
+            'text': HEIDI_QUESTION, 'rationale': 'Συνθετική αιτιολόγηση.', 'purpose': HEIDI_REASON,
+            'source_excerpts': [plan], 'source_anchors': [{'kind': 'recommendation', 'certainty': 'certain'}],
+            'provenance': ['heidi_today'], 'role_scope': 'within_role', 'impact': 'continuity',
+        })
+        assert not heidi_advice_grounded(candidate, suggestion)
+        suggestion.source_excerpts = ['  ']
+        suggestion.source_anchors[0].kind = 'uncertainty'
+        assert not heidi_advice_grounded(candidate, suggestion)
+
+
 def test_legacy_suggestion_amendment_fingerprint_keeps_old_replay(setup):
     from clinical_pending_one_tap import PendingEventBase
     from clinical_visit_amendments import digest

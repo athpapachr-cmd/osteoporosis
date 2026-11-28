@@ -365,14 +365,15 @@
     const legacy=!anchors.length;
     if(!legacy&&anchors.length!==item.source_excerpts.length)return false;
     const facts=Object.entries(groups).flatMap(([kind,key])=>
-      (visit[key]||[]).filter(f=>f.certainty==='certain'||(!legacy&&kind==='uncertainty'))
-        .map(f=>({kind,certainty:f.certainty,text:f.text})));
+      (visit[key]||[]).map(f=>({kind,certainty:f.certainty,text:f.text})));
+    const textKey=text=>String(text||'').normalize('NFC').trim().replace(/\s+/gu,' ').replace(/\.$/u,'');
     return item.source_excerpts.every((excerpt,index)=>{
       if(!excerpt?.trim())return false;
       const matches=facts.filter(f=>f.text===excerpt);
-      if(legacy)return matches.some(f=>!['recommendation','option'].includes(f.kind));
-      const distinct=new Set(matches.map(f=>f.kind+'|'+f.certainty));
-      return distinct.size===1&&matches.some(f=>f.kind===anchors[index].kind&&f.certainty===anchors[index].certainty);
+      if(legacy)return matches.some(f=>f.certainty==='certain'&&!['recommendation','option'].includes(f.kind));
+      const distinct=new Set(facts.filter(f=>textKey(f.text)===textKey(excerpt)).map(f=>f.kind+'|'+f.certainty));
+      return distinct.size===1&&matches.some(f=>f.kind===anchors[index].kind&&f.certainty===anchors[index].certainty&&
+        (f.certainty==='certain'||f.kind==='uncertainty'));
     });
   }
   function clinicalSummary(parent,v,edit,{showFocus=true,showEmptyFocus=false,detailParent=parent}={}){

@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from clinical_data import (PatientORM, EncounterORM, ClinicalPendingORM, VisitCaptureCandidateV1,
-    VisitCapturePendingCandidate, VisitPlanningSuggestion, heidi_advice_facts,
+    VisitCapturePendingCandidate, VisitPlanningSuggestion, heidi_advice_facts, heidi_focus_fact_groups,
     SYNTHETIC_161_PATIENT_IDS, _validate_visit_capture_candidate, _render_visit_capture,
     _pending_record, utcnow)
 
@@ -207,8 +207,10 @@ def _heidi_evidence(candidate, source):
     facts, seen = [], set()
     eligible = heidi_advice_facts(candidate)
     meanings = {}
-    for kind, fact in eligible:
-        meanings.setdefault(unit_key(fact.text), set()).add((kind, fact.certainty))
+    for kind, group in heidi_focus_fact_groups(candidate):
+        if kind == 'reason':continue
+        for fact in group:
+            meanings.setdefault(unit_key(fact.text), set()).add((kind, fact.certainty))
     for kind, fact in eligible:
         key = unit_key(fact.text)
         if key not in seen and key in complete_units and len(meanings[key]) == 1:
