@@ -158,7 +158,8 @@ def attach_visit_amendments(router,engine,protected,context_for,ensure_patient):
                             or not heidi_advice_grounded(req.candidate,suggestion)):
                         raise HTTPException(422,'Planning suggestion source changed')
                     if suggestion in signed_candidate.next_visit_focus:continue
-                    if (signed_candidate.reason_is_unspecified or signed_candidate.source_identity_state!='consistent'
+                    if (not suggestion.source_anchors
+                            or signed_candidate.reason_is_unspecified or signed_candidate.source_identity_state!='consistent'
                             or not any(b.role=='heidi_today' for b in signed_candidate.source_bindings)
                             or suggestion.purpose!=signed_candidate.reason_for_visit.text
                             or not heidi_advice_grounded(signed_candidate,suggestion)):

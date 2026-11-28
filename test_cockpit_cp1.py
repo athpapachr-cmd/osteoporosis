@@ -261,6 +261,9 @@ def test_saved_heidi_review_creates_only_unsaved_grounded_suggestions(setup, hei
     forged['candidate']['findings'][0]['certainty'] = 'uncertain'
     assert c.post(path + '/amend', json=forged).status_code == 422
     forged = deepcopy(amendment)
+    forged['candidate']['next_visit_focus'][0]['source_anchors'] = []
+    assert c.post(path + '/amend', json=forged).status_code == 422
+    forged = deepcopy(amendment)
     forged['candidate']['findings'][0]['text'] = 'Δεν ισχύει ότι ' + HEIDI_FINDING
     assert c.post(path + '/amend', json=forged).status_code == 422
     forged = deepcopy(amendment)
