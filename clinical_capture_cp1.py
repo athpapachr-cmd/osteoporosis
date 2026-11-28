@@ -215,11 +215,14 @@ def _heidi_evidence(candidate, source):
 
 
 async def _heidi_visit_focus(candidate, source):
+    return await _visit_focus_from_facts(candidate, _heidi_evidence(candidate, source), source, "source_note")
+
+
+async def _visit_focus_from_facts(candidate, facts, source, evidence_basis):
     from clinic_utilities.clinical_documents.report_ai import require_provider
     from clinical_visit_audio import MAX_CONTEXTUAL_FACT_BYTES, _consideration_schema, checked_considerations
     from openai import AsyncOpenAI
 
-    facts = _heidi_evidence(candidate, source)
     if not facts:
         return "insufficient_evidence", []
     purpose = candidate.reason_for_visit.text
@@ -280,7 +283,7 @@ async def _heidi_visit_focus(candidate, source):
             focus.append(VisitPlanningSuggestion(
                 text=text, rationale=hint["rationale"], purpose=candidate.reason_for_visit.text,
                 source_excerpts=[by_id[sid]["draft_text"] for sid in hint["source_ids"]], provenance=["heidi_today"],
-                role_scope="within_role", impact=hint["impact"],
+                role_scope="within_role", impact=hint["impact"], evidence_basis=evidence_basis,
             ))
             seen.add(key)
             if len(focus) == 3:

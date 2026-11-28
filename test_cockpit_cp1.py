@@ -230,6 +230,38 @@ def test_signed_legacy_heidi_advice_does_not_hide_visit_or_block_an_amendment(se
         assert current["amendment_history"][0]["previous"]["signed"]["candidate"]["next_visit_focus"][-1] == legacy
 
 
+def test_saved_heidi_review_creates_only_unsaved_grounded_suggestions(setup, heidi_provider):
+    from clinical_pending_one_tap import PendingEventBase
+    app, engine = setup
+    PendingEventBase.metadata.create_all(engine)
+    c = login(app)
+    c.post('/clinical/visit-capture/test-patient')
+    context = ctx(c)
+    candidate = c.post('/clinical/visit-capture/extract', json={
+        "context_id": context, "encounter_date": "2026-10-18", "source_kind": "heidi", "text": HEIDI_TEXT,
+    }).json()["candidate"]
+    candidate["next_visit_focus"] = []
+    encounter = c.post('/clinical/visit-capture/save', json={"context_id": context, "candidate": candidate}).json()["encounter"]["encounter_id"]
+    path = f'/clinical/patient/{TEST_ID}/visit/{encounter}'
+    edit = c.get(path + '/edit').json()
+    before = c.get('/clinical/patient/' + TEST_ID + '/chart').json()
+    result = c.post(path + '/review', json={'expected_token': edit['expected_token']})
+    assert result.status_code == 200
+    proposal = result.json()['suggestions'][0]
+    assert proposal['text'] == HEIDI_QUESTION
+    assert proposal['evidence_basis'] == 'saved_visit'
+    assert proposal['source_excerpts'] == [HEIDI_FINDING]
+    assert c.get('/clinical/patient/' + TEST_ID + '/chart').json() == before
+    bad = c.post(path + '/review', json={'expected_token': '0' * 64})
+    assert bad.status_code == 409
+    amendment = {'context_id': ctx(c), 'expected_token': edit['expected_token'], 'request_id': str(uuid4()),
+                 'candidate': edit['candidate'], 'pending_bindings': edit['pending_bindings']}
+    amendment['candidate']['next_visit_focus'] = [proposal]
+    assert c.post(path + '/amend', json=amendment).status_code == 200
+    stored = c.get('/clinical/patient/' + TEST_ID + '/chart').json()
+    assert stored['visits'][0]['clinical']['next_visit_focus'][0]['evidence_basis'] == 'saved_visit'
+
+
 def test_proposal_approval_atomic_persistence_and_exact_origin(setup,monkeypatch):
     app,engine=setup;c=login(app)
     assert c.post('/clinical/visit-capture/test-patient').status_code==200
@@ -417,6 +449,59 @@ def test_browser_heidi_paste_runs_one_processing_action_and_edits_grounding(setu
     with Session(engine) as db:
         assert db.scalar(select(func.count()).select_from(EncounterORM)) == 2
         assert db.scalar(select(func.count()).select_from(ClinicalPendingORM)) == 0
+
+
+def test_browser_saved_heidi_visit_can_generate_and_save_advice(setup, heidi_provider):
+    import shutil
+    import socket
+    import threading
+    import uvicorn
+    from playwright.sync_api import expect, sync_playwright
+    from clinical_pending_one_tap import PendingEventBase
+
+    app, engine = setup
+    PendingEventBase.metadata.create_all(engine)
+    c = login(app)
+    c.post('/clinical/visit-capture/test-patient')
+    context = ctx(c)
+    candidate = c.post('/clinical/visit-capture/extract', json={
+        "context_id": context, "encounter_date": "2026-10-18", "source_kind": "heidi", "text": HEIDI_TEXT,
+    }).json()["candidate"]
+    candidate['next_visit_focus'] = []
+    encounter = c.post('/clinical/visit-capture/save', json={
+        'context_id': context, 'candidate': candidate,
+    }).json()['encounter']['encounter_id']
+    sock = socket.socket()
+    sock.bind(('127.0.0.1', 0))
+    server = uvicorn.Server(uvicorn.Config(app, log_level='error'))
+    thread = threading.Thread(target=server.run, kwargs={'sockets': [sock]}, daemon=True)
+    thread.start()
+    try:
+        with sync_playwright() as pw:
+            browser = pw.chromium.launch(executable_path=shutil.which('google-chrome') or shutil.which('chromium'))
+            page = browser.new_page(viewport={'width': 1280, 'height': 950})
+            page.goto(f'http://localhost:{sock.getsockname()[1]}/static/cockpit/index.html')
+            page.locator('#ceGlobalKey').click()
+            page.locator('#ceGlobalKeyInput').fill(KEY)
+            page.locator('#ceGlobalLoginForm button[type=submit]').click()
+            expect(page.locator('#ceGlobalAuthStatus')).to_contain_text('Συνδέθηκες')
+            page.keyboard.press('Escape')
+            page.evaluate('([id,eid])=>window.CockpitStoredChart.openVisit(id,eid)', [TEST_ID, encounter])
+            page.get_by_role('button', name='Επεξεργασία επίσκεψης', exact=True).click()
+            page.get_by_role('button', name='Έλεγχος επίσκεψης με AI', exact=True).click()
+            focus = page.locator('#captureAudioSummary .next-visit-focus')
+            expect(focus).to_contain_text(HEIDI_QUESTION)
+            focus.get_by_text('Σύνδεση με τον σκοπό').click()
+            expect(focus).to_contain_text('Από την αποθηκευμένη επίσκεψη')
+            assert c.get('/clinical/patient/' + TEST_ID + '/chart').json()['visits'][0]['clinical']['next_visit_focus'] == []
+            page.locator('#captureSave').click()
+            expect(page.locator('#captureComposer')).to_be_hidden()
+            assert c.get('/clinical/patient/' + TEST_ID + '/chart').json()['visits'][0]['clinical']['next_visit_focus'][0]['text'] == HEIDI_QUESTION
+            browser.close()
+    finally:
+        server.should_exit = True
+        thread.join(10)
+        sock.close()
 
 
 def test_browser_capture_edit_reject_save_refresh_and_second_session(setup,monkeypatch,tmp_path):

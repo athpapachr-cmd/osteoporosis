@@ -10,7 +10,7 @@ from sqlalchemy import select, update, delete
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, OperationalError
 from clinical_data import EncounterORM, PatientORM, ClinicalPendingORM, VisitCaptureContextORM, VisitCaptureCandidateV1, _validate_visit_capture_candidate, _render_visit_capture, utcnow
-from clinical_data import grounded_heidi_visit_focus
+from clinical_data import grounded_heidi_visit_focus, heidi_focus_fact_groups
 from clinical_pending_one_tap import actor_for, installed, project_lifecycle, cancel_pending, pending_write_session
 
 class Amendment(BaseModel):
@@ -20,6 +20,10 @@ class Amendment(BaseModel):
     request_id: UUID4
     candidate: VisitCaptureCandidateV1
     pending_bindings: list[str | None]=Field(max_length=60)
+
+class SavedVisitReview(BaseModel):
+    model_config = {"extra": "forbid"}
+    expected_token: str = Field(pattern=r'^[a-f0-9]{64}$')
 
 def digest(value):
     return hashlib.sha256(json.dumps(value,sort_keys=True,ensure_ascii=False,separators=(',',':'),default=str).encode()).hexdigest()
@@ -80,6 +84,44 @@ def attach_visit_amendments(router,engine,protected,context_for,ensure_patient):
                 'omitted_visit_focus':omitted_visit_focus,
                 'expected_token':token(db,row,pending),'revision':signed.get('revision',0)}
 
+    @router.post('/patient/{patient_id}/visit/{encounter_id}/review',dependencies=protected)
+    async def review_saved_visit(patient_id:str,encounter_id:str,request:Request,response:Response):
+        from clinical_capture_cp1 import _visit_focus_from_facts
+        from clinical_visit_preparation import connected_call
+        response.headers['Cache-Control']='no-store'
+        try:
+            raw=bytearray()
+            async for chunk in request.stream():
+                raw.extend(chunk)
+                if len(raw)>4096:raise ValueError('request too large')
+            body=SavedVisitReview.model_validate_json(bytes(raw))
+        except Exception:
+            raise HTTPException(422,'Έλεγξε την επίσκεψη.') from None
+        with Session(engine) as db:
+            _,_,row,signed,pending=load(db,patient_id,encounter_id,request)
+            if token(db,row,pending)!=body.expected_token:
+                raise HTTPException(409,'Visit changed; reopen editing')
+            candidate=VisitCaptureCandidateV1.model_validate(signed['candidate'])
+            if candidate.source_identity_state!='consistent' or candidate.reason_is_unspecified or not any(
+                    binding.role=='heidi_today' for binding in candidate.source_bindings):
+                raise HTTPException(422,'Η επίσκεψη δεν περιέχει κατάλληλη καταγραφή για έλεγχο.')
+            facts=[];seen=set()
+            for kind,group in heidi_focus_fact_groups(candidate):
+                if kind=='reason':continue
+                for fact in group:
+                    if fact.certainty!='certain' or fact.text in seen:continue
+                    seen.add(fact.text)
+                    facts.append({'source_id':len(facts)+1,'kind':kind,'excerpt':fact.text,
+                                  'draft_text':fact.text,'verification':fact.verification})
+        status,suggestions=await connected_call(request,_visit_focus_from_facts(
+            candidate,facts,'\n'.join(f['excerpt'] for f in facts),'saved_visit'))
+        with Session(engine) as db:
+            _,_,row,_,pending=load(db,patient_id,encounter_id,request)
+            if token(db,row,pending)!=body.expected_token:
+                raise HTTPException(409,'Visit changed; reopen editing')
+        return {'patient_id':patient_id,'encounter_id':encounter_id,'expected_token':body.expected_token,
+                'status':status,'suggestions':[item.model_dump(mode='json') for item in suggestions]}
+
     @router.post('/patient/{patient_id}/visit/{encounter_id}/amend',dependencies=protected)
     async def amend(patient_id:str,encounter_id:str,request:Request,response:Response):
         response.headers['Cache-Control']='no-store';raw=bytearray()
@@ -101,6 +143,17 @@ def attach_visit_amendments(router,engine,protected,context_for,ensure_patient):
                     if h['digest']!=identity or h['actor']!=[actor.principal_id,actor.role]:raise HTTPException(409,'Amendment request conflict')
                     return {'encounter_id':row.id,'revision':signed.get('revision',0),'replayed':True}
             if token(db,row,pending)!=req.expected_token:raise HTTPException(409,'Visit or obligations changed; reopen editing')
+            # Advice created from a saved visit must remain grounded in that signed version.
+            signed_candidate=VisitCaptureCandidateV1.model_validate(signed['candidate'])
+            signed_facts={fact.text for kind,group in heidi_focus_fact_groups(signed_candidate)
+                          if kind!='reason' for fact in group if fact.certainty=='certain'}
+            previous_focus=signed_candidate.next_visit_focus
+            for suggestion in req.candidate.next_visit_focus:
+                if suggestion.evidence_basis!='saved_visit' or suggestion in previous_focus:continue
+                if (signed_candidate.reason_is_unspecified
+                        or suggestion.purpose!=signed_candidate.reason_for_visit.text
+                        or not all(excerpt in signed_facts for excerpt in suggestion.source_excerpts)):
+                    raise HTTPException(422,'Planning suggestion source changed')
             context=context_for(db,req.context_id)
             if context.patient_id!=patient_id:raise HTTPException(409,'Invalid patient context')
             ids=[v for v in req.pending_bindings if v is not None]
