@@ -418,6 +418,7 @@
       const article=el(section,'article');el(article,'strong',item.text);
       el(article,'p',item.rationale);
       const why=el(article,'details');el(why,'summary','Σύνδεση με τον σκοπό');el(why,'p','Σκοπός: '+item.purpose,'clinical-muted');
+      if(item.evidence_basis==='saved_visit')el(why,'p','Από την αποθηκευμένη επίσκεψη','clinical-muted');
       if(item.provenance?.includes('heidi_today')){
         for(const excerpt of item.source_excerpts||[])el(why,'blockquote',excerpt,'clinical-preview-text');
       }
@@ -515,7 +516,12 @@
     const clinical=el(overview,'section','','capture-result-clinical');
     el(clinical,'h4','Κλινική εικόνα');
     clinicalSummary(clinical,candidate,openSectionEditor,{showFocus:false});
-    renderNextFocus(overview,candidate,{showEmpty:true,status:heidiFocusStatus});
+    const focus=renderNextFocus(overview,candidate,{showEmpty:true,status:heidiFocusStatus});
+    if(heidi&&amendment&&!candidate.reason_is_unspecified){
+      el(focus,'p','Ο έλεγχος στέλνει τα κλινικά στοιχεία της αποθηκευμένης επίσκεψης στο AI.','clinical-muted');
+      const reviewButton=button(focus,'Έλεγχος επίσκεψης με AI',reviewSavedVisit);
+      reviewButton.title='Χρησιμοποιεί τα κλινικά στοιχεία της αποθηκευμένης επίσκεψης για προτάσεις επανελέγχου.';
+    }
     if(heidi||candidate.next_visit_focus?.length)overview.classList.add('has-visit-focus');
     renderDraftChecks(audioSummaryText,{taskChecks:!heidi});
     const obligations=(candidate.pending||[]).map(p=>[p.description,p.trigger,p.review_date,roles[p.responsible_role]].filter(Boolean).join(' · '));
@@ -542,6 +548,40 @@
     review.replaceChildren();
     review.hidden=true;
     showAmendmentEffects();
+  }
+  async function reviewSavedVisit(){
+    if(busy||!amendment||!candidate||!patientId)return;
+    const editing=amendment,id=patientId,ticket=generation,draftTicket=draftGeneration;
+    const before=JSON.stringify(candidate),expected=editing.expected_token;
+    const controller=new AbortController();heidiRequest=controller;
+    const active=()=>ticket===generation&&draftTicket===draftGeneration&&id===patientId&&
+      amendment===editing&&JSON.stringify(candidate)===before;
+    busy=true;
+    const control=audioSummaryText.querySelector('.next-visit-focus button:last-child');
+    if(control)control.disabled=true;
+    feedback.textContent='Έλεγχος της αποθηκευμένης επίσκεψης με AI…';
+    try{
+      const result=await request('/patient/'+encodeURIComponent(id)+'/visit/'+encodeURIComponent(editing.encounter_id)+'/review',{expected_token:expected},controller.signal);
+      if(!active()||result.patient_id!==id||result.encounter_id!==editing.encounter_id||result.expected_token!==expected)return;
+      if(result.status!=='ready'||!result.suggestions.length){
+        feedback.textContent=result.status==='insufficient_evidence'
+          ?'Δεν βρέθηκαν αρκετά σαφή κλινικά στοιχεία για προτάσεις.'
+          :'Δεν προέκυψαν διαθέσιμες προτάσεις. Η καταγραφή διατηρήθηκε.';
+        return;
+      }
+      const facts=['findings','clinical_impression','decisions','follow_up','history','uncertainties','safety_net']
+        .flatMap(key=>candidate[key]||[]).filter(f=>f.certainty==='certain').map(f=>f.text);
+      const available=result.suggestions.filter(item=>item.evidence_basis==='saved_visit'&&
+        item.purpose===candidate.reason_for_visit.text&&item.source_excerpts.every(excerpt=>facts.includes(excerpt)));
+      const existing=new Set(candidate.next_visit_focus.map(item=>item.text));
+      for(const item of available){
+        if(candidate.next_visit_focus.length>=3)break;
+        if(!existing.has(item.text)){candidate.next_visit_focus.push(item);existing.add(item.text);}
+      }
+      showStructuredDraft();
+      feedback.textContent=available.length?'Έλεγξε τις προτάσεις και αποθήκευσε όσες θέλεις.':'Τα στοιχεία άλλαξαν. Έλεγξε την καταγραφή και δοκίμασε ξανά.';
+    }catch(e){if(active())feedback.textContent=e.message+' Η καταγραφή διατηρήθηκε.';}
+    finally{if(heidiRequest===controller)heidiRequest=null;if(amendment===editing){busy=false;if(control?.isConnected)control.disabled=false;showAmendmentEffects();}}
   }
   function showPending(id,item,editMetadata=false){
     if(!composer.hidden||pendingBusy||patientId!==id)return;

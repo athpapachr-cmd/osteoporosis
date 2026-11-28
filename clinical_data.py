@@ -355,6 +355,7 @@ class VisitPlanningSuggestion(BaseModel):
     impact: Literal['management', 'continuity', 'safety']
     origin: Literal['ai_suggested'] = 'ai_suggested'
     status: Literal['suggestion'] = 'suggestion'
+    evidence_basis: Literal['source_note', 'saved_visit'] = 'source_note'
 
 
 class VisitCaptureCandidateV1(BaseModel):
@@ -1139,6 +1140,8 @@ def build_clinical_router(engine: Engine) -> APIRouter:
     )
     def save_visit_capture(req: VisitCaptureRequest) -> VisitCaptureSaveRecord:
         _validate_visit_capture_candidate(req.candidate)
+        if any(item.evidence_basis == 'saved_visit' for item in req.candidate.next_visit_focus):
+            raise HTTPException(422, 'Saved-visit advice requires an existing visit amendment')
         if any(
             binding.role in {"web_visit_audio", "local_visit_audio"}
             for binding in req.candidate.source_bindings
