@@ -638,3 +638,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
 .capture-identity-review {margin:10px 0 15px;padding:12px 14px;border:1px solid #e5c58d;border-radius:10px;background:#fff8e9}
 .capture-identity-review h4,.capture-identity-review p {margin:0}
 .capture-identity-review p {margin-top:5px}
+
+.patient-chart-snapshot {grid-template-columns:minmax(0,1fr);align-items:start;gap:14px}
+.patient-chart-snapshot > *, .patient-chart-overview > .clinical-full-record {overflow-wrap:anywhere}
+.patient-chart-snapshot .patient-chart-obligations {grid-column:1 / -1}
+.patient-chart-snapshot .patient-chart-next-visit {background:#f4faf8;border-color:#d2e7de}
+.patient-chart-next-visit > h4 {margin:0 0 8px;font-size:1.15rem;color:#203c48}
+.patient-chart-next-visit article {margin:10px 0 0;padding:10px 0 0;border-top:1px solid #d2e7de}
+.patient-chart-next-visit article p {margin:5px 0;font-size:.9rem;line-height:1.45}
+.patient-chart-next-visit summary {cursor:pointer;font-size:.85rem}
+@media(min-width:1060px){
+  .patient-chart-snapshot.has-stored-focus {grid-template-columns:minmax(0,1.2fr) minmax(0,1fr)}
+}
