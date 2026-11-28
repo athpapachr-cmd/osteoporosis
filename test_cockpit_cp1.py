@@ -261,6 +261,9 @@ def test_saved_heidi_review_creates_only_unsaved_grounded_suggestions(setup, hei
     forged['candidate']['findings'][0]['certainty'] = 'uncertain'
     assert c.post(path + '/amend', json=forged).status_code == 422
     forged = deepcopy(amendment)
+    forged['candidate']['next_visit_focus'][0]['source_anchors'] = []
+    assert c.post(path + '/amend', json=forged).status_code == 422
+    forged = deepcopy(amendment)
     forged['candidate']['findings'][0]['text'] = 'Δεν ισχύει ότι ' + HEIDI_FINDING
     assert c.post(path + '/amend', json=forged).status_code == 422
     forged = deepcopy(amendment)
@@ -272,6 +275,99 @@ def test_saved_heidi_review_creates_only_unsaved_grounded_suggestions(setup, hei
     assert c.post(path + '/amend', json=amendment).status_code == 200
     stored = c.get('/clinical/patient/' + TEST_ID + '/chart').json()
     assert stored['visits'][0]['clinical']['next_visit_focus'][0]['evidence_basis'] == 'saved_visit'
+
+
+def test_heidi_plan_and_uncertainty_keep_exact_recorded_role_and_certainty(setup, heidi_provider):
+    from clinical_pending_one_tap import PendingEventBase
+    app, engine = setup
+    PendingEventBase.metadata.create_all(engine)
+    c = login(app)
+    c.post('/clinical/visit-capture/test-patient')
+    context = ctx(c)
+    plan = 'Συζητήθηκε η σταδιακή επανέναρξη της άσκησης.'
+    ambiguity = 'Δεν είναι σαφές πότε θα ελεγχθεί η ανταπόκριση.'
+    option = 'Συζητήθηκε το ενδεχόμενο επανεκτίμησης.'
+    raw = (HEIDI_TEXT + '\nΣυστάσεις:\n' + plan +
+           '\nΑβεβαιότητες:\n' + ambiguity +
+           '\nΕπιλογές που συζητήθηκαν:\n' + option)
+    record = heidi_provider['record'].model_dump(mode='json')
+    fact = lambda text: {'text': text, 'provenance': ['heidi_today']}
+    record['recommendations'] = [{**fact(plan), 'type': 'therapy'}]
+    record['uncertainties'] = [{**fact(ambiguity), 'certainty': 'uncertain'}]
+    record['options_discussed'] = [fact(option)]
+    heidi_provider['record'] = HeidiVisitFacts.model_validate(record)
+    question = {'category': 'management_review', 'text': 'Πότε θα επανεκτιμηθεί η ανταπόκριση;',
+                'rationale': 'Ο χρόνος ελέγχου του πλάνου παραμένει ασαφής.',
+                'source_ids': [2, 3], 'confidence': 'moderate', 'purpose_source_ids': [0],
+                'role_scope': 'within_role', 'impact': 'continuity'}
+    heidi_provider['advisory'] = json.dumps({'contextual_clinical_considerations': [question]})
+    result = c.post('/clinical/visit-capture/extract', json={
+        'context_id': context, 'encounter_date': '2026-10-18', 'source_kind': 'heidi', 'text': raw,
+    }).json()
+    assert result['visit_focus_status'] == 'ready'
+    candidate = result['candidate']
+    proposal = candidate['next_visit_focus'][0]
+    assert proposal['source_excerpts'] == [ambiguity, plan]
+    assert proposal['source_anchors'] == [{'kind': 'uncertainty', 'certainty': 'uncertain'},
+                                          {'kind': 'recommendation', 'certainty': 'certain'}]
+    sent = json.loads(heidi_provider['calls'][-1][1]['input'][1]['content'])
+    assert [(item['kind'], item['certainty']) for item in sent['validated_facts']] == [
+        ('finding', 'certain'), ('uncertainty', 'uncertain'), ('recommendation', 'certain'), ('option', 'certain')]
+    assert not candidate['pending']
+    invalid = deepcopy(candidate)
+    invalid['uncertainties'][0]['certainty'] = 'conflicting'
+    assert c.post('/clinical/visit-capture/preview', json={'context_id': context, 'candidate': invalid}).status_code == 422
+    invalid = deepcopy(candidate)
+    invalid['options_discussed'].append({k: v for k, v in invalid['recommendations'].pop().items() if k != 'type'})
+    assert c.post('/clinical/visit-capture/preview', json={'context_id': context, 'candidate': invalid}).status_code == 422
+    invalid = deepcopy(candidate)
+    invalid['next_visit_focus'][0]['source_anchors'] = []
+    assert c.post('/clinical/visit-capture/preview', json={'context_id': context, 'candidate': invalid}).status_code == 422
+    saved = c.post('/clinical/visit-capture/save', json={'context_id': context, 'candidate': candidate})
+    assert saved.status_code == 200
+    encounter = saved.json()['encounter']['encounter_id']
+    path = f'/clinical/patient/{TEST_ID}/visit/{encounter}'
+    edit = c.get(path + '/edit').json()
+    assert edit['candidate']['next_visit_focus'][0]['source_anchors'] == proposal['source_anchors']
+    generated = c.post(path + '/review', json={'expected_token': edit['expected_token']})
+    assert generated.status_code == 200
+    assert generated.json()['suggestions'][0]['source_anchors'] == proposal['source_anchors']
+    amendment = {'context_id': ctx(c), 'expected_token': edit['expected_token'], 'request_id': str(uuid4()),
+                 'candidate': edit['candidate'], 'pending_bindings': edit['pending_bindings']}
+    amendment['candidate']['next_visit_focus'] = generated.json()['suggestions']
+    altered = deepcopy(amendment)
+    altered['candidate']['uncertainties'][0]['certainty'] = 'certain'
+    assert c.post(path + '/amend', json=altered).status_code == 422
+    altered = deepcopy(amendment)
+    altered['candidate']['next_visit_focus'][0]['source_anchors'][0]['kind'] = 'finding'
+    assert c.post(path + '/amend', json=altered).status_code == 422
+    assert c.post(path + '/amend', json=amendment).status_code == 200
+    assert not c.get('/clinical/patient/' + TEST_ID + '/chart').json()['pending']
+
+
+def test_heidi_advice_excludes_blank_and_ambiguous_roles_even_when_one_is_uncertain(heidi_provider):
+    from clinical_capture_cp1 import _heidi_evidence
+    from clinical_data import VisitPlanningSuggestion, heidi_advice_facts, heidi_advice_grounded
+    plan = 'Συζητήθηκε σταδιακή επανέναρξη άσκησης.'
+    for disputed in (plan, plan.replace('σταδιακή ', 'σταδιακή  ')):
+        record = heidi_provider['record'].model_dump(mode='json')
+        record['recommendations'] = [{'text': plan, 'type': 'therapy', 'provenance': ['heidi_today']}]
+        record['findings'].append({'text': disputed, 'certainty': 'conflicting', 'provenance': ['heidi_today']})
+        record['uncertainties'] = [{'text': '  ', 'provenance': ['heidi_today']}]
+        candidate = HeidiVisitFacts.model_validate(record)
+        eligible = heidi_advice_facts(candidate)
+        assert [(kind, item.text) for kind, item in eligible] == [('finding', HEIDI_FINDING)]
+        original = HEIDI_TEXT + '\nΣυστάσεις:\n' + plan
+        assert [item['draft_text'] for item in _heidi_evidence(candidate, original)] == [HEIDI_FINDING]
+        suggestion = VisitPlanningSuggestion.model_validate({
+            'text': HEIDI_QUESTION, 'rationale': 'Συνθετική αιτιολόγηση.', 'purpose': HEIDI_REASON,
+            'source_excerpts': [plan], 'source_anchors': [{'kind': 'recommendation', 'certainty': 'certain'}],
+            'provenance': ['heidi_today'], 'role_scope': 'within_role', 'impact': 'continuity',
+        })
+        assert not heidi_advice_grounded(candidate, suggestion)
+        suggestion.source_excerpts = ['  ']
+        suggestion.source_anchors[0].kind = 'uncertainty'
+        assert not heidi_advice_grounded(candidate, suggestion)
 
 
 def test_legacy_suggestion_amendment_fingerprint_keeps_old_replay(setup):
@@ -499,11 +595,19 @@ def test_browser_saved_heidi_visit_can_generate_and_save_advice(setup, heidi_pro
 
     app, engine = setup
     PendingEventBase.metadata.create_all(engine)
+    ambiguity = 'Δεν είναι σαφές πότε θα ελεγχθεί η ανταπόκριση.'
+    record = heidi_provider['record'].model_dump(mode='json')
+    record['uncertainties'] = [{'text': ambiguity, 'certainty': 'uncertain', 'provenance': ['heidi_today']}]
+    heidi_provider['record'] = HeidiVisitFacts.model_validate(record)
+    hint = json.loads(heidi_provider['advisory'])['contextual_clinical_considerations'][2]
+    hint['source_ids'] = [2]
+    heidi_provider['advisory'] = json.dumps({'contextual_clinical_considerations': [hint]})
     c = login(app)
     c.post('/clinical/visit-capture/test-patient')
     context = ctx(c)
     candidate = c.post('/clinical/visit-capture/extract', json={
-        "context_id": context, "encounter_date": "2026-10-18", "source_kind": "heidi", "text": HEIDI_TEXT,
+        "context_id": context, "encounter_date": "2026-10-18", "source_kind": "heidi",
+        "text": HEIDI_TEXT + '\nΑβεβαιότητες:\n' + ambiguity,
     }).json()["candidate"]
     candidate['next_visit_focus'] = []
     encounter = c.post('/clinical/visit-capture/save', json={
@@ -531,6 +635,19 @@ def test_browser_saved_heidi_visit_can_generate_and_save_advice(setup, heidi_pro
             expect(focus).to_contain_text(HEIDI_QUESTION)
             focus.get_by_text('Σύνδεση με τον σκοπό').click()
             expect(focus).to_contain_text('Από την αποθηκευμένη επίσκεψη')
+            expect(focus).to_contain_text('Καταγεγραμμένη αβεβαιότητα')
+            page.get_by_role('button', name='Διόρθωση · Αβεβαιότητες').click()
+            editor = page.locator('#captureReview')
+            editor.get_by_text('Λεπτομέρειες', exact=True).click()
+            editor.get_by_label('Βεβαιότητα').select_option('conflicting')
+            editor.get_by_role('button', name='Επιστροφή στην καταγραφή').click()
+            expect(focus.locator('article')).to_have_count(0)
+            page.get_by_role('button', name='Διόρθωση · Αβεβαιότητες').click()
+            editor.get_by_text('Λεπτομέρειες', exact=True).click()
+            editor.get_by_label('Βεβαιότητα').select_option('uncertain')
+            editor.get_by_role('button', name='Επιστροφή στην καταγραφή').click()
+            page.get_by_role('button', name='Έλεγχος επίσκεψης με AI', exact=True).click()
+            expect(focus).to_contain_text(HEIDI_QUESTION)
             assert c.get('/clinical/patient/' + TEST_ID + '/chart').json()['visits'][0]['clinical']['next_visit_focus'] == []
             page.locator('#captureSave').click()
             expect(page.locator('#captureComposer')).to_be_hidden()
